@@ -6,11 +6,14 @@ import WodHistoryClient from './WodHistoryClient';
 export default async function WodHistoryPage() {
   const session = await getSession();
   if (!session) redirect('/login');
-  const member = getMemberById(session.id);
+  const [member, exercises, allWods] = await Promise.all([
+    getMemberById(session.id),
+    getExercises(),
+    getWods(),
+  ]);
   if (!member) redirect('/login');
 
-  const exercises = getExercises();
-  const wods = getWods()
+  const wods = allWods
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 60)
     .map(w => ({
@@ -21,5 +24,6 @@ export default async function WodHistoryPage() {
       cooldown: (w.cooldown || []).map((e: any) => ({ ...e, exercise: exercises.find(ex => ex.id === e.exerciseId) })),
     }));
 
-  return <WodHistoryClient member={member} wods={wods} />;
+  const { password: _, ...safeMember } = member;
+  return <WodHistoryClient member={safeMember} wods={wods} />;
 }

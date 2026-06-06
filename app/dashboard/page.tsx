@@ -7,13 +7,17 @@ export default async function DashboardPage() {
   const session = await getSession();
   if (!session) redirect('/login');
 
-  const member = getMemberById(session.id);
+  const member = await getMemberById(session.id);
   if (!member) redirect('/login');
 
-  const exercises = getExercises();
-  const rawWod = getTodayWod();
+  const [exercises, rawWod, logs, prs, attendance] = await Promise.all([
+    getExercises(),
+    getTodayWod(),
+    getLogEntries(),
+    getPRs(),
+    getAttendance(),
+  ]);
 
-  // Enrich WOD with exercise data
   const enrich = (list: any[]) => list.map(item => ({
     ...item,
     exercise: exercises.find((e: any) => e.id === item.exerciseId)
@@ -29,10 +33,6 @@ export default async function DashboardPage() {
 
   const today = new Date().toISOString().split('T')[0];
   const thisMonth = today.slice(0, 7);
-
-  const logs = getLogEntries();
-  const prs = getPRs();
-  const attendance = getAttendance();
 
   const myLogs = logs.filter(l => l.memberId === session.id);
   const myPRs = prs.filter(p => p.memberId === session.id);
