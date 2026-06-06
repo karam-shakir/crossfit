@@ -1,0 +1,40 @@
+{
+  "members": [
+    {
+      "id": "admin",
+      "username": "admin",
+      "password": "$2a$10$placeholder",
+      "nameAr": "المدير",
+      "role": "admin",
+      "joinDate": "2024-01-01",
+      "avatar": "👑"
+    },
+    {
+      "id": "mq2msifoi9y59vrgjhc",
+      "username": "abdo",
+      "password": "$2b$10$L01ZwArPj4jYrs7v718p7.HNflV4oEvjRIZ5eDKyb2pI6TREaLovm",
+      "nameAr": "عبد الله الصغير",
+      "role": "member",
+      "joinDate": "2026-06-06",
+      "avatar": "💪"
+    },
+    {
+      "id": "mq2mszvhdb4lkuf7bam",
+      "username": "abotaj",
+      "password": "$2b$10$BsUp2L7F4j4dIixLgVl6d.3IpNXXjA/x9gHVlqapXX7QOgdRxNYwS",
+      "nameAr": "احمد التويجري",
+      "role": "member",
+      "joinDate": "2026-06-06",
+      "avatar": "🔥"
+    },
+    {
+      "id": "mq2mun0uek6qmcye8gt",
+      "username": "shakir",
+      "password": "$2b$10$0kPfO0rJRXsxz2mqZo4ENuw0lKfecNEk4/7Uc0Okt.Y54NfyettD6",
+      "nameAr": "شاكر الريشي",
+      "role": "member",
+      "joinDate": "2026-06-06",
+      "avatar": "⚡"
+    }
+  ]
+}

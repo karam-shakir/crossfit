@@ -1,0 +1,85 @@
+{
+  "benchmarks": [
+    {
+      "id": "fran",
+      "nameAr": "فران",
+      "nameEn": "Fran",
+      "type": "للوقت",
+      "description": "21-15-9: ثراستر (43 كجم) + عقلة",
+      "exercises": ["thruster", "pull-up"],
+      "scheme": "21-15-9",
+      "category": "girls"
+    },
+    {
+      "id": "helen",
+      "nameAr": "هيلين",
+      "nameEn": "Helen",
+      "type": "للوقت",
+      "description": "3 راوندات: جري 400م + 21 هزة كيتل بيل (24 كجم) + 12 عقلة",
+      "exercises": ["run", "kettle-bell-swing", "pull-up"],
+      "scheme": "3 rounds",
+      "category": "girls"
+    },
+    {
+      "id": "grace",
+      "nameAr": "غريس",
+      "nameEn": "Grace",
+      "type": "للوقت",
+      "description": "30 نظيفة وخطف (61 كجم) للوقت",
+      "exercises": ["clean-and-jerk"],
+      "scheme": "30 reps",
+      "category": "girls"
+    },
+    {
+      "id": "isabel",
+      "nameAr": "إيزابيل",
+      "nameEn": "Isabel",
+      "type": "للوقت",
+      "description": "30 خطف (61 كجم) للوقت",
+      "exercises": ["snatch"],
+      "scheme": "30 reps",
+      "category": "girls"
+    },
+    {
+      "id": "diane",
+      "nameAr": "ديان",
+      "nameEn": "Diane",
+      "type": "للوقت",
+      "description": "21-15-9: رفعة ميتة (102 كجم) + ضغط على اليدين",
+      "exercises": ["deadlift", "handstand-pushup"],
+      "scheme": "21-15-9",
+      "category": "girls"
+    },
+    {
+      "id": "cindy",
+      "nameAr": "سيندي",
+      "nameEn": "Cindy",
+      "type": "أكثر راوندات",
+      "description": "20 دقيقة: 5 عقلات + 10 ضغط + 15 جلوس",
+      "exercises": ["pull-up", "push-up", "sit-up"],
+      "scheme": "20 min AMRAP",
+      "category": "girls"
+    },
+    {
+      "id": "murph",
+      "nameAr": "مورف",
+      "nameEn": "Murph",
+      "type": "للوقت",
+      "description": "جري 1.6كم + 100 عقلة + 200 ضغط + 300 جلوس + جري 1.6كم",
+      "exercises": ["run", "pull-up", "push-up", "sit-up"],
+      "scheme": "for time",
+      "category": "heroes"
+    },
+    {
+      "id": "dt",
+      "nameAr": "دي تي",
+      "nameEn": "DT",
+      "type": "للوقت",
+      "description": "5 راوندات: 12 رفعة ميتة + 9 نظيفة + 6 دفع بالساقين (70 كجم)",
+      "exercises": ["deadlift", "power-clean", "push-press"],
+      "scheme": "5 rounds",
+      "category": "heroes"
+    }
+  ],
+  "results": []
+}

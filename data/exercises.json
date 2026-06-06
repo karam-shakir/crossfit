@@ -1,0 +1,238 @@
+{
+  "exercises": [
+    {
+      "id": "back-squat",
+      "nameAr": "القرفصاء الخلفية",
+      "nameEn": "Back Squat",
+      "category": "قوة",
+      "gif": "https://media.giphy.com/media/3o7TKSjRrfIPjeiVyM/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=Dy28eq2PjcM",
+      "muscles": "الأرجل والمؤخرة"
+    },
+    {
+      "id": "front-squat",
+      "nameAr": "القرفصاء الأمامية",
+      "nameEn": "Front Squat",
+      "category": "قوة",
+      "gif": "https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=m4ytaCJZpl0",
+      "muscles": "الأرجل والمؤخرة"
+    },
+    {
+      "id": "deadlift",
+      "nameAr": "الرفعة الميتة",
+      "nameEn": "Deadlift",
+      "category": "قوة",
+      "gif": "https://media.giphy.com/media/3ohzdIuqJoo8QdKlnW/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=op9kVnSso6Q",
+      "muscles": "الظهر والأرجل"
+    },
+    {
+      "id": "power-clean",
+      "nameAr": "النظيفة القوية",
+      "nameEn": "Power Clean",
+      "category": "رفع أثقال أولمبي",
+      "gif": "https://media.giphy.com/media/xT9IgG50Lg7ruskt7i/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=vm3dNFvmVCU",
+      "muscles": "كامل الجسم"
+    },
+    {
+      "id": "clean-and-jerk",
+      "nameAr": "النظيفة والخطف",
+      "nameEn": "Clean & Jerk",
+      "category": "رفع أثقال أولمبي",
+      "gif": "https://media.giphy.com/media/3o7TKSjRrfIPjeiVyM/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=2SGVgsgOgJo",
+      "muscles": "كامل الجسم"
+    },
+    {
+      "id": "snatch",
+      "nameAr": "الخطف",
+      "nameEn": "Snatch",
+      "category": "رفع أثقال أولمبي",
+      "gif": "https://media.giphy.com/media/xT9IgG50Lg7ruskt7i/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=9xQp2sldyts",
+      "muscles": "كامل الجسم"
+    },
+    {
+      "id": "overhead-squat",
+      "nameAr": "القرفصاء فوق الرأس",
+      "nameEn": "Overhead Squat",
+      "category": "قوة",
+      "gif": "https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=RD_vUnqwqqI",
+      "muscles": "الأكتاف والأرجل"
+    },
+    {
+      "id": "shoulder-press",
+      "nameAr": "الضغط فوق الرأس",
+      "nameEn": "Shoulder Press",
+      "category": "قوة",
+      "gif": "https://media.giphy.com/media/3ohzdIuqJoo8QdKlnW/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=2yjwXTZQDDI",
+      "muscles": "الأكتاف"
+    },
+    {
+      "id": "push-press",
+      "nameAr": "الدفع بالساقين",
+      "nameEn": "Push Press",
+      "category": "قوة",
+      "gif": "https://media.giphy.com/media/3ohzdIuqJoo8QdKlnW/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=iaBVSJm78ko",
+      "muscles": "الأكتاف والأرجل"
+    },
+    {
+      "id": "thruster",
+      "nameAr": "الثراستر",
+      "nameEn": "Thruster",
+      "category": "وود",
+      "gif": "https://media.giphy.com/media/3o7TKSjRrfIPjeiVyM/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=L219ltL15zk",
+      "muscles": "كامل الجسم"
+    },
+    {
+      "id": "pull-up",
+      "nameAr": "العقلة",
+      "nameEn": "Pull Up",
+      "category": "جمناستيك",
+      "gif": "https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=eGo4IYlbE5g",
+      "muscles": "الظهر والذراعين"
+    },
+    {
+      "id": "kipping-pull-up",
+      "nameAr": "العقلة الكيبينج",
+      "nameEn": "Kipping Pull Up",
+      "category": "جمناستيك",
+      "gif": "https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=laBt3SBPMxY",
+      "muscles": "الظهر والكتفين"
+    },
+    {
+      "id": "muscle-up",
+      "nameAr": "الماسل أب",
+      "nameEn": "Muscle Up",
+      "category": "جمناستيك",
+      "gif": "https://media.giphy.com/media/xT9IgG50Lg7ruskt7i/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=iBNGGxfVpTQ",
+      "muscles": "الذراعين والكتفين والظهر"
+    },
+    {
+      "id": "handstand-pushup",
+      "nameAr": "الضغط على اليدين",
+      "nameEn": "Handstand Push Up",
+      "category": "جمناستيك",
+      "gif": "https://media.giphy.com/media/3ohzdIuqJoo8QdKlnW/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=ORsHOygMORg",
+      "muscles": "الأكتاف والظهر"
+    },
+    {
+      "id": "handstand-walk",
+      "nameAr": "المشي على اليدين",
+      "nameEn": "Handstand Walk",
+      "category": "جمناستيك",
+      "gif": "https://media.giphy.com/media/3o7TKSjRrfIPjeiVyM/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=Cp8P3t-kd5Q",
+      "muscles": "الأكتاف والتوازن"
+    },
+    {
+      "id": "toes-to-bar",
+      "nameAr": "الأصابع للعارضة",
+      "nameEn": "Toes to Bar",
+      "category": "جمناستيك",
+      "gif": "https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=7p3Dz3JJ4cQ",
+      "muscles": "البطن والظهر"
+    },
+    {
+      "id": "double-under",
+      "nameAr": "القفز المزدوج",
+      "nameEn": "Double Under",
+      "category": "تحمل",
+      "gif": "https://media.giphy.com/media/xT9IgG50Lg7ruskt7i/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=82jNjDS19lg",
+      "muscles": "القلب والساقين"
+    },
+    {
+      "id": "box-jump",
+      "nameAr": "القفز على الصندوق",
+      "nameEn": "Box Jump",
+      "category": "قوة وتحمل",
+      "gif": "https://media.giphy.com/media/3ohzdIuqJoo8QdKlnW/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=NBY9-kTuHEk",
+      "muscles": "الأرجل"
+    },
+    {
+      "id": "burpee",
+      "nameAr": "البيربي",
+      "nameEn": "Burpee",
+      "category": "تحمل",
+      "gif": "https://media.giphy.com/media/3o7TKSjRrfIPjeiVyM/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=dZgVxmf6jkA",
+      "muscles": "كامل الجسم"
+    },
+    {
+      "id": "wall-ball",
+      "nameAr": "كرة الحائط",
+      "nameEn": "Wall Ball",
+      "category": "وود",
+      "gif": "https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=fpUD0mcFp_0",
+      "muscles": "الأرجل والأكتاف"
+    },
+    {
+      "id": "kettle-bell-swing",
+      "nameAr": "هزة الكيتل بيل",
+      "nameEn": "Kettlebell Swing",
+      "category": "وود",
+      "gif": "https://media.giphy.com/media/xT9IgG50Lg7ruskt7i/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=YSxHifyI6s8",
+      "muscles": "الظهر والمؤخرة"
+    },
+    {
+      "id": "row",
+      "nameAr": "التجديف",
+      "nameEn": "Row",
+      "category": "تحمل",
+      "gif": "https://media.giphy.com/media/3ohzdIuqJoo8QdKlnW/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=H0r_ZPXJLtg",
+      "muscles": "الظهر والذراعين"
+    },
+    {
+      "id": "run",
+      "nameAr": "الجري",
+      "nameEn": "Run",
+      "category": "تحمل",
+      "gif": "https://media.giphy.com/media/3o7TKSjRrfIPjeiVyM/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=brFHyOtTwH4",
+      "muscles": "الأرجل والقلب"
+    },
+    {
+      "id": "push-up",
+      "nameAr": "الضغط",
+      "nameEn": "Push Up",
+      "category": "جمناستيك",
+      "gif": "https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=IODxDxX7oi4",
+      "muscles": "الصدر والذراعين"
+    },
+    {
+      "id": "sit-up",
+      "nameAr": "الجلوس",
+      "nameEn": "Sit Up",
+      "category": "جمناستيك",
+      "gif": "https://media.giphy.com/media/xT9IgG50Lg7ruskt7i/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=jDwoBqPH0jk",
+      "muscles": "البطن"
+    },
+    {
+      "id": "rope-climb",
+      "nameAr": "تسلق الحبل",
+      "nameEn": "Rope Climb",
+      "category": "جمناستيك",
+      "gif": "https://media.giphy.com/media/3ohzdIuqJoo8QdKlnW/giphy.gif",
+      "youtube": "https://www.youtube.com/watch?v=MrSNtAUCovk",
+      "muscles": "الذراعين والظهر"
+    }
+  ]
+}

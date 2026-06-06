@@ -1,0 +1,19 @@
+{
+  "skills": [
+    { "id": "pull-up", "nameAr": "العقلة", "nameEn": "Pull-up", "category": "gymnastics", "levels": ["لا أستطيع", "محاولة", "1-5 تكرارات", "6-15 تكرارات", "15+ تكرار"] },
+    { "id": "kipping-pull-up", "nameAr": "العقلة الكيبينج", "nameEn": "Kipping Pull-up", "category": "gymnastics", "levels": ["لا أستطيع", "محاولة", "1-5 تكرارات", "6-15 تكرارات", "15+ تكرار"] },
+    { "id": "muscle-up", "nameAr": "الماسل أب", "nameEn": "Muscle-up", "category": "gymnastics", "levels": ["لا أستطيع", "محاولة", "1 تكرار", "2-5 تكرارات", "5+ تكرارات"] },
+    { "id": "handstand-pushup", "nameAr": "الضغط على اليدين", "nameEn": "Handstand Push-up", "category": "gymnastics", "levels": ["لا أستطيع", "وقوف على الجدار", "1-3 تكرارات", "4-10 تكرارات", "10+ تكرار"] },
+    { "id": "handstand-walk", "nameAr": "المشي على اليدين", "nameEn": "Handstand Walk", "category": "gymnastics", "levels": ["لا أستطيع", "ثانية واحدة توازن", "5 أمتار", "10-25 متر", "25+ متر"] },
+    { "id": "toes-to-bar", "nameAr": "الأصابع للعارضة", "nameEn": "Toes-to-Bar", "category": "gymnastics", "levels": ["لا أستطيع", "رفع الركبتين", "1-5 تكرارات", "6-15 تكرارات", "15+ تكرار"] },
+    { "id": "rope-climb", "nameAr": "تسلق الحبل", "nameEn": "Rope Climb", "category": "gymnastics", "levels": ["لا أستطيع", "وقوف على الحبل", "L-sit على الحبل", "تسلق 1 مرة", "تسلق متعدد"] },
+    { "id": "double-under", "nameAr": "القفز المزدوج", "nameEn": "Double Under", "category": "gymnastics", "levels": ["لا أستطيع", "محاولة", "1-10 تكرارات", "11-50 تكرار", "50+ تكرار"] },
+    { "id": "pistol-squat", "nameAr": "القرفصاء على رجل واحدة", "nameEn": "Pistol Squat", "category": "gymnastics", "levels": ["لا أستطيع", "مع دعم", "1-3 تكرارات", "4-10 تكرارات", "10+ تكرار"] },
+    { "id": "bar-muscle-up", "nameAr": "الماسل أب على العارضة", "nameEn": "Bar Muscle-up", "category": "gymnastics", "levels": ["لا أستطيع", "محاولة", "1 تكرار", "2-5 تكرارات", "5+ تكرارات"] },
+    { "id": "ring-muscle-up", "nameAr": "الماسل أب على الحلقات", "nameEn": "Ring Muscle-up", "category": "gymnastics", "levels": ["لا أستطيع", "محاولة", "1 تكرار", "2-5 تكرارات", "5+ تكرارات"] },
+    { "id": "snatch", "nameAr": "الخطف الأولمبي", "nameEn": "Snatch", "category": "olympic", "levels": ["لا أعرف التقنية", "تقنية جزئية", "وزن الجسم 50%", "وزن الجسم 75%", "وزن الجسم 100%+"] },
+    { "id": "clean-jerk", "nameAr": "النظيفة والخطف", "nameEn": "Clean & Jerk", "category": "olympic", "levels": ["لا أعرف التقنية", "تقنية جزئية", "وزن الجسم 75%", "وزن الجسم 100%", "وزن الجسم 125%+"] },
+    { "id": "power-clean", "nameAr": "النظيفة القوية", "nameEn": "Power Clean", "category": "olympic", "levels": ["لا أعرف التقنية", "تقنية جزئية", "وزن الجسم 50%", "وزن الجسم 75%", "وزن الجسم 100%+"] }
+  ],
+  "records": []
+}
