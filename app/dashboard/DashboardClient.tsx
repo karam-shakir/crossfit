@@ -3,6 +3,35 @@ import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import ExerciseCard from '@/components/ExerciseCard';
 
+const YOUTUBE_LINKS: Record<string, string> = {
+  'back-squat':       'https://www.youtube.com/results?search_query=back+squat+crossfit+tutorial',
+  'front-squat':      'https://www.youtube.com/results?search_query=front+squat+crossfit+tutorial',
+  'deadlift':         'https://www.youtube.com/results?search_query=deadlift+crossfit+tutorial',
+  'power-clean':      'https://www.youtube.com/results?search_query=power+clean+crossfit+tutorial',
+  'clean-and-jerk':   'https://www.youtube.com/results?search_query=clean+and+jerk+crossfit+tutorial',
+  'snatch':           'https://www.youtube.com/results?search_query=snatch+crossfit+tutorial',
+  'overhead-squat':   'https://www.youtube.com/results?search_query=overhead+squat+crossfit+tutorial',
+  'shoulder-press':   'https://www.youtube.com/results?search_query=shoulder+press+crossfit+tutorial',
+  'push-press':       'https://www.youtube.com/results?search_query=push+press+crossfit+tutorial',
+  'thruster':         'https://www.youtube.com/results?search_query=thruster+crossfit+tutorial',
+  'pull-up':          'https://www.youtube.com/results?search_query=pull+up+crossfit+tutorial',
+  'kipping-pull-up':  'https://www.youtube.com/results?search_query=kipping+pull+up+crossfit+tutorial',
+  'muscle-up':        'https://www.youtube.com/results?search_query=muscle+up+crossfit+tutorial',
+  'handstand-pushup': 'https://www.youtube.com/results?search_query=handstand+push+up+crossfit+tutorial',
+  'handstand-walk':   'https://www.youtube.com/results?search_query=handstand+walk+crossfit+tutorial',
+  'toes-to-bar':      'https://www.youtube.com/results?search_query=toes+to+bar+crossfit+tutorial',
+  'double-under':     'https://www.youtube.com/results?search_query=double+under+jump+rope+crossfit+tutorial',
+  'box-jump':         'https://www.youtube.com/results?search_query=box+jump+crossfit+tutorial',
+  'burpee':           'https://www.youtube.com/results?search_query=burpee+crossfit+tutorial',
+  'wall-ball':        'https://www.youtube.com/results?search_query=wall+ball+crossfit+tutorial',
+  'kettle-bell-swing':'https://www.youtube.com/results?search_query=kettlebell+swing+crossfit+tutorial',
+  'row':              'https://www.youtube.com/results?search_query=rowing+machine+crossfit+tutorial',
+  'run':              'https://www.youtube.com/results?search_query=crossfit+running+technique',
+  'push-up':          'https://www.youtube.com/results?search_query=push+up+crossfit+tutorial',
+  'sit-up':           'https://www.youtube.com/results?search_query=sit+up+abmat+crossfit+tutorial',
+  'rope-climb':       'https://www.youtube.com/results?search_query=rope+climb+crossfit+tutorial',
+};
+
 const DAYS_AR = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 const MONTHS_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 const REACTION_EMOJIS = ['💪', '🔥', '😤', '🏆', '💀', '😅', '👊', '🙌'];
@@ -247,6 +276,8 @@ export default function DashboardClient({ member, wod, stats }: {
                               {sec.items.map((ex: any, i: number) => {
                                 const nameEn = ex.exercise?.nameEn || ex.exerciseId || '—';
                                 const nameAr = ex.exercise?.nameAr || '';
+                                const ytUrl = YOUTUBE_LINKS[ex.exerciseId] ||
+                                  `https://www.youtube.com/results?search_query=${encodeURIComponent((nameEn) + ' crossfit tutorial')}`;
                                 return (
                                   <div key={i} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${style.bg} border border-white/5`}>
                                     <span className="text-gray-500 font-mono text-xs w-5">{i + 1}</span>
@@ -254,7 +285,7 @@ export default function DashboardClient({ member, wod, stats }: {
                                       <div className="font-semibold text-white text-sm">{nameEn}</div>
                                       {nameAr && <div className="text-xs text-gray-500">{nameAr}</div>}
                                     </div>
-                                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                                    <div className="flex items-center gap-2 flex-shrink-0">
                                       {ex.reps && (
                                         <span className="text-xs bg-orange-900/40 text-orange-300 border border-orange-800/40 px-2 py-0.5 rounded-lg font-mono">
                                           {ex.reps}
@@ -265,6 +296,14 @@ export default function DashboardClient({ member, wod, stats }: {
                                           {ex.weight}
                                         </span>
                                       )}
+                                      {/* YouTube icon */}
+                                      <a href={ytUrl} target="_blank" rel="noopener noreferrer"
+                                        className="flex-shrink-0 hover:opacity-80 transition-opacity"
+                                        title={`Watch ${nameEn} tutorial`}>
+                                        <svg viewBox="0 0 24 24" className="w-6 h-6" fill="#FF0000">
+                                          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                                        </svg>
+                                      </a>
                                     </div>
                                   </div>
                                 );
