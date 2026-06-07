@@ -137,7 +137,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
     }
   }
 
-  // Weekly AI plan
+  // Weekly AI plan — full WODs
   async function generateWeeklyPlan() {
     setWeeklyLoading(true);
     setWeeklyError('');
@@ -145,10 +145,10 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
     setPlanSaved(false);
     setViewingSaved(null);
     try {
-      const res = await fetch('/api/wod/recommendations', {
+      const res = await fetch('/api/wod/generate-week', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fromDate: weeklyFromDate, days: weeklyDays }),
+        body: JSON.stringify({ fromDate: weeklyFromDate, days: weeklyDays, difficulty: aiDifficulty }),
       });
       const data = await res.json();
       if (!res.ok) { setWeeklyError(data.error || 'خطأ'); return; }
@@ -165,33 +165,32 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
     setSavingPlan(true);
     try {
       const label = `خطة ${weeklyDays} أيام من ${weeklyFromDate}`;
-      // 1. Save the plan record
+      // 1. Save plan record
       await fetch('/api/weekly-plans', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...weeklyPlan, label, fromDate: weeklyFromDate, days: weeklyDays }),
       });
-
-      // 2. Create actual WOD entries for each day
-      const typeMap: Record<string, string> = {
-        crossfit: 'للوقت', hyrox: 'هايروكس', kettlebell: 'كيتل بيل',
-        rest: 'راحة', active_recovery: 'راحة نشطة',
-      };
-      for (const day of weeklyPlan.plan || []) {
+      // 2. Save each WOD fully to the calendar
+      for (const wod of weeklyPlan.wods || []) {
         await fetch('/api/wod', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            date: day.date,
-            title: day.title || day.dayName,
-            type: typeMap[day.type] || day.type,
-            notes: [day.focus, day.aiInsight, day.reason].filter(Boolean).join(' | '),
-            aiTheme: day.aiInsight || '',
-            warmup: [], strength: [], metcon: [], cooldown: [],
+            date: wod.date,
+            title: wod.title,
+            type: wod.type,
+            duration: wod.duration,
+            rounds: wod.rounds,
+            notes: wod.notes || '',
+            aiTheme: wod.aiTheme || '',
+            warmup: wod.warmup || [],
+            strength: wod.strength || [],
+            metcon: wod.metcon || [],
+            cooldown: wod.cooldown || [],
           }),
         });
       }
-
       setPlanSaved(true);
       loadSavedPlans();
     } catch {}
@@ -615,83 +614,81 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
               {/* Weekly Plan Result */}
               {weeklyPlan && (
                 <div className="space-y-4">
-                  {/* Week Summary */}
                   {weeklyPlan.weekSummary && (
                     <div className="bg-indigo-900/20 border border-indigo-700/30 rounded-2xl p-4">
-                      <h3 className="font-semibold text-indigo-300 mb-2 flex items-center gap-2">
-                        <span>📋</span> فلسفة الأسبوع
-                      </h3>
+                      <h3 className="font-semibold text-indigo-300 mb-2">📋 فلسفة الأسبوع</h3>
                       <p className="text-sm text-gray-300">{weeklyPlan.weekSummary}</p>
                     </div>
                   )}
 
-                  {/* Days */}
-                  <div className="space-y-3">
-                    {weeklyPlan.plan?.map((day: any, i: number) => {
-                      const typeConfig: Record<string, { emoji: string; color: string; bg: string; border: string }> = {
-                        crossfit: { emoji: '🔥', color: 'text-orange-400', bg: 'bg-orange-900/20', border: 'border-orange-700/30' },
-                        hyrox: { emoji: '🏁', color: 'text-red-400', bg: 'bg-red-900/20', border: 'border-red-700/30' },
-                        kettlebell: { emoji: '🏋️', color: 'text-yellow-400', bg: 'bg-yellow-900/20', border: 'border-yellow-700/30' },
-                        rest: { emoji: '😴', color: 'text-blue-400', bg: 'bg-blue-900/20', border: 'border-blue-700/30' },
-                        active_recovery: { emoji: '🧘', color: 'text-green-400', bg: 'bg-green-900/20', border: 'border-green-700/30' },
-                      };
-                      const cfg = typeConfig[day.type] || typeConfig.crossfit;
-                      const intensityColors: Record<string, string> = {
-                        'خفيف': 'text-green-400 bg-green-900/30',
-                        'متوسط': 'text-yellow-400 bg-yellow-900/30',
-                        'مرتفع': 'text-red-400 bg-red-900/30',
-                        'راحة': 'text-blue-400 bg-blue-900/30',
+                  <div className="space-y-4">
+                    {weeklyPlan.wods?.map((wod: any, i: number) => {
+                      const isRest = wod.isRest || wod.type === 'راحة' || wod.type === 'راحة نشطة';
+                      const SECTION_LABELS: Record<string, { label: string; icon: string; color: string }> = {
+                        warmup:   { label: 'الإحماء',  icon: '🔆', color: 'text-yellow-400' },
+                        strength: { label: 'القوة',    icon: '🏋️', color: 'text-blue-400' },
+                        metcon:   { label: 'الـ WOD',  icon: '🔥', color: 'text-orange-400' },
+                        cooldown: { label: 'التهدئة',  icon: '🧘', color: 'text-teal-400' },
                       };
                       return (
-                        <div key={i} className={`rounded-2xl border p-4 ${cfg.bg} ${cfg.border}`}>
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex items-center gap-3">
-                              <span className="text-2xl">{cfg.emoji}</span>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <span className="font-semibold text-white text-sm">{day.dayName}</span>
-                                  <span className="text-xs text-gray-500">{day.date}</span>
+                        <div key={i} className={`rounded-2xl border overflow-hidden ${
+                          isRest ? 'border-blue-700/30 bg-blue-900/10' : 'border-gray-700 bg-gray-900'
+                        }`}>
+                          {/* Header */}
+                          <div className="p-4 border-b border-gray-800">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="text-lg">{isRest ? '😴' : '🔥'}</span>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-white text-sm">{wod.dayName}</span>
+                                    <span className="text-xs text-gray-500">{wod.date}</span>
+                                  </div>
+                                  <div className="text-xs text-gray-400">{wod.title}</div>
                                 </div>
-                                <div className={`text-xs font-semibold ${cfg.color}`}>{day.title}</div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full">{wod.type}</span>
+                                {wod.duration && <span className="text-xs text-gray-500">⏱ {wod.duration}د</span>}
+                                {wod.rounds && <span className="text-xs text-gray-500">🔄 {wod.rounds}</span>}
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              {day.intensity && (
-                                <span className={`text-xs px-2 py-0.5 rounded-full ${intensityColors[day.intensity] || 'text-gray-400 bg-gray-800'}`}>
-                                  {day.intensity}
-                                </span>
-                              )}
-                              {(day.type === 'hyrox' || day.type === 'kettlebell') && (
-                                <a href={`/${day.type}`}
-                                  className={`text-xs px-2 py-1 rounded-lg ${cfg.color} bg-black/20 hover:bg-black/40 transition-colors`}>
-                                  فتح ←
-                                </a>
-                              )}
-                            </div>
-                          </div>
-
-                          {day.focus && (
-                            <div className="text-xs text-gray-400 mb-2">🎯 {day.focus}</div>
-                          )}
-
-                          {day.aiInsight && (
-                            <div className="bg-black/20 rounded-xl p-2 text-xs text-gray-300 mb-2">
-                              💡 {day.aiInsight}
-                            </div>
-                          )}
-
-                          <div className="flex items-center justify-between text-xs text-gray-500">
-                            {day.muscleGroups?.length > 0 && (
-                              <span>💪 {day.muscleGroups.join('، ')}</span>
+                            {wod.aiTheme && (
+                              <div className="mt-2 bg-purple-900/20 rounded-lg p-2 text-xs text-purple-300">
+                                🔗 {wod.aiTheme}
+                              </div>
                             )}
-                            {day.recommendedTime && (
-                              <span>⏰ {day.recommendedTime}</span>
+                            {wod.notes && (
+                              <div className="mt-2 text-xs text-gray-400">📝 {wod.notes}</div>
                             )}
                           </div>
 
-                          {day.reason && (
-                            <div className="mt-2 text-xs text-gray-500 border-t border-white/5 pt-2">
-                              🔍 {day.reason}
+                          {/* Sections */}
+                          {!isRest && (
+                            <div className="p-4 space-y-4">
+                              {(['warmup', 'strength', 'metcon', 'cooldown'] as const).map(sec => {
+                                const items = (wod[sec] || []).filter((e: any) => e.exerciseId);
+                                if (!items.length) return null;
+                                const { label, icon, color } = SECTION_LABELS[sec];
+                                return (
+                                  <div key={sec}>
+                                    <h4 className={`font-semibold text-xs mb-2 flex items-center gap-1 ${color}`}>
+                                      <span>{icon}</span>{label} ({items.length})
+                                    </h4>
+                                    <div className="space-y-1">
+                                      {items.map((ex: any, j: number) => (
+                                        <div key={j} className="flex items-center gap-2 bg-gray-800/60 rounded-lg px-3 py-2 text-xs">
+                                          <span className="text-gray-500 font-mono w-4">{j + 1}</span>
+                                          <span className="text-white font-medium flex-1">{ex.exerciseId}</span>
+                                          {ex.reps && <span className="text-orange-300 bg-orange-900/30 px-2 py-0.5 rounded">{ex.reps}</span>}
+                                          {ex.weight && <span className="text-blue-300 bg-blue-900/30 px-2 py-0.5 rounded">{ex.weight}</span>}
+                                          {ex.notes && <span className="text-gray-400">· {ex.notes}</span>}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
                         </div>
@@ -699,29 +696,17 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                     })}
                   </div>
 
-                  {/* Recovery Tips */}
                   {weeklyPlan.recoveryTips?.length > 0 && (
                     <div className="bg-green-900/20 border border-green-700/30 rounded-2xl p-4">
-                      <h3 className="font-semibold text-green-400 mb-3 flex items-center gap-2">
-                        <span>🌿</span> نصائح التعافي
-                      </h3>
-                      <div className="space-y-2">
-                        {weeklyPlan.recoveryTips.map((tip: string, i: number) => (
-                          <div key={i} className="flex items-start gap-2 text-sm text-gray-300">
-                            <span className="text-green-400 mt-0.5">•</span>
-                            <span>{tip}</span>
-                          </div>
-                        ))}
-                      </div>
+                      <h3 className="font-semibold text-green-400 mb-2">🌿 نصائح التعافي</h3>
+                      {weeklyPlan.recoveryTips.map((t: string, i: number) => (
+                        <div key={i} className="text-sm text-gray-300 flex gap-2"><span className="text-green-400">•</span>{t}</div>
+                      ))}
                     </div>
                   )}
-
-                  {/* Nutrition Note */}
                   {weeklyPlan.nutritionNote && (
                     <div className="bg-amber-900/20 border border-amber-700/30 rounded-2xl p-4">
-                      <h3 className="font-semibold text-amber-400 mb-2 flex items-center gap-2">
-                        <span>🥗</span> ملاحظة تغذوية للأسبوع
-                      </h3>
+                      <h3 className="font-semibold text-amber-400 mb-2">🥗 التغذية</h3>
                       <p className="text-sm text-gray-300">{weeklyPlan.nutritionNote}</p>
                     </div>
                   )}
