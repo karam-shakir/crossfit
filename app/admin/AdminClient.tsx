@@ -36,6 +36,11 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   const [weeklyError, setWeeklyError] = useState('');
   const [weeklyFromDate, setWeeklyFromDate] = useState(new Date().toISOString().split('T')[0]);
   const [weeklyDays, setWeeklyDays] = useState(7);
+  const [savedPlans, setSavedPlans] = useState<any[]>([]);
+  const [savingPlan, setSavingPlan] = useState(false);
+  const [planSaved, setPlanSaved] = useState(false);
+  const [viewingSaved, setViewingSaved] = useState<any>(null);
+  const [savedLoading, setSavedLoading] = useState(false);
 
   // AI generation state
   const [aiGenerating, setAiGenerating] = useState(false);
@@ -136,6 +141,9 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   async function generateWeeklyPlan() {
     setWeeklyLoading(true);
     setWeeklyError('');
+    setWeeklyPlan(null);
+    setPlanSaved(false);
+    setViewingSaved(null);
     try {
       const res = await fetch('/api/wod/recommendations', {
         method: 'POST',
@@ -151,6 +159,41 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
       setWeeklyLoading(false);
     }
   }
+
+  async function saveWeeklyPlan() {
+    if (!weeklyPlan) return;
+    setSavingPlan(true);
+    try {
+      const label = `خطة ${weeklyDays} أيام من ${weeklyFromDate}`;
+      await fetch('/api/weekly-plans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...weeklyPlan, label, fromDate: weeklyFromDate, days: weeklyDays }),
+      });
+      setPlanSaved(true);
+      loadSavedPlans();
+    } catch {}
+    setSavingPlan(false);
+  }
+
+  async function loadSavedPlans() {
+    setSavedLoading(true);
+    const res = await fetch('/api/weekly-plans');
+    const data = await res.json();
+    setSavedPlans(Array.isArray(data) ? data : []);
+    setSavedLoading(false);
+  }
+
+  async function deleteSavedPlan(id: string) {
+    await fetch(`/api/weekly-plans?id=${id}`, { method: 'DELETE' });
+    setSavedPlans(p => p.filter(x => x.id !== id));
+    if (viewingSaved?.id === id) setViewingSaved(null);
+  }
+
+  // Load saved plans when tab opens
+  useEffect(() => {
+    if (tab === 'weekly') loadSavedPlans();
+  }, [tab]);
 
   // Members
   useEffect(() => {
@@ -470,6 +513,82 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                   </p>
                 )}
               </div>
+
+              {/* Save button */}
+              {weeklyPlan && (
+                <button onClick={saveWeeklyPlan} disabled={savingPlan || planSaved}
+                  className={`w-full py-3 rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${
+                    planSaved ? 'bg-green-700 text-white' : 'bg-gray-700 hover:bg-gray-600 text-white'
+                  }`}>
+                  {planSaved ? '✅ تم الحفظ في السجل' : savingPlan ? '⏳ جاري الحفظ...' : '💾 حفظ الخطة في السجل'}
+                </button>
+              )}
+
+              {/* Saved Plans List */}
+              {savedPlans.length > 0 && !weeklyPlan && (
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-white text-sm flex items-center gap-2">
+                    <span>📁</span> الخطط المحفوظة ({savedPlans.length})
+                  </h3>
+                  {savedLoading ? (
+                    <div className="text-center text-gray-500 py-4 text-sm">جاري التحميل...</div>
+                  ) : (
+                    savedPlans.map(p => (
+                      <div key={p.id} className="bg-gray-900 rounded-xl border border-gray-800 p-4">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-semibold text-white text-sm">{p.label}</span>
+                          <div className="flex gap-2">
+                            <button onClick={() => setViewingSaved(viewingSaved?.id === p.id ? null : p)}
+                              className="text-xs text-indigo-400 hover:text-indigo-300 bg-indigo-900/30 px-3 py-1 rounded-lg transition-colors">
+                              {viewingSaved?.id === p.id ? 'إخفاء' : 'عرض'}
+                            </button>
+                            <button onClick={() => deleteSavedPlan(p.id)}
+                              className="text-xs text-red-400 hover:text-red-300 bg-red-900/20 px-2 py-1 rounded-lg transition-colors">
+                              🗑
+                            </button>
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(p.createdAt).toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                          {' · '}{p.days} أيام
+                        </div>
+
+                        {/* Expanded saved plan */}
+                        {viewingSaved?.id === p.id && (
+                          <div className="mt-4 space-y-3 border-t border-gray-800 pt-4">
+                            {p.weekSummary && (
+                              <div className="bg-indigo-900/20 border border-indigo-700/30 rounded-xl p-3 text-xs text-gray-300">
+                                📋 {p.weekSummary}
+                              </div>
+                            )}
+                            {p.plan?.map((day: any, i: number) => {
+                              const icons: Record<string, string> = { crossfit: '🔥', hyrox: '🏁', kettlebell: '🏋️', rest: '😴', active_recovery: '🧘' };
+                              const colors: Record<string, string> = { crossfit: 'border-orange-700/40', hyrox: 'border-red-700/40', kettlebell: 'border-yellow-700/40', rest: 'border-blue-700/40', active_recovery: 'border-green-700/40' };
+                              return (
+                                <div key={i} className={`rounded-xl border p-3 bg-gray-800/50 ${colors[day.type] || 'border-gray-700'}`}>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span>{icons[day.type] || '📅'}</span>
+                                    <span className="font-semibold text-white text-sm">{day.dayName}</span>
+                                    <span className="text-xs text-gray-500">{day.date}</span>
+                                    <span className="text-xs text-gray-400 mr-auto">{day.intensity}</span>
+                                  </div>
+                                  <div className="text-xs text-gray-300">{day.title}</div>
+                                  {day.aiInsight && <div className="text-xs text-gray-500 mt-1">💡 {day.aiInsight}</div>}
+                                </div>
+                              );
+                            })}
+                            {p.nutritionNote && (
+                              <div className="bg-amber-900/20 border border-amber-700/30 rounded-xl p-3 text-xs text-gray-300">
+                                🥗 {p.nutritionNote}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
 
               {/* Weekly Plan Result */}
               {weeklyPlan && (
