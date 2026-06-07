@@ -18,7 +18,7 @@ export default async function DashboardPage() {
     getAttendance(),
   ]);
 
-  const enrich = (list: any[]) => list.map(item => ({
+  const enrich = (list: any[] | undefined) => (list || []).map(item => ({
     ...item,
     exercise: exercises.find((e: any) => e.id === item.exerciseId)
   }));
@@ -34,11 +34,11 @@ export default async function DashboardPage() {
   const today = new Date().toISOString().split('T')[0];
   const thisMonth = today.slice(0, 7);
 
-  const myLogs = logs.filter(l => l.memberId === session.id);
-  const myPRs = prs.filter(p => p.memberId === session.id);
-  const myAttendance = attendance.filter(a => a.memberId === session.id);
-  const monthAttendance = myAttendance.filter(a => a.date.startsWith(thisMonth));
-  const checkedInToday = myAttendance.some(a => a.date === today);
+  const myLogs = (logs || []).filter((l: any) => l.memberId === session.id);
+  const myPRs = (prs || []).filter((p: any) => p.memberId === session.id);
+  const myAttendance = (attendance || []).filter((a: any) => a.memberId === session.id);
+  const monthAttendance = myAttendance.filter((a: any) => a.date.startsWith(thisMonth));
+  const checkedInToday = myAttendance.some((a: any) => a.date === today);
 
   const { password: _, ...safeMember } = member;
 

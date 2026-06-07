@@ -13,15 +13,18 @@ export default async function WodHistoryPage() {
   ]);
   if (!member) redirect('/login');
 
-  const wods = allWods
+  const enrich = (list: any[] | undefined) =>
+    (list || []).map((e: any) => ({ ...e, exercise: exercises.find(ex => ex.id === e.exerciseId) }));
+
+  const wods = (allWods || [])
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 60)
     .map(w => ({
       ...w,
-      warmup: (w.warmup || []).map((e: any) => ({ ...e, exercise: exercises.find(ex => ex.id === e.exerciseId) })),
-      strength: (w.strength || []).map((e: any) => ({ ...e, exercise: exercises.find(ex => ex.id === e.exerciseId) })),
-      metcon: (w.metcon || []).map((e: any) => ({ ...e, exercise: exercises.find(ex => ex.id === e.exerciseId) })),
-      cooldown: (w.cooldown || []).map((e: any) => ({ ...e, exercise: exercises.find(ex => ex.id === e.exerciseId) })),
+      warmup: enrich(w.warmup),
+      strength: enrich(w.strength),
+      metcon: enrich(w.metcon),
+      cooldown: enrich(w.cooldown),
     }));
 
   const { password: _, ...safeMember } = member;
