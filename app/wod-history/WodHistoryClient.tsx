@@ -90,6 +90,7 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
               {wod.type}
             </span>
             {wod.duration && <span className="text-xs text-gray-500">⏱ {wod.duration}د</span>}
+            {wod.rounds && <span className="text-xs text-gray-500">🔄 {wod.rounds}</span>}
             <span className="text-gray-600">{isOpen ? '▲' : '▼'}</span>
           </div>
           <div className="text-right min-w-0">

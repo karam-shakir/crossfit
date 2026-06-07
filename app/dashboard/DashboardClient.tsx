@@ -180,9 +180,11 @@ export default function DashboardClient({ member, wod, stats }: {
               <div className="bg-gradient-to-l from-orange-900/30 to-gray-900 rounded-2xl p-4 border border-orange-800/50">
                 <div className="flex items-center justify-between mb-1">
                   <h2 className="text-lg font-bold text-orange-400">🔥 تمرين اليوم</h2>
-                  <span className="text-xs bg-orange-500/20 text-orange-300 px-3 py-1 rounded-full border border-orange-700">
-                    {wod.type}{wod.duration && ` • ${wod.duration} دقيقة`}{wod.rounds && ` • ${wod.rounds} راوندات`}
-                  </span>
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                    <span className="text-xs bg-orange-500/20 text-orange-300 px-3 py-1 rounded-full border border-orange-700">{wod.type}</span>
+                    {wod.duration && <span className="text-xs text-gray-400">⏱ {wod.duration} دقيقة</span>}
+                    {wod.rounds && <span className="text-xs text-gray-400">🔄 {wod.rounds} جولات</span>}
+                  </div>
                 </div>
                 <div className="text-white font-semibold">{wod.title}</div>
                 {wod.notes && (
