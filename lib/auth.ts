@@ -1,18 +1,22 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 
-const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'matanikeh-crossfit-secret-2024');
+function getSecret() {
+  const s = process.env.JWT_SECRET;
+  if (!s) throw new Error('JWT_SECRET environment variable is not set');
+  return new TextEncoder().encode(s);
+}
 
 export async function signToken(payload: { id: string; username: string; role: string; nameAr: string }) {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setExpirationTime('7d')
-    .sign(SECRET);
+    .sign(getSecret());
 }
 
 export async function verifyToken(token: string) {
   try {
-    const { payload } = await jwtVerify(token, SECRET);
+    const { payload } = await jwtVerify(token, getSecret());
     return payload as { id: string; username: string; role: string; nameAr: string };
   } catch {
     return null;

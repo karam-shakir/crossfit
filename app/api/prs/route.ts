@@ -11,7 +11,8 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
-  const memberId = searchParams.get('memberId') || session.id;
+  const requested = searchParams.get('memberId') || session.id;
+  const memberId = session.role === 'admin' ? requested : session.id;
 
   const [records, exercises] = await Promise.all([getMemberPRs(memberId), getExercises()]);
 

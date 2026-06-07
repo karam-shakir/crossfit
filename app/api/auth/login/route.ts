@@ -11,20 +11,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'اسم المستخدم أو كلمة المرور غلط' }, { status: 401 });
   }
 
-  let valid = false;
-  if (member.password === '$2a$10$placeholder') {
-    valid = password === 'admin123';
-  } else {
-    valid = await bcrypt.compare(password, member.password);
-  }
-
+  // All accounts must use bcrypt — no plaintext fallback
+  const valid = await bcrypt.compare(password, member.password);
   if (!valid) {
     return NextResponse.json({ error: 'اسم المستخدم أو كلمة المرور غلط' }, { status: 401 });
   }
 
-  const token = await signToken({ id: member.id, username: member.username, role: member.role, nameAr: member.nameAr });
+  const token = await signToken({
+    id: member.id,
+    username: member.username,
+    role: member.role,
+    nameAr: member.nameAr,
+  });
 
-  const res = NextResponse.json({ ok: true, member: { id: member.id, nameAr: member.nameAr, role: member.role } });
-  res.cookies.set('auth-token', token, { httpOnly: true, maxAge: 60 * 60 * 24 * 7, path: '/' });
+  const res = NextResponse.json({
+    ok: true,
+    member: { id: member.id, nameAr: member.nameAr, role: member.role },
+  });
+
+  res.cookies.set('auth-token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 60 * 60 * 24 * 7,
+    path: '/',
+  });
+
   return res;
 }
