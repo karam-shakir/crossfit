@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { NavbarLogo } from './LogoMark';
 
 // ===== SVG Icon Components =====
 function IcHome({ className }: { className?: string }) {
@@ -160,23 +161,6 @@ function IcUserShield({ className }: { className?: string }) {
   );
 }
 
-// ===== Barbell Logo SVG =====
-function BarbellLogo() {
-  return (
-    <svg viewBox="0 0 48 22" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-10 h-5 flex-shrink-0">
-      {/* Left outer plate */}
-      <rect x="0" y="4" width="5" height="14" rx="1.5" fill="#f97316"/>
-      {/* Left inner plate */}
-      <rect x="6" y="7" width="3.5" height="8" rx="1" fill="#fb923c"/>
-      {/* Bar */}
-      <rect x="9.5" y="10" width="29" height="2" rx="1" fill="#fdba74"/>
-      {/* Right inner plate */}
-      <rect x="38.5" y="7" width="3.5" height="8" rx="1" fill="#fb923c"/>
-      {/* Right outer plate */}
-      <rect x="43" y="4" width="5" height="14" rx="1.5" fill="#f97316"/>
-    </svg>
-  );
-}
 
 // ===== Nav Link Data =====
 type NavItem = { href: string; label: string; iconKey: string };
@@ -290,14 +274,8 @@ export default function Navbar({ member }: {
       <aside className="hidden lg:flex flex-col w-56 bg-gray-900 border-l border-gray-800 min-h-screen fixed right-0 top-0 z-40">
 
         {/* Logo */}
-        <div className="px-4 py-5 border-b border-gray-800 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <BarbellLogo />
-            <div>
-              <div className="text-sm font-bold text-white leading-tight tracking-wide">المطانيخ</div>
-              <div className="text-xs text-orange-400 font-medium tracking-wider uppercase">CrossFit</div>
-            </div>
-          </div>
+        <div className="px-4 py-4 border-b border-gray-800 flex-shrink-0">
+          <NavbarLogo />
         </div>
 
         {/* User Card */}
