@@ -346,3 +346,26 @@ export async function deleteBenchmarkResult(id: string): Promise<void> {
   const db = await getDb();
   await db.collection('benchmark_results').deleteOne({ id });
 }
+
+// ===================== CALISTHENICS SESSIONS =====================
+
+export async function saveCalisthenicsSession(session: any): Promise<any> {
+  const db = await getDb();
+  await db.collection('calisthenics_sessions').insertOne(session as any);
+  return session;
+}
+
+export async function getMemberCalisthenicsSessions(memberId: string): Promise<any[]> {
+  const db = await getDb();
+  const docs = await db.collection('calisthenics_sessions')
+    .find({ memberId })
+    .sort({ createdAt: -1 })
+    .limit(20)
+    .toArray();
+  return stripAll(docs);
+}
+
+export async function deleteCalisthenicsSession(id: string): Promise<void> {
+  const db = await getDb();
+  await db.collection('calisthenics_sessions').deleteOne({ id });
+}
