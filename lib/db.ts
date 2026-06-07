@@ -10,6 +10,8 @@ export interface Member {
   role: 'admin' | 'member';
   joinDate: string;
   avatar: string;
+  canViewWods?: boolean;
+  canGenerateWod?: boolean;
 }
 
 export interface Exercise {

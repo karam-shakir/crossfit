@@ -767,50 +767,49 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
               ) : (
                 <div className="space-y-3">
                   {members.map(m => (
-                    <div key={m.id} className="flex items-center gap-3 bg-gray-900 rounded-xl border border-gray-800 p-4">
-                      <span className="text-2xl">{m.avatar}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-white">{m.nameAr}</div>
-                        <div className="text-xs text-gray-400">@{m.username} • {m.role === 'admin' ? 'مدير' : 'عضو'} • انضم {m.joinDate}</div>
+                    <div key={m.id} className="bg-gray-900 rounded-xl border border-gray-800 p-4 space-y-3">
+                      {/* معلومات العضو */}
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{m.avatar}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-white">{m.nameAr}</div>
+                          <div className="text-xs text-gray-400">@{m.username} • {m.role === 'admin' ? 'مدير' : 'عضو'} • انضم {m.joinDate}</div>
+                        </div>
+                        {m.id !== 'admin' && (
+                          <button onClick={() => deleteMember(m.id)}
+                            className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-red-800 flex items-center justify-center text-sm transition-colors flex-shrink-0">
+                            🗑
+                          </button>
+                        )}
                       </div>
-                      {m.id !== 'admin' && (
-                        <button onClick={() => deleteMember(m.id)}
-                          className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-red-800 flex items-center justify-center text-sm transition-colors flex-shrink-0">
-                          🗑
-                        </button>
+
+                      {/* صلاحيات العضو */}
+                      {m.role !== 'admin' && (
+                        <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-800">
+                          <span className="text-xs text-gray-500 flex items-center self-center">🔐 الصلاحيات:</span>
+                          <button
+                            onClick={() => togglePermission(m.id, 'canViewWods', m.canViewWods !== false)}
+                            className={`text-xs px-3 py-1 rounded-full border transition-colors font-medium ${
+                              m.canViewWods !== false
+                                ? 'bg-green-900/40 border-green-700/50 text-green-400 hover:bg-red-900/40 hover:border-red-700/50 hover:text-red-400'
+                                : 'bg-red-900/40 border-red-700/50 text-red-400 hover:bg-green-900/40 hover:border-green-700/50 hover:text-green-400'
+                            }`}
+                          >
+                            {m.canViewWods !== false ? '✅ سجل التمارين' : '🚫 سجل التمارين'}
+                          </button>
+                          <button
+                            onClick={() => togglePermission(m.id, 'canGenerateWod', m.canGenerateWod !== false)}
+                            className={`text-xs px-3 py-1 rounded-full border transition-colors font-medium ${
+                              m.canGenerateWod !== false
+                                ? 'bg-green-900/40 border-green-700/50 text-green-400 hover:bg-red-900/40 hover:border-red-700/50 hover:text-red-400'
+                                : 'bg-red-900/40 border-red-700/50 text-red-400 hover:bg-green-900/40 hover:border-green-700/50 hover:text-green-400'
+                            }`}
+                          >
+                            {m.canGenerateWod !== false ? '✅ توليد التمرين' : '🚫 توليد التمرين'}
+                          </button>
+                        </div>
                       )}
                     </div>
-
-                    {/* Permissions row — للأعضاء فقط (ليس الأدمن) */}
-                    {m.role !== 'admin' && (
-                      <div className="mt-3 pt-3 border-t border-gray-800 flex flex-wrap gap-2">
-                        <span className="text-xs text-gray-500 flex items-center">🔐 الصلاحيات:</span>
-
-                        {/* عرض سجل التمارين */}
-                        <button
-                          onClick={() => togglePermission(m.id, 'canViewWods', m.canViewWods !== false)}
-                          className={`text-xs px-3 py-1 rounded-full border transition-colors font-medium ${
-                            m.canViewWods !== false
-                              ? 'bg-green-900/40 border-green-700/50 text-green-400 hover:bg-red-900/40 hover:border-red-700/50 hover:text-red-400'
-                              : 'bg-red-900/40 border-red-700/50 text-red-400 hover:bg-green-900/40 hover:border-green-700/50 hover:text-green-400'
-                          }`}
-                        >
-                          {m.canViewWods !== false ? '✅ سجل التمارين' : '🚫 سجل التمارين'}
-                        </button>
-
-                        {/* توليد التمرين اليومي */}
-                        <button
-                          onClick={() => togglePermission(m.id, 'canGenerateWod', m.canGenerateWod !== false)}
-                          className={`text-xs px-3 py-1 rounded-full border transition-colors font-medium ${
-                            m.canGenerateWod !== false
-                              ? 'bg-green-900/40 border-green-700/50 text-green-400 hover:bg-red-900/40 hover:border-red-700/50 hover:text-red-400'
-                              : 'bg-red-900/40 border-red-700/50 text-red-400 hover:bg-green-900/40 hover:border-green-700/50 hover:text-green-400'
-                          }`}
-                        >
-                          {m.canGenerateWod !== false ? '✅ توليد التمرين' : '🚫 توليد التمرين'}
-                        </button>
-                      </div>
-                    )}
                   ))}
                 </div>
               )}
