@@ -92,7 +92,9 @@ ${JSON.stringify(recentWods, null, 2)}
 - duration يجب أن يكون دائماً رقماً (ليس null)، rounds قد يكون null
 
 **قواعد البرمجة:**
-- وزّع: 2-3 أيام CrossFit، يوم هايروكس أو كيتل بيل، يوم راحة أو راحة نشطة
+- وزّع: 2-3 أيام CrossFit كلاسيكي، يوم Calisthenics (وزن جسم + جمناستيكس)، يوم Hyrox أو Kettlebell، يوم راحة أو راحة نشطة
+- في يوم Calisthenics: اجعل strength عبارة عن تمارين وزن الجسم (pull-up, push-up, dips, pistol-squat) وأضف skill work (handstand, muscle-up progression) في notes
+- في بعض الأيام (مرة أسبوعياً): ادمج الكاليسثينكس مع CrossFit بوضع pull-up/muscle-up/handstand-pushup في الميتكون بجانب تمارين الحديد
 - لا تكرر نفس التمارين في يومين متتاليين
 - اجعل القوة والميتكون مترابطَين (نفس مجموعة العضلات أو نفس الحركة)
 - أيام الراحة: warmup وstrength وmetcon وcooldown = مصفوفات فارغة []

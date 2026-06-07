@@ -160,24 +160,41 @@ function IcUserShield({ className }: { className?: string }) {
     </svg>
   );
 }
+function IcCalisthenics({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      {/* عارضة عقلة أفقية */}
+      <line x1="2" y1="4" x2="22" y2="4"/>
+      {/* يدان ممسكتان بالعارضة */}
+      <line x1="8" y1="4" x2="8" y2="8"/>
+      <line x1="16" y1="4" x2="16" y2="8"/>
+      {/* جسم الشخص */}
+      <path d="M8 8 Q12 10 16 8"/>
+      <circle cx="12" cy="13" r="2.5"/>
+      <path d="M9.5 15.5 L8 21M14.5 15.5 L16 21"/>
+      <path d="M9.5 15.5 L7 18M14.5 15.5 L17 18"/>
+    </svg>
+  );
+}
 
 
 // ===== Nav Link Data =====
 type NavItem = { href: string; label: string; iconKey: string };
 
 const mainLinks: NavItem[] = [
-  { href: '/dashboard',    label: 'الرئيسية',   iconKey: 'home'      },
-  { href: '/logbook',      label: 'السجل',       iconKey: 'logbook'   },
-  { href: '/prs',          label: 'أرقامي',      iconKey: 'trophy'    },
-  { href: '/skills',       label: 'المهارات',    iconKey: 'target'    },
-  { href: '/wod-history',  label: 'تاريخ WODs',  iconKey: 'calendar'  },
-  { href: '/hyrox',        label: 'Hyrox',       iconKey: 'run'       },
-  { href: '/kettlebell',   label: 'Kettlebell',  iconKey: 'kettlebell'},
-  { href: '/measurements', label: 'القياسات',    iconKey: 'ruler'     },
-  { href: '/benchmarks',   label: 'البنشمارك',   iconKey: 'barchart'  },
-  { href: '/leaderboard',  label: 'الترتيب',     iconKey: 'podium'    },
-  { href: '/attendance',   label: 'الحضور',      iconKey: 'checkcal'  },
-  { href: '/profile',      label: 'ملفي',        iconKey: 'user'      },
+  { href: '/dashboard',      label: 'الرئيسية',     iconKey: 'home'          },
+  { href: '/logbook',        label: 'السجل',         iconKey: 'logbook'       },
+  { href: '/prs',            label: 'أرقامي',        iconKey: 'trophy'        },
+  { href: '/skills',         label: 'المهارات',      iconKey: 'target'        },
+  { href: '/wod-history',    label: 'تاريخ WODs',    iconKey: 'calendar'      },
+  { href: '/hyrox',          label: 'Hyrox',         iconKey: 'run'           },
+  { href: '/kettlebell',     label: 'Kettlebell',    iconKey: 'kettlebell'    },
+  { href: '/calisthenics',   label: 'Calisthenics',  iconKey: 'calisthenics'  },
+  { href: '/measurements',   label: 'القياسات',      iconKey: 'ruler'         },
+  { href: '/benchmarks',     label: 'البنشمارك',     iconKey: 'barchart'      },
+  { href: '/leaderboard',    label: 'الترتيب',       iconKey: 'podium'        },
+  { href: '/attendance',     label: 'الحضور',        iconKey: 'checkcal'      },
+  { href: '/profile',        label: 'ملفي',          iconKey: 'user'          },
 ];
 
 function NavIcon({ iconKey, className }: { iconKey: string; className?: string }) {
@@ -194,19 +211,21 @@ function NavIcon({ iconKey, className }: { iconKey: string; className?: string }
     case 'barchart':   return <IcBarChart className={cls}/>;
     case 'podium':     return <IcPodium className={cls}/>;
     case 'checkcal':   return <IcCheckCalendar className={cls}/>;
-    case 'user':       return <IcUser className={cls}/>;
-    case 'sliders':    return <IcSliders className={cls}/>;
-    case 'logout':     return <IcLogout className={cls}/>;
-    case 'more':       return <IcMore className={cls}/>;
-    case 'usershield': return <IcUserShield className={cls}/>;
-    default:           return <IcHome className={cls}/>;
+    case 'user':           return <IcUser className={cls}/>;
+    case 'sliders':        return <IcSliders className={cls}/>;
+    case 'logout':         return <IcLogout className={cls}/>;
+    case 'more':           return <IcMore className={cls}/>;
+    case 'usershield':     return <IcUserShield className={cls}/>;
+    case 'calisthenics':   return <IcCalisthenics className={cls}/>;
+    default:               return <IcHome className={cls}/>;
   }
 }
 
 // ===== Link Color Theme =====
 function linkColor(href: string) {
-  if (href === '/hyrox')      return 'red';
-  if (href === '/kettlebell') return 'amber';
+  if (href === '/hyrox')        return 'red';
+  if (href === '/kettlebell')   return 'amber';
+  if (href === '/calisthenics') return 'emerald';
   return undefined;
 }
 
@@ -224,6 +243,9 @@ function NavLink({ href, iconKey, label, active, color }: {
   } else if (color === 'amber') {
     activeClass   = 'bg-amber-600 text-white shadow-sm';
     inactiveClass = 'text-amber-400 hover:bg-gray-800 hover:text-amber-300';
+  } else if (color === 'emerald') {
+    activeClass   = 'bg-emerald-600 text-white shadow-sm';
+    inactiveClass = 'text-emerald-400 hover:bg-gray-800 hover:text-emerald-300';
   }
 
   return (
@@ -338,7 +360,7 @@ export default function Navbar({ member }: {
         {mobileBottomFiltered.map(l => {
           const isActive = pathname === l.href;
           const col = linkColor(l.href);
-          const activeColor = col === 'red' ? '#ef4444' : col === 'amber' ? '#d97706' : '#f97316';
+          const activeColor = col === 'red' ? '#ef4444' : col === 'amber' ? '#d97706' : col === 'emerald' ? '#10b981' : '#f97316';
           return (
             <Link key={l.href} href={l.href}
               className="flex-1 flex flex-col items-center py-2.5 gap-1 transition-colors"
@@ -369,8 +391,9 @@ export default function Navbar({ member }: {
                 const isActive = pathname === l.href;
                 let activeCls = 'bg-orange-500 text-white';
                 let inactiveCls = 'text-gray-300 bg-gray-800 hover:bg-gray-700';
-                if (col === 'red')   { activeCls = 'bg-red-600 text-white';   inactiveCls = 'text-red-300 bg-gray-800 hover:bg-gray-700'; }
-                if (col === 'amber') { activeCls = 'bg-amber-600 text-white'; inactiveCls = 'text-amber-300 bg-gray-800 hover:bg-gray-700'; }
+                if (col === 'red')     { activeCls = 'bg-red-600 text-white';     inactiveCls = 'text-red-300 bg-gray-800 hover:bg-gray-700'; }
+                if (col === 'amber')   { activeCls = 'bg-amber-600 text-white';   inactiveCls = 'text-amber-300 bg-gray-800 hover:bg-gray-700'; }
+                if (col === 'emerald') { activeCls = 'bg-emerald-600 text-white'; inactiveCls = 'text-emerald-300 bg-gray-800 hover:bg-gray-700'; }
                 return (
                   <Link key={l.href} href={l.href} onClick={() => setOpen(false)}
                     className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-colors ${isActive ? activeCls : inactiveCls}`}>
