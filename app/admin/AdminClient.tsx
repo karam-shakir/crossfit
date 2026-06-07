@@ -165,11 +165,33 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
     setSavingPlan(true);
     try {
       const label = `خطة ${weeklyDays} أيام من ${weeklyFromDate}`;
+      // 1. Save the plan record
       await fetch('/api/weekly-plans', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...weeklyPlan, label, fromDate: weeklyFromDate, days: weeklyDays }),
       });
+
+      // 2. Create actual WOD entries for each day
+      const typeMap: Record<string, string> = {
+        crossfit: 'للوقت', hyrox: 'هايروكس', kettlebell: 'كيتل بيل',
+        rest: 'راحة', active_recovery: 'راحة نشطة',
+      };
+      for (const day of weeklyPlan.plan || []) {
+        await fetch('/api/wod', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            date: day.date,
+            title: day.title || day.dayName,
+            type: typeMap[day.type] || day.type,
+            notes: [day.focus, day.aiInsight, day.reason].filter(Boolean).join(' | '),
+            aiTheme: day.aiInsight || '',
+            warmup: [], strength: [], metcon: [], cooldown: [],
+          }),
+        });
+      }
+
       setPlanSaved(true);
       loadSavedPlans();
     } catch {}
@@ -520,7 +542,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                   className={`w-full py-3 rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${
                     planSaved ? 'bg-green-700 text-white' : 'bg-gray-700 hover:bg-gray-600 text-white'
                   }`}>
-                  {planSaved ? '✅ تم الحفظ في السجل' : savingPlan ? '⏳ جاري الحفظ...' : '💾 حفظ الخطة في السجل'}
+                  {planSaved ? '✅ تم الحفظ وإضافة التمارين للتقويم' : savingPlan ? '⏳ جاري الحفظ وإنشاء التمارين...' : '💾 حفظ الخطة وإضافتها للتقويم'}
                 </button>
               )}
 
