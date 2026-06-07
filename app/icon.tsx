@@ -14,67 +14,59 @@ export default function Icon() {
         alignItems: 'center',
         justifyContent: 'center',
       }}>
-
-        {/* ── Outer hexagon glow ── */}
+        {/* Orange glow */}
         <div style={{
           position: 'absolute',
           width: 420, height: 420,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(249,115,22,0.18) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(249,115,22,0.2) 0%, transparent 70%)',
         }}/>
 
-        {/* ── Badge container ── */}
+        {/* Circle badge border */}
         <div style={{
+          position: 'absolute',
+          width: 400, height: 400,
+          borderRadius: '50%',
+          border: '12px solid #f97316',
           display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 0,
-        }}>
+        }}/>
 
-          {/* ── Arabic م letter (large, bold) ── */}
-          <div style={{
-            fontSize: 130,
-            fontWeight: 900,
-            color: '#ffffff',
-            lineHeight: 1,
-            fontFamily: 'serif',
-            marginBottom: 8,
-          }}>م</div>
-
-          {/* ── Barbell ── */}
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 18 }}>
-            {/* Left outer plate */}
-            <div style={{ width: 46, height: 130, background: '#f97316', borderRadius: 10 }}/>
-            {/* Left inner plate */}
-            <div style={{ width: 30, height: 88, background: '#fb923c', borderRadius: 7, marginLeft: 7 }}/>
-            {/* Bar */}
-            <div style={{ width: 120, height: 18, background: '#fdba74', borderRadius: 9 }}/>
-            {/* Right inner plate */}
-            <div style={{ width: 30, height: 88, background: '#fb923c', borderRadius: 7, marginRight: 7 }}/>
-            {/* Right outer plate */}
-            <div style={{ width: 46, height: 130, background: '#f97316', borderRadius: 10 }}/>
-          </div>
-
-          {/* ── CROSSFIT label ── */}
-          <div style={{
-            fontSize: 38,
-            fontWeight: 800,
-            color: '#f97316',
-            letterSpacing: 10,
-            fontFamily: 'sans-serif',
-            textTransform: 'uppercase',
-          }}>CROSSFIT</div>
-
-          {/* ── Arabic name ── */}
-          <div style={{
-            fontSize: 52,
-            fontWeight: 900,
-            color: '#ffffff',
-            fontFamily: 'serif',
-            marginTop: 4,
-          }}>المطانيخ</div>
-
+        {/* Barbell */}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          {/* Left outer plate */}
+          <div style={{ width: 46, height: 160, background: '#f97316', borderRadius: 10 }}/>
+          {/* Left inner plate */}
+          <div style={{ width: 30, height: 110, background: '#fb923c', borderRadius: 7, marginLeft: 8 }}/>
+          {/* Bar */}
+          <div style={{ width: 140, height: 20, background: '#fdba74', borderRadius: 10 }}/>
+          {/* Right inner plate */}
+          <div style={{ width: 30, height: 110, background: '#fb923c', borderRadius: 7, marginRight: 8 }}/>
+          {/* Right outer plate */}
+          <div style={{ width: 46, height: 160, background: '#f97316', borderRadius: 10 }}/>
         </div>
+
+        {/* CROSSFIT text - Latin only, safe */}
+        <div style={{
+          position: 'absolute',
+          bottom: 110,
+          fontSize: 42,
+          fontWeight: 900,
+          color: '#f97316',
+          letterSpacing: 8,
+          fontFamily: 'sans-serif',
+          display: 'flex',
+        }}>CROSSFIT</div>
+
+        {/* M letter - Latin, safe */}
+        <div style={{
+          position: 'absolute',
+          top: 90,
+          fontSize: 110,
+          fontWeight: 900,
+          color: '#ffffff',
+          fontFamily: 'sans-serif',
+          display: 'flex',
+        }}>M</div>
       </div>
     ),
     { width: 512, height: 512 },
