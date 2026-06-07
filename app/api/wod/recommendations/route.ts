@@ -77,8 +77,7 @@ ${JSON.stringify(wodSummary, null, 2)}
   try {
     const message = await client.messages.create({
       model: 'claude-opus-4-8',
-      max_tokens: 3000,
-      thinking: { type: 'adaptive' },
+      max_tokens: 8000,
       messages: [{ role: 'user', content: prompt }],
     });
 
