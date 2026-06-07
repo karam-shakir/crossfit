@@ -246,10 +246,20 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   }
 
   // Members
+  const [memberStats, setMemberStats] = useState<any[]>([]);
+  const [newMemberCredentials, setNewMemberCredentials] = useState<any>(null);
+
   useEffect(() => {
     if (tab === 'members') {
       setMembersLoading(true);
-      fetch('/api/members').then(r => r.json()).then(d => { setMembers(d); setMembersLoading(false); });
+      Promise.all([
+        fetch('/api/members').then(r => r.json()),
+        fetch('/api/leaderboard').then(r => r.json()),
+      ]).then(([m, s]) => {
+        setMembers(Array.isArray(m) ? m : []);
+        setMemberStats(Array.isArray(s) ? s : []);
+        setMembersLoading(false);
+      });
     }
   }, [tab]);
 
@@ -263,6 +273,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
     if (res.ok) {
       const m = await res.json();
       setMembers(prev => [...prev, m]);
+      setNewMemberCredentials({ nameAr: m.nameAr, username: newMember.username, password: newMember.password });
       setNewMember({ username: '', nameAr: '', password: '' });
     } else {
       const err = await res.json();
@@ -799,19 +810,41 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                   {members.map(m => (
                     <div key={m.id} className="bg-gray-900 rounded-xl border border-gray-800 p-4 space-y-3">
                       {/* معلومات العضو */}
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{m.avatar}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-white">{m.nameAr}</div>
-                          <div className="text-xs text-gray-400">@{m.username} • {m.role === 'admin' ? 'مدير' : 'عضو'} • انضم {m.joinDate}</div>
-                        </div>
-                        {m.id !== 'admin' && (
-                          <button onClick={() => deleteMember(m.id)}
-                            className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-red-800 flex items-center justify-center text-sm transition-colors flex-shrink-0">
-                            🗑
-                          </button>
-                        )}
-                      </div>
+                      {(() => {
+                        const st = memberStats.find(s => s.id === m.id);
+                        return (
+                          <>
+                            <div className="flex items-center gap-3">
+                              <span className="text-2xl">{m.avatar}</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="font-semibold text-white">{m.nameAr}</div>
+                                <div className="text-xs text-gray-400">@{m.username} • {m.role === 'admin' ? '👑 مدير' : '🏋️ عضو'} • انضم {m.joinDate}</div>
+                              </div>
+                              {m.id !== 'admin' && (
+                                <button onClick={() => deleteMember(m.id)}
+                                  className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-red-800 flex items-center justify-center text-sm transition-colors flex-shrink-0">
+                                  🗑
+                                </button>
+                              )}
+                            </div>
+                            {st && (
+                              <div className="grid grid-cols-4 gap-2">
+                                {[
+                                  { label: 'هذا الشهر', value: st.monthSessions, unit: 'جلسة', color: 'text-orange-400' },
+                                  { label: 'الإجمالي',  value: st.totalSessions, unit: 'جلسة', color: 'text-blue-400' },
+                                  { label: 'الأرقام',   value: st.totalPRs,      unit: 'PR',   color: 'text-yellow-400' },
+                                  { label: 'التواصل',   value: st.streak,        unit: 'يوم',  color: 'text-green-400' },
+                                ].map(item => (
+                                  <div key={item.label} className="bg-gray-800/60 rounded-lg p-2 text-center">
+                                    <div className={`text-lg font-bold ${item.color}`}>{item.value}</div>
+                                    <div className="text-xs text-gray-500">{item.label}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
 
                       {/* صلاحيات العضو */}
                       {m.role !== 'admin' && (
@@ -978,6 +1011,44 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                 إلغاء
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: بيانات العضو الجديد */}
+      {newMemberCredentials && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="bg-gray-900 border border-green-700/50 rounded-2xl p-6 w-full max-w-sm space-y-4 shadow-2xl">
+            <h3 className="font-bold text-white text-lg text-center">✅ تم إضافة العضو</h3>
+            <p className="text-sm text-gray-400 text-center">احتفظ ببيانات الدخول وشاركها مع العضو</p>
+            <div className="bg-gray-800 rounded-xl p-4 space-y-3 font-mono text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-500">الاسم</span>
+                <span className="text-white">{newMemberCredentials.nameAr}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">اسم المستخدم</span>
+                <span className="text-green-400">{newMemberCredentials.username}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">كلمة المرور</span>
+                <span className="text-orange-400">{newMemberCredentials.password}</span>
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                const text = `🏋️ بيانات دخول منصة المطانيخ CrossFit\n\nالاسم: ${newMemberCredentials.nameAr}\nاسم المستخدم: ${newMemberCredentials.username}\nكلمة المرور: ${newMemberCredentials.password}\n\n📱 الرابط: ${window.location.origin}`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+              }}
+              className="w-full py-2.5 rounded-xl bg-green-700 hover:bg-green-600 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.136.564 4.14 1.547 5.874L0 24l6.304-1.524A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.002-1.366l-.358-.214-3.742.904.938-3.64-.234-.374A9.818 9.818 0 1112 21.818z"/></svg>
+              إرسال عبر واتساب
+            </button>
+            <button onClick={() => setNewMemberCredentials(null)}
+              className="w-full py-2 text-gray-500 hover:text-gray-300 text-sm transition-colors">
+              إغلاق
+            </button>
           </div>
         </div>
       )}

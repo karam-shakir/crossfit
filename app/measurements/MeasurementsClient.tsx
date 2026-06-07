@@ -14,25 +14,73 @@ const FIELDS = [
   { key: 'thigh',    label: 'الفخذ (سم)',         icon: '🦵', lowerIsBetter: false },
 ];
 
-// Simple SVG line chart
-function MiniChart({ data, color = '#f97316' }: { data: number[]; color?: string }) {
+function FullChart({ data, color = '#f97316', label = '' }: { data: { date: string; value: number }[]; color?: string; label?: string }) {
   if (data.length < 2) return null;
-  const min = Math.min(...data);
-  const max = Math.max(...data);
+  const values = data.map(d => d.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
   const range = max - min || 1;
-  const W = 200, H = 50, PAD = 4;
-  const pts = data.map((v, i) => {
-    const x = PAD + (i / (data.length - 1)) * (W - PAD * 2);
-    const y = PAD + ((max - v) / range) * (H - PAD * 2);
-    return `${x},${y}`;
-  });
+  const W = 400, H = 160, PL = 44, PR = 12, PT = 16, PB = 36;
+  const iW = W - PL - PR, iH = H - PT - PB;
+
+  const px = (i: number) => PL + (i / (data.length - 1)) * iW;
+  const py = (v: number) => PT + ((max - v) / range) * iH;
+
+  const points = data.map((d, i) => `${px(i)},${py(d.value)}`).join(' ');
+  const area = `M ${px(0)},${py(data[0].value)} ` +
+    data.slice(1).map((d, i) => `L ${px(i + 1)},${py(d.value)}`).join(' ') +
+    ` L ${px(data.length - 1)},${PT + iH} L ${PL},${PT + iH} Z`;
+
+  // Y-axis ticks
+  const ticks = 4;
+  const yTicks = Array.from({ length: ticks + 1 }, (_, i) => min + (range / ticks) * i);
+
+  // X-axis labels: show max 5
+  const xStep = Math.ceil(data.length / 5);
+  const xLabels = data.filter((_, i) => i % xStep === 0 || i === data.length - 1);
+
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-12">
-      <polyline points={pts.join(' ')} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      {pts.map((p, i) => {
-        const [x, y] = p.split(',');
-        return <circle key={i} cx={x} cy={y} r="3" fill={color} />;
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: '160px' }}>
+      <defs>
+        <linearGradient id={`grad-${label}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+      {/* Grid lines */}
+      {yTicks.map((t, i) => (
+        <g key={i}>
+          <line x1={PL} y1={py(t)} x2={W - PR} y2={py(t)} stroke="#374151" strokeWidth="1" strokeDasharray="3,3" />
+          <text x={PL - 4} y={py(t) + 4} textAnchor="end" fontSize="9" fill="#6b7280">{t.toFixed(1)}</text>
+        </g>
+      ))}
+      {/* Area fill */}
+      <path d={area} fill={`url(#grad-${label})`} />
+      {/* Line */}
+      <polyline points={points} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      {/* Data points + value labels */}
+      {data.map((d, i) => (
+        <g key={i}>
+          <circle cx={px(i)} cy={py(d.value)} r="4" fill={color} stroke="#111827" strokeWidth="2" />
+          {(i === 0 || i === data.length - 1 || data.length <= 6) && (
+            <text x={px(i)} y={py(d.value) - 8} textAnchor="middle" fontSize="9" fill={color} fontWeight="bold">
+              {d.value}
+            </text>
+          )}
+        </g>
+      ))}
+      {/* X-axis labels */}
+      {xLabels.map((d, i) => {
+        const idx = data.indexOf(d);
+        const parts = d.date.split('-');
+        return (
+          <text key={i} x={px(idx)} y={H - 6} textAnchor="middle" fontSize="8" fill="#6b7280">
+            {parts[2]}/{parts[1]}
+          </text>
+        );
       })}
+      {/* X axis line */}
+      <line x1={PL} y1={PT + iH} x2={W - PR} y2={PT + iH} stroke="#374151" strokeWidth="1" />
     </svg>
   );
 }
@@ -188,42 +236,33 @@ export default function MeasurementsClient({ member }: { member: any }) {
                   </div>
 
                   {/* Chart */}
-                  {chartData.length >= 2 ? (
-                    <div className="bg-gray-800/50 rounded-xl p-3">
-                      <div className="flex items-center justify-between mb-2 text-xs text-gray-500">
-                        <span>{chartData[0]?.date}</span>
-                        <span className="text-white font-semibold">
-                          {chartField_info?.icon} {chartField_info?.label}
-                        </span>
-                        <span>{chartData[chartData.length - 1]?.date}</span>
+                  {chartData.length >= 2 ? (() => {
+                    const chartColor = chartField_info?.lowerIsBetter === true ? '#ef4444'
+                      : chartField_info?.lowerIsBetter === false ? '#22c55e' : '#f97316';
+                    const delta = chartData[chartData.length - 1]?.value - chartData[0]?.value;
+                    const isGood = chartField_info?.lowerIsBetter ? delta < 0 : delta > 0;
+                    return (
+                      <div className="bg-gray-800/40 rounded-xl p-3 space-y-2">
+                        <FullChart data={chartData} color={chartColor} label={chartField} />
+                        <div className="grid grid-cols-3 gap-2 text-center text-xs pt-1 border-t border-gray-700">
+                          <div>
+                            <div className="text-gray-500">أدنى</div>
+                            <div className="text-white font-bold">{Math.min(...chartData.map(d => d.value))}</div>
+                          </div>
+                          <div>
+                            <div className="text-gray-500">التغيير الكلي</div>
+                            <div className={`font-bold ${isGood ? 'text-green-400' : 'text-red-400'}`}>
+                              {delta > 0 ? '+' : ''}{delta.toFixed(1)}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-gray-500">أعلى</div>
+                            <div className="text-white font-bold">{Math.max(...chartData.map(d => d.value))}</div>
+                          </div>
+                        </div>
                       </div>
-                      <MiniChart
-                        data={chartData.map(d => d.value)}
-                        color={
-                          chartField_info?.lowerIsBetter === true ? '#ef4444' :
-                          chartField_info?.lowerIsBetter === false ? '#22c55e' : '#f97316'
-                        }
-                      />
-                      <div className="flex items-center justify-between mt-2 text-xs">
-                        <span className="text-gray-500">
-                          أدنى: <span className="text-white">{Math.min(...chartData.map(d => d.value))}</span>
-                        </span>
-                        <span className="text-gray-500">
-                          أعلى: <span className="text-white">{Math.max(...chartData.map(d => d.value))}</span>
-                        </span>
-                        <span className="text-gray-500">
-                          التغيير: <span className={
-                            chartData[chartData.length - 1]?.value > chartData[0]?.value
-                              ? chartField_info?.lowerIsBetter ? 'text-red-400' : 'text-green-400'
-                              : chartField_info?.lowerIsBetter ? 'text-green-400' : 'text-red-400'
-                          }>
-                            {((chartData[chartData.length - 1]?.value - chartData[0]?.value) > 0 ? '+' : '')}
-                            {(chartData[chartData.length - 1]?.value - chartData[0]?.value).toFixed(1)}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
+                    );
+                  })() : (
                     <p className="text-xs text-gray-500 text-center py-3">أضف قياسَين على الأقل لعرض الرسم البياني</p>
                   )}
                 </div>
