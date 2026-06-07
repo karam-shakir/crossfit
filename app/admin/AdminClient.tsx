@@ -251,6 +251,17 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
     setMembers(prev => prev.filter(m => m.id !== id));
   }
 
+  async function togglePermission(id: string, perm: 'canViewWods' | 'canGenerateWod', current: boolean) {
+    const res = await fetch(`/api/members/permissions?id=${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [perm]: !current }),
+    });
+    if (res.ok) {
+      setMembers(prev => prev.map(m => m.id === id ? { ...m, [perm]: !current } : m));
+    }
+  }
+
   const sections = [
     { key: 'warmup', label: 'الإحماء 🔆' },
     { key: 'strength', label: 'القوة 🏋️' },
@@ -769,6 +780,37 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                         </button>
                       )}
                     </div>
+
+                    {/* Permissions row — للأعضاء فقط (ليس الأدمن) */}
+                    {m.role !== 'admin' && (
+                      <div className="mt-3 pt-3 border-t border-gray-800 flex flex-wrap gap-2">
+                        <span className="text-xs text-gray-500 flex items-center">🔐 الصلاحيات:</span>
+
+                        {/* عرض سجل التمارين */}
+                        <button
+                          onClick={() => togglePermission(m.id, 'canViewWods', m.canViewWods !== false)}
+                          className={`text-xs px-3 py-1 rounded-full border transition-colors font-medium ${
+                            m.canViewWods !== false
+                              ? 'bg-green-900/40 border-green-700/50 text-green-400 hover:bg-red-900/40 hover:border-red-700/50 hover:text-red-400'
+                              : 'bg-red-900/40 border-red-700/50 text-red-400 hover:bg-green-900/40 hover:border-green-700/50 hover:text-green-400'
+                          }`}
+                        >
+                          {m.canViewWods !== false ? '✅ سجل التمارين' : '🚫 سجل التمارين'}
+                        </button>
+
+                        {/* توليد التمرين اليومي */}
+                        <button
+                          onClick={() => togglePermission(m.id, 'canGenerateWod', m.canGenerateWod !== false)}
+                          className={`text-xs px-3 py-1 rounded-full border transition-colors font-medium ${
+                            m.canGenerateWod !== false
+                              ? 'bg-green-900/40 border-green-700/50 text-green-400 hover:bg-red-900/40 hover:border-red-700/50 hover:text-red-400'
+                              : 'bg-red-900/40 border-red-700/50 text-red-400 hover:bg-green-900/40 hover:border-green-700/50 hover:text-green-400'
+                          }`}
+                        >
+                          {m.canGenerateWod !== false ? '✅ توليد التمرين' : '🚫 توليد التمرين'}
+                        </button>
+                      </div>
+                    )}
                   ))}
                 </div>
               )}

@@ -44,10 +44,19 @@ function NavLink({ href, icon, label, active, color }: {
   );
 }
 
-export default function Navbar({ member }: { member: { nameAr: string; role: string; avatar?: string } }) {
+export default function Navbar({ member }: { member: { nameAr: string; role: string; avatar?: string; canViewWods?: boolean; canGenerateWod?: boolean } }) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+
+  // فلترة الروابط حسب صلاحيات العضو
+  const isAdmin = member.role === 'admin';
+  const allowedLinks = mainLinks.filter(l => {
+    if (l.href === '/wod-history' && !isAdmin && member.canViewWods === false) return false;
+    return true;
+  });
+  const mobileBottomFiltered = allowedLinks.slice(0, 5);
+  const mobileMoreFiltered = allowedLinks.slice(5);
 
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -81,7 +90,7 @@ export default function Navbar({ member }: { member: { nameAr: string; role: str
 
         {/* Links */}
         <nav className="flex-1 p-2 overflow-y-auto flex flex-col gap-0.5">
-          {mainLinks.map(l => (
+          {allowedLinks.map(l => (
             <NavLink
               key={l.href}
               href={l.href}
@@ -118,7 +127,7 @@ export default function Navbar({ member }: { member: { nameAr: string; role: str
 
       {/* ===== شريط الجوال السفلي ===== */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-gray-900 border-t border-gray-800 flex">
-        {mobileBottom.map(l => (
+        {mobileBottomFiltered.map(l => (
           <Link key={l.href} href={l.href}
             className="flex-1 flex flex-col items-center py-2 gap-0.5 transition-colors"
             style={{ color: pathname === l.href ? '#f97316' : '#6b7280' }}>
@@ -141,7 +150,7 @@ export default function Navbar({ member }: { member: { nameAr: string; role: str
             style={{ bottom: '56px' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-              {mobileMore.map(l => (
+              {mobileMoreFiltered.map(l => (
                 <Link key={l.href} href={l.href}
                   onClick={() => setOpen(false)}
                   className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-colors ${

@@ -12,6 +12,8 @@ export default async function WodHistoryPage() {
     getWods(),
   ]);
   if (!member) redirect('/login');
+  // تحقق من صلاحية عرض التمارين (الافتراضي: مسموح)
+  if (member.canViewWods === false && session.role !== 'admin') redirect('/dashboard');
 
   const enrich = (list: any[] | undefined) =>
     (list || []).map((e: any) => ({ ...e, exercise: exercises.find(ex => ex.id === e.exerciseId) }));
