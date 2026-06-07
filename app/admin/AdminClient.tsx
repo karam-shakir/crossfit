@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 
-type AdminTab = 'wod' | 'members' | 'weekly';
+type AdminTab = 'wod' | 'members' | 'weekly' | 'logs';
 
 const WOD_TYPES = ['AMRAP', 'للوقت', 'قوة', 'تدريب'];
 const DIFFICULTY_OPTIONS = ['مبتدئ', 'متوسط', 'متقدم', 'نخبة'];
@@ -219,6 +219,32 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
     if (tab === 'weekly') loadSavedPlans();
   }, [tab]);
 
+  // ===== Login Logs =====
+  const [logs, setLogs] = useState<any[]>([]);
+  const [logStats, setLogStats] = useState<any[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logsTab, setLogsTab] = useState<'stats' | 'detail'>('stats');
+  const [logFilter, setLogFilter] = useState('');
+
+  useEffect(() => {
+    if (tab === 'logs') loadLogs();
+  }, [tab]);
+
+  async function loadLogs() {
+    setLogsLoading(true);
+    const res = await fetch('/api/login-logs');
+    const data = await res.json();
+    setLogs(data.logs || []);
+    setLogStats(data.stats || []);
+    setLogsLoading(false);
+  }
+
+  async function clearLogs() {
+    if (!confirm('حذف كل سجل الدخول؟')) return;
+    await fetch('/api/login-logs', { method: 'DELETE' });
+    setLogs([]); setLogStats([]);
+  }
+
   // Members
   useEffect(() => {
     if (tab === 'members') {
@@ -289,6 +315,10 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
             <button onClick={() => setTab('members')}
               className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'members' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
               👥 الأعضاء
+            </button>
+            <button onClick={() => setTab('logs')}
+              className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'logs' ? 'bg-teal-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+              📋 سجل الدخول
             </button>
           </div>
 
@@ -811,6 +841,108 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                       )}
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Login Logs */}
+          {tab === 'logs' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="font-bold text-white flex items-center gap-2">📋 سجل الدخول للمنصة</h2>
+                <button onClick={clearLogs} className="text-xs text-red-400 hover:text-red-300 bg-red-900/20 px-3 py-1.5 rounded-lg transition-colors">
+                  🗑 مسح السجل
+                </button>
+              </div>
+
+              {/* Sub tabs */}
+              <div className="flex gap-2 bg-gray-900 p-1 rounded-xl border border-gray-800">
+                <button onClick={() => setLogsTab('stats')}
+                  className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${logsTab === 'stats' ? 'bg-teal-600 text-white' : 'text-gray-400'}`}>
+                  📊 إحصائيات الأعضاء
+                </button>
+                <button onClick={() => setLogsTab('detail')}
+                  className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${logsTab === 'detail' ? 'bg-teal-600 text-white' : 'text-gray-400'}`}>
+                  🕒 السجل التفصيلي
+                </button>
+              </div>
+
+              {logsLoading ? (
+                <div className="text-center text-gray-500 py-12">جاري التحميل...</div>
+              ) : logsTab === 'stats' ? (
+                /* ===== إحصائيات لكل عضو ===== */
+                <div className="space-y-3">
+                  {logStats.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">لا توجد بيانات بعد — انتظر أول دخول للأعضاء</div>
+                  ) : logStats.map((s, i) => (
+                    <div key={s.memberId} className="bg-gray-900 rounded-xl border border-gray-800 p-4">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl font-bold text-teal-400 w-8">{i + 1}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-white">{s.memberName}</div>
+                          <div className="text-xs text-gray-500">@{s.username} • {s.role === 'admin' ? '👑 مدير' : '🏋️ عضو'}</div>
+                        </div>
+                        <div className="text-center flex-shrink-0">
+                          <div className="text-2xl font-bold text-teal-400">{s.totalLogins}</div>
+                          <div className="text-xs text-gray-500">دخول</div>
+                        </div>
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-gray-800 grid grid-cols-2 gap-2 text-xs text-gray-500">
+                        <div>
+                          <span className="text-gray-600">أول دخول: </span>
+                          <span className="text-gray-400">{new Date(s.firstLogin).toLocaleDateString('ar-SA', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">آخر دخول: </span>
+                          <span className="text-teal-400 font-medium">{new Date(s.lastLogin).toLocaleDateString('ar-SA', { year: 'numeric', month: 'short', day: 'numeric' })} — {new Date(s.lastLogin).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                /* ===== السجل التفصيلي ===== */
+                <div className="space-y-3">
+                  {/* فلتر */}
+                  <input
+                    value={logFilter}
+                    onChange={e => setLogFilter(e.target.value)}
+                    placeholder="🔍 ابحث باسم العضو أو اسم المستخدم..."
+                    className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-teal-500"
+                  />
+                  <div className="text-xs text-gray-600 text-left">{logs.length} سجل</div>
+                  {logs.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">لا توجد سجلات</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {logs
+                        .filter(l => !logFilter || l.memberName?.includes(logFilter) || l.username?.includes(logFilter))
+                        .map((l, i) => (
+                          <div key={i} className="flex items-center gap-3 bg-gray-900 rounded-xl border border-gray-800 px-4 py-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-white text-sm">{l.memberName}</span>
+                                <span className="text-xs text-gray-600">@{l.username}</span>
+                                {l.role === 'admin' && <span className="text-xs bg-purple-900/40 text-purple-300 px-1.5 rounded">مدير</span>}
+                              </div>
+                              <div className="text-xs text-gray-500 mt-0.5">
+                                🌐 {l.ip !== 'unknown' ? l.ip : 'غير معروف'}
+                              </div>
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              <div className="text-xs text-teal-400 font-medium">
+                                {new Date(l.loginAt).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                {new Date(l.loginAt).toLocaleDateString('ar-SA', { weekday: 'short', month: 'short', day: 'numeric' })}
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      }
+                    </div>
+                  )}
                 </div>
               )}
             </div>

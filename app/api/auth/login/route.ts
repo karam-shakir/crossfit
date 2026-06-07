@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMemberByUsername } from '@/lib/db';
 import { signToken } from '@/lib/auth';
+import { getDb } from '@/lib/mongodb';
 import bcrypt from 'bcryptjs';
 
 export async function POST(req: NextRequest) {
@@ -23,6 +24,23 @@ export async function POST(req: NextRequest) {
     role: member.role,
     nameAr: member.nameAr,
   });
+
+  // تسجيل الدخول في سجل الـ Login Log
+  try {
+    const db = await getDb();
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || req.headers.get('x-real-ip')
+      || 'unknown';
+    await db.collection('login_logs').insertOne({
+      memberId:   member.id,
+      memberName: member.nameAr,
+      username:   member.username,
+      role:       member.role,
+      loginAt:    new Date().toISOString(),
+      ip,
+      userAgent:  req.headers.get('user-agent') || '',
+    });
+  } catch (_) { /* لا نوقف الدخول إذا فشل التسجيل */ }
 
   const res = NextResponse.json({
     ok: true,
