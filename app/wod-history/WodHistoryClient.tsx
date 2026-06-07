@@ -17,18 +17,98 @@ const SECTION_LABELS: Record<string, { label: string; icon: string; color: strin
   cooldown: { label: 'التهدئة',   icon: '🧘', color: 'text-teal-400'   },
 };
 
+function formatDate(date: string) {
+  const d = new Date(date + 'T00:00:00');
+  return d.toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function WodCard({ wod, defaultOpen = false }: { wod: any; defaultOpen?: boolean }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const today = new Date().toISOString().split('T')[0];
+  const isFuture = wod.date > today;
+  const isToday = wod.date === today;
+
+  return (
+    <div className={`bg-gray-900 rounded-2xl border overflow-hidden ${
+      isToday ? 'border-orange-500/60' : isFuture ? 'border-blue-700/40' : 'border-gray-800'
+    }`}>
+      <button className="w-full p-4 text-right" onClick={() => setIsOpen(o => !o)}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {isToday && <span className="text-xs bg-orange-500 text-white px-2 py-0.5 rounded-full font-bold">اليوم</span>}
+            {isFuture && <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">قادم</span>}
+            <span className={`text-xs px-2 py-0.5 rounded-full border ${TYPE_COLORS[wod.type] || 'bg-gray-700 text-gray-400 border-gray-600'}`}>
+              {wod.type}
+            </span>
+            {wod.duration && <span className="text-xs text-gray-500">⏱ {wod.duration}د</span>}
+            <span className="text-gray-600">{isOpen ? '▲' : '▼'}</span>
+          </div>
+          <div className="text-right min-w-0">
+            <div className="font-semibold text-white text-sm leading-tight truncate">{wod.title || 'تمرين'}</div>
+            <div className="text-xs text-gray-500 mt-0.5">{formatDate(wod.date)}</div>
+          </div>
+        </div>
+
+        {!isOpen && (
+          <div className="flex gap-3 mt-2">
+            {(['strength', 'metcon'] as const).map(sec => {
+              const items = wod[sec]?.filter((e: any) => e.exerciseId);
+              if (!items?.length) return null;
+              const { icon, color } = SECTION_LABELS[sec];
+              return (
+                <div key={sec} className="text-xs text-gray-500 flex items-center gap-1">
+                  <span className={color}>{icon}</span>
+                  <span>{items.map((e: any) => e.exercise?.nameAr || e.exerciseId).slice(0, 2).join('، ')}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </button>
+
+      {isOpen && (
+        <div className="border-t border-gray-800 p-4 space-y-4">
+          {wod.notes && (
+            <div className="bg-gray-800/50 rounded-xl p-3 text-xs text-gray-300">📝 {wod.notes}</div>
+          )}
+          {wod.aiTheme && (
+            <div className="bg-purple-900/20 border border-purple-700/30 rounded-xl p-3 text-xs text-purple-300">🤖 {wod.aiTheme}</div>
+          )}
+          {(['warmup', 'strength', 'metcon', 'cooldown'] as const).map(sec => {
+            const items = wod[sec]?.filter((e: any) => e.exerciseId);
+            if (!items?.length) return null;
+            const { label, icon, color } = SECTION_LABELS[sec];
+            return (
+              <div key={sec}>
+                <h3 className={`font-semibold text-sm mb-2 flex items-center gap-2 ${color}`}>
+                  <span>{icon}</span>{label}
+                </h3>
+                <div className="space-y-2">
+                  {items.map((ex: any, i: number) => (
+                    <ExerciseCard key={i} item={ex} index={i} />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function WodHistoryClient({ member, wods }: { member: any; wods: any[] }) {
   const [search, setSearch] = useState('');
-  const [expandedId, setExpandedId] = useState<string | null>(wods[0]?.id || null);
+  const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming');
 
-  const filtered = wods.filter(w =>
+  const today = new Date().toISOString().split('T')[0];
+
+  const upcoming = wods.filter(w => w.date >= today).sort((a, b) => a.date.localeCompare(b.date));
+  const past = wods.filter(w => w.date < today).sort((a, b) => b.date.localeCompare(a.date));
+
+  const filtered = (tab === 'upcoming' ? upcoming : past).filter(w =>
     !search || w.title?.toLowerCase().includes(search.toLowerCase()) || w.date.includes(search)
   );
-
-  function formatDate(date: string) {
-    const d = new Date(date + 'T00:00:00');
-    return d.toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  }
 
   return (
     <div className="min-h-screen flex">
@@ -38,9 +118,29 @@ export default function WodHistoryClient({ member, wods }: { member: any; wods: 
 
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-white flex items-center gap-2">
-              <span>📚</span> تاريخ التمارين
+              <span>📚</span> جدول التمارين
             </h1>
             <span className="text-xs text-gray-500 bg-gray-800 px-3 py-1 rounded-full">{wods.length} تمرين</span>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex gap-2 bg-gray-900 p-1 rounded-xl border border-gray-800">
+            <button
+              onClick={() => setTab('upcoming')}
+              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                tab === 'upcoming' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              📅 القادمة ({upcoming.length})
+            </button>
+            <button
+              onClick={() => setTab('past')}
+              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                tab === 'past' ? 'bg-orange-500 text-white' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              📚 السابقة ({past.length})
+            </button>
           </div>
 
           {/* Search */}
@@ -51,89 +151,31 @@ export default function WodHistoryClient({ member, wods }: { member: any; wods: 
             className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-orange-500"
           />
 
-          {filtered.length === 0 && (
-            <div className="text-center text-gray-500 py-16">
+          {tab === 'upcoming' && upcoming.length === 0 && (
+            <div className="text-center py-16 space-y-3">
+              <div className="text-4xl">📭</div>
+              <p className="text-gray-500">لا توجد تمارين مجدولة للأيام القادمة</p>
+              <p className="text-xs text-gray-600">استخدم لوحة الإدارة ← الخطة الأسبوعية لتوليد تمارين الأسبوع</p>
+            </div>
+          )}
+
+          {tab === 'past' && past.length === 0 && (
+            <div className="text-center py-16">
               <div className="text-4xl mb-3">📭</div>
-              <p>لا توجد تمارين</p>
+              <p className="text-gray-500">لا توجد تمارين سابقة</p>
             </div>
           )}
 
           <div className="space-y-3">
-            {filtered.map(wod => {
-              const isOpen = expandedId === wod.id;
-              return (
-                <div key={wod.id} className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
-                  {/* Header */}
-                  <button className="w-full p-4 text-right" onClick={() => setExpandedId(isOpen ? null : wod.id)}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className={`text-xs px-2 py-0.5 rounded-full border ${TYPE_COLORS[wod.type] || 'bg-gray-700 text-gray-400 border-gray-600'}`}>
-                          {wod.type}
-                        </span>
-                        {wod.duration && <span className="text-xs text-gray-500">⏱ {wod.duration}د</span>}
-                        <span className="text-gray-600">{isOpen ? '▲' : '▼'}</span>
-                      </div>
-                      <div className="text-right min-w-0">
-                        <div className="font-semibold text-white text-sm leading-tight truncate">{wod.title || 'تمرين'}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">{formatDate(wod.date)}</div>
-                      </div>
-                    </div>
-
-                    {/* Mini preview */}
-                    {!isOpen && (
-                      <div className="flex gap-3 mt-2">
-                        {(['strength', 'metcon'] as const).map(sec => {
-                          const items = wod[sec]?.filter((e: any) => e.exerciseId);
-                          if (!items?.length) return null;
-                          const { icon, color } = SECTION_LABELS[sec];
-                          return (
-                            <div key={sec} className="text-xs text-gray-500 flex items-center gap-1">
-                              <span className={color}>{icon}</span>
-                              <span>{items.map((e: any) => e.exercise?.nameAr || e.exerciseId).slice(0, 2).join('، ')}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </button>
-
-                  {/* Full Details */}
-                  {isOpen && (
-                    <div className="border-t border-gray-800 p-4 space-y-4">
-                      {wod.notes && (
-                        <div className="bg-gray-800/50 rounded-xl p-3 text-xs text-gray-300">
-                          📝 {wod.notes}
-                        </div>
-                      )}
-                      {wod.aiTheme && (
-                        <div className="bg-purple-900/20 border border-purple-700/30 rounded-xl p-3 text-xs text-purple-300">
-                          🤖 {wod.aiTheme}
-                        </div>
-                      )}
-
-                      {(['warmup', 'strength', 'metcon', 'cooldown'] as const).map(sec => {
-                        const items = wod[sec]?.filter((e: any) => e.exerciseId);
-                        if (!items?.length) return null;
-                        const { label, icon, color } = SECTION_LABELS[sec];
-                        return (
-                          <div key={sec}>
-                            <h3 className={`font-semibold text-sm mb-2 flex items-center gap-2 ${color}`}>
-                              <span>{icon}</span>{label}
-                            </h3>
-                            <div className="space-y-2">
-                              {items.map((ex: any, i: number) => (
-                                <ExerciseCard key={i} item={ex} index={i} />
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {filtered.map((wod, i) => (
+              <WodCard
+                key={wod.id}
+                wod={wod}
+                defaultOpen={tab === 'upcoming' && i === 0}
+              />
+            ))}
           </div>
+
         </div>
       </main>
     </div>

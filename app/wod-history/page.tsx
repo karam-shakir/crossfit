@@ -16,9 +16,9 @@ export default async function WodHistoryPage() {
   const enrich = (list: any[] | undefined) =>
     (list || []).map((e: any) => ({ ...e, exercise: exercises.find(ex => ex.id === e.exerciseId) }));
 
+  // جلب كل WODs — الماضية والمستقبلية (بدون limit)
   const wods = (allWods || [])
     .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 60)
     .map(w => ({
       ...w,
       warmup: enrich(w.warmup),
