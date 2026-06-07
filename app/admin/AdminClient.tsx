@@ -205,8 +205,11 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
     setSavedLoading(false);
   }
 
-  async function deleteSavedPlan(id: string) {
-    await fetch(`/api/weekly-plans?id=${id}`, { method: 'DELETE' });
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  async function deleteSavedPlan(id: string, deleteWods: boolean) {
+    setDeleteConfirm(null);
+    await fetch(`/api/weekly-plans?id=${id}&deleteWods=${deleteWods}`, { method: 'DELETE' });
     setSavedPlans(p => p.filter(x => x.id !== id));
     if (viewingSaved?.id === id) setViewingSaved(null);
   }
@@ -563,7 +566,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                               className="text-xs text-indigo-400 hover:text-indigo-300 bg-indigo-900/30 px-3 py-1 rounded-lg transition-colors">
                               {viewingSaved?.id === p.id ? 'إخفاء' : 'عرض'}
                             </button>
-                            <button onClick={() => deleteSavedPlan(p.id)}
+                            <button onClick={() => setDeleteConfirm(p.id)}
                               className="text-xs text-red-400 hover:text-red-300 bg-red-900/20 px-2 py-1 rounded-lg transition-colors">
                               🗑
                             </button>
@@ -773,6 +776,38 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
           )}
         </div>
       </main>
+
+      {/* Delete confirm modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-sm space-y-4 shadow-2xl">
+            <h3 className="font-bold text-white text-lg text-center">🗑 حذف الخطة</h3>
+            <p className="text-sm text-gray-400 text-center">
+              هل تريد حذف سجل الخطة فقط، أم حذف التمارين من التقويم أيضاً؟
+            </p>
+            <div className="space-y-2">
+              <button
+                onClick={() => deleteSavedPlan(deleteConfirm, true)}
+                className="w-full py-3 rounded-xl bg-red-700 hover:bg-red-600 text-white font-semibold text-sm transition-colors"
+              >
+                🗑 حذف الخطة والتمارين من التقويم
+              </button>
+              <button
+                onClick={() => deleteSavedPlan(deleteConfirm, false)}
+                className="w-full py-3 rounded-xl bg-gray-700 hover:bg-gray-600 text-white font-semibold text-sm transition-colors"
+              >
+                📁 حذف السجل فقط (إبقاء التمارين)
+              </button>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="w-full py-2 text-gray-500 hover:text-gray-300 text-sm transition-colors"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
