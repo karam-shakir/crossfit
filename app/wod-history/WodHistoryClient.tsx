@@ -22,11 +22,57 @@ function formatDate(date: string) {
   return d.toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 }
 
+function buildWhatsAppText(wod: any): string {
+  const lines: string[] = [];
+  lines.push(`🏋️ تمرين CrossFit — ${formatDate(wod.date)}`);
+  lines.push(`📌 ${wod.title || 'تمرين'}`);
+  if (wod.type) lines.push(`⚡ النوع: ${wod.type}`);
+  if (wod.duration) lines.push(`⏱ المدة: ${wod.duration} دقيقة`);
+  if (wod.rounds) lines.push(`🔄 الجولات: ${wod.rounds}`);
+  if (wod.aiTheme) lines.push(`\n🔗 ${wod.aiTheme}`);
+
+  const sections: { key: string; icon: string; label: string }[] = [
+    { key: 'warmup',   icon: '🔆', label: 'الإحماء'  },
+    { key: 'strength', icon: '🏋️', label: 'القوة'    },
+    { key: 'metcon',   icon: '🔥', label: 'الـ WOD'  },
+    { key: 'cooldown', icon: '🧘', label: 'التهدئة'  },
+  ];
+  for (const sec of sections) {
+    const items = (wod[sec.key] || []).filter((e: any) => e.exerciseId);
+    if (!items.length) continue;
+    lines.push(`\n${sec.icon} ${sec.label}:`);
+    items.forEach((ex: any, i: number) => {
+      const name = ex.exercise?.nameAr || ex.exerciseId;
+      const reps = ex.reps ? ` — ${ex.reps}` : '';
+      const weight = ex.weight ? ` (${ex.weight})` : '';
+      const note = ex.notes ? ` · ${ex.notes}` : '';
+      lines.push(`  ${i + 1}. ${name}${reps}${weight}${note}`);
+    });
+  }
+  if (wod.notes) lines.push(`\n📝 ${wod.notes}`);
+  lines.push(`\n💪 مجموعة المطانيخ CrossFit`);
+  return lines.join('\n');
+}
+
 function WodCard({ wod, defaultOpen = false }: { wod: any; defaultOpen?: boolean }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const [copied, setCopied] = useState(false);
   const today = new Date().toISOString().split('T')[0];
   const isFuture = wod.date > today;
   const isToday = wod.date === today;
+
+  function shareWhatsApp() {
+    const text = buildWhatsAppText(wod);
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  }
+
+  async function copyText() {
+    const text = buildWhatsAppText(wod);
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   return (
     <div className={`bg-gray-900 rounded-2xl border overflow-hidden ${
@@ -68,6 +114,26 @@ function WodCard({ wod, defaultOpen = false }: { wod: any; defaultOpen?: boolean
 
       {isOpen && (
         <div className="border-t border-gray-800 p-4 space-y-4">
+          {/* Share buttons */}
+          <div className="flex gap-2">
+            <button
+              onClick={shareWhatsApp}
+              className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-green-700 hover:bg-green-600 text-white text-xs font-semibold transition-colors"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.136.564 4.14 1.547 5.874L0 24l6.304-1.524A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.002-1.366l-.358-.214-3.742.904.938-3.64-.234-.374A9.818 9.818 0 1112 21.818z"/>
+              </svg>
+              مشاركة واتساب
+            </button>
+            <button
+              onClick={copyText}
+              className="px-3 py-2 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-xs font-semibold transition-colors"
+            >
+              {copied ? '✅ تم النسخ' : '📋 نسخ'}
+            </button>
+          </div>
+
           {wod.notes && (
             <div className="bg-gray-800/50 rounded-xl p-3 text-xs text-gray-300">📝 {wod.notes}</div>
           )}
