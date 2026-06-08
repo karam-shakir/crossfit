@@ -45,7 +45,7 @@ export default function KettlebellClient({ member }: { member: any }) {
   return (
     <div className="min-h-screen flex">
       <Navbar member={member} />
-      <main className="flex-1 lg:mr-56 pb-20 lg:pb-0">
+      <main className="flex-1 lg:mr-56 pb-28 lg:pb-0">
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
 
           {/* Header */}

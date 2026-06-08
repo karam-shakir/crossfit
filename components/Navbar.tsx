@@ -356,25 +356,26 @@ export default function Navbar({ member }: {
       </aside>
 
       {/* ===== Mobile Bottom Bar ===== */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-gray-900 border-t border-gray-800 flex safe-area-pb">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-gray-900 border-t border-gray-800 flex"
+           style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {mobileBottomFiltered.map(l => {
           const isActive = pathname === l.href;
           const col = linkColor(l.href);
           const activeColor = col === 'red' ? '#ef4444' : col === 'amber' ? '#d97706' : col === 'emerald' ? '#10b981' : '#f97316';
           return (
             <Link key={l.href} href={l.href}
-              className="flex-1 flex flex-col items-center py-2.5 gap-1 transition-colors"
+              className="flex-1 flex flex-col items-center py-3 gap-1.5 transition-colors"
               style={{ color: isActive ? activeColor : '#6b7280' }}>
-              <NavIcon iconKey={l.iconKey} className="w-5 h-5"/>
-              <span style={{ fontSize: '9px', lineHeight: 1 }}>{l.label}</span>
+              <NavIcon iconKey={l.iconKey} className="w-6 h-6"/>
+              <span style={{ fontSize: '10px', lineHeight: 1 }}>{l.label}</span>
             </Link>
           );
         })}
         <button onClick={() => setOpen(!open)}
-          className="flex-1 flex flex-col items-center py-2.5 gap-1"
+          className="flex-1 flex flex-col items-center py-3 gap-1.5"
           style={{ color: open ? '#f97316' : '#6b7280' }}>
-          <IcMore className="w-5 h-5"/>
-          <span style={{ fontSize: '9px', lineHeight: 1 }}>المزيد</span>
+          <IcMore className="w-6 h-6"/>
+          <span style={{ fontSize: '10px', lineHeight: 1 }}>المزيد</span>
         </button>
       </nav>
 
@@ -382,39 +383,39 @@ export default function Navbar({ member }: {
       {open && (
         <div className="lg:hidden fixed inset-0 z-50" onClick={() => setOpen(false)}>
           <div
-            className="absolute left-0 right-0 bg-gray-900 border-t border-gray-800 p-3 shadow-2xl"
-            style={{ bottom: '56px' }}
+            className="absolute left-0 right-0 bg-gray-900 border-t border-gray-700 shadow-2xl overflow-y-auto"
+            style={{ bottom: 'calc(64px + env(safe-area-inset-bottom))', maxHeight: '70vh', padding: '12px 12px 16px' }}
             onClick={e => e.stopPropagation()}>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2.5">
               {mobileMoreFiltered.map(l => {
                 const col = linkColor(l.href);
                 const isActive = pathname === l.href;
                 let activeCls = 'bg-orange-500 text-white';
-                let inactiveCls = 'text-gray-300 bg-gray-800 hover:bg-gray-700';
-                if (col === 'red')     { activeCls = 'bg-red-600 text-white';     inactiveCls = 'text-red-300 bg-gray-800 hover:bg-gray-700'; }
-                if (col === 'amber')   { activeCls = 'bg-amber-600 text-white';   inactiveCls = 'text-amber-300 bg-gray-800 hover:bg-gray-700'; }
-                if (col === 'emerald') { activeCls = 'bg-emerald-600 text-white'; inactiveCls = 'text-emerald-300 bg-gray-800 hover:bg-gray-700'; }
+                let inactiveCls = 'text-gray-200 bg-gray-800';
+                if (col === 'red')     { activeCls = 'bg-red-600 text-white';     inactiveCls = 'text-red-300 bg-gray-800'; }
+                if (col === 'amber')   { activeCls = 'bg-amber-600 text-white';   inactiveCls = 'text-amber-300 bg-gray-800'; }
+                if (col === 'emerald') { activeCls = 'bg-emerald-600 text-white'; inactiveCls = 'text-emerald-300 bg-gray-800'; }
                 return (
                   <Link key={l.href} href={l.href} onClick={() => setOpen(false)}
-                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-colors ${isActive ? activeCls : inactiveCls}`}>
-                    <NavIcon iconKey={l.iconKey} className="w-4 h-4 flex-shrink-0"/>
+                    className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-medium transition-colors ${isActive ? activeCls : inactiveCls}`}>
+                    <NavIcon iconKey={l.iconKey} className="w-5 h-5 flex-shrink-0"/>
                     <span>{l.label}</span>
                   </Link>
                 );
               })}
               {isAdmin && (
                 <Link href="/admin" onClick={() => setOpen(false)}
-                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm col-span-2 transition-colors ${
-                    pathname === '/admin' ? 'bg-purple-600 text-white' : 'text-purple-300 bg-gray-800 hover:bg-gray-700'
+                  className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-medium col-span-2 transition-colors ${
+                    pathname === '/admin' ? 'bg-purple-600 text-white' : 'text-purple-300 bg-gray-800'
                   }`}>
-                  <IcSliders className="w-4 h-4 flex-shrink-0"/>
+                  <IcSliders className="w-5 h-5 flex-shrink-0"/>
                   <span>لوحة التحكم</span>
                 </Link>
               )}
             </div>
             <button onClick={logout}
-              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-red-400 bg-gray-800 hover:bg-gray-700 mt-2 transition-colors">
-              <IcLogout className="w-4 h-4 flex-shrink-0"/>
+              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-medium text-red-400 bg-gray-800 mt-2.5 transition-colors">
+              <IcLogout className="w-5 h-5 flex-shrink-0"/>
               <span>تسجيل الخروج</span>
             </button>
           </div>
