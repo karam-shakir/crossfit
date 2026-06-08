@@ -282,8 +282,10 @@ export default function Navbar({ member }: {
     return true;
   });
 
-  const mobileBottomFiltered = allowedLinks.slice(0, 5);
-  const mobileMoreFiltered   = allowedLinks.slice(5);
+  // القائمة السفلية: 4 روابط ثابتة دائماً + المزيد
+  const BOTTOM_FIXED = ['/dashboard', '/logbook', '/prs', '/skills'];
+  const mobileBottomFiltered = allowedLinks.filter(l => BOTTOM_FIXED.includes(l.href));
+  const mobileMoreFiltered   = allowedLinks.filter(l => !BOTTOM_FIXED.includes(l.href));
 
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' });
