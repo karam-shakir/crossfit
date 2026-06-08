@@ -9,7 +9,6 @@ const SESSION_TYPES = [
   { id: 'endurance',   label: 'تحمل',        labelEn: 'Endurance', icon: '🔄', desc: 'تكرارات عالية وكثافة قلبية',       color: 'border-green-500 bg-green-900/20 text-green-300',   activeColor: 'border-green-400 bg-green-500/30 text-white'   },
   { id: 'mixed',       label: 'مختلط',       labelEn: 'Mixed',     icon: '⚡', desc: 'قوة + مهارات + تحمل',              color: 'border-orange-500 bg-orange-900/20 text-orange-300', activeColor: 'border-orange-400 bg-orange-500/30 text-white' },
   { id: 'hiit',        label: 'HIIT',        labelEn: 'HIIT',      icon: '🔥', desc: 'تدريب متقطع عالي الكثافة',         color: 'border-red-500 bg-red-900/20 text-red-300',         activeColor: 'border-red-400 bg-red-500/30 text-white'       },
-  { id: 'crossfit_mix',label: 'CrossFit Mix',labelEn: 'CF Mix',    icon: '🏋️', desc: 'كاليسثينكس + حديد CrossFit',       color: 'border-yellow-500 bg-yellow-900/20 text-yellow-300', activeColor: 'border-yellow-400 bg-yellow-500/30 text-white' },
 ];
 const FOCUS_OPTIONS     = ['كامل الجسم','الجزء العلوي','الجزء السفلي','القلب والكور','مهارات الجمناستيكس','الكتفين والضغط','الظهر والسحب','تدريب الحلقات'];
 const DIFFICULTY_OPTIONS = ['مبتدئ','متوسط','متقدم','نخبة'];

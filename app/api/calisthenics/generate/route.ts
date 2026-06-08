@@ -16,16 +16,14 @@ export async function POST(req: NextRequest) {
     difficulty   = 'متوسط',
     sessionType  = 'strength',
     focus        = 'كامل الجسم',
-    mixCrossfit  = false,
   } = body;
 
   const SESSION_TYPES: Record<string, string> = {
-    strength:    'قوة — بناء القوة المطلقة بحركات الوزن الذاتي',
-    skills:      'مهارات — تطوير مهارات جمناستيكية (وقوف على يدين، ليفر، بلانش)',
-    endurance:   'تحمل — عدد تكرارات عالٍ وراحة قصيرة',
-    mixed:       'مختلط — مزيج من القوة والمهارات والتحمل',
-    hiit:        'HIIT — تدريب متقطع عالي الكثافة بحركات وزن الجسم',
-    crossfit_mix: 'مختلط مع CrossFit — يدمج حركات الكاليسثينكس مع حديد CrossFit',
+    strength:  'قوة — بناء القوة المطلقة بحركات الوزن الذاتي',
+    skills:    'مهارات — تطوير مهارات جمناستيكية (وقوف على يدين، ليفر، بلانش)',
+    endurance: 'تحمل — عدد تكرارات عالٍ وراحة قصيرة',
+    mixed:     'مختلط — مزيج من القوة والمهارات والتحمل',
+    hiit:      'HIIT — تدريب متقطع عالي الكثافة بحركات وزن الجسم',
   };
 
   const prompt = `أنت مدرب Calisthenics محترف بخبرة تزيد عن 10 سنوات، متخصص في برمجة تمارين وزن الجسم والجمناستيكس.
@@ -43,7 +41,6 @@ export async function POST(req: NextRequest) {
 - مستوى الصعوبة: ${difficulty}
 - التركيز: ${focus}
 - التاريخ: ${date || 'اليوم'}
-${mixCrossfit ? '- ملاحظة: اجعل الميتكون مختلطاً مع تمارين CrossFit (barbell/kettlebell)' : ''}
 
 **قواعد البرمجة:**
 - الإحماء: حركات مفصلية + تنشيط عضلي تدريجي
