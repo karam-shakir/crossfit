@@ -1,4 +1,5 @@
 import { getDb } from './mongodb';
+import { unstable_cache } from 'next/cache';
 
 // ===================== INTERFACES =====================
 
@@ -147,12 +148,16 @@ export async function getMemberByUsername(username: string): Promise<Member | un
 
 // ===================== EXERCISES =====================
 
-// Exercises are static — stored in DB once during seed
-export async function getExercises(): Promise<Exercise[]> {
-  const db = await getDb();
-  const docs = await db.collection('exercises').find({}).toArray();
-  return stripAll<Exercise>(docs);
-}
+// Exercises are static — cached for 1 hour (they rarely change)
+export const getExercises = unstable_cache(
+  async (): Promise<Exercise[]> => {
+    const db = await getDb();
+    const docs = await db.collection('exercises').find({}).toArray();
+    return stripAll<Exercise>(docs);
+  },
+  ['exercises'],
+  { revalidate: 3600 }
+);
 
 export async function getExerciseById(id: string): Promise<Exercise | undefined> {
   const db = await getDb();
@@ -162,10 +167,16 @@ export async function getExerciseById(id: string): Promise<Exercise | undefined>
 
 // ===================== WODS =====================
 
-export async function getWods(): Promise<Wod[]> {
+export async function getWods(limit?: number): Promise<Wod[]> {
   const db = await getDb();
-  const docs = await db.collection('wods').find({}).sort({ date: -1 }).toArray();
+  let query = db.collection('wods').find({}).sort({ date: -1 });
+  if (limit) query = query.limit(limit);
+  const docs = await query.toArray();
   return stripAll<Wod>(docs);
+}
+
+export async function getRecentWods(limit = 60): Promise<Wod[]> {
+  return getWods(limit);
 }
 
 export async function saveWods(wods: Wod[]): Promise<void> {

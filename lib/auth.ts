@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
+import { cache } from 'react';
 
 function getSecret() {
   const s = process.env.JWT_SECRET;
@@ -23,9 +24,10 @@ export async function verifyToken(token: string) {
   }
 }
 
-export async function getSession() {
+// cache() يجعل getSession() تُنفَّذ مرة واحدة فقط per request
+export const getSession = cache(async () => {
   const cookieStore = cookies();
   const token = cookieStore.get('auth-token')?.value;
   if (!token) return null;
   return verifyToken(token);
-}
+});
