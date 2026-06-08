@@ -24,4 +24,9 @@ body {
   .pt-safe-lg {
     padding-top: max(2.5rem, env(safe-area-inset-top));
   }
+
+  /* Safe area padding bottom — محتوى لا يختفي خلف القائمة السفلية */
+  .pb-safe-nav {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
 }
