@@ -51,6 +51,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   const [showAiPanel, setShowAiPanel] = useState(false);
   const [aiDifficulty, setAiDifficulty] = useState('متوسط');
   const [aiFocus, setAiFocus] = useState('');
+  const [wodMode, setWodMode] = useState<'crossfit' | 'calisthenics'>('crossfit');
 
   // Load WOD for selected date
   async function loadWod(date: string) {
@@ -116,6 +117,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
           date: wod.date,
           difficulty: aiDifficulty,
           focus: aiFocus || undefined,
+          wodMode,
         }),
       });
       const data = await res.json();
@@ -353,10 +355,16 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
               <div className="space-y-3">
                 <button
                   onClick={() => setShowAiPanel(p => !p)}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-lg">
-                  <span className="text-lg">🤖</span>
+                  className={`w-full py-3 rounded-xl text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-lg ${
+                    wodMode === 'calisthenics'
+                      ? 'bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-600 hover:to-teal-600'
+                      : 'bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600'
+                  }`}>
+                  <span className="text-lg">{wodMode === 'calisthenics' ? '🤸' : '🤖'}</span>
                   توليد تلقائي بالذكاء الاصطناعي
-                  <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">CompTrain Style</span>
+                  <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">
+                    {wodMode === 'calisthenics' ? 'Calisthenics' : 'CompTrain Style'}
+                  </span>
                 </button>
 
                 {/* AI Panel */}
@@ -367,8 +375,33 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                       <h3 className="text-purple-300 font-semibold text-sm">إعدادات توليد التمرين</h3>
                     </div>
 
+                    {/* WOD Mode Toggle */}
+                    <div className="flex rounded-xl overflow-hidden border border-purple-700/40">
+                      <button
+                        onClick={() => setWodMode('crossfit')}
+                        className={`flex-1 py-2.5 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
+                          wodMode === 'crossfit'
+                            ? 'bg-orange-600 text-white'
+                            : 'bg-gray-800/60 text-gray-400 hover:text-gray-200'
+                        }`}>
+                        🔥 CrossFit
+                      </button>
+                      <button
+                        onClick={() => setWodMode('calisthenics')}
+                        className={`flex-1 py-2.5 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
+                          wodMode === 'calisthenics'
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-gray-800/60 text-gray-400 hover:text-gray-200'
+                        }`}>
+                        🤸 Calisthenics
+                      </button>
+                    </div>
+
                     <div className="text-xs text-gray-400 bg-purple-900/30 rounded-xl p-3 border border-purple-800/40">
-                      سيقوم الذكاء الاصطناعي بتوليد <strong className="text-purple-300">تمرين قوة</strong> و<strong className="text-purple-300">ميتكون</strong> مترابطَين بأسلوب CompTrain وPRVN Athletics
+                      {wodMode === 'calisthenics'
+                        ? <>سيولّد الذكاء الاصطناعي <strong className="text-emerald-300">تمرين Calisthenics</strong> كامل — وزن الجسم فقط بدون معدات</>
+                        : <>سيقوم الذكاء الاصطناعي بتوليد <strong className="text-purple-300">تمرين قوة</strong> و<strong className="text-purple-300">ميتكون</strong> مترابطَين بأسلوب CompTrain وPRVN Athletics</>
+                      }
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
@@ -399,14 +432,17 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                       <button
                         onClick={generateAiWod}
                         disabled={aiGenerating}
-                        className="flex-1 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:bg-gray-700 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2">
+                        className={`flex-1 py-3 rounded-xl disabled:bg-gray-700 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${
+                          wodMode === 'calisthenics'
+                            ? 'bg-emerald-600 hover:bg-emerald-500'
+                            : 'bg-purple-600 hover:bg-purple-500'
+                        }`}>
                         {aiGenerating ? (
-                          <>
-                            <span className="animate-spin">⚙️</span>
-                            جاري التوليد...
-                          </>
+                          <><span className="animate-spin">⚙️</span> جاري التوليد...</>
+                        ) : wodMode === 'calisthenics' ? (
+                          <>🤸 توليد تمرين Calisthenics</>
                         ) : (
-                          <>🤖 توليد التمرين</>
+                          <>🤖 توليد تمرين CrossFit</>
                         )}
                       </button>
                       <button
@@ -426,10 +462,18 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
 
                 {/* AI Theme Banner */}
                 {aiTheme && !showAiPanel && (
-                  <div className="bg-purple-900/20 border border-purple-700/30 rounded-xl p-3 flex items-start gap-2">
-                    <span className="text-purple-400 mt-0.5 flex-shrink-0">🔗</span>
+                  <div className={`rounded-xl p-3 flex items-start gap-2 ${
+                    wodMode === 'calisthenics'
+                      ? 'bg-emerald-900/20 border border-emerald-700/30'
+                      : 'bg-purple-900/20 border border-purple-700/30'
+                  }`}>
+                    <span className={`mt-0.5 flex-shrink-0 ${wodMode === 'calisthenics' ? 'text-emerald-400' : 'text-purple-400'}`}>
+                      {wodMode === 'calisthenics' ? '🤸' : '🔗'}
+                    </span>
                     <div>
-                      <div className="text-xs text-purple-400 font-semibold mb-0.5">الرابط بين القوة والميتكون</div>
+                      <div className={`text-xs font-semibold mb-0.5 ${wodMode === 'calisthenics' ? 'text-emerald-400' : 'text-purple-400'}`}>
+                        {wodMode === 'calisthenics' ? 'هدف تمرين Calisthenics' : 'الرابط بين القوة والميتكون'}
+                      </div>
                       <div className="text-xs text-gray-300">{aiTheme}</div>
                     </div>
                   </div>

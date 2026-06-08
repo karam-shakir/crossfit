@@ -39,11 +39,74 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
-  const { date, focus, difficulty = 'متوسط' } = body;
+  const { date, focus, difficulty = 'متوسط', wodMode = 'crossfit' } = body;
+
+  const CALISTHENICS_EXERCISES = EXERCISES.filter(e =>
+    ['gymnastics', 'cardio'].includes(e.category) ||
+    ['push-up', 'sit-up', 'box-jump', 'burpee', 'double-under'].includes(e.id)
+  );
 
   const exerciseList = EXERCISES.map(e => `- ${e.id} (${e.nameEn} / ${e.nameAr}) [${e.category}]`).join('\n');
+  const calisExerciseList = CALISTHENICS_EXERCISES.map(e => `- ${e.id} (${e.nameEn} / ${e.nameAr}) [${e.category}]`).join('\n');
 
-  const prompt = `أنت مبرمج CrossFit محترف بخبرة تزيد عن 10 سنوات، متخصص في برمجة تمارين على مستوى CompTrain وPRVN Athletics.
+  const calisthenicsPrompt = `أنت مبرمج Calisthenics محترف متخصص في تمارين وزن الجسم والجمناستيكس.
+
+مهمتك: توليد تمرين Calisthenics يومي متكامل — وزن الجسم فقط، بدون أي معدات أثقال.
+
+**الصعوبة المطلوبة:** ${difficulty}
+${focus ? `**التركيز اليوم:** ${focus}` : ''}
+${date ? `**تاريخ التمرين:** ${date}` : ''}
+
+**التمارين المتاحة (وزن الجسم فقط — استخدم IDs هذه فقط):**
+${calisExerciseList}
+
+**قواعد حقلَي duration و rounds:**
+- "للوقت" مع جولات محددة → rounds = عدد الجولات، duration = التايم كاب بالدقائق
+- "AMRAP" → rounds = null، duration = مدة الـ AMRAP بالدقائق
+- "تدريب" (Skill Work) → rounds = عدد المجموعات، duration = الوقت التقديري
+- duration يجب أن يكون دائماً رقماً
+
+**المطلوب**: تمرين Calisthenics كامل يشمل:
+- إحماء ديناميكي بحركات وزن الجسم
+- تمرين قوة (Skill Work): تمارين مهارية كالـ handstand أو muscle-up أو تقوية push/pull
+- الميتكون: circuit مكثف من وزن الجسم
+- تهدئة وتمطيط
+
+أرجع JSON بهذا التنسيق بدون أي نص خارجه:
+{
+  "title": "عنوان التمرين بالعربية — يوم Calisthenics",
+  "type": "للوقت | AMRAP | تدريب",
+  "duration": 20,
+  "rounds": null,
+  "notes": "ملاحظات للمتدربين — تمرين وزن جسم كامل",
+  "theme": "الهدف الأساسي من هذا التمرين (مثال: تقوية الضغط وتحمل الجمناستيكس)",
+  "warmup": [
+    {"exerciseId": "run", "reps": "400م", "weight": "", "distance": "", "time": "", "notes": "إيقاع هادئ"}
+  ],
+  "strength": [
+    {"exerciseId": "handstand-pushup", "reps": "5×5", "weight": "", "distance": "", "time": "", "notes": "Strict — بطيء وتحكم"}
+  ],
+  "metcon": [
+    {"exerciseId": "pull-up", "reps": "21-15-9", "weight": "", "distance": "", "time": "", "notes": ""},
+    {"exerciseId": "push-up", "reps": "21-15-9", "weight": "", "distance": "", "time": "", "notes": ""},
+    {"exerciseId": "burpee", "reps": "21-15-9", "weight": "", "distance": "", "time": "", "notes": ""}
+  ],
+  "cooldown": [
+    {"exerciseId": "sit-up", "reps": "20", "weight": "", "distance": "", "time": "", "notes": "تمطيط خفيف"}
+  ]
+}
+
+**قواعد صارمة:**
+- استخدم فقط IDs التمارين المتاحة أعلاه
+- لا تضع أي أوزان حديدية (weight يكون فارغاً أو نسبة مئوية من وزن الجسم كـ "BW")
+- الإحماء: 3-4 تمارين خفيفة ديناميكية
+- Skill Work: 2-3 تمارين مهارية تحت الحمل
+- الميتكون: 3-5 تمارين وزن جسم مكثفة 7-20 دقيقة
+- التهدئة: 2-3 تمارين تمطيط
+
+أرجع JSON فقط، بدون أي كلام قبله أو بعده.`;
+
+  const crossfitPrompt = `أنت مبرمج CrossFit محترف بخبرة تزيد عن 10 سنوات، متخصص في برمجة تمارين على مستوى CompTrain وPRVN Athletics.
 
 مهمتك: توليد تمرين CrossFit يومي متكامل وعالي المستوى.
 
@@ -94,6 +157,8 @@ ${exerciseList}
 
 أرجع JSON فقط، بدون أي كلام قبله أو بعده.`;
 
+  const prompt = wodMode === 'calisthenics' ? calisthenicsPrompt : crossfitPrompt;
+
   try {
     const message = await client.messages.create({
       model: 'claude-opus-4-8',
@@ -124,8 +189,9 @@ ${exerciseList}
 
     const wodData = {
       date: date || new Date().toISOString().split('T')[0],
-      title: generated.title || 'تمرين يومي',
+      title: generated.title || (wodMode === 'calisthenics' ? 'تمرين Calisthenics' : 'تمرين يومي'),
       type: generated.type || 'للوقت',
+      isCalisthenics: wodMode === 'calisthenics',
       duration: generated.duration ?? 20,
       rounds: generated.rounds ?? null,
       notes: generated.notes || '',
