@@ -1,43 +1,61 @@
 import { NextResponse } from 'next/server';
-import { getMembers, getPRs, getLogEntries, getAttendance } from '@/lib/db';
+import { getDb } from '@/lib/mongodb';
+import { getMembers } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
 export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
-  const [members, prs, logs, attendance] = await Promise.all([
-    getMembers(), getPRs(), getLogEntries(), getAttendance()
-  ]);
-
+  const db = await getDb();
   const thisMonth = new Date().toISOString().slice(0, 7);
 
+  // جلب الأعضاء واستخدام MongoDB aggregation بدلاً من filter في JavaScript
+  const [members, prsAgg, logsAgg, attendanceAgg] = await Promise.all([
+    getMembers(),
+    db.collection('prs').aggregate([
+      { $group: { _id: '$memberId', count: { $sum: 1 } } }
+    ]).toArray(),
+    db.collection('logbook').aggregate([
+      { $group: { _id: '$memberId', total: { $sum: 1 }, rxd: { $sum: { $cond: ['$rxd', 1, 0] } } } }
+    ]).toArray(),
+    db.collection('attendance').aggregate([
+      { $group: {
+        _id: '$memberId',
+        total: { $sum: 1 },
+        monthCount: { $sum: { $cond: [{ $eq: [{ $substr: ['$date', 0, 7] }, thisMonth] }, 1, 0] } },
+        dates: { $push: '$date' },
+      }},
+    ]).toArray(),
+  ]);
+
+  const prsMap    = Object.fromEntries(prsAgg.map(r => [r._id, r.count]));
+  const logsMap   = Object.fromEntries(logsAgg.map(r => [r._id, { total: r.total, rxd: r.rxd }]));
+  const attMap    = Object.fromEntries(attendanceAgg.map(r => [r._id, r]));
+
   const leaderboard = members.map(m => {
-    const memberPRs = prs.filter(p => p.memberId === m.id);
-    const memberLogs = logs.filter(l => l.memberId === m.id);
-    const memberAttendance = attendance.filter(a => a.memberId === m.id);
-    const monthAttendance = memberAttendance.filter(a => a.date.startsWith(thisMonth));
-
+    const att = attMap[m.id];
+    // حساب streak
     let streak = 0;
-    const today = new Date();
-    for (let i = 0; i < 30; i++) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      if (memberAttendance.find(a => a.date === dateStr)) {
-        streak++;
-      } else if (i > 0) break;
+    if (att?.dates) {
+      const dateSet = new Set(att.dates);
+      const today = new Date();
+      for (let i = 0; i < 30; i++) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        if (dateSet.has(d.toISOString().split('T')[0])) { streak++; }
+        else if (i > 0) break;
+      }
     }
-
     return {
-      id: m.id,
-      nameAr: m.nameAr,
-      avatar: m.avatar,
-      totalSessions: memberLogs.length,
-      totalPRs: memberPRs.length,
-      monthSessions: monthAttendance.length,
+      id:            m.id,
+      nameAr:        m.nameAr,
+      avatar:        m.avatar,
+      totalSessions: logsMap[m.id]?.total   ?? 0,
+      totalPRs:      prsMap[m.id]            ?? 0,
+      monthSessions: att?.monthCount          ?? 0,
+      rxdCount:      logsMap[m.id]?.rxd      ?? 0,
       streak,
-      rxdCount: memberLogs.filter(l => l.rxd).length,
     };
   });
 

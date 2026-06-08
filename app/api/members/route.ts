@@ -2,15 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getMembers, saveMembers } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
 
 function generateId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+  return randomUUID();
 }
+
 const AVATARS = ['🏋️','💪','🔥','⚡','🦁','🐺','🦅','🎯','🏆','💥'];
 
 export async function GET() {
   const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
+  // Admin فقط يمكنه رؤية قائمة الأعضاء الكاملة
+  if (!session || session.role !== 'admin')
+    return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
   const members = (await getMembers()).map(({ password: _, ...m }) => m);
   return NextResponse.json(members);
 }

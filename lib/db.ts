@@ -210,9 +210,11 @@ export async function getTodayWod(): Promise<Wod | undefined> {
 
 // ===================== LOGBOOK =====================
 
-export async function getLogEntries(): Promise<LogEntry[]> {
+export async function getLogEntries(limit?: number): Promise<LogEntry[]> {
   const db = await getDb();
-  const docs = await db.collection('logbook').find({}).sort({ createdAt: -1 }).toArray();
+  let q = db.collection('logbook').find({}).sort({ createdAt: -1 });
+  if (limit) q = q.limit(limit);
+  const docs = await q.toArray();
   return stripAll<LogEntry>(docs);
 }
 
@@ -242,9 +244,11 @@ export async function deleteLogEntry(id: string): Promise<void> {
 
 // ===================== PRs =====================
 
-export async function getPRs(): Promise<PR[]> {
+export async function getPRs(limit?: number): Promise<PR[]> {
   const db = await getDb();
-  const docs = await db.collection('prs').find({}).toArray();
+  let q = db.collection('prs').find({}).sort({ date: -1 });
+  if (limit) q = q.limit(limit);
+  const docs = await q.toArray();
   return stripAll<PR>(docs);
 }
 
