@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
-  const { fromDate, days = 7, difficulty = 'متوسط' } = body;
+  const { fromDate, days = 7, difficulty = 'متوسط', weekMode = 'crossfit', calisthenicsDays = 1 } = body;
 
   const startDate = fromDate || new Date().toISOString().split('T')[0];
 
@@ -74,9 +74,33 @@ export async function POST(req: NextRequest) {
 
   const exerciseList = EXERCISES.map(e => `${e.id} | ${e.nameAr} | ${e.nameEn} | ${e.category}`).join('\n');
 
+  // Build programming rules based on weekMode
+  const programmingRules = weekMode === 'mixed'
+    ? `**قواعد البرمجة — أسبوع مختلط CrossFit + Calisthenics:**
+- خصص ${calisthenicsDays === 2 ? 'يومَين' : 'يوماً واحداً'} كاملاً لـ Calisthenics (وزن الجسم البحت) من أصل الأيام المطلوبة
+- باقي الأيام: CrossFit كلاسيكي + يوم راحة أو راحة نشطة
+- أيام Calisthenics: اجعل نوع اليوم "تدريب" وضع isCalisthenics: true
+  - strength: تمارين وزن الجسم فقط (pull-up, push-up, muscle-up, handstand-pushup, rope-climb)
+  - metcon: circuit من وزن الجسم (burpee, box-jump, double-under, sit-up, toes-to-bar, pull-up, push-up)
+  - notes: اذكر أن هذا يوم Calisthenics
+  - aiTheme: "Calisthenics — وزن الجسم كامل"
+- لا تضع أي أوزان حديد في أيام Calisthenics
+- وزّع أيام Calisthenics على مدار الأسبوع بشكل متوازن (ليست يومين متتاليين)
+- لا تكرر نفس التمارين في يومين متتاليين
+- اجعل القوة والميتكون مترابطَين في أيام CrossFit
+- أيام الراحة: warmup وstrength وmetcon وcooldown = مصفوفات فارغة []`
+    : `**قواعد البرمجة:**
+- وزّع: 2-3 أيام CrossFit كلاسيكي، يوم Calisthenics (وزن جسم + جمناستيكس)، يوم Hyrox أو Kettlebell، يوم راحة أو راحة نشطة
+- في يوم Calisthenics: اجعل strength عبارة عن تمارين وزن الجسم (pull-up, push-up, dips, pistol-squat) وأضف skill work (handstand, muscle-up progression) في notes
+- في بعض الأيام (مرة أسبوعياً): ادمج الكاليسثينكس مع CrossFit بوضع pull-up/muscle-up/handstand-pushup في الميتكون بجانب تمارين الحديد
+- لا تكرر نفس التمارين في يومين متتاليين
+- اجعل القوة والميتكون مترابطَين (نفس مجموعة العضلات أو نفس الحركة)
+- أيام الراحة: warmup وstrength وmetcon وcooldown = مصفوفات فارغة []`;
+
   const prompt = `أنت مبرمج CrossFit محترف على مستوى CompTrain وPRVN Athletics.
 
 **مهمتك:** توليد خطة أسبوعية كاملة لـ ${days} أيام بدءاً من ${startDate} بمستوى صعوبة: ${difficulty}.
+نوع الخطة: ${weekMode === 'mixed' ? `أسبوع مختلط (CrossFit + ${calisthenicsDays === 2 ? 'يومان' : 'يوم واحد'} Calisthenics)` : 'أسبوع CrossFit كامل'}
 
 **التمارين المتاحة (استخدم IDs هذه فقط):**
 ${exerciseList}
@@ -91,13 +115,7 @@ ${JSON.stringify(recentWods, null, 2)}
 - "قوة" فقط → rounds = عدد المجموعات (مثل 5)، duration = الوقت التقديري (مثل 30)
 - duration يجب أن يكون دائماً رقماً (ليس null)، rounds قد يكون null
 
-**قواعد البرمجة:**
-- وزّع: 2-3 أيام CrossFit كلاسيكي، يوم Calisthenics (وزن جسم + جمناستيكس)، يوم Hyrox أو Kettlebell، يوم راحة أو راحة نشطة
-- في يوم Calisthenics: اجعل strength عبارة عن تمارين وزن الجسم (pull-up, push-up, dips, pistol-squat) وأضف skill work (handstand, muscle-up progression) في notes
-- في بعض الأيام (مرة أسبوعياً): ادمج الكاليسثينكس مع CrossFit بوضع pull-up/muscle-up/handstand-pushup في الميتكون بجانب تمارين الحديد
-- لا تكرر نفس التمارين في يومين متتاليين
-- اجعل القوة والميتكون مترابطَين (نفس مجموعة العضلات أو نفس الحركة)
-- أيام الراحة: warmup وstrength وmetcon وcooldown = مصفوفات فارغة []
+${programmingRules}
 
 **الأيام المطلوبة:**
 ${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
@@ -115,6 +133,7 @@ ${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
       "notes": "ملاحظات للأعضاء",
       "aiTheme": "الرابط بين القوة والميتكون",
       "isRest": false,
+      "isCalisthenics": false,
       "warmup": [
         { "exerciseId": "run", "reps": "400م", "weight": "", "notes": "" }
       ],

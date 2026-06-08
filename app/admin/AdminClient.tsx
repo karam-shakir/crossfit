@@ -36,6 +36,8 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   const [weeklyError, setWeeklyError] = useState('');
   const [weeklyFromDate, setWeeklyFromDate] = useState(new Date().toISOString().split('T')[0]);
   const [weeklyDays, setWeeklyDays] = useState(7);
+  const [weekMode, setWeekMode] = useState<'crossfit' | 'mixed'>('crossfit');
+  const [calisthenicsDays, setCalisthenicsDays] = useState(1);
   const [savedPlans, setSavedPlans] = useState<any[]>([]);
   const [savingPlan, setSavingPlan] = useState(false);
   const [planSaved, setPlanSaved] = useState(false);
@@ -148,7 +150,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
       const res = await fetch('/api/wod/generate-week', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fromDate: weeklyFromDate, days: weeklyDays, difficulty: aiDifficulty }),
+        body: JSON.stringify({ fromDate: weeklyFromDate, days: weeklyDays, difficulty: aiDifficulty, weekMode, calisthenicsDays }),
       });
       const data = await res.json();
       if (!res.ok) { setWeeklyError(data.error || 'خطأ'); return; }
@@ -555,6 +557,54 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                   </div>
                 </div>
 
+                {/* Week Mode Toggle */}
+                <div className="flex rounded-xl overflow-hidden border border-indigo-700/50">
+                  <button
+                    onClick={() => setWeekMode('crossfit')}
+                    className={`flex-1 py-2.5 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
+                      weekMode === 'crossfit'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-gray-800/60 text-gray-400 hover:text-gray-200'
+                    }`}>
+                    🔥 CrossFit كامل
+                  </button>
+                  <button
+                    onClick={() => setWeekMode('mixed')}
+                    className={`flex-1 py-2.5 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
+                      weekMode === 'mixed'
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-gray-800/60 text-gray-400 hover:text-gray-200'
+                    }`}>
+                    🤸 مختلط + Calisthenics
+                  </button>
+                </div>
+
+                {/* Calisthenics days selector — shown only when mixed */}
+                {weekMode === 'mixed' && (
+                  <div className="bg-emerald-900/20 border border-emerald-700/40 rounded-xl p-3 space-y-2">
+                    <p className="text-xs text-emerald-300 font-semibold">🤸 عدد أيام Calisthenics في الأسبوع</p>
+                    <div className="flex gap-2">
+                      {[1, 2].map(n => (
+                        <button
+                          key={n}
+                          onClick={() => setCalisthenicsDays(n)}
+                          className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                            calisthenicsDays === n
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-gray-800 text-gray-400 hover:text-gray-200 border border-gray-700'
+                          }`}>
+                          {n === 1 ? 'يوم واحد 1️⃣' : 'يومان 2️⃣'}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      {calisthenicsDays === 1
+                        ? 'يوم واحد مخصص لوزن الجسم + باقي الأيام CrossFit'
+                        : 'يومان مخصصان لوزن الجسم + باقي الأيام CrossFit'}
+                    </p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs text-gray-400 mb-1 block">من تاريخ</label>
@@ -576,9 +626,15 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                 )}
 
                 <button onClick={generateWeeklyPlan} disabled={weeklyLoading}
-                  className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 text-white font-semibold transition-all flex items-center justify-center gap-2">
+                  className={`w-full py-3 rounded-xl disabled:bg-gray-700 text-white font-semibold transition-all flex items-center justify-center gap-2 ${
+                    weekMode === 'mixed'
+                      ? 'bg-emerald-600 hover:bg-emerald-500'
+                      : 'bg-indigo-600 hover:bg-indigo-500'
+                  }`}>
                   {weeklyLoading ? (
                     <><span className="animate-spin">⚙️</span> يتم تحليل التمارين السابقة وبناء الخطة...</>
+                  ) : weekMode === 'mixed' ? (
+                    <><span>🤸</span> توليد أسبوع مختلط CrossFit + Calisthenics</>
                   ) : (
                     <><span>🤖</span> توليد الخطة الأسبوعية</>
                   )}
@@ -679,6 +735,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                   <div className="space-y-4">
                     {weeklyPlan.wods?.map((wod: any, i: number) => {
                       const isRest = wod.isRest || wod.type === 'راحة' || wod.type === 'راحة نشطة';
+                      const isCalis = wod.isCalisthenics === true;
                       const SECTION_LABELS: Record<string, { label: string; icon: string; color: string }> = {
                         warmup:   { label: 'الإحماء',  icon: '🔆', color: 'text-yellow-400' },
                         strength: { label: 'القوة',    icon: '🏋️', color: 'text-blue-400' },
@@ -687,13 +744,20 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                       };
                       return (
                         <div key={i} className={`rounded-2xl border overflow-hidden ${
-                          isRest ? 'border-blue-700/30 bg-blue-900/10' : 'border-gray-700 bg-gray-900'
+                          isRest ? 'border-blue-700/30 bg-blue-900/10'
+                          : isCalis ? 'border-emerald-700/50 bg-emerald-900/10'
+                          : 'border-gray-700 bg-gray-900'
                         }`}>
                           {/* Header */}
-                          <div className="p-4 border-b border-gray-800">
+                          <div className={`p-4 border-b ${isCalis ? 'border-emerald-800/40' : 'border-gray-800'}`}>
+                            {isCalis && (
+                              <div className="mb-2 inline-flex items-center gap-1.5 bg-emerald-700/30 border border-emerald-600/40 rounded-full px-2.5 py-0.5 text-xs text-emerald-300 font-semibold">
+                                🤸 يوم Calisthenics
+                              </div>
+                            )}
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <span className="text-lg">{isRest ? '😴' : '🔥'}</span>
+                                <span className="text-lg">{isRest ? '😴' : isCalis ? '🤸' : '🔥'}</span>
                                 <div>
                                   <div className="flex items-center gap-2">
                                     <span className="font-bold text-white text-sm">{wod.dayName}</span>
