@@ -46,7 +46,7 @@ export default function KettlebellClient({ member }: { member: any }) {
     <div className="min-h-screen flex">
       <Navbar member={member} />
       <main className="flex-1 lg:mr-56 pb-28 lg:pb-0">
-        <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
+        <div className="max-w-2xl mx-auto px-4 pt-safe pb-6 space-y-5">
 
           {/* Header */}
           <div className="bg-gradient-to-l from-yellow-900/40 to-amber-900/40 rounded-2xl border border-yellow-700/30 p-5">

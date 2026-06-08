@@ -50,7 +50,7 @@ export default function HyroxClient({ member }: { member: any }) {
     <div className="min-h-screen flex">
       <Navbar member={member} />
       <main className="flex-1 lg:mr-56 pb-28 lg:pb-0">
-        <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
+        <div className="max-w-2xl mx-auto px-4 pt-safe pb-6 space-y-5">
 
           {/* Header */}
           <div className="bg-gradient-to-l from-red-900/40 to-orange-900/40 rounded-2xl border border-red-700/30 p-5">
