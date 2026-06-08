@@ -52,6 +52,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   const [aiDifficulty, setAiDifficulty] = useState('متوسط');
   const [aiFocus, setAiFocus] = useState('');
   const [wodMode, setWodMode] = useState<'crossfit' | 'calisthenics'>('crossfit');
+  const [aiGeneratedMode, setAiGeneratedMode] = useState<'crossfit' | 'calisthenics'>('crossfit');
 
   // Load WOD for selected date
   async function loadWod(date: string) {
@@ -132,6 +133,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
         rounds: generated.rounds ? String(generated.rounds) : '',
       });
       if (data.theme) setAiTheme(data.theme);
+      setAiGeneratedMode(wodMode);
       setShowAiPanel(false);
       setActiveSection('strength');
     } catch (e: any) {
@@ -463,16 +465,16 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                 {/* AI Theme Banner */}
                 {aiTheme && !showAiPanel && (
                   <div className={`rounded-xl p-3 flex items-start gap-2 ${
-                    wodMode === 'calisthenics'
+                    aiGeneratedMode === 'calisthenics'
                       ? 'bg-emerald-900/20 border border-emerald-700/30'
                       : 'bg-purple-900/20 border border-purple-700/30'
                   }`}>
-                    <span className={`mt-0.5 flex-shrink-0 ${wodMode === 'calisthenics' ? 'text-emerald-400' : 'text-purple-400'}`}>
-                      {wodMode === 'calisthenics' ? '🤸' : '🔗'}
+                    <span className={`mt-0.5 flex-shrink-0 ${aiGeneratedMode === 'calisthenics' ? 'text-emerald-400' : 'text-purple-400'}`}>
+                      {aiGeneratedMode === 'calisthenics' ? '🤸' : '🔗'}
                     </span>
                     <div>
-                      <div className={`text-xs font-semibold mb-0.5 ${wodMode === 'calisthenics' ? 'text-emerald-400' : 'text-purple-400'}`}>
-                        {wodMode === 'calisthenics' ? 'هدف تمرين Calisthenics' : 'الرابط بين القوة والميتكون'}
+                      <div className={`text-xs font-semibold mb-0.5 ${aiGeneratedMode === 'calisthenics' ? 'text-emerald-400' : 'text-purple-400'}`}>
+                        {aiGeneratedMode === 'calisthenics' ? 'هدف تمرين Calisthenics' : 'الرابط بين القوة والميتكون'}
                       </div>
                       <div className="text-xs text-gray-300">{aiTheme}</div>
                     </div>

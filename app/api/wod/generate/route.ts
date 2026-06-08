@@ -41,9 +41,10 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const { date, focus, difficulty = 'متوسط', wodMode = 'crossfit' } = body;
 
+  // Calisthenics: bodyweight only — exclude barbell/machine exercises (row = machine)
   const CALISTHENICS_EXERCISES = EXERCISES.filter(e =>
-    ['gymnastics', 'cardio'].includes(e.category) ||
-    ['push-up', 'sit-up', 'box-jump', 'burpee', 'double-under'].includes(e.id)
+    e.category === 'gymnastics' ||
+    ['run', 'double-under', 'burpee', 'box-jump'].includes(e.id)
   );
 
   const exerciseList = EXERCISES.map(e => `- ${e.id} (${e.nameEn} / ${e.nameAr}) [${e.category}]`).join('\n');
