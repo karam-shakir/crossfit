@@ -364,18 +364,18 @@ export default function Navbar({ member }: {
           const activeColor = col === 'red' ? '#ef4444' : col === 'amber' ? '#d97706' : col === 'emerald' ? '#10b981' : '#f97316';
           return (
             <Link key={l.href} href={l.href}
-              className="flex-1 flex flex-col items-center py-3 gap-1.5 transition-colors"
+              className="flex-1 flex flex-col items-center py-4 gap-2 transition-colors"
               style={{ color: isActive ? activeColor : '#6b7280' }}>
-              <NavIcon iconKey={l.iconKey} className="w-6 h-6"/>
-              <span style={{ fontSize: '10px', lineHeight: 1 }}>{l.label}</span>
+              <NavIcon iconKey={l.iconKey} className="w-7 h-7"/>
+              <span style={{ fontSize: '12px', lineHeight: 1, fontWeight: 500 }}>{l.label}</span>
             </Link>
           );
         })}
         <button onClick={() => setOpen(!open)}
-          className="flex-1 flex flex-col items-center py-3 gap-1.5"
+          className="flex-1 flex flex-col items-center py-4 gap-2"
           style={{ color: open ? '#f97316' : '#6b7280' }}>
-          <IcMore className="w-6 h-6"/>
-          <span style={{ fontSize: '10px', lineHeight: 1 }}>المزيد</span>
+          <IcMore className="w-7 h-7"/>
+          <span style={{ fontSize: '12px', lineHeight: 1, fontWeight: 500 }}>المزيد</span>
         </button>
       </nav>
 
