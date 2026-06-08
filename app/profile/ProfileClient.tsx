@@ -44,7 +44,7 @@ export default function ProfileClient({ member }: { member: any }) {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex overflow-x-hidden">
       <Navbar member={{ ...member, nameAr, avatar }} />
       <main className="flex-1 lg:mr-56 pb-safe-nav lg:pb-0">
         <div className="max-w-lg mx-auto px-4 py-6 space-y-5">

@@ -263,10 +263,10 @@ export default function WodHistoryClient({ member, wods: initialWods }: { member
   );
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex overflow-x-hidden">
       <Navbar member={member} />
-      <main className="flex-1 lg:mr-56 pb-safe-nav lg:pb-0">
-        <div className="max-w-2xl mx-auto px-4 pt-safe pb-6 space-y-5">
+      <main className="flex-1 lg:mr-56 pb-safe-nav lg:pb-0 overflow-x-hidden">
+        <div className="max-w-2xl mx-auto px-4 pt-safe pb-6 space-y-5 overflow-x-hidden">
 
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-white flex items-center gap-2">

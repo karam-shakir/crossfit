@@ -139,7 +139,7 @@ export default function DashboardClient({ member, wod, stats }: {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex overflow-x-hidden">
       <Navbar member={member} />
       <main className="flex-1 lg:mr-56 pb-safe-nav lg:pb-0">
         <div className="max-w-2xl mx-auto px-4 pt-safe pb-6 space-y-6">
