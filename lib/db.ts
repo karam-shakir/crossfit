@@ -407,3 +407,26 @@ export async function deleteHyroxSession(id: string): Promise<void> {
   const db = await getDb();
   await db.collection('hyrox_sessions').deleteOne({ id });
 }
+
+// ===================== KETTLEBELL SESSIONS =====================
+
+export async function saveKettlebellSession(session: any): Promise<any> {
+  const db = await getDb();
+  await db.collection('kettlebell_sessions').insertOne(session as any);
+  return session;
+}
+
+export async function getMemberKettlebellSessions(memberId: string): Promise<any[]> {
+  const db = await getDb();
+  const docs = await db.collection('kettlebell_sessions')
+    .find({ memberId })
+    .sort({ createdAt: -1 })
+    .limit(20)
+    .toArray();
+  return stripAll(docs);
+}
+
+export async function deleteKettlebellSession(id: string): Promise<void> {
+  const db = await getDb();
+  await db.collection('kettlebell_sessions').deleteOne({ id });
+}
