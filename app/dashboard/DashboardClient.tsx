@@ -36,39 +36,377 @@ const DAYS_AR = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأرب
 const MONTHS_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 const REACTION_EMOJIS = ['💪', '🔥', '😤', '🏆', '💀', '😅', '👊', '🙌'];
 
-// ── بطاقة رياضة اليوم ───────────────────────────────────────────────────────
-function TodaySportCard({
-  icon, label, color, borderColor, sessions, renderDetail,
-}: {
-  icon: string; label: string; color: string; borderColor: string;
-  sessions: any[]; renderDetail: (s: any) => React.ReactNode;
-}) {
-  const [open, setOpen] = useState(false);
-  const active = sessions.length > 0;
-  if (!active) return null;
-  const first = sessions[0];
-  const title = first.sessionData?.title || first.title || label;
+// ── مساعد: رابط يوتيوب ──────────────────────────────────────────────────────
+function YtBtn({ nameEn, sport }: { nameEn: string; sport: string }) {
+  const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(nameEn + ' ' + sport + ' tutorial')}`;
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer"
+      className="flex-shrink-0 hover:opacity-80 transition-opacity" title="شاهد الشرح">
+      <svg viewBox="0 0 24 24" className="w-5 h-5" fill="#FF0000">
+        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+      </svg>
+    </a>
+  );
+}
+
+// ── بطاقة Hyrox اليوم ────────────────────────────────────────────────────────
+function HyroxTodayCard({ sessions }: { sessions: any[] }) {
+  const [open, setOpen]   = useState(false);
+  const [tab,  setTab]    = useState('stations');
+  if (!sessions.length) return null;
+  const rec = sessions[0];
+  const s   = rec.sessionData || rec;
+
+  const tabs = [
+    s.warmup?.exercises?.length   && { key: 'warmup',   label: '🔆 إحماء' },
+    s.stations?.length            && { key: 'stations', label: '🏁 محطات' },
+    s.targetTimes                 && { key: 'times',    label: '⏱ أوقات'  },
+    true                          && { key: 'all',      label: '🌐 الكل'   },
+  ].filter(Boolean) as { key: string; label: string }[];
 
   return (
-    <div className={`bg-gray-900 rounded-2xl border overflow-hidden ${open ? borderColor : 'border-gray-800'}`}>
+    <div className={`bg-gray-900 rounded-2xl border overflow-hidden ${open ? 'border-red-600/50' : 'border-gray-800'}`}>
       <button className="w-full p-4 text-right" onClick={() => setOpen(o => !o)}>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 flex-shrink-0">
-            <span className={`text-xs px-2 py-0.5 rounded-full ${color}`}>{sessions.length} جلسة</span>
+            <span className="text-xs bg-red-900/40 text-red-300 px-2 py-0.5 rounded-full">{rec.sessionType || 'simulation'}</span>
+            {s.totalDuration && <span className="text-xs text-gray-500">⏱{s.totalDuration}د</span>}
             <span className="text-gray-600 text-xs">{open ? '▲' : '▼'}</span>
           </div>
           <div className="flex items-center gap-2 min-w-0">
             <div className="text-right min-w-0">
-              <div className="text-xs text-gray-400">{label}</div>
-              <div className="text-sm font-semibold text-white truncate">{title}</div>
+              <div className="text-xs text-gray-400">Hyrox اليوم</div>
+              <div className="text-sm font-semibold text-white truncate">{s.title || 'جلسة Hyrox'}</div>
             </div>
-            <span className="text-xl flex-shrink-0">{icon}</span>
+            <span className="text-2xl flex-shrink-0">🏁</span>
           </div>
         </div>
       </button>
+
       {open && (
         <div className="border-t border-gray-800 p-4 space-y-3">
-          {sessions.map((s, i) => <div key={i}>{renderDetail(s)}</div>)}
+          {s.coachNote && <div className="bg-red-900/20 border border-red-700/30 rounded-xl p-3 text-xs text-red-300">💬 {s.coachNote}</div>}
+
+          {/* Section tabs */}
+          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+            {tabs.map(t => (
+              <button key={t.key} onClick={() => setTab(t.key)}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${tab === t.key ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Warmup */}
+          {(tab === 'warmup' || tab === 'all') && s.warmup?.exercises?.length > 0 && (
+            <div>
+              {tab === 'all' && <h4 className="text-xs font-semibold text-yellow-400 mb-2">🔆 الإحماء — {s.warmup.duration}</h4>}
+              <div className="space-y-1.5">
+                {s.warmup.exercises.map((ex: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between bg-gray-800/60 rounded-xl px-3 py-2.5">
+                    <YtBtn nameEn={ex.nameEn || ex.name} sport="hyrox" />
+                    <div className="text-right min-w-0">
+                      <span className="text-sm text-white">{ex.name}</span>
+                      <span className="text-xs text-gray-400 mr-2">{ex.duration || ex.reps || ''}</span>
+                      {ex.notes && <p className="text-xs text-gray-500 mt-0.5">{ex.notes}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Stations */}
+          {(tab === 'stations' || tab === 'all') && s.stations?.length > 0 && (
+            <div>
+              {tab === 'all' && <h4 className="text-xs font-semibold text-red-400 mb-2">🏁 المحطات</h4>}
+              <div className="space-y-2">
+                {s.stations.map((st: any, i: number) => (
+                  <div key={i} className="bg-gray-800/60 rounded-xl p-3 border border-gray-700">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <YtBtn nameEn={st.nameEn || st.name} sport="hyrox" />
+                      <div className="text-right">
+                        <span className="text-xs text-gray-500">#{st.number} 🏃 {st.runBefore} ←</span>
+                        <span className="font-semibold text-white text-sm mr-1">{st.name}</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-3 text-xs text-gray-400 justify-end flex-wrap">
+                      <span>🎯 {st.target}</span>
+                      {st.weight     && <span>⚖️ {st.weight}</span>}
+                      {st.targetTime && <span>⏱ {st.targetTime}</span>}
+                    </div>
+                    {st.tips && <p className="text-xs text-yellow-300 mt-1.5 text-right">💡 {st.tips}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Target times */}
+          {(tab === 'times' || tab === 'all') && s.targetTimes && (
+            <div>
+              {tab === 'all' && <h4 className="text-xs font-semibold text-gray-400 mb-2">⏱ أوقات الأداء المرجعية</h4>}
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(s.targetTimes).map(([k, v]: [string, any]) => {
+                  const labels: Record<string,string> = {elite:'نخبة 🥇',advanced:'متقدم 🥈',intermediate:'متوسط 🥉',beginner:'مبتدئ'};
+                  return (
+                    <div key={k} className="bg-gray-800/60 rounded-lg px-3 py-2 text-right">
+                      <div className="text-xs text-gray-400">{labels[k]||k}</div>
+                      <div className="text-sm font-semibold text-white">{v}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── بطاقة Kettlebell اليوم ───────────────────────────────────────────────────
+function KettlebellTodayCard({ sessions }: { sessions: any[] }) {
+  const [open, setOpen] = useState(false);
+  const [tab,  setTab]  = useState('main');
+  if (!sessions.length) return null;
+  const rec = sessions[0];
+  const s   = rec.sessionData || rec;
+
+  const tabs = [
+    s.warmup?.movements?.length   && { key: 'warmup', label: '🔆 إحماء'    },
+    s.mainWork?.length            && { key: 'main',   label: '🔔 التمرين'   },
+    s.techniqueNotes?.length      && { key: 'notes',  label: '💡 تقنية'     },
+    true                          && { key: 'all',    label: '🌐 الكل'      },
+  ].filter(Boolean) as { key: string; label: string }[];
+
+  return (
+    <div className={`bg-gray-900 rounded-2xl border overflow-hidden ${open ? 'border-yellow-600/50' : 'border-gray-800'}`}>
+      <button className="w-full p-4 text-right" onClick={() => setOpen(o => !o)}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="text-xs bg-yellow-900/40 text-yellow-300 px-2 py-0.5 rounded-full">{rec.eventType || 'biathlon'}</span>
+            {s.focus && <span className="text-xs text-gray-500">{s.focus}</span>}
+            <span className="text-gray-600 text-xs">{open ? '▲' : '▼'}</span>
+          </div>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="text-right min-w-0">
+              <div className="text-xs text-gray-400">Kettlebell اليوم</div>
+              <div className="text-sm font-semibold text-white truncate">{s.title || 'جلسة Kettlebell'}</div>
+            </div>
+            <span className="text-2xl flex-shrink-0">🔔</span>
+          </div>
+        </div>
+      </button>
+
+      {open && (
+        <div className="border-t border-gray-800 p-4 space-y-3">
+          {s.coachNote && <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-xl p-3 text-xs text-yellow-300">💬 {s.coachNote}</div>}
+          {s.breathingPattern && <div className="bg-gray-800/50 rounded-xl p-3 text-xs text-gray-300">🌬️ {s.breathingPattern}</div>}
+
+          {/* Section tabs */}
+          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+            {tabs.map(t => (
+              <button key={t.key} onClick={() => setTab(t.key)}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${tab === t.key ? 'bg-yellow-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Warmup */}
+          {(tab === 'warmup' || tab === 'all') && s.warmup?.movements?.length > 0 && (
+            <div>
+              {tab === 'all' && <h4 className="text-xs font-semibold text-yellow-400 mb-2">🔆 الإحماء — {s.warmup.duration}</h4>}
+              <div className="flex flex-wrap gap-2">
+                {s.warmup.movements.map((m: string, i: number) => (
+                  <span key={i} className="text-xs bg-gray-800 text-gray-300 px-2 py-1 rounded-lg">{m}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Main Work */}
+          {(tab === 'main' || tab === 'all') && s.mainWork?.length > 0 && (
+            <div>
+              {tab === 'all' && <h4 className="text-xs font-semibold text-yellow-400 mb-2">🔔 العمل الرئيسي</h4>}
+              <div className="space-y-2">
+                {s.mainWork.map((ex: any, i: number) => (
+                  <div key={i} className="bg-gray-800/60 rounded-xl p-3 border border-yellow-900/30">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <YtBtn nameEn={ex.exercise || ex.exerciseAr || ''} sport="kettlebell" />
+                      <div className="font-semibold text-white text-sm">{ex.exerciseAr || ex.exercise}</div>
+                    </div>
+                    <div className="flex gap-3 text-xs text-gray-400 justify-end flex-wrap">
+                      {ex.sets      && <span>{ex.sets} مجموعة</span>}
+                      {ex.reps      && <span>{ex.reps} تكرار</span>}
+                      {ex.weight    && <span>⚖️ {ex.weight}</span>}
+                      {ex.targetRPM && <span>🔄 {ex.targetRPM} RPM</span>}
+                      {ex.restBetweenSets && <span>راحة {ex.restBetweenSets}</span>}
+                    </div>
+                    {ex.technique && <p className="text-xs text-yellow-300 mt-1.5 text-right">💡 {ex.technique}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Technique Notes */}
+          {(tab === 'notes' || tab === 'all') && s.techniqueNotes?.length > 0 && (
+            <div>
+              {tab === 'all' && <h4 className="text-xs font-semibold text-gray-400 mb-2">💡 ملاحظات تقنية</h4>}
+              <div className="bg-gray-800/40 rounded-xl p-3 space-y-1.5">
+                {s.techniqueNotes.map((n: string, i: number) => (
+                  <p key={i} className="text-xs text-gray-300">• {n}</p>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {s.progressionNote && tab === 'all' && (
+            <div className="bg-blue-900/20 border border-blue-700/30 rounded-xl p-3 text-xs text-blue-300">
+              📈 {s.progressionNote}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── بطاقة Calisthenics اليوم ─────────────────────────────────────────────────
+function CalisthenicsTodayCard({ sessions }: { sessions: any[] }) {
+  const [open, setOpen] = useState(false);
+  const [tab,  setTab]  = useState('main');
+  if (!sessions.length) return null;
+  const rec = sessions[0];
+  const s   = rec.sessionData || rec;
+
+  const tabs = [
+    s.warmup?.exercises?.length      && { key: 'warmup',  label: '🔆 إحماء'    },
+    s.skillWork?.exercises?.length   && { key: 'skill',   label: '🤸 مهارات'   },
+    s.mainWork?.exercises?.length    && { key: 'main',    label: '💪 التمرين'   },
+    s.metcon?.exercises?.length      && { key: 'metcon',  label: '🔥 WOD'       },
+    true                             && { key: 'all',     label: '🌐 الكل'      },
+  ].filter(Boolean) as { key: string; label: string }[];
+
+  return (
+    <div className={`bg-gray-900 rounded-2xl border overflow-hidden ${open ? 'border-emerald-600/50' : 'border-gray-800'}`}>
+      <button className="w-full p-4 text-right" onClick={() => setOpen(o => !o)}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="text-xs bg-emerald-900/40 text-emerald-300 px-2 py-0.5 rounded-full">{rec.sessionType || 'strength'}</span>
+            {s.totalDuration && <span className="text-xs text-gray-500">⏱{s.totalDuration}د</span>}
+            <span className="text-gray-600 text-xs">{open ? '▲' : '▼'}</span>
+          </div>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="text-right min-w-0">
+              <div className="text-xs text-gray-400">Calisthenics اليوم</div>
+              <div className="text-sm font-semibold text-white truncate">{s.title || 'جلسة Calisthenics'}</div>
+            </div>
+            <span className="text-2xl flex-shrink-0">🤸</span>
+          </div>
+        </div>
+      </button>
+
+      {open && (
+        <div className="border-t border-gray-800 p-4 space-y-3">
+          {s.coachNote && <div className="bg-emerald-900/20 border border-emerald-700/30 rounded-xl p-3 text-xs text-emerald-300">💬 {s.coachNote}</div>}
+
+          {/* Section tabs */}
+          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+            {tabs.map(t => (
+              <button key={t.key} onClick={() => setTab(t.key)}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${tab === t.key ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Warmup */}
+          {(tab === 'warmup' || tab === 'all') && s.warmup?.exercises?.length > 0 && (
+            <div>
+              {tab === 'all' && <h4 className="text-xs font-semibold text-yellow-400 mb-2">🔆 الإحماء — {s.warmup.duration} د</h4>}
+              <div className="space-y-1.5">
+                {s.warmup.exercises.map((ex: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between bg-gray-800/60 rounded-xl px-3 py-2.5">
+                    <YtBtn nameEn={ex.nameEn || ex.name} sport="calisthenics" />
+                    <div className="text-right min-w-0">
+                      <span className="text-sm text-white">{ex.name}</span>
+                      <span className="text-xs text-gray-400 mr-2">{ex.sets}×{ex.reps}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Skill Work */}
+          {(tab === 'skill' || tab === 'all') && s.skillWork?.exercises?.length > 0 && (
+            <div>
+              {tab === 'all' && <h4 className="text-xs font-semibold text-purple-400 mb-2">🤸 {s.skillWork.title || 'مهارات'} — {s.skillWork.duration} د</h4>}
+              <div className="space-y-2">
+                {s.skillWork.exercises.map((ex: any, i: number) => (
+                  <div key={i} className="bg-gray-800/60 rounded-xl p-3 border border-purple-900/30">
+                    <div className="flex items-center justify-between mb-1">
+                      <YtBtn nameEn={ex.nameEn || ex.name} sport="calisthenics" />
+                      <div className="font-semibold text-white text-sm">{ex.name}</div>
+                    </div>
+                    {ex.regression  && <p className="text-xs text-blue-300 text-right">⬇️ مبسّط: {ex.regression}</p>}
+                    {ex.progression && <p className="text-xs text-green-300 text-right">⬆️ متقدم: {ex.progression}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Main Work */}
+          {(tab === 'main' || tab === 'all') && s.mainWork?.exercises?.length > 0 && (
+            <div>
+              {tab === 'all' && <h4 className="text-xs font-semibold text-emerald-400 mb-2">💪 {s.mainWork.title || 'العمل الرئيسي'} — {s.mainWork.duration} د</h4>}
+              <div className="space-y-2">
+                {s.mainWork.exercises.map((ex: any, i: number) => (
+                  <div key={i} className="bg-gray-800/60 rounded-xl p-3 border border-emerald-900/30">
+                    <div className="flex items-center justify-between mb-1">
+                      <YtBtn nameEn={ex.nameEn || ex.name} sport="calisthenics" />
+                      <div className="font-semibold text-white text-sm">{ex.name}</div>
+                    </div>
+                    <div className="flex gap-3 text-xs text-gray-400 justify-end">
+                      {ex.sets && <span>{ex.sets} مج</span>}
+                      {ex.reps && <span>{ex.reps}</span>}
+                      {ex.rest && <span>راحة {ex.rest}</span>}
+                    </div>
+                    {ex.regression  && <p className="text-xs text-blue-300 text-right mt-1">⬇️ {ex.regression}</p>}
+                    {ex.progression && <p className="text-xs text-green-300 text-right mt-1">⬆️ {ex.progression}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Metcon */}
+          {(tab === 'metcon' || tab === 'all') && s.metcon?.exercises?.length > 0 && (
+            <div>
+              {tab === 'all' && <h4 className="text-xs font-semibold text-orange-400 mb-2">🔥 {s.metcon.format} — {s.metcon.duration} د</h4>}
+              <div className="space-y-1.5">
+                {s.metcon.exercises.map((ex: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between bg-gray-800/60 rounded-xl px-3 py-2.5">
+                    <YtBtn nameEn={ex.nameEn || ex.name} sport="calisthenics" />
+                    <div className="text-right">
+                      <span className="text-sm text-white">{ex.name}</span>
+                      <span className="text-xs text-gray-400 mr-2">{ex.reps}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {s.progressionNote && tab === 'all' && (
+            <div className="bg-blue-900/20 border border-blue-700/30 rounded-xl p-3 text-xs text-blue-300">
+              📈 {s.progressionNote}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -220,101 +558,9 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
           {(todayHyrox.length > 0 || todayKettlebell.length > 0 || todayCalisthenics.length > 0) && (
             <div className="space-y-3">
               <h2 className="text-sm font-semibold text-gray-400">📅 تمارين اليوم</h2>
-
-              {/* Hyrox */}
-              <TodaySportCard
-                icon="🏁" label="Hyrox" color="bg-red-900/40 text-red-300" borderColor="border-red-600/50"
-                sessions={todayHyrox}
-                renderDetail={(rec) => {
-                  const s = rec.sessionData || rec;
-                  return (
-                    <div className="space-y-2">
-                      {s.coachNote && <p className="text-xs text-red-300 bg-red-900/20 rounded-lg p-2">💬 {s.coachNote}</p>}
-                      {s.stations?.length > 0 && (
-                        <div className="space-y-1">
-                          <p className="text-xs font-semibold text-gray-400">🏁 المحطات ({s.stations.length})</p>
-                          {s.stations.map((st: any, i: number) => (
-                            <div key={i} className="flex items-center justify-between bg-gray-800/60 rounded-lg px-3 py-2">
-                              <div className="flex items-center gap-2">
-                                <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent((st.nameEn||st.name)+' hyrox tutorial')}`}
-                                  target="_blank" rel="noopener noreferrer" className="text-red-400 text-xs hover:text-red-300">▶</a>
-                              </div>
-                              <div className="text-right">
-                                <span className="text-sm text-white">{st.name}</span>
-                                <span className="text-xs text-gray-500 mr-2">🏃 {st.runBefore} ← {st.target}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {s.totalDuration && <p className="text-xs text-gray-500 text-right">⏱ {s.totalDuration} دقيقة</p>}
-                    </div>
-                  );
-                }}
-              />
-
-              {/* Kettlebell */}
-              <TodaySportCard
-                icon="🔔" label="Kettlebell" color="bg-yellow-900/40 text-yellow-300" borderColor="border-yellow-600/50"
-                sessions={todayKettlebell}
-                renderDetail={(rec) => {
-                  const s = rec.sessionData || rec;
-                  return (
-                    <div className="space-y-2">
-                      {s.coachNote && <p className="text-xs text-yellow-300 bg-yellow-900/20 rounded-lg p-2">💬 {s.coachNote}</p>}
-                      {s.mainWork?.length > 0 && (
-                        <div className="space-y-1">
-                          <p className="text-xs font-semibold text-gray-400">🔔 العمل الرئيسي</p>
-                          {s.mainWork.map((ex: any, i: number) => (
-                            <div key={i} className="flex items-center justify-between bg-gray-800/60 rounded-lg px-3 py-2">
-                              <div className="flex items-center gap-2">
-                                <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent((ex.exercise||ex.exerciseAr)+' kettlebell tutorial')}`}
-                                  target="_blank" rel="noopener noreferrer" className="text-red-400 text-xs hover:text-red-300">▶</a>
-                              </div>
-                              <div className="text-right">
-                                <span className="text-sm text-white">{ex.exerciseAr || ex.exercise}</span>
-                                <span className="text-xs text-gray-500 mr-2">{ex.sets}×{ex.reps} {ex.weight && `· ${ex.weight}`}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                }}
-              />
-
-              {/* Calisthenics */}
-              <TodaySportCard
-                icon="🤸" label="Calisthenics" color="bg-emerald-900/40 text-emerald-300" borderColor="border-emerald-600/50"
-                sessions={todayCalisthenics}
-                renderDetail={(rec) => {
-                  const s = rec.sessionData || rec;
-                  return (
-                    <div className="space-y-2">
-                      {s.coachNote && <p className="text-xs text-emerald-300 bg-emerald-900/20 rounded-lg p-2">💬 {s.coachNote}</p>}
-                      {s.mainWork?.exercises?.length > 0 && (
-                        <div className="space-y-1">
-                          <p className="text-xs font-semibold text-gray-400">💪 العمل الرئيسي</p>
-                          {s.mainWork.exercises.map((ex: any, i: number) => (
-                            <div key={i} className="flex items-center justify-between bg-gray-800/60 rounded-lg px-3 py-2">
-                              <div className="flex items-center gap-2">
-                                <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent((ex.nameEn||ex.name)+' calisthenics tutorial')}`}
-                                  target="_blank" rel="noopener noreferrer" className="text-red-400 text-xs hover:text-red-300">▶</a>
-                              </div>
-                              <div className="text-right">
-                                <span className="text-sm text-white">{ex.name}</span>
-                                <span className="text-xs text-gray-500 mr-2">{ex.sets}×{ex.reps}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {s.totalDuration && <p className="text-xs text-gray-500 text-right">⏱ {s.totalDuration} دقيقة</p>}
-                    </div>
-                  );
-                }}
-              />
+              <HyroxTodayCard sessions={todayHyrox} />
+              <KettlebellTodayCard sessions={todayKettlebell} />
+              <CalisthenicsTodayCard sessions={todayCalisthenics} />
             </div>
           )}
 
