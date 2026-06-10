@@ -36,9 +36,51 @@ const DAYS_AR = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأرب
 const MONTHS_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 const REACTION_EMOJIS = ['💪', '🔥', '😤', '🏆', '💀', '😅', '👊', '🙌'];
 
-export default function DashboardClient({ member, wod, stats }: {
+// ── بطاقة رياضة اليوم ───────────────────────────────────────────────────────
+function TodaySportCard({
+  icon, label, color, borderColor, sessions, renderDetail,
+}: {
+  icon: string; label: string; color: string; borderColor: string;
+  sessions: any[]; renderDetail: (s: any) => React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const active = sessions.length > 0;
+  if (!active) return null;
+  const first = sessions[0];
+  const title = first.sessionData?.title || first.title || label;
+
+  return (
+    <div className={`bg-gray-900 rounded-2xl border overflow-hidden ${open ? borderColor : 'border-gray-800'}`}>
+      <button className="w-full p-4 text-right" onClick={() => setOpen(o => !o)}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className={`text-xs px-2 py-0.5 rounded-full ${color}`}>{sessions.length} جلسة</span>
+            <span className="text-gray-600 text-xs">{open ? '▲' : '▼'}</span>
+          </div>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="text-right min-w-0">
+              <div className="text-xs text-gray-400">{label}</div>
+              <div className="text-sm font-semibold text-white truncate">{title}</div>
+            </div>
+            <span className="text-xl flex-shrink-0">{icon}</span>
+          </div>
+        </div>
+      </button>
+      {open && (
+        <div className="border-t border-gray-800 p-4 space-y-3">
+          {sessions.map((s, i) => <div key={i}>{renderDetail(s)}</div>)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function DashboardClient({ member, wod, todayHyrox = [], todayKettlebell = [], todayCalisthenics = [], stats }: {
   member: any;
   wod: any;
+  todayHyrox?: any[];
+  todayKettlebell?: any[];
+  todayCalisthenics?: any[];
   stats: { totalSessions: number; totalPRs: number; monthSessions: number; checkedInToday: boolean };
 }) {
   const [checkedIn, setCheckedIn] = useState(stats.checkedInToday);
@@ -173,6 +215,108 @@ export default function DashboardClient({ member, wod, stats }: {
               <div className="text-xs text-gray-400 mt-1">إجمالي التمارين</div>
             </div>
           </div>
+
+          {/* تمارين اليوم — الرياضات الأخرى */}
+          {(todayHyrox.length > 0 || todayKettlebell.length > 0 || todayCalisthenics.length > 0) && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold text-gray-400">📅 تمارين اليوم</h2>
+
+              {/* Hyrox */}
+              <TodaySportCard
+                icon="🏁" label="Hyrox" color="bg-red-900/40 text-red-300" borderColor="border-red-600/50"
+                sessions={todayHyrox}
+                renderDetail={(rec) => {
+                  const s = rec.sessionData || rec;
+                  return (
+                    <div className="space-y-2">
+                      {s.coachNote && <p className="text-xs text-red-300 bg-red-900/20 rounded-lg p-2">💬 {s.coachNote}</p>}
+                      {s.stations?.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold text-gray-400">🏁 المحطات ({s.stations.length})</p>
+                          {s.stations.map((st: any, i: number) => (
+                            <div key={i} className="flex items-center justify-between bg-gray-800/60 rounded-lg px-3 py-2">
+                              <div className="flex items-center gap-2">
+                                <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent((st.nameEn||st.name)+' hyrox tutorial')}`}
+                                  target="_blank" rel="noopener noreferrer" className="text-red-400 text-xs hover:text-red-300">▶</a>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-sm text-white">{st.name}</span>
+                                <span className="text-xs text-gray-500 mr-2">🏃 {st.runBefore} ← {st.target}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {s.totalDuration && <p className="text-xs text-gray-500 text-right">⏱ {s.totalDuration} دقيقة</p>}
+                    </div>
+                  );
+                }}
+              />
+
+              {/* Kettlebell */}
+              <TodaySportCard
+                icon="🔔" label="Kettlebell" color="bg-yellow-900/40 text-yellow-300" borderColor="border-yellow-600/50"
+                sessions={todayKettlebell}
+                renderDetail={(rec) => {
+                  const s = rec.sessionData || rec;
+                  return (
+                    <div className="space-y-2">
+                      {s.coachNote && <p className="text-xs text-yellow-300 bg-yellow-900/20 rounded-lg p-2">💬 {s.coachNote}</p>}
+                      {s.mainWork?.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold text-gray-400">🔔 العمل الرئيسي</p>
+                          {s.mainWork.map((ex: any, i: number) => (
+                            <div key={i} className="flex items-center justify-between bg-gray-800/60 rounded-lg px-3 py-2">
+                              <div className="flex items-center gap-2">
+                                <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent((ex.exercise||ex.exerciseAr)+' kettlebell tutorial')}`}
+                                  target="_blank" rel="noopener noreferrer" className="text-red-400 text-xs hover:text-red-300">▶</a>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-sm text-white">{ex.exerciseAr || ex.exercise}</span>
+                                <span className="text-xs text-gray-500 mr-2">{ex.sets}×{ex.reps} {ex.weight && `· ${ex.weight}`}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }}
+              />
+
+              {/* Calisthenics */}
+              <TodaySportCard
+                icon="🤸" label="Calisthenics" color="bg-emerald-900/40 text-emerald-300" borderColor="border-emerald-600/50"
+                sessions={todayCalisthenics}
+                renderDetail={(rec) => {
+                  const s = rec.sessionData || rec;
+                  return (
+                    <div className="space-y-2">
+                      {s.coachNote && <p className="text-xs text-emerald-300 bg-emerald-900/20 rounded-lg p-2">💬 {s.coachNote}</p>}
+                      {s.mainWork?.exercises?.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold text-gray-400">💪 العمل الرئيسي</p>
+                          {s.mainWork.exercises.map((ex: any, i: number) => (
+                            <div key={i} className="flex items-center justify-between bg-gray-800/60 rounded-lg px-3 py-2">
+                              <div className="flex items-center gap-2">
+                                <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent((ex.nameEn||ex.name)+' calisthenics tutorial')}`}
+                                  target="_blank" rel="noopener noreferrer" className="text-red-400 text-xs hover:text-red-300">▶</a>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-sm text-white">{ex.name}</span>
+                                <span className="text-xs text-gray-500 mr-2">{ex.sets}×{ex.reps}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {s.totalDuration && <p className="text-xs text-gray-500 text-right">⏱ {s.totalDuration} دقيقة</p>}
+                    </div>
+                  );
+                }}
+              />
+            </div>
+          )}
 
           {/* WOD */}
           {wod ? (
