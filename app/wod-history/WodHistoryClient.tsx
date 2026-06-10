@@ -50,17 +50,33 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
   const colors   = SPORT_COLORS.crossfit;
 
   function buildText() {
-    const lines = [`🏋️ CrossFit — ${formatDate(wod.date)}`, `📌 ${wod.title || 'تمرين'}`, wod.type ? `⚡ ${wod.type}` : '', wod.aiTheme ? `\n🤖 ${wod.aiTheme}` : ''];
-    for (const sec of [{k:'strength',i:'🏋️',l:'القوة'},{k:'metcon',i:'🔥',l:'الـ WOD'}]) {
+    const lines: string[] = [];
+    lines.push(`🏋️ CrossFit — ${formatDate(wod.date)}`);
+    lines.push(`📌 ${wod.title || 'تمرين'}${wod.type ? ' | ' + wod.type : ''}${wod.duration ? ' | ⏱' + wod.duration + 'د' : ''}`);
+    if (wod.aiTheme) lines.push(`🤖 ${wod.aiTheme}`);
+    if (wod.notes)   lines.push(`📝 ${wod.notes}`);
+    const sections = [
+      { k: 'warmup',   icon: '🔆', label: 'الإحماء' },
+      { k: 'strength', icon: '🏋️', label: 'القوة' },
+      { k: 'metcon',   icon: '🔥', label: 'الـ WOD' },
+      { k: 'cooldown', icon: '🧘', label: 'التهدئة' },
+    ];
+    for (const sec of sections) {
       const items = (wod[sec.k] || []).filter((e: any) => e.exerciseId);
       if (!items.length) continue;
-      lines.push(`\n${sec.i} ${sec.l}:`);
+      lines.push('');
+      lines.push(`${sec.icon} ${sec.label}:`);
       items.forEach((ex: any, i: number) => {
-        lines.push(`  ${i+1}. ${ex.exercise?.nameAr || ex.exerciseId}${ex.reps ? ' — ' + ex.reps : ''}${ex.weight ? ' (' + ex.weight + ')' : ''}`);
+        const name   = ex.exercise?.nameAr || ex.exerciseId;
+        const reps   = ex.reps   ? ` — ${ex.reps}`   : '';
+        const weight = ex.weight ? ` (${ex.weight})`  : '';
+        const sets   = ex.sets   ? ` × ${ex.sets} مج` : '';
+        lines.push(`  ${i + 1}. ${name}${sets}${reps}${weight}`);
       });
     }
-    lines.push('\n💪 مجموعة المطانيخ CrossFit');
-    return lines.filter(Boolean).join('\n');
+    lines.push('');
+    lines.push('💪 مجموعة المطانيخ CrossFit');
+    return lines.join('\n');
   }
 
   async function copyText() {
@@ -157,16 +173,40 @@ function HyroxCard({ rec }: { rec: any }) {
   const colors   = SPORT_COLORS.hyrox;
 
   function buildText() {
-    const lines = [`🏁 Hyrox — ${formatDate(rec.date)}`, `📌 ${s.title || 'جلسة Hyrox'}`];
+    const lines: string[] = [];
+    lines.push(`🏁 Hyrox — ${formatDate(rec.date)}`);
+    lines.push(`📌 ${s.title || 'جلسة Hyrox'}${s.totalDuration ? ' | ⏱' + s.totalDuration + 'د' : ''}`);
     if (s.coachNote) lines.push(`💬 ${s.coachNote}`);
-    if (s.stations?.length) {
-      lines.push('\n🏁 المحطات:');
-      s.stations.forEach((st: any, i: number) => {
-        lines.push(`  ${i+1}. ${st.name}${st.target ? ' — ' + st.target : ''}${st.weight ? ' (' + st.weight + ')' : ''}`);
+    // الإحماء
+    if (s.warmup?.exercises?.length) {
+      lines.push(''); lines.push(`🔆 الإحماء${s.warmup.duration ? ' — ' + s.warmup.duration + 'د' : ''}:`);
+      s.warmup.exercises.forEach((ex: any, i: number) => {
+        lines.push(`  ${i + 1}. ${ex.name}${ex.reps ? ' — ' + ex.reps : ''}${ex.duration ? ' — ' + ex.duration : ''}`);
       });
     }
-    lines.push('\n💪 مجموعة المطانيخ CrossFit');
-    return lines.filter(Boolean).join('\n');
+    // المحطات
+    if (s.stations?.length) {
+      lines.push(''); lines.push('🏁 المحطات:');
+      s.stations.forEach((st: any, i: number) => {
+        const run = st.runBefore ? ` | جري ${st.runBefore}` : '';
+        const w   = st.weight   ? ` | ⚖️ ${st.weight}`      : '';
+        const t   = st.target   ? ` | 🎯 ${st.target}`       : '';
+        lines.push(`  ${i + 1}. ${st.name}${run}${w}${t}`);
+        if (st.tips) lines.push(`     💡 ${st.tips}`);
+      });
+    }
+    // التهدئة
+    if (s.cooldown?.exercises?.length) {
+      lines.push(''); lines.push('🧘 التهدئة:');
+      s.cooldown.exercises.forEach((ex: any, i: number) => {
+        lines.push(`  ${i + 1}. ${ex.name}${ex.duration ? ' — ' + ex.duration : ''}`);
+      });
+    }
+    // التغذية
+    if (s.nutritionBefore) lines.push(`\n🥗 قبل التمرين: ${s.nutritionBefore}`);
+    if (s.nutritionAfter)  lines.push(`🥗 بعد التمرين: ${s.nutritionAfter}`);
+    lines.push(''); lines.push('💪 مجموعة المطانيخ CrossFit');
+    return lines.join('\n');
   }
   async function copyText() {
     await navigator.clipboard.writeText(buildText());
@@ -314,16 +354,52 @@ function KettlebellCard({ rec }: { rec: any }) {
   const colors   = SPORT_COLORS.kettlebell;
 
   function buildText() {
-    const lines = [`🔔 Kettlebell — ${formatDate(rec.date)}`, `📌 ${s.title || 'جلسة Kettlebell'}`];
-    if (s.coachNote) lines.push(`💬 ${s.coachNote}`);
-    if (s.mainWork?.length) {
-      lines.push('\n🔔 العمل الرئيسي:');
-      s.mainWork.forEach((ex: any, i: number) => {
-        lines.push(`  ${i+1}. ${ex.exerciseAr || ex.exercise}${ex.sets ? ' — ' + ex.sets + ' مجموعات' : ''}${ex.reps ? ' × ' + ex.reps : ''}${ex.weight ? ' (' + ex.weight + ')' : ''}`);
+    const lines: string[] = [];
+    lines.push(`🔔 Kettlebell — ${formatDate(rec.date)}`);
+    lines.push(`📌 ${s.title || 'جلسة Kettlebell'}`);
+    if (s.coachNote)       lines.push(`💬 ${s.coachNote}`);
+    if (s.breathingPattern) lines.push(`🌬️ ${s.breathingPattern}`);
+    // الإحماء
+    if (s.warmup?.movements?.length) {
+      lines.push(''); lines.push(`🔆 الإحماء${s.warmup.duration ? ' — ' + s.warmup.duration + 'د' : ''}:`);
+      s.warmup.movements.forEach((m: any, i: number) => {
+        if (typeof m === 'string') {
+          lines.push(`  ${i + 1}. ${m}`);
+        } else {
+          lines.push(`  ${i + 1}. ${m.name}${m.sets ? ' — ' + m.sets + '×' : ''}${m.reps ? m.reps : ''}${m.notes ? ' | ' + m.notes : ''}`);
+        }
       });
     }
-    lines.push('\n💪 مجموعة المطانيخ CrossFit');
-    return lines.filter(Boolean).join('\n');
+    // العمل الرئيسي
+    if (s.mainWork?.length) {
+      lines.push(''); lines.push('🔔 العمل الرئيسي:');
+      s.mainWork.forEach((ex: any, i: number) => {
+        const name  = ex.exerciseAr || ex.exercise;
+        const sets  = ex.sets   ? ` | ${ex.sets} مجموعات` : '';
+        const reps  = ex.reps   ? ` × ${ex.reps}`          : '';
+        const w     = ex.weight ? ` | ⚖️ ${ex.weight}`     : '';
+        const rpm   = ex.targetRPM ? ` | 🔄 ${ex.targetRPM} RPM` : '';
+        const rest  = ex.restBetweenSets ? ` | راحة ${ex.restBetweenSets}` : '';
+        lines.push(`  ${i + 1}. ${name}${sets}${reps}${w}${rpm}${rest}`);
+        if (ex.technique) lines.push(`     💡 ${ex.technique}`);
+      });
+    }
+    // ملاحظات تقنية
+    if (s.techniqueNotes?.length) {
+      lines.push(''); lines.push('💡 ملاحظات تقنية:');
+      s.techniqueNotes.forEach((n: string) => lines.push(`  • ${n}`));
+    }
+    // التهدئة
+    const cooldownArr = Array.isArray(s.cooldown) ? s.cooldown : s.cooldown?.movements;
+    if (cooldownArr?.length) {
+      lines.push(''); lines.push('🧘 التهدئة:');
+      cooldownArr.forEach((ex: any, i: number) => {
+        lines.push(`  ${i + 1}. ${ex.name}${ex.duration ? ' — ' + ex.duration : ''}`);
+      });
+    }
+    if (s.progressionNote) lines.push(`\n📈 ${s.progressionNote}`);
+    lines.push(''); lines.push('💪 مجموعة المطانيخ CrossFit');
+    return lines.join('\n');
   }
   async function copyText() {
     await navigator.clipboard.writeText(buildText());
@@ -455,23 +531,65 @@ function CalisthenicsCard({ rec }: { rec: any }) {
   const colors   = SPORT_COLORS.calisthenics;
 
   function buildText() {
-    const lines = [`🤸 Calisthenics — ${formatDate(rec.date)}`, `📌 ${s.title || 'جلسة Calisthenics'}`];
+    const lines: string[] = [];
+    lines.push(`🤸 Calisthenics — ${formatDate(rec.date)}`);
+    const typeLabel = CALIS_TYPE_LABELS[rec.sessionType] || rec.sessionType || '';
+    lines.push(`📌 ${s.title || 'جلسة Calisthenics'}${typeLabel ? ' | ' + typeLabel : ''}${s.totalDuration ? ' | ⏱' + s.totalDuration + 'د' : ''}`);
     if (s.coachNote) lines.push(`💬 ${s.coachNote}`);
-    const exercises = Array.isArray(s.mainWork) ? s.mainWork : (s.mainWork?.exercises || []);
-    if (exercises.length) {
-      lines.push('\n💪 العمل الرئيسي:');
-      exercises.forEach((ex: any, i: number) => {
-        lines.push(`  ${i+1}. ${ex.name}${ex.sets ? ' — ' + ex.sets + ' مجموعات' : ''}${ex.reps ? ' × ' + ex.reps : ''}`);
+    // الإحماء
+    if (s.warmup?.exercises?.length) {
+      lines.push(''); lines.push(`🔆 الإحماء${s.warmup.duration ? ' — ' + s.warmup.duration + 'د' : ''}:`);
+      s.warmup.exercises.forEach((ex: any, i: number) => {
+        lines.push(`  ${i + 1}. ${ex.name}${ex.sets ? ' — ' + ex.sets + '×' : ''}${ex.reps || ''}${ex.notes ? ' | ' + ex.notes : ''}`);
       });
     }
+    // عمل المهارات
     if (s.skillWork?.exercises?.length) {
-      lines.push('\n🤸 عمل المهارات:');
+      lines.push(''); lines.push(`🤸 ${s.skillWork.title || 'عمل المهارات'}${s.skillWork.duration ? ' — ' + s.skillWork.duration + 'د' : ''}:`);
       s.skillWork.exercises.forEach((ex: any, i: number) => {
-        lines.push(`  ${i+1}. ${ex.name}`);
+        const target = ex.target || ex.hold || '';
+        lines.push(`  ${i + 1}. ${ex.name}${target ? ' — ' + target : ''}${ex.sets ? ' | ' + ex.sets + ' مج' : ''}`);
+        if (ex.regression)  lines.push(`     ⬇️ ${ex.regression}`);
+        if (ex.progression) lines.push(`     ⬆️ ${ex.progression}`);
       });
     }
-    lines.push('\n💪 مجموعة المطانيخ CrossFit');
-    return lines.filter(Boolean).join('\n');
+    // العمل الرئيسي
+    const mainExercises = Array.isArray(s.mainWork) ? s.mainWork : (s.mainWork?.exercises || []);
+    if (mainExercises.length) {
+      const mwTitle = !Array.isArray(s.mainWork) ? (s.mainWork?.title || 'العمل الرئيسي') : 'العمل الرئيسي';
+      const mwDur   = !Array.isArray(s.mainWork) && s.mainWork?.duration ? ' — ' + s.mainWork.duration + 'د' : '';
+      lines.push(''); lines.push(`💪 ${mwTitle}${mwDur}:`);
+      if (!Array.isArray(s.mainWork) && s.mainWork?.format) lines.push(`  📋 ${s.mainWork.format}`);
+      mainExercises.forEach((ex: any, i: number) => {
+        const sets  = ex.sets  ? ` | ${ex.sets} مج`    : '';
+        const reps  = ex.reps  ? ` × ${ex.reps}`        : '';
+        const rest  = ex.rest  ? ` | راحة ${ex.rest}`   : '';
+        const tempo = ex.tempo ? ` | Tempo ${ex.tempo}` : '';
+        lines.push(`  ${i + 1}. ${ex.name}${sets}${reps}${rest}${tempo}`);
+        if (ex.cues)        lines.push(`     💡 ${ex.cues}`);
+        if (ex.regression || ex.scaling?.easier)  lines.push(`     ⬇️ ${ex.regression || ex.scaling?.easier}`);
+        if (ex.progression || ex.scaling?.harder) lines.push(`     ⬆️ ${ex.progression || ex.scaling?.harder}`);
+      });
+    }
+    // الميتكون
+    if (s.metcon?.exercises?.length) {
+      lines.push(''); lines.push(`🔥 ${s.metcon.format || 'الميتكون'}${s.metcon.duration ? ' — ' + s.metcon.duration + 'د' : ''}:`);
+      s.metcon.exercises.forEach((ex: any, i: number) => {
+        lines.push(`  ${i + 1}. ${ex.name}${ex.reps ? ' — ' + ex.reps : ''}`);
+        if (ex.notes) lines.push(`     💡 ${ex.notes}`);
+      });
+    }
+    // التهدئة
+    if (s.cooldown?.stretches?.length) {
+      lines.push(''); lines.push(`🧘 التهدئة${s.cooldown.duration ? ' — ' + s.cooldown.duration + 'د' : ''}:`);
+      s.cooldown.stretches.forEach((st: any, i: number) => {
+        lines.push(`  ${i + 1}. ${st.name}${st.duration ? ' — ' + st.duration : ''}${st.focus ? ' | ' + st.focus : ''}`);
+      });
+    }
+    if (s.nutritionTips)  lines.push(`\n🥗 ${s.nutritionTips}`);
+    if (s.progressionPath) lines.push(`📈 ${s.progressionPath}`);
+    lines.push(''); lines.push('💪 مجموعة المطانيخ CrossFit');
+    return lines.join('\n');
   }
   async function copyText() {
     await navigator.clipboard.writeText(buildText());
