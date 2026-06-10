@@ -460,6 +460,7 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
   const [checkLoading, setCheckLoading] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('metcon');
   const [copied, setCopied] = useState(false);
+  const [sportTab, setSportTab] = useState<'crossfit' | 'hyrox' | 'kettlebell' | 'calisthenics'>('crossfit');
   const [comments, setComments] = useState<any[]>([]);
   const [commentText, setCommentText] = useState('');
   const [commentResult, setCommentResult] = useState('');
@@ -589,18 +590,77 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
             </div>
           </div>
 
-          {/* تمارين اليوم — الرياضات الأخرى */}
-          {(todayHyrox.length > 0 || todayKettlebell.length > 0 || todayCalisthenics.length > 0) && (
+          {/* ══ تمارين اليوم — تبويبات الرياضات ══ */}
+          {(wod || todayHyrox.length > 0 || todayKettlebell.length > 0 || todayCalisthenics.length > 0) && (
             <div className="space-y-3">
               <h2 className="text-sm font-semibold text-gray-400">📅 تمارين اليوم</h2>
-              <HyroxTodayCard sessions={todayHyrox} />
-              <KettlebellTodayCard sessions={todayKettlebell} />
-              <CalisthenicsTodayCard sessions={todayCalisthenics} />
+
+              {/* Sport tabs */}
+              <div className="grid grid-cols-4 gap-1 bg-gray-900 p-1 rounded-2xl border border-gray-800">
+                {([
+                  { id: 'crossfit',     emoji: '🏋️', label: 'CrossFit',     color: 'bg-orange-500',  has: !!wod },
+                  { id: 'hyrox',        emoji: '🏁', label: 'Hyrox',        color: 'bg-red-600',     has: todayHyrox.length > 0 },
+                  { id: 'kettlebell',   emoji: '🔔', label: 'Kettlebell',   color: 'bg-yellow-500',  has: todayKettlebell.length > 0 },
+                  { id: 'calisthenics', emoji: '🤸', label: 'Calisthenics', color: 'bg-emerald-600', has: todayCalisthenics.length > 0 },
+                ] as const).map(t => (
+                  <button key={t.id} onClick={() => setSportTab(t.id)}
+                    className={`relative flex flex-col items-center py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                      sportTab === t.id ? t.color + ' text-white shadow-lg scale-[1.03]' : 'text-gray-500 hover:text-gray-300'
+                    }`}>
+                    <span className="text-lg leading-none">{t.emoji}</span>
+                    <span className="mt-1 text-[10px] hidden sm:block">{t.label}</span>
+                    {t.has && (
+                      <span className={`absolute top-1 left-1 w-2 h-2 rounded-full ${sportTab === t.id ? 'bg-white/60' : 'bg-green-400'}`} />
+                    )}
+                    {!t.has && (
+                      <span className="absolute top-1 left-1 w-2 h-2 rounded-full bg-gray-700" />
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* CrossFit tab — no separate WOD block below */}
+              {sportTab === 'crossfit' && !wod && (
+                <div className="bg-gray-900 rounded-2xl p-8 text-center border border-gray-800">
+                  <div className="text-4xl mb-3">😴</div>
+                  <div className="text-gray-400 font-semibold">لا يوجد تمرين CrossFit لهذا اليوم</div>
+                </div>
+              )}
+
+              {/* Hyrox tab */}
+              {sportTab === 'hyrox' && (
+                todayHyrox.length > 0
+                  ? <HyroxTodayCard sessions={todayHyrox} />
+                  : <div className="bg-gray-900 rounded-2xl p-8 text-center border border-gray-800">
+                      <div className="text-4xl mb-3">🏁</div>
+                      <div className="text-gray-400">لا يوجد جلسة Hyrox لهذا اليوم</div>
+                    </div>
+              )}
+
+              {/* Kettlebell tab */}
+              {sportTab === 'kettlebell' && (
+                todayKettlebell.length > 0
+                  ? <KettlebellTodayCard sessions={todayKettlebell} />
+                  : <div className="bg-gray-900 rounded-2xl p-8 text-center border border-gray-800">
+                      <div className="text-4xl mb-3">🔔</div>
+                      <div className="text-gray-400">لا يوجد جلسة Kettlebell لهذا اليوم</div>
+                    </div>
+              )}
+
+              {/* Calisthenics tab */}
+              {sportTab === 'calisthenics' && (
+                todayCalisthenics.length > 0
+                  ? <CalisthenicsTodayCard sessions={todayCalisthenics} />
+                  : <div className="bg-gray-900 rounded-2xl p-8 text-center border border-gray-800">
+                      <div className="text-4xl mb-3">🤸</div>
+                      <div className="text-gray-400">لا يوجد جلسة Calisthenics لهذا اليوم</div>
+                    </div>
+              )}
             </div>
           )}
 
-          {/* WOD */}
-          {wod ? (
+          {/* WOD — CrossFit (يظهر فقط عند تبويب CrossFit) */}
+          {wod && sportTab === 'crossfit' ? (
             <div className="space-y-4">
               <div className="bg-gradient-to-l from-orange-900/30 to-gray-900 rounded-2xl p-4 border border-orange-800/50">
                 <div className="flex items-center justify-between mb-1">
@@ -848,13 +908,7 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                 )}
               </div>
             </div>
-          ) : (
-            <div className="bg-gray-900 rounded-2xl p-8 text-center border border-gray-800">
-              <div className="text-5xl mb-4">😴</div>
-              <div className="text-gray-400 font-semibold">لا يوجد تمرين لهذا اليوم</div>
-              <div className="text-gray-600 text-sm mt-1">تواصل مع المدير لإضافة WOD</div>
-            </div>
-          )}
+          ) : null}
         </div>
       </main>
     </div>
