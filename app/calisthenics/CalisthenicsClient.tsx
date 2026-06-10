@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 
@@ -167,9 +167,9 @@ export default function CalisthenicsClient({ member }: { member: any }) {
   }
 
   return (
-    <div className="min-h-screen flex overflow-x-hidden">
+    <div className="min-h-dvh flex overflow-x-clip">
       <Navbar member={member}/>
-      <main className="flex-1 lg:mr-56 pb-safe-nav lg:pb-0">
+      <main className="flex-1 lg:mr-56 pb-safe-nav lg:pb-0 overflow-x-clip">
         <div className="max-w-2xl mx-auto px-4 pt-safe pb-6 space-y-6">
 
           {/* ── Header ── */}
@@ -404,3 +404,4 @@ export default function CalisthenicsClient({ member }: { member: any }) {
     </div>
   );
 }
+

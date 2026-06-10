@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState } from 'react';
 import Navbar from '@/components/Navbar';
 
@@ -44,9 +44,9 @@ export default function ProfileClient({ member }: { member: any }) {
   }
 
   return (
-    <div className="min-h-screen flex overflow-x-hidden">
+    <div className="min-h-dvh flex overflow-x-clip">
       <Navbar member={{ ...member, nameAr, avatar }} />
-      <main className="flex-1 lg:mr-56 pb-safe-nav lg:pb-0">
+      <main className="flex-1 lg:mr-56 pb-safe-nav lg:pb-0 overflow-x-clip">
         <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
 
           {/* Header */}
@@ -153,3 +153,4 @@ export default function ProfileClient({ member }: { member: any }) {
     </div>
   );
 }
+
