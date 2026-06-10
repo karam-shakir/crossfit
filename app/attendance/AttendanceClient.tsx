@@ -74,7 +74,7 @@ export default function AttendanceClient({ member }: { member: any }) {
   return (
     <div className="min-h-dvh flex w-full">
       <Navbar member={member} />
-      <main className="flex-1 min-w-0 lg:mr-56 pb-safe-nav lg:pb-0 overflow-hidden">
+      <main className="flex-1 min-w-0 lg:mr-56 pb-safe-nav lg:pb-0 overflow-x-hidden">
         <div className="max-w-2xl mx-auto px-4 pt-safe pb-6 space-y-6">
 
           <h1 className="text-xl font-bold text-white">📅 سجل الحضور</h1>
@@ -160,5 +160,6 @@ export default function AttendanceClient({ member }: { member: any }) {
     </div>
   );
 }
+
 
 

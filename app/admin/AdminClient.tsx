@@ -356,7 +356,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   return (
     <div className="min-h-screen flex">
       <Navbar member={member} />
-      <main className="flex-1 min-w-0 lg:mr-56 pb-safe-nav lg:pb-0 overflow-hidden">
+      <main className="flex-1 min-w-0 lg:mr-56 pb-safe-nav lg:pb-0 overflow-x-hidden">
         <div className="max-w-2xl mx-auto px-4 pt-safe pb-6 space-y-6">
 
           <h1 className="text-xl font-bold text-white">⚙️ لوحة الإدارة</h1>
@@ -1314,5 +1314,6 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
     </div>
   );
 }
+
 
 
