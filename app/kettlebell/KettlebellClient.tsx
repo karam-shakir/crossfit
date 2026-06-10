@@ -148,7 +148,7 @@ export default function KettlebellClient({ member }: { member: any }) {
   }
 
   return (
-    <div className="min-h-dvh flex w-full">
+    <div className="min-h-dvh flex w-full overflow-x-hidden">
       <Navbar member={member} />
       <main className="flex-1 min-w-0 lg:mr-56 pb-safe-nav lg:pb-0 overflow-x-hidden">
         <div className="max-w-2xl mx-auto px-4 pt-safe pb-6 space-y-5">
@@ -412,6 +412,7 @@ export default function KettlebellClient({ member }: { member: any }) {
     </div>
   );
 }
+
 
 
 

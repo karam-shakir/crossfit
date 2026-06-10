@@ -732,7 +732,7 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
   }
 
   return (
-    <div className="min-h-dvh flex w-full">
+    <div className="min-h-dvh flex w-full overflow-x-hidden">
       <Navbar member={member} />
 
       <main className="flex-1 min-w-0 lg:mr-56 pb-safe-nav lg:pb-0 overflow-x-hidden">
@@ -1086,4 +1086,5 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
     </div>
   );
 }
+
 
