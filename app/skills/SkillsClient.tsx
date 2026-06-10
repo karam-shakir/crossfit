@@ -51,7 +51,7 @@ export default function SkillsClient({ member }: { member: any }) {
     setSaving(null);
   }
 
-  const categories = [...new Set(skills.map(s => s.category))];
+  const categories = Array.from(new Set(skills.map((s: any) => s.category)));
   const filtered = skills.filter(s => s.category === activeCategory);
 
   // Stats

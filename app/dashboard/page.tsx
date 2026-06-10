@@ -14,7 +14,8 @@ export default async function DashboardPage() {
   const member = await getMemberById(session.id);
   if (!member) redirect('/login');
 
-  const today = new Date().toISOString().split('T')[0];
+  const today     = new Date().toISOString().split('T')[0];
+  const thisMonth = today.slice(0, 7);
 
   const [exercises, rawWod, logs, prs, attendance, allHyrox, allKettlebell, allCalisthenics] = await Promise.all([
     getExercises(),
@@ -28,13 +29,13 @@ export default async function DashboardPage() {
   ]);
 
   // جلسات اليوم فقط لكل رياضة
-  const todayHyrox       = (allHyrox       || []).filter((s: any) => s.date === today);
-  const todayKettlebell  = (allKettlebell  || []).filter((s: any) => s.date === today);
-  const todayCalisthenics= (allCalisthenics|| []).filter((s: any) => s.date === today);
+  const todayHyrox        = (allHyrox        || []).filter((s: any) => s.date === today);
+  const todayKettlebell   = (allKettlebell   || []).filter((s: any) => s.date === today);
+  const todayCalisthenics = (allCalisthenics || []).filter((s: any) => s.date === today);
 
   const enrich = (list: any[] | undefined) => (list || []).map(item => ({
     ...item,
-    exercise: exercises.find((e: any) => e.id === item.exerciseId)
+    exercise: exercises.find((e: any) => e.id === item.exerciseId),
   }));
 
   const wod = rawWod ? {
@@ -44,9 +45,6 @@ export default async function DashboardPage() {
     metcon:   enrich(rawWod.metcon),
     cooldown: enrich(rawWod.cooldown),
   } : null;
-
-  const today     = new Date().toISOString().split('T')[0];
-  const thisMonth = today.slice(0, 7);
 
   const monthAttendance = (attendance || []).filter((a: any) => a.date.startsWith(thisMonth));
   const checkedInToday  = (attendance || []).some((a: any) => a.date === today);

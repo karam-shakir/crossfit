@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   const record = {
     id: randomUUID(),
     memberId: session.id,
-    memberName: session.name || '',
+    memberName: (session as any).nameAr || '',
     date: date || new Date().toISOString().split('T')[0],
     sessionType,
     difficulty,
