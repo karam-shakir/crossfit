@@ -124,11 +124,11 @@ function HyroxTodayCard({ sessions }: { sessions: any[] }) {
           {/* أزرار المشاركة */}
           <div className="flex gap-2">
             <button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(buildText())}`, '_blank')}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-green-700 hover:bg-green-600 text-white text-xs font-semibold transition-colors">
+              className="tap-scale flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-green-700 hover:bg-green-600 text-white text-sm font-semibold transition-colors">
               📲 واتساب
             </button>
             <button onClick={copyText}
-              className="px-3 py-2 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-xs font-semibold transition-colors">
+              className="tap-scale px-4 py-2.5 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold transition-colors min-w-[72px]">
               {copied ? '✅' : '📋'} نسخ
             </button>
           </div>
@@ -296,11 +296,11 @@ function KettlebellTodayCard({ sessions }: { sessions: any[] }) {
           {/* أزرار المشاركة */}
           <div className="flex gap-2">
             <button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(buildText())}`, '_blank')}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-green-700 hover:bg-green-600 text-white text-xs font-semibold transition-colors">
+              className="tap-scale flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-green-700 hover:bg-green-600 text-white text-sm font-semibold transition-colors">
               📲 واتساب
             </button>
             <button onClick={copyText}
-              className="px-3 py-2 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-xs font-semibold transition-colors">
+              className="tap-scale px-4 py-2.5 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold transition-colors min-w-[72px]">
               {copied ? '✅' : '📋'} نسخ
             </button>
           </div>
@@ -499,11 +499,11 @@ function CalisthenicsTodayCard({ sessions }: { sessions: any[] }) {
           {/* أزرار المشاركة */}
           <div className="flex gap-2">
             <button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(buildText())}`, '_blank')}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-green-700 hover:bg-green-600 text-white text-xs font-semibold transition-colors">
+              className="tap-scale flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-green-700 hover:bg-green-600 text-white text-sm font-semibold transition-colors">
               📲 واتساب
             </button>
             <button onClick={copyText}
-              className="px-3 py-2 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-xs font-semibold transition-colors">
+              className="tap-scale px-4 py-2.5 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold transition-colors min-w-[72px]">
               {copied ? '✅' : '📋'} نسخ
             </button>
           </div>
@@ -732,39 +732,52 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
   }
 
   return (
-    <div className="min-h-screen flex overflow-x-hidden">
+    <div className="min-h-dvh flex overflow-x-clip">
       <Navbar member={member} />
-      <main className="flex-1 lg:mr-56 pb-safe-nav lg:pb-0">
-        <div className="max-w-2xl mx-auto px-4 pt-safe pb-6 space-y-6">
 
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-gray-400 text-sm">{dateStr}</div>
-              <h1 className="text-xl font-bold text-white mt-1">أهلاً {member.nameAr} {member.avatar}</h1>
+      <main className="flex-1 lg:mr-56 overflow-x-clip">
+
+        {/* ══ هيدر ثابت — يشبه تطبيقات الجوال ══════════════════════════ */}
+        <div className="sticky top-0 z-30 bg-gray-950/95 backdrop-blur-md border-b border-gray-800/60 px-4 pt-safe pb-3">
+          <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[11px] text-gray-500 font-medium tracking-wide">{dateStr}</div>
+              <h1 className="text-lg font-bold text-white leading-tight truncate">
+                أهلاً {member.nameAr} {member.avatar}
+              </h1>
             </div>
             <button onClick={checkIn} disabled={checkedIn || checkLoading}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-                checkedIn ? 'bg-green-800 text-green-300 cursor-default' : 'bg-orange-500 hover:bg-orange-400 text-white'
+              className={`tap-scale flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                checkedIn
+                  ? 'bg-green-900/60 text-green-400 border border-green-800'
+                  : 'bg-orange-500 hover:bg-orange-400 text-white shadow-lg shadow-orange-500/30'
               }`}>
-              {checkedIn ? '✅ حضرت اليوم' : checkLoading ? '...' : '📅 سجّل حضور'}
+              {checkedIn
+                ? <><span className="text-base">✅</span><span className="text-xs">حضرت</span></>
+                : checkLoading
+                  ? <span className="text-xs">...</span>
+                  : <><span className="text-base">📅</span><span className="text-xs">سجّل حضور</span></>
+              }
             </button>
           </div>
+        </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800">
-              <div className="text-2xl font-bold text-orange-400">{stats.monthSessions}</div>
-              <div className="text-xs text-gray-400 mt-1">تمرين هذا الشهر</div>
-            </div>
-            <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800">
-              <div className="text-2xl font-bold text-yellow-400">{stats.totalPRs}</div>
-              <div className="text-xs text-gray-400 mt-1">رقم شخصي</div>
-            </div>
-            <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800">
-              <div className="text-2xl font-bold text-blue-400">{stats.totalSessions}</div>
-              <div className="text-xs text-gray-400 mt-1">إجمالي التمارين</div>
-            </div>
+        {/* ══ المحتوى القابل للتمرير ═══════════════════════════════════ */}
+        <div className="max-w-2xl mx-auto px-4 pb-safe-nav lg:pb-6 pt-4 space-y-4">
+
+          {/* Stats — شريط إحصائيات بشكل app */}
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { val: stats.monthSessions, label: 'هذا الشهر', color: 'text-orange-400', icon: '🔥' },
+              { val: stats.totalPRs,      label: 'رقم شخصي',  color: 'text-yellow-400', icon: '🏆' },
+              { val: stats.totalSessions, label: 'إجمالي',     color: 'text-blue-400',   icon: '📊' },
+            ].map((s, i) => (
+              <div key={i} className="bg-gray-900 rounded-2xl p-3 text-center border border-gray-800/80">
+                <div className="text-base mb-0.5">{s.icon}</div>
+                <div className={`text-xl font-bold ${s.color}`}>{s.val}</div>
+                <div className="text-[10px] text-gray-500 mt-0.5">{s.label}</div>
+              </div>
+            ))}
           </div>
 
           {/* ══ تمارين اليوم — تبويبات الرياضات ══ */}
@@ -781,11 +794,11 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                   { id: 'calisthenics', emoji: '🤸', label: 'Calisthenics', color: 'bg-emerald-600', has: todayCalisthenics.length > 0 },
                 ] as const).map(t => (
                   <button key={t.id} onClick={() => setSportTab(t.id)}
-                    className={`relative flex flex-col items-center py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                      sportTab === t.id ? t.color + ' text-white shadow-lg scale-[1.03]' : 'text-gray-500 hover:text-gray-300'
+                    className={`tap-scale relative flex flex-col items-center py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                      sportTab === t.id ? t.color + ' text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'
                     }`}>
-                    <span className="text-lg leading-none">{t.emoji}</span>
-                    <span className="mt-1 text-[10px] hidden sm:block">{t.label}</span>
+                    <span className="text-xl leading-none">{t.emoji}</span>
+                    <span className="mt-1 text-[10px] block">{t.label}</span>
                     {t.has && (
                       <span className={`absolute top-1 left-1 w-2 h-2 rounded-full ${sportTab === t.id ? 'bg-white/60' : 'bg-green-400'}`} />
                     )}
