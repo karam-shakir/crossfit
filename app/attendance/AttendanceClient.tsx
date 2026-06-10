@@ -1,6 +1,7 @@
 ﻿'use client';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const DAYS = ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س'];
 const MONTHS_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
@@ -71,6 +72,19 @@ export default function AttendanceClient({ member }: { member: any }) {
     else if (i > 0) break;
   }
 
+  // بيانات آخر 6 أشهر للرسم البياني
+  const last6Months = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - (5 - i));
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    const key = `${y}-${String(m + 1).padStart(2, '0')}`;
+    const count = records.filter(r => r.startsWith(key)).length;
+    return { month: MONTHS_AR[m].slice(0, 3), count, isCurrent: i === 5 };
+  });
+
+  const maxCount = Math.max(...last6Months.map(m => m.count), 1);
+
   return (
     <div className="min-h-dvh flex w-full overflow-x-hidden">
       <Navbar member={member} />
@@ -104,6 +118,37 @@ export default function AttendanceClient({ member }: { member: any }) {
               <p className="text-sm text-green-400">{msg}</p>
             )}
           </div>
+
+          {/* رسم بياني — آخر 6 أشهر */}
+          {!loading && records.length > 0 && (
+            <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
+              <h2 className="text-sm font-semibold text-gray-300 mb-4">📊 الحضور — آخر 6 أشهر</h2>
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={last6Months} margin={{ top: 4, right: 4, left: -24, bottom: 0 }} barCategoryGap="30%">
+                  <XAxis dataKey="month" tick={{ fill: '#9ca3af', fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                    content={({ active, payload, label }) => active && payload?.length ? (
+                      <div className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-xs shadow-xl">
+                        <div className="text-gray-400">{label}</div>
+                        <div className="text-orange-400 font-bold text-sm">{payload[0].value} يوم</div>
+                      </div>
+                    ) : null}
+                  />
+                  <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                    {last6Months.map((entry, i) => (
+                      <Cell key={i} fill={entry.isCurrent ? '#f97316' : entry.count >= maxCount * 0.7 ? '#fb923c' : '#374151'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="flex justify-between text-xs text-gray-600 mt-1 px-1">
+                <span>أقل شهر: {Math.min(...last6Months.map(m => m.count))} يوم</span>
+                <span>أفضل شهر: {maxCount} يوم</span>
+              </div>
+            </div>
+          )}
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3">

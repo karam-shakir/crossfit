@@ -2,6 +2,30 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import ExerciseCard from '@/components/ExerciseCard';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+
+// تحويل نتيجة نصية إلى رقم للرسم البياني
+function parseResult(result: string): number | null {
+  if (!result) return null;
+  // صيغة الوقت: 3:45 أو 12:34
+  const timeMatch = result.match(/^(\d+):(\d+)$/);
+  if (timeMatch) return parseInt(timeMatch[1]) * 60 + parseInt(timeMatch[2]);
+  // أرقام فقط
+  const numMatch = result.match(/^(\d+(\.\d+)?)/);
+  if (numMatch) return parseFloat(numMatch[1]);
+  return null;
+}
+
+function isTimeResult(results: any[]): boolean {
+  return results.some(r => /^\d+:\d+$/.test(r.result));
+}
+
+function formatVal(val: number, isTime: boolean): string {
+  if (!isTime) return String(val);
+  const m = Math.floor(val / 60);
+  const s = val % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
 
 export default function BenchmarksClient({ member }: { member: any }) {
   const [benchmarks, setBenchmarks] = useState<any[]>([]);
@@ -152,19 +176,61 @@ export default function BenchmarksClient({ member }: { member: any }) {
                       </div>
                     )}
 
-                    {selected.myResults?.length > 0 ? (
-                      <div className="space-y-2">
-                        {[...selected.myResults].reverse().map((r: any) => (
-                          <div key={r.id} className="flex items-center justify-between bg-gray-800 rounded-xl px-3 py-2">
-                            <div>
-                              <span className="font-mono text-orange-400 font-semibold">{r.result}</span>
-                              {r.rxd && <span className="text-xs text-green-400 mr-2">Rx'd</span>}
+                    {selected.myResults?.length > 0 ? (() => {
+                      const results = [...selected.myResults].sort((a: any, b: any) => a.date.localeCompare(b.date));
+                      const parsed = results.map((r: any) => ({ ...r, numVal: parseResult(r.result) })).filter((r: any) => r.numVal !== null);
+                      const isTime = isTimeResult(results);
+                      const bestVal = isTime
+                        ? Math.min(...parsed.map((r: any) => r.numVal))
+                        : Math.max(...parsed.map((r: any) => r.numVal));
+
+                      return (
+                        <>
+                          {/* رسم بياني تطور الأداء */}
+                          {parsed.length >= 2 && (
+                            <div className="bg-gray-800/60 rounded-xl p-3 mb-3">
+                              <div className="text-xs text-gray-400 mb-2">
+                                📈 تطور الأداء {isTime ? '(أقل وقت = أفضل)' : '(أعلى = أفضل)'}
+                              </div>
+                              <ResponsiveContainer width="100%" height={140}>
+                                <LineChart data={parsed.map((r: any) => ({ date: r.date.slice(5), value: r.numVal, result: r.result }))}
+                                  margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                                  <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 9 }} tickLine={false} axisLine={false} />
+                                  <YAxis tick={{ fill: '#6b7280', fontSize: 9 }} tickLine={false} axisLine={false}
+                                    domain={['auto', 'auto']} tickFormatter={v => formatVal(v, isTime)} />
+                                  <Tooltip content={({ active, payload }) => active && payload?.length ? (
+                                    <div className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-xs shadow-xl">
+                                      <div className="text-orange-400 font-bold">{payload[0]?.payload?.result}</div>
+                                      {payload[0]?.payload?.result === formatVal(bestVal, isTime) && (
+                                        <div className="text-green-400 text-xs">🏆 أفضل نتيجة</div>
+                                      )}
+                                    </div>
+                                  ) : null} />
+                                  <ReferenceLine y={bestVal} stroke="#22c55e" strokeDasharray="4 2" strokeWidth={1.5} label={{ value: '🏆', position: 'right', fontSize: 10 }} />
+                                  <Line type="monotone" dataKey="value" stroke="#f97316" strokeWidth={2.5}
+                                    dot={{ fill: '#f97316', r: 4, strokeWidth: 2, stroke: '#1f2937' }}
+                                    activeDot={{ r: 6 }} />
+                                </LineChart>
+                              </ResponsiveContainer>
                             </div>
-                            <span className="text-xs text-gray-500">{r.date}</span>
+                          )}
+
+                          {/* قائمة النتائج */}
+                          <div className="space-y-2">
+                            {[...selected.myResults].reverse().map((r: any) => (
+                              <div key={r.id} className="flex items-center justify-between bg-gray-800 rounded-xl px-3 py-2">
+                                <div>
+                                  <span className="font-mono text-orange-400 font-semibold">{r.result}</span>
+                                  {r.rxd && <span className="text-xs text-green-400 mr-2">Rx'd</span>}
+                                </div>
+                                <span className="text-xs text-gray-500">{r.date}</span>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    ) : (
+                        </>
+                      );
+                    })() : (
                       <div className="text-sm text-gray-500 text-center py-4">لم تُسجَّل نتيجة بعد</div>
                     )}
                   </div>

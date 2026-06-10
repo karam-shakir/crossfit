@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import ExerciseCard from '@/components/ExerciseCard';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const YOUTUBE_LINKS: Record<string, string> = {
   'back-squat':       'https://www.youtube.com/results?search_query=back+squat+crossfit+tutorial',
@@ -638,6 +639,23 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
   const [activeSection, setActiveSection] = useState<string>('metcon');
   const [copied, setCopied] = useState(false);
   const [sportTab, setSportTab] = useState<'crossfit' | 'hyrox' | 'kettlebell' | 'calisthenics'>('crossfit');
+  const [weeklyActivity, setWeeklyActivity] = useState<{ day: string; count: number; isToday: boolean }[]>([]);
+
+  // جلب نشاط آخر 7 أيام
+  useEffect(() => {
+    fetch('/api/attendance').then(r => r.json()).then((data: any[]) => {
+      const records = new Set(Array.isArray(data) ? data.map((r: any) => r.date) : []);
+      const today = new Date();
+      const DAYS_SHORT = ['أحد', 'إث', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت'];
+      const week = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(today);
+        d.setDate(today.getDate() - (6 - i));
+        const dateStr = d.toISOString().split('T')[0];
+        return { day: DAYS_SHORT[d.getDay()], count: records.has(dateStr) ? 1 : 0, isToday: i === 6 };
+      });
+      setWeeklyActivity(week);
+    }).catch(() => {});
+  }, []);
   const [comments, setComments] = useState<any[]>([]);
   const [commentText, setCommentText] = useState('');
   const [commentResult, setCommentResult] = useState('');
@@ -766,6 +784,30 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
               </div>
             ))}
           </div>
+
+          {/* نشاط آخر 7 أيام */}
+          {weeklyActivity.length > 0 && (
+            <div className="bg-gray-900 rounded-2xl border border-gray-800/80 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-gray-400">📈 نشاط آخر 7 أيام</span>
+                <span className="text-xs text-orange-400 font-bold">
+                  {weeklyActivity.filter(d => d.count > 0).length} / 7 أيام
+                </span>
+              </div>
+              <div className="flex items-end justify-between gap-1 h-10">
+                {weeklyActivity.map((d, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <div className={`w-full rounded-sm transition-all ${
+                      d.count > 0
+                        ? d.isToday ? 'bg-orange-500 h-8' : 'bg-orange-400/70 h-8'
+                        : d.isToday ? 'bg-gray-700 border border-orange-500/40 h-8' : 'bg-gray-800 h-3'
+                    }`} />
+                    <span className={`text-[8px] ${d.isToday ? 'text-orange-400 font-bold' : 'text-gray-600'}`}>{d.day}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* ══ تمارين اليوم — تبويبات الرياضات ══ */}
           {(wod || todayHyrox.length > 0 || todayKettlebell.length > 0 || todayCalisthenics.length > 0) && (

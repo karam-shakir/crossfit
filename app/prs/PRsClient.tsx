@@ -1,6 +1,10 @@
 ﻿'use client';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, ReferenceLine,
+} from 'recharts';
 
 const UNITS = [
   { value: 'kg', label: 'كيلو (وزن)' },
@@ -41,6 +45,19 @@ export default function PRsClient({ member, exercises }: { member: any; exercise
     if (!confirm('حذف هذا الرقم؟')) return;
     await fetch(`/api/prs?id=${id}`, { method: 'DELETE' });
     setPRs(prev => prev.filter(p => p.id !== id));
+  }
+
+  const [expandedChart, setExpandedChart] = useState<string | null>(null);
+
+  // رسم بياني مخصص للـ tooltip
+  function CustomTooltip({ active, payload, label }: any) {
+    if (!active || !payload?.length) return null;
+    return (
+      <div className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-xs shadow-xl">
+        <div className="text-gray-400 mb-1">{label}</div>
+        <div className="text-orange-400 font-bold text-sm">{payload[0]?.value} {payload[0]?.payload?.unit}</div>
+      </div>
+    );
   }
 
   // Group PRs by exercise, keep best per exercise
@@ -167,12 +184,61 @@ export default function PRsClient({ member, exercises }: { member: any; exercise
                   </div>
 
                   {pr.history?.length > 1 && (
-                    <div className="border-t border-gray-800 px-4 py-2 flex gap-2 overflow-x-auto scrollbar-hide">
-                      {pr.history.slice(0, 5).map((h: any, i: number) => (
-                        <div key={h.id} className={`flex-shrink-0 text-xs px-2 py-1 rounded-lg ${i === 0 ? 'bg-orange-500/20 text-orange-300 border border-orange-700' : 'bg-gray-800 text-gray-400'}`}>
-                          {h.value} {h.unit} <span className="text-gray-600">— {h.date}</span>
+                    <div className="border-t border-gray-800">
+                      {/* زر تبديل عرض الرسم */}
+                      <button
+                        onClick={() => setExpandedChart(expandedChart === pr.id ? null : pr.id)}
+                        className="w-full px-4 py-2 text-xs text-gray-500 hover:text-orange-400 flex items-center justify-center gap-2 transition-colors">
+                        {expandedChart === pr.id ? '▲ إخفاء الرسم البياني' : `📈 عرض التطور (${pr.history.length} تسجيل)`}
+                      </button>
+
+                      {/* رسم بياني لتطور الرقم */}
+                      {expandedChart === pr.id && (() => {
+                        const chartData = [...pr.history]
+                          .sort((a: any, b: any) => a.date.localeCompare(b.date))
+                          .map((h: any) => ({
+                            date: h.date.slice(5),  // MM-DD
+                            value: h.value,
+                            unit: pr.unit === 'kg' ? 'كجم' : pr.unit === 'min' ? 'د' : pr.unit === 'sec' ? 'ث' : 'تك',
+                          }));
+                        const bestVal = pr.unit === 'min' || pr.unit === 'sec'
+                          ? Math.min(...chartData.map((d: any) => d.value))
+                          : Math.max(...chartData.map((d: any) => d.value));
+
+                        return (
+                          <div className="px-2 pb-3 card-open">
+                            <ResponsiveContainer width="100%" height={160}>
+                              <LineChart data={chartData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                                <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 10 }} tickLine={false} axisLine={false} />
+                                <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} tickLine={false} axisLine={false}
+                                  domain={['auto', 'auto']} />
+                                <Tooltip content={<CustomTooltip />} />
+                                <ReferenceLine y={bestVal} stroke="#22c55e" strokeDasharray="4 2" strokeWidth={1.5} />
+                                <Line type="monotone" dataKey="value" stroke="#f97316" strokeWidth={2.5}
+                                  dot={{ fill: '#f97316', r: 4, strokeWidth: 2, stroke: '#111827' }}
+                                  activeDot={{ r: 6, fill: '#fb923c' }} />
+                              </LineChart>
+                            </ResponsiveContainer>
+                            <div className="flex justify-between px-2 text-xs text-gray-600 mt-1">
+                              <span>أقدم</span>
+                              <span className="text-green-500">— أفضل رقم</span>
+                              <span>أحدث</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* سجل مختصر */}
+                      {expandedChart !== pr.id && (
+                        <div className="px-4 pb-2 flex gap-2 overflow-x-auto scrollbar-hide">
+                          {pr.history.slice(0, 5).map((h: any, i: number) => (
+                            <div key={h.id} className={`flex-shrink-0 text-xs px-2 py-1 rounded-lg ${i === 0 ? 'bg-orange-500/20 text-orange-300 border border-orange-700' : 'bg-gray-800 text-gray-400'}`}>
+                              {h.value} {h.unit} <span className="text-gray-600">— {h.date}</span>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
                   )}
                 </div>
