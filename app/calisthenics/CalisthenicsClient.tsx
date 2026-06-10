@@ -332,13 +332,22 @@ export default function CalisthenicsClient({ member }: { member: any }) {
                     </Section>
                   )}
 
-                  {/* العمل الرئيسي */}
-                  {session.mainWork?.map((block: any, bi: number) => (
-                    <Section key={bi} title={`${block.block}${block.duration ? ` — ${block.duration} دقيقة` : ''}`} icon="💪" colorClass="border-blue-700/40 bg-blue-900/10">
-                      {block.type && <div className="text-xs text-blue-400 font-medium mb-2 uppercase tracking-wider">{block.type}</div>}
-                      {block.exercises?.map((ex: any, ei: number) => <ExerciseRow key={ei} ex={ex} index={ei}/>)}
-                    </Section>
-                  ))}
+                  {/* العمل الرئيسي — يدعم البنية الجديدة (object) والقديمة (array) */}
+                  {session.mainWork && (
+                    Array.isArray(session.mainWork)
+                      ? session.mainWork.map((block: any, bi: number) => (
+                          <Section key={bi} title={`${block.block || block.title || 'العمل الرئيسي'}${block.duration ? ` — ${block.duration} دقيقة` : ''}`} icon="💪" colorClass="border-blue-700/40 bg-blue-900/10">
+                            {block.type && <div className="text-xs text-blue-400 font-medium mb-2 uppercase tracking-wider">{block.type}</div>}
+                            {(block.exercises || []).map((ex: any, ei: number) => <ExerciseRow key={ei} ex={ex} index={ei}/>)}
+                          </Section>
+                        ))
+                      : (
+                          <Section title={`${(session.mainWork as any).title || 'العمل الرئيسي'}${(session.mainWork as any).duration ? ` — ${(session.mainWork as any).duration} دقيقة` : ''}`} icon="💪" colorClass="border-blue-700/40 bg-blue-900/10">
+                            {(session.mainWork as any).format && <div className="text-xs text-blue-400 font-medium mb-2 uppercase tracking-wider">{(session.mainWork as any).format}</div>}
+                            {((session.mainWork as any).exercises || []).map((ex: any, ei: number) => <ExerciseRow key={ei} ex={ex} index={ei}/>)}
+                          </Section>
+                        )
+                  )}
 
                   {/* الميتكون */}
                   {session.metcon && (

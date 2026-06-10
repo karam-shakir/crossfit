@@ -33,7 +33,7 @@ function buildShareText(s: any, meta: { date: string; eventType: string; difficu
   if (s.mainWork?.length) {
     lines.push(`💪 *العمل الرئيسي:*`);
     s.mainWork.forEach((block: any) => {
-      lines.push(`  🎯 *${block.movement}* — ${block.weight}`);
+      lines.push(`  🎯 *${block.exercise || block.movement}* — ${block.weight}`);
       lines.push(`     ${block.sets} مجموعات × ${block.reps}  |  راحة: ${block.restBetweenSets}`);
       if (block.targetRPM) lines.push(`     الهدف: ${block.targetRPM}`);
       if (block.technique) lines.push(`     💡 ${block.technique}`);
@@ -284,7 +284,7 @@ export default function KettlebellClient({ member }: { member: any }) {
                       {session.mainWork.map((block: any, i: number) => (
                         <div key={i} className="bg-gray-900 rounded-2xl border border-yellow-700/20 p-4">
                           <div className="flex items-center justify-between mb-3">
-                            <div><div className="font-semibold text-white">{block.movement}</div><div className="text-xs text-gray-500">{block.movementEn}</div></div>
+                            <div><div className="font-semibold text-white">{block.exercise || block.movement}</div><div className="text-xs text-gray-500">{block.exerciseAr || block.movementEn}</div></div>
                             <div className="text-right"><div className="text-lg font-bold text-yellow-400">{block.weight}</div><div className="text-xs text-gray-500">الوزن</div></div>
                           </div>
                           <div className="grid grid-cols-3 gap-2">
