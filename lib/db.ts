@@ -370,12 +370,32 @@ export async function saveCalisthenicsSession(session: any): Promise<any> {
   return session;
 }
 
+export async function upsertCalisthenicsSession(session: any): Promise<any> {
+  const db = await getDb();
+  await db.collection('calisthenics_sessions').replaceOne(
+    { id: session.id },
+    session,
+    { upsert: true }
+  );
+  return session;
+}
+
 export async function getMemberCalisthenicsSessions(memberId: string): Promise<any[]> {
   const db = await getDb();
   const docs = await db.collection('calisthenics_sessions')
     .find({ memberId })
-    .sort({ createdAt: -1 })
-    .limit(20)
+    .sort({ date: -1, createdAt: -1 })
+    .limit(50)
+    .toArray();
+  return stripAll(docs);
+}
+
+export async function getAllCalisthenicsSessions(): Promise<any[]> {
+  const db = await getDb();
+  const docs = await db.collection('calisthenics_sessions')
+    .find({})
+    .sort({ date: -1 })
+    .limit(100)
     .toArray();
   return stripAll(docs);
 }
@@ -393,12 +413,32 @@ export async function saveHyroxSession(session: any): Promise<any> {
   return session;
 }
 
+export async function upsertHyroxSession(session: any): Promise<any> {
+  const db = await getDb();
+  await db.collection('hyrox_sessions').replaceOne(
+    { id: session.id },
+    session,
+    { upsert: true }
+  );
+  return session;
+}
+
 export async function getMemberHyroxSessions(memberId: string): Promise<any[]> {
   const db = await getDb();
   const docs = await db.collection('hyrox_sessions')
     .find({ memberId })
-    .sort({ createdAt: -1 })
-    .limit(20)
+    .sort({ date: -1, createdAt: -1 })
+    .limit(50)
+    .toArray();
+  return stripAll(docs);
+}
+
+export async function getAllHyroxSessions(): Promise<any[]> {
+  const db = await getDb();
+  const docs = await db.collection('hyrox_sessions')
+    .find({})
+    .sort({ date: -1 })
+    .limit(100)
     .toArray();
   return stripAll(docs);
 }
@@ -416,12 +456,32 @@ export async function saveKettlebellSession(session: any): Promise<any> {
   return session;
 }
 
+export async function upsertKettlebellSession(session: any): Promise<any> {
+  const db = await getDb();
+  await db.collection('kettlebell_sessions').replaceOne(
+    { id: session.id },
+    session,
+    { upsert: true }
+  );
+  return session;
+}
+
 export async function getMemberKettlebellSessions(memberId: string): Promise<any[]> {
   const db = await getDb();
   const docs = await db.collection('kettlebell_sessions')
     .find({ memberId })
-    .sort({ createdAt: -1 })
-    .limit(20)
+    .sort({ date: -1, createdAt: -1 })
+    .limit(50)
+    .toArray();
+  return stripAll(docs);
+}
+
+export async function getAllKettlebellSessions(): Promise<any[]> {
+  const db = await getDb();
+  const docs = await db.collection('kettlebell_sessions')
+    .find({})
+    .sort({ date: -1 })
+    .limit(100)
     .toArray();
   return stripAll(docs);
 }

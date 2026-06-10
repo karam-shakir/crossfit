@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 
-type AdminTab = 'wod' | 'members' | 'weekly' | 'logs';
+type AdminTab = 'wod' | 'members' | 'weekly' | 'sports' | 'logs';
 
 const WOD_TYPES = ['AMRAP', 'للوقت', 'قوة', 'تدريب'];
 const DIFFICULTY_OPTIONS = ['مبتدئ', 'متوسط', 'متقدم', 'نخبة'];
@@ -53,6 +53,47 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   const [aiFocus, setAiFocus] = useState('');
   const [wodMode, setWodMode] = useState<'crossfit' | 'calisthenics'>('crossfit');
   const [aiGeneratedMode, setAiGeneratedMode] = useState<'crossfit' | 'calisthenics'>('crossfit');
+
+  // ===== Sports Weekly Plans =====
+  type SportsTab = 'hyrox' | 'kettlebell' | 'calisthenics';
+  const [sportsTab, setSportsTab] = useState<SportsTab>('hyrox');
+  const [sportsFromDate, setSportsFromDate] = useState(new Date().toISOString().split('T')[0]);
+  const [sportsDays, setSportsDays] = useState(5);
+  const [sportsDifficulty, setSportsDifficulty] = useState('متوسط');
+  const [sportsLoading, setSportsLoading] = useState(false);
+  const [sportsPlan, setSportsPlan] = useState<any>(null);
+  const [sportsError, setSportsError] = useState('');
+  const [sportsSaving, setSportsSaving] = useState(false);
+  const [sportsSaved, setSportsSaved] = useState(false);
+
+  async function generateSportsPlan() {
+    setSportsLoading(true); setSportsError(''); setSportsPlan(null); setSportsSaved(false);
+    try {
+      const res = await fetch(`/api/${sportsTab}/generate-week`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fromDate: sportsFromDate, days: sportsDays, difficulty: sportsDifficulty }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setSportsError(data.error || 'خطأ في التوليد'); return; }
+      setSportsPlan(data);
+    } catch (e: any) { setSportsError(e.message); }
+    setSportsLoading(false);
+  }
+
+  async function saveSportsPlan() {
+    if (!sportsPlan) return;
+    setSportsSaving(true);
+    try {
+      const res = await fetch(`/api/${sportsTab}/save-week`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessions: sportsPlan.sessions || [] }),
+      });
+      if (res.ok) setSportsSaved(true);
+    } catch {}
+    setSportsSaving(false);
+  }
 
   // Load WOD for selected date
   async function loadWod(date: string) {
@@ -320,21 +361,25 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
 
           <h1 className="text-xl font-bold text-white">⚙️ لوحة الإدارة</h1>
 
-          <div className="flex gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <button onClick={() => setTab('wod')}
-              className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'wod' ? 'bg-orange-500 text-white' : 'bg-gray-800 text-gray-400'}`}>
+              className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'wod' ? 'bg-orange-500 text-white' : 'bg-gray-800 text-gray-400'}`}>
               🔥 WOD اليومي
             </button>
             <button onClick={() => setTab('weekly')}
-              className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'weekly' ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
-              🤖 الخطة الأسبوعية
+              className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'weekly' ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+              📅 خطة CrossFit
+            </button>
+            <button onClick={() => setTab('sports')}
+              className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'sports' ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+              🏋️ خطة الرياضات
             </button>
             <button onClick={() => setTab('members')}
-              className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'members' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+              className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'members' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
               👥 الأعضاء
             </button>
             <button onClick={() => setTab('logs')}
-              className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'logs' ? 'bg-teal-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+              className={`col-span-2 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'logs' ? 'bg-teal-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
               📋 سجل الدخول
             </button>
           </div>
@@ -875,6 +920,110 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                       <p className="text-sm text-gray-300">{weeklyPlan.nutritionNote}</p>
                     </div>
                   )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Sports Weekly Plans */}
+          {tab === 'sports' && (
+            <div className="space-y-4">
+              {/* Sport selector */}
+              <div className="flex gap-2 bg-gray-900 p-1 rounded-xl border border-gray-800">
+                {([
+                  { id: 'hyrox',       label: '🏁 Hyrox',       active: 'bg-red-600' },
+                  { id: 'kettlebell',  label: '🔔 Kettlebell',   active: 'bg-yellow-600' },
+                  { id: 'calisthenics',label: '🤸 Calisthenics', active: 'bg-emerald-600' },
+                ] as const).map(s => (
+                  <button key={s.id}
+                    onClick={() => { setSportsTab(s.id); setSportsPlan(null); setSportsSaved(false); setSportsError(''); }}
+                    className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${sportsTab === s.id ? s.active + ' text-white' : 'text-gray-400 hover:text-white'}`}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Settings */}
+              <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4 space-y-3">
+                <h2 className="font-semibold text-emerald-400 text-sm">⚙️ إعدادات الخطة الأسبوعية</h2>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">من تاريخ</label>
+                    <input type="date" value={sportsFromDate} onChange={e => setSportsFromDate(e.target.value)}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">عدد الأيام</label>
+                    <select value={sportsDays} onChange={e => setSportsDays(Number(e.target.value))}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500">
+                      {[3,4,5,6,7].map(n => <option key={n} value={n}>{n} أيام</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">مستوى الصعوبة</label>
+                  <div className="flex gap-2">
+                    {DIFFICULTY_OPTIONS.map(d => (
+                      <button key={d} onClick={() => setSportsDifficulty(d)}
+                        className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors ${sportsDifficulty === d ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button onClick={generateSportsPlan} disabled={sportsLoading}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                  {sportsLoading ? (
+                    <><span className="animate-spin">⏳</span> جاري التوليد...</>
+                  ) : (
+                    <><span>🤖</span> توليد الخطة الأسبوعية</>
+                  )}
+                </button>
+                {sportsError && <p className="text-red-400 text-xs text-center">{sportsError}</p>}
+              </div>
+
+              {/* Results */}
+              {sportsPlan && (
+                <div className="space-y-3">
+                  {/* Summary */}
+                  {sportsPlan.weekSummary && (
+                    <div className="bg-emerald-900/20 border border-emerald-700/30 rounded-xl p-3 text-xs text-emerald-300">
+                      🎯 {sportsPlan.weekSummary}
+                    </div>
+                  )}
+
+                  {/* Sessions */}
+                  {(sportsPlan.sessions || []).map((s: any, i: number) => (
+                    <div key={i} className={`rounded-xl border p-3 space-y-1 ${s.isRest ? 'border-gray-700 bg-gray-900/40' : 'border-emerald-700/30 bg-emerald-900/10'}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${s.isRest ? 'bg-gray-700 text-gray-400' : 'bg-emerald-700/40 text-emerald-300'}`}>
+                            {s.isRest ? '😴 راحة' : sportsTab === 'hyrox' ? s.sessionType : sportsTab === 'kettlebell' ? s.eventType : s.sessionType}
+                          </span>
+                          <span className="text-xs text-gray-400">{s.dayName}</span>
+                        </div>
+                        <span className="text-xs text-gray-500">{s.date}</span>
+                      </div>
+                      {!s.isRest && (
+                        <>
+                          <div className="text-sm font-semibold text-white">{s.title}</div>
+                          {s.coachNote && <div className="text-xs text-gray-400">💬 {s.coachNote}</div>}
+                          <div className="flex gap-2 flex-wrap mt-1">
+                            {s.difficulty && <span className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded-full">{s.difficulty}</span>}
+                            {s.totalDuration && <span className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded-full">⏱ {s.totalDuration} د</span>}
+                            {s.focus && <span className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded-full">{s.focus}</span>}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Save button */}
+                  <button onClick={saveSportsPlan} disabled={sportsSaving || sportsSaved}
+                    className={`w-full py-3 rounded-xl font-semibold text-sm transition-colors ${sportsSaved ? 'bg-green-600 text-white' : 'bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-50'}`}>
+                    {sportsSaved ? '✅ تم الحفظ — ستظهر في سجل التمارين' : sportsSaving ? '⏳ جاري الحفظ...' : '💾 حفظ الخطة في التقويم'}
+                  </button>
                 </div>
               )}
             </div>

@@ -114,7 +114,7 @@ export default function CalisthenicsClient({ member }: { member: any }) {
     try {
       const res  = await fetch('/api/calisthenics/generate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, difficulty, sessionType, focus, mixCrossfit: sessionType === 'crossfit_mix' }),
+        body: JSON.stringify({ date, difficulty, sessionType, focus }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'خطأ في التوليد');
