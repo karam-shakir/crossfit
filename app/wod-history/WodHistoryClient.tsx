@@ -149,11 +149,29 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
 // ── Hyrox Session Card ───────────────────────────────────────────────────────
 function HyroxCard({ rec }: { rec: any }) {
   const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const s = rec.sessionData || rec;
   const today = new Date().toISOString().split('T')[0];
   const isFuture = rec.date > today;
   const isToday  = rec.date === today;
   const colors   = SPORT_COLORS.hyrox;
+
+  function buildText() {
+    const lines = [`🏁 Hyrox — ${formatDate(rec.date)}`, `📌 ${s.title || 'جلسة Hyrox'}`];
+    if (s.coachNote) lines.push(`💬 ${s.coachNote}`);
+    if (s.stations?.length) {
+      lines.push('\n🏁 المحطات:');
+      s.stations.forEach((st: any, i: number) => {
+        lines.push(`  ${i+1}. ${st.name}${st.target ? ' — ' + st.target : ''}${st.weight ? ' (' + st.weight + ')' : ''}`);
+      });
+    }
+    lines.push('\n💪 مجموعة المطانيخ CrossFit');
+    return lines.filter(Boolean).join('\n');
+  }
+  async function copyText() {
+    await navigator.clipboard.writeText(buildText());
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  }
 
   return (
     <div className={`bg-gray-900 rounded-2xl border overflow-hidden ${isToday ? colors.border : isFuture ? 'border-blue-700/40' : 'border-gray-800'}`}>
@@ -177,6 +195,17 @@ function HyroxCard({ rec }: { rec: any }) {
 
       {open && (
         <div className="border-t border-gray-800 p-4 space-y-3">
+          {/* Share buttons */}
+          <div className="flex gap-2">
+            <button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(buildText())}`, '_blank')}
+              className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl bg-green-700 hover:bg-green-600 text-white text-xs font-semibold">
+              📲 واتساب
+            </button>
+            <button onClick={copyText} className="px-3 py-2 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-xs font-semibold">
+              {copied ? '✅' : '📋'} نسخ
+            </button>
+          </div>
+
           {s.coachNote && <div className="bg-red-900/20 border border-red-700/30 rounded-xl p-3 text-xs text-red-300">💬 {s.coachNote}</div>}
 
           {/* Warmup */}
@@ -277,11 +306,29 @@ function HyroxCard({ rec }: { rec: any }) {
 // ── Kettlebell Session Card ──────────────────────────────────────────────────
 function KettlebellCard({ rec }: { rec: any }) {
   const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const s = rec.sessionData || rec;
   const today = new Date().toISOString().split('T')[0];
   const isFuture = rec.date > today;
   const isToday  = rec.date === today;
   const colors   = SPORT_COLORS.kettlebell;
+
+  function buildText() {
+    const lines = [`🔔 Kettlebell — ${formatDate(rec.date)}`, `📌 ${s.title || 'جلسة Kettlebell'}`];
+    if (s.coachNote) lines.push(`💬 ${s.coachNote}`);
+    if (s.mainWork?.length) {
+      lines.push('\n🔔 العمل الرئيسي:');
+      s.mainWork.forEach((ex: any, i: number) => {
+        lines.push(`  ${i+1}. ${ex.exerciseAr || ex.exercise}${ex.sets ? ' — ' + ex.sets + ' مجموعات' : ''}${ex.reps ? ' × ' + ex.reps : ''}${ex.weight ? ' (' + ex.weight + ')' : ''}`);
+      });
+    }
+    lines.push('\n💪 مجموعة المطانيخ CrossFit');
+    return lines.filter(Boolean).join('\n');
+  }
+  async function copyText() {
+    await navigator.clipboard.writeText(buildText());
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  }
 
   return (
     <div className={`bg-gray-900 rounded-2xl border overflow-hidden ${isToday ? colors.border : isFuture ? 'border-blue-700/40' : 'border-gray-800'}`}>
@@ -305,6 +352,17 @@ function KettlebellCard({ rec }: { rec: any }) {
 
       {open && (
         <div className="border-t border-gray-800 p-4 space-y-3">
+          {/* Share buttons */}
+          <div className="flex gap-2">
+            <button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(buildText())}`, '_blank')}
+              className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl bg-green-700 hover:bg-green-600 text-white text-xs font-semibold">
+              📲 واتساب
+            </button>
+            <button onClick={copyText} className="px-3 py-2 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-xs font-semibold">
+              {copied ? '✅' : '📋'} نسخ
+            </button>
+          </div>
+
           {s.coachNote && <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-xl p-3 text-xs text-yellow-300">💬 {s.coachNote}</div>}
           {s.breathingPattern && <div className="bg-gray-800/50 rounded-xl p-3 text-xs text-gray-300">🌬️ {s.breathingPattern}</div>}
 
@@ -389,11 +447,36 @@ function KettlebellCard({ rec }: { rec: any }) {
 // ── Calisthenics Session Card ────────────────────────────────────────────────
 function CalisthenicsCard({ rec }: { rec: any }) {
   const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const s = rec.sessionData || rec;
   const today = new Date().toISOString().split('T')[0];
   const isFuture = rec.date > today;
   const isToday  = rec.date === today;
   const colors   = SPORT_COLORS.calisthenics;
+
+  function buildText() {
+    const lines = [`🤸 Calisthenics — ${formatDate(rec.date)}`, `📌 ${s.title || 'جلسة Calisthenics'}`];
+    if (s.coachNote) lines.push(`💬 ${s.coachNote}`);
+    const exercises = Array.isArray(s.mainWork) ? s.mainWork : (s.mainWork?.exercises || []);
+    if (exercises.length) {
+      lines.push('\n💪 العمل الرئيسي:');
+      exercises.forEach((ex: any, i: number) => {
+        lines.push(`  ${i+1}. ${ex.name}${ex.sets ? ' — ' + ex.sets + ' مجموعات' : ''}${ex.reps ? ' × ' + ex.reps : ''}`);
+      });
+    }
+    if (s.skillWork?.exercises?.length) {
+      lines.push('\n🤸 عمل المهارات:');
+      s.skillWork.exercises.forEach((ex: any, i: number) => {
+        lines.push(`  ${i+1}. ${ex.name}`);
+      });
+    }
+    lines.push('\n💪 مجموعة المطانيخ CrossFit');
+    return lines.filter(Boolean).join('\n');
+  }
+  async function copyText() {
+    await navigator.clipboard.writeText(buildText());
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  }
 
   return (
     <div className={`bg-gray-900 rounded-2xl border overflow-hidden ${isToday ? colors.border : isFuture ? 'border-blue-700/40' : 'border-gray-800'}`}>
@@ -417,6 +500,17 @@ function CalisthenicsCard({ rec }: { rec: any }) {
 
       {open && (
         <div className="border-t border-gray-800 p-4 space-y-3">
+          {/* Share buttons */}
+          <div className="flex gap-2">
+            <button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(buildText())}`, '_blank')}
+              className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl bg-green-700 hover:bg-green-600 text-white text-xs font-semibold">
+              📲 واتساب
+            </button>
+            <button onClick={copyText} className="px-3 py-2 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-xs font-semibold">
+              {copied ? '✅' : '📋'} نسخ
+            </button>
+          </div>
+
           {s.coachNote && <div className="bg-emerald-900/20 border border-emerald-700/30 rounded-xl p-3 text-xs text-emerald-300">💬 {s.coachNote}</div>}
 
           {/* Warmup */}
