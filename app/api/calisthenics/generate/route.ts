@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
+import { getAllCalisthenicsSessions } from '@/lib/db';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -17,6 +18,22 @@ export async function POST(req: NextRequest) {
     sessionType  = 'strength',
     focus        = 'كامل الجسم',
   } = body;
+
+  // جلب آخر 4 جلسات Calisthenics للسياق التاريخي
+  const allCalis = await getAllCalisthenicsSessions();
+  const recentCalis = allCalis
+    .filter((s: any) => date ? s.date < date : true)
+    .slice(0, 4)
+    .map((s: any) => ({
+      date: s.date,
+      sessionType: s.sessionType || s.sessionData?.sessionType,
+      focus: s.sessionData?.focus || s.focus,
+      title: s.sessionData?.title || s.title,
+      mainExercises: (s.sessionData?.mainWork?.exercises || []).map((e: any) => e.nameEn || e.name).filter(Boolean).slice(0, 4).join(', '),
+    }));
+  const recentContext = recentCalis.length > 0
+    ? `\n**الجلسات السابقة (نوّع التركيز العضلي والنوع — تجنب نفس التمارين مباشرة):**\n${JSON.stringify(recentCalis, null, 2)}\n`
+    : '';
 
   const SESSION_TYPES: Record<string, string> = {
     strength:  'قوة — بناء القوة المطلقة بحركات الوزن الذاتي',
@@ -45,6 +62,7 @@ Muscle-up: Chest-to-Bar Pull-up (5) → Negative MU → Band-Assisted MU → Str
 Front Lever: Tuck (10ث) → Advanced Tuck (8ث) → One Leg (5ث) → Straddle (3ث) → Full (2ث)
 Planche: Frog Stand (30ث) → Tuck Planche (5ث) → Advanced Tuck (3ث) → Straddle (2ث)
 
+${recentContext}
 **الجلسة المطلوبة:**
 - نوع الجلسة: ${sessionType} → ${SESSION_TYPES[sessionType] || sessionType}
 - مستوى الصعوبة: ${difficulty}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
+import { getAllKettlebellSessions } from '@/lib/db';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -18,6 +19,22 @@ export async function POST(req: NextRequest) {
     eventType  = 'biathlon',
     focus      = 'التحمل',
   } = body;
+
+  // جلب آخر 4 جلسات Kettlebell للسياق التاريخي
+  const allKB = await getAllKettlebellSessions();
+  const recentKB = allKB
+    .filter((s: any) => date ? s.date < date : true)
+    .slice(0, 4)
+    .map((s: any) => ({
+      date: s.date,
+      eventType: s.eventType || s.sessionData?.eventType,
+      title: s.sessionData?.title || s.title,
+      exercises: (s.sessionData?.mainWork || []).map((e: any) => e.exercise || e.movement).filter(Boolean).join(', '),
+      focus: s.sessionData?.focus || s.focus,
+    }));
+  const recentContext = recentKB.length > 0
+    ? `\n**الجلسات السابقة (نوّع الحدث والتركيز — تجنب نفس الحدث مرتين متتاليتين):**\n${JSON.stringify(recentKB, null, 2)}\n`
+    : '';
 
   const prompt = `أنت مدرب Kettlebell Athletics محترف ومعتمد من IUKL (الاتحاد الدولي لرياضة الكيتل بيل)، بخبرة في تدريب الرياضيين على المستوى التنافسي. تعرف الفارق بين Girevoy Sport (GS) وHardstyle، وتبرمج بدقة علمية.
 
@@ -46,6 +63,7 @@ export async function POST(req: NextRequest) {
 | CMS | 12-14 | 14-16 | 10-12 |
 | MS (ماستر) | 14+ | 16+ | 12+ |
 
+${recentContext}
 **الجلسة المطلوبة:**
 - نوع الحدث: ${eventType}
 - مستوى الصعوبة: ${difficulty}

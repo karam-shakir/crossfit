@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
+import { getAllCalisthenicsSessions } from '@/lib/db';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -25,6 +26,21 @@ export async function POST(req: NextRequest) {
     d.setDate(d.getDate() + i);
     dates.push({ date: d.toISOString().split('T')[0], dayName: DAY_NAMES[d.getDay()] || '' });
   }
+
+  // جلب آخر 6 جلسات Calisthenics للسياق التاريخي
+  const allCalis = await getAllCalisthenicsSessions();
+  const recentCalis = allCalis
+    .filter((s: any) => s.date < startDate)
+    .slice(0, 6)
+    .map((s: any) => ({
+      date: s.date,
+      sessionType: s.sessionType || s.sessionData?.sessionType,
+      focus: s.sessionData?.focus || s.focus,
+      weeklyFocus: s.sessionData?.weeklyFocus,
+    }));
+  const recentContext = recentCalis.length > 0
+    ? `\n**الأسابيع السابقة — تطوّر على نفس المهارات وتجنب الإجهاد المتراكم:**\n${JSON.stringify(recentCalis, null, 2)}\n`
+    : '';
 
   const prompt = `أنت مدرب Calisthenics محترف متخصص في GST (Gymnastics Strength Training) وتصميم الخطط الأسبوعية الاحترافية. تعرف كيف توزع القوة والمهارات والتحمل عبر الأسبوع لتحقيق تطور مستمر دون إرهاق أو إصابة.
 
@@ -55,6 +71,7 @@ export async function POST(req: NextRequest) {
 جلسة مهارات: ابقَ على نفس الهدف لأسبوعين قبل الرفع
 مهارة جديدة: ابدأ من أسهل regression حتى تُتقن 3×10 ث قبل التطور
 
+${recentContext}
 **الأيام المطلوبة:**
 ${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
 

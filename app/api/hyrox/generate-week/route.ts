@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
+import { getAllHyroxSessions } from '@/lib/db';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -26,6 +27,21 @@ export async function POST(req: NextRequest) {
     dates.push({ date: d.toISOString().split('T')[0], dayName: DAY_NAMES[d.getDay()] || '' });
   }
 
+  // جلب آخر 6 جلسات Hyrox للسياق التاريخي
+  const allHyrox = await getAllHyroxSessions();
+  const recentHyrox = allHyrox
+    .filter((s: any) => s.date < startDate)
+    .slice(0, 6)
+    .map((s: any) => ({
+      date: s.date,
+      sessionType: s.sessionType || s.sessionData?.sessionType,
+      title: s.sessionData?.title || s.title,
+      load: s.sessionData?.weeklyLoad || s.sessionData?.difficulty,
+    }));
+  const recentContext = recentHyrox.length > 0
+    ? `\n**الأسابيع السابقة — تجنب تكرار نفس التوزيع وانتبه للحمل التراكمي:**\n${JSON.stringify(recentHyrox, null, 2)}\n`
+    : '';
+
   const prompt = `أنت مدرب Hyrox محترف متخصص في بناء خطط تدريبية أسبوعية لسباقات Hyrox. تعمل بفلسفة التدريج المنهجي: كل جلسة تبني على السابقة، والأسبوع مُصمَّم كوحدة متكاملة لا مجرد أيام عشوائية.
 
 ═══════════════════════════════
@@ -47,6 +63,7 @@ export async function POST(req: NextRequest) {
 يوم 4: راحة كاملة — تعافٍ إلزامي
 يوم 5: جري متقطع (running) — intervals + zone 2
 
+${recentContext}
 **الأيام المطلوبة:**
 ${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
 

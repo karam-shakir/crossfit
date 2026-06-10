@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
+import { getAllHyroxSessions } from '@/lib/db';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -18,6 +19,21 @@ export async function POST(req: NextRequest) {
     focus        = 'كامل',
     sessionType  = 'full',
   } = body;
+
+  // جلب آخر 4 جلسات Hyrox للسياق التاريخي
+  const allHyrox = await getAllHyroxSessions();
+  const recentHyrox = allHyrox
+    .filter((s: any) => date ? s.date < date : true)
+    .slice(0, 4)
+    .map((s: any) => ({
+      date: s.date,
+      sessionType: s.sessionType || s.sessionData?.sessionType,
+      title: s.sessionData?.title || s.title,
+      stations: (s.sessionData?.stations || []).map((st: any) => st.nameEn || st.name).join(', '),
+    }));
+  const recentContext = recentHyrox.length > 0
+    ? `\n**الجلسات السابقة (تجنب تكرار نفس نوع الجلسة مباشرة — نوّع المحطات والتركيز):**\n${JSON.stringify(recentHyrox, null, 2)}\n`
+    : '';
 
   const prompt = `أنت مدرب Hyrox محترف ومعتمد على المستوى الدولي، بخبرة في تدريب الرياضيين للمشاركة في سباقات Hyrox. تعرف الرياضة من الداخل — أوزان المحطات الرسمية، الأوقات المستهدفة، والاستراتيجية الصحيحة لكل مستوى.
 
@@ -52,6 +68,7 @@ export async function POST(req: NextRequest) {
 - المتوسط: 90-105 دقيقة
 - المبتدئ: 105-120 دقيقة
 
+${recentContext}
 **الجلسة المطلوبة:**
 - نوع الجلسة: ${sessionType}
   * full = محاكاة سباق كامل (8 محطات + 8 جولات جري)

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
+import { getAllKettlebellSessions } from '@/lib/db';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -25,6 +26,21 @@ export async function POST(req: NextRequest) {
     d.setDate(d.getDate() + i);
     dates.push({ date: d.toISOString().split('T')[0], dayName: DAY_NAMES[d.getDay()] || '' });
   }
+
+  // جلب آخر 6 جلسات Kettlebell للسياق التاريخي
+  const allKB = await getAllKettlebellSessions();
+  const recentKB = allKB
+    .filter((s: any) => s.date < startDate)
+    .slice(0, 6)
+    .map((s: any) => ({
+      date: s.date,
+      eventType: s.eventType || s.sessionData?.eventType,
+      focus: s.sessionData?.focus || s.focus,
+      volume: s.sessionData?.weeklyVolume,
+    }));
+  const recentContext = recentKB.length > 0
+    ? `\n**الأسابيع السابقة — نوّع الأحداث وابنِ على الحجم السابق تدريجياً:**\n${JSON.stringify(recentKB, null, 2)}\n`
+    : '';
 
   const prompt = `أنت مدرب Kettlebell Athletics محترف ومعتمد من IUKL، متخصص في بناء الخطط الأسبوعية بأسلوب التدرج المنهجي. تعرف كيف توزع الحجم والشدة عبر الأسبوع لتحقيق أقصى تكيّف مع أدنى خطر إصابة.
 
@@ -56,6 +72,7 @@ export async function POST(req: NextRequest) {
 | متقدم | 20-24كجم | 10-12 | 12-14 | 8-10 |
 | نخبة | 28-32كجم | 12+ | 14+ | 10+ |
 
+${recentContext}
 **الأيام المطلوبة:**
 ${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
 

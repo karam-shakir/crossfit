@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
+import { getWods } from '@/lib/db';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -50,6 +51,22 @@ export async function POST(req: NextRequest) {
   const exerciseList = EXERCISES.map(e => `- ${e.id} (${e.nameEn} / ${e.nameAr}) [${e.category}]`).join('\n');
   const calisExerciseList = CALISTHENICS_EXERCISES.map(e => `- ${e.id} (${e.nameEn} / ${e.nameAr}) [${e.category}]`).join('\n');
 
+  // جلب آخر 5 تمارين CrossFit للسياق التاريخي
+  const allWods = await getWods();
+  const recentWods = allWods
+    .filter(w => date ? w.date < date : true)
+    .slice(0, 5)
+    .map(w => ({
+      date: w.date,
+      title: w.title,
+      type: w.type,
+      strength: (w.strength || []).map((e: any) => e.exerciseId).join(', '),
+      metcon: (w.metcon || []).map((e: any) => e.exerciseId).join(', '),
+    }));
+  const recentContext = recentWods.length > 0
+    ? `\n**التمارين السابقة (تجنب التكرار المباشر):**\n${JSON.stringify(recentWods, null, 2)}\n`
+    : '';
+
   const calisthenicsPrompt = `أنت مدرب Calisthenics محترف بخبرة أكثر من 10 سنوات، متخصص في برمجة تمارين وزن الجسم والجمناستيكس على المستوى التنافسي. أسلوبك يشبه أفضل مدربي Street Workout وGymnastics Strength Training (GST).
 
 ═══════════════════════════════
@@ -65,7 +82,7 @@ ${date ? `- التاريخ: ${date}` : ''}
 
 **التمارين المتاحة (وزن الجسم فقط — استخدم IDs هذه حصراً):**
 ${calisExerciseList}
-
+${recentContext}
 **فلسفة البرمجة الاحترافية:**
 - الإحماء: تنشيط مفصلي تدريجي + تفعيل عضلي (shoulder circles، hip circles، inchworm، scapular pull-ups)
 - القوة / Skill Work: تمارين تقنية مهارية بمجموعات قصيرة عالية الجودة (Strict Pull-up، HSPU، Muscle-up Progression)
@@ -136,7 +153,7 @@ ${date ? `- التاريخ: ${date}` : ''}
 
 **قائمة التمارين المتاحة (استخدم ID المطابق حصراً):**
 ${exerciseList}
-
+${recentContext}
 **فلسفة البرمجة الاحترافية:**
 ✦ الإحماء: تهيئة تدريجية تُفعّل العضلات المستخدمة في الجلسة (dynamic warm-up، mobility، activation)
 ✦ القوة: بناء الأساس — compound movements بنسب 70-85% من الـ 1RM، مجموعات 3-5 × 3-6 تكرارات
