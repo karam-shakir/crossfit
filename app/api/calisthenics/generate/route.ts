@@ -26,88 +26,115 @@ export async function POST(req: NextRequest) {
     hiit:      'HIIT — تدريب متقطع عالي الكثافة بحركات وزن الجسم',
   };
 
-  const prompt = `أنت مدرب Calisthenics محترف بخبرة تزيد عن 10 سنوات، متخصص في برمجة تمارين وزن الجسم والجمناستيكس.
+  const prompt = `أنت مدرب Calisthenics محترف بخبرة أكثر من 10 سنوات، متخصص في Gymnastics Strength Training (GST) وStreet Workout التنافسي. تبرمج بأسلوب علمي يجمع بين تطوير المهارات وبناء القوة الوظيفية وتحسين التحمل.
 
-**معلومات عن Calisthenics:**
-رياضة تعتمد على وزن الجسم فقط لبناء القوة والمهارات والتحمل، تشمل:
-- حركات الضغط العلوي: Push-up, Pike Push-up, Handstand Push-up, Dips
-- حركات السحب: Pull-up, Chin-up, Muscle-up, Front Lever, Back Lever
-- حركات القلب/الجوهر: L-sit, Dragon Flag, Hollow Body, Planche Lean
-- حركات الأرجل: Pistol Squat, Shrimp Squat, Nordic Curl, Jumping Squat
-- المهارات: Handstand, Human Flag, Planche, Front Lever, Back Lever
+═══════════════════════════════
+النادي: مجموعة المطانيخ CrossFit
+═══════════════════════════════
 
-**تفاصيل الجلسة المطلوبة:**
+**Calisthenics — الحركات المتاحة حسب الفئة:**
+▶ الضغط (Push): Push-up, Pike Push-up, Dips, Handstand Push-up, Diamond Push-up, Archer Push-up
+▶ السحب (Pull): Pull-up, Chin-up, Muscle-up, Australian Pull-up, Front Lever Row, Typewriter Pull-up
+▶ الجوهر (Core): L-sit, Tuck L-sit, Dragon Flag, Hollow Body, V-up, Hanging Knee Raise, Toes-to-Bar
+▶ الأرجل (Legs): Pistol Squat, Shrimp Squat, Nordic Curl, Bulgarian Split Squat, Box Jump, Burpee
+▶ المهارات (Skills): Handstand, Planche Lean, Frog Stand, Front Lever, Back Lever, Human Flag
+
+**جدول التدرج للمهارات الرئيسية:**
+Handstand: Wall Hold (30ث) → Kick-up (5 تكرارات) → Free HS (5ث) → HS Walk (5م)
+Muscle-up: Chest-to-Bar Pull-up (5) → Negative MU → Band-Assisted MU → Strict MU → Kipping MU
+Front Lever: Tuck (10ث) → Advanced Tuck (8ث) → One Leg (5ث) → Straddle (3ث) → Full (2ث)
+Planche: Frog Stand (30ث) → Tuck Planche (5ث) → Advanced Tuck (3ث) → Straddle (2ث)
+
+**الجلسة المطلوبة:**
 - نوع الجلسة: ${sessionType} → ${SESSION_TYPES[sessionType] || sessionType}
 - مستوى الصعوبة: ${difficulty}
 - التركيز: ${focus}
 - التاريخ: ${date || 'اليوم'}
 
+**فلسفة الإحماء لـ Calisthenics:**
+- حركات مفصلية (3 دقائق): رقبة، كتف، معصم، ورك، ركبة، كاحل
+- تفعيل عضلي (4 دقائق): Scapular Pull-ups، Wall Slides، Hip Circles، Hollow Body hold خفيف
+- رفع درجة الحرارة (3 دقائق): Jumping Jacks، Inchworm، Bear Crawl
+
 **قواعد البرمجة:**
-- الإحماء: حركات مفصلية + تنشيط عضلي تدريجي
-- العمل الرئيسي: حسب نوع الجلسة
-- كل تمرين يجب أن يحتوي على: نسخة مبسطة للمبتدئين ونسخة متقدمة
-- الراحة: 60-120 ث بين المجموعات للقوة، 30-45 ث للتحمل
-- التقدم: اذكر كيف يتطور التمرين في المرحلة التالية
+- القوة: 4-5 مجموعات × 3-6 تكرارات، راحة 90-120 ث بين المجموعات
+- المهارات: 5-8 مجموعات × إمساك 3-10 ث أو 2-5 تكرارات، راحة 60-90 ث
+- التحمل: تكرارات 10-20، راحة 30-45 ث
+- HIIT: فترات 20-40 ث عمل × 10-20 ث راحة
 
 أرجع JSON بهذا التنسيق بالضبط بدون أي نص خارجه:
 {
-  "title": "عنوان الجلسة بالعربي",
+  "title": "عنوان الجلسة بالعربي — احترافي ومُلهم",
   "sessionType": "${sessionType}",
   "difficulty": "${difficulty}",
   "focus": "${focus}",
   "totalDuration": 60,
-  "equipment": ["المعدات المطلوبة — مثل: عارضة سحب، حلقات، أرضية"],
+  "equipment": ["عارضة سحب", "أرضية مستوية"],
   "warmup": {
     "duration": 10,
     "exercises": [
       {
-        "name": "اسم التمرين بالعربي",
-        "nameEn": "Exercise name",
+        "name": "دوائر الكتف",
+        "nameEn": "Shoulder Circles",
+        "sets": 1,
+        "reps": "20 دورة × كل اتجاه",
+        "rest": "بدون",
+        "notes": "بطيء وواعٍ — تنشيط المفصل الكتفي"
+      },
+      {
+        "name": "Scapular Pull-ups",
+        "nameEn": "Scapular Pull-ups",
         "sets": 2,
-        "reps": "10-15",
+        "reps": "8",
         "rest": "30 ث",
-        "notes": "ملاحظة تقنية"
+        "notes": "فعّل لوح الكتف — الجسم مستقيم"
+      },
+      {
+        "name": "Hollow Body خفيف",
+        "nameEn": "Easy Hollow Body",
+        "sets": 2,
+        "reps": "20 ث",
+        "rest": "30 ث",
+        "notes": "أسفل الظهر ملتصق بالأرض — تنشيط الوسط"
       }
     ]
   },
   "skillWork": {
-    "title": "العمل على المهارة (إذا وجدت)",
-    "duration": 10,
+    "title": "عمل المهارات — تطوير الحركات التقنية",
+    "duration": 12,
     "exercises": [
       {
-        "name": "اسم المهارة",
-        "nameEn": "Skill name",
-        "type": "hold | reps | wall-assisted | band-assisted",
-        "sets": 4,
-        "target": "5-10 ث أو 3-5 تكرارات",
-        "rest": "90 ث",
-        "progression": "الخطوة التالية للتطور",
-        "regression": "نسخة أسهل للمبتدئين"
+        "name": "وقوف على الجدار",
+        "nameEn": "Wall Handstand",
+        "type": "hold",
+        "sets": 5,
+        "target": "20-30 ث",
+        "rest": "60 ث",
+        "progression": "الخطوة التالية: Free Handstand Kick-up",
+        "regression": "Pike Hold بزاوية 90 درجة للمبتدئين"
       }
     ]
   },
-  "mainWork": [
-    {
-      "block": "اسم الكتلة (مثل: تمرين القوة العلوي)",
-      "type": "strength | superset | circuit | amrap | emom",
-      "duration": 15,
-      "exercises": [
-        {
-          "name": "اسم التمرين بالعربي",
-          "nameEn": "Exercise name",
-          "sets": 4,
-          "reps": "6-8",
-          "rest": "90 ث",
-          "tempo": "3-1-2-0",
-          "cues": "نقاط تقنية أساسية",
-          "scaling": {
-            "easier": "نسخة أسهل للمبتدئين",
-            "harder": "نسخة أصعب للمتقدمين"
-          }
+  "mainWork": {
+    "title": "عنوان العمل الرئيسي",
+    "format": "وصف تنسيق الجلسة",
+    "duration": 25,
+    "exercises": [
+      {
+        "name": "عقلة صارمة",
+        "nameEn": "Strict Pull-up",
+        "sets": 4,
+        "reps": "5-8",
+        "rest": "90 ث",
+        "tempo": "2-1-3-0",
+        "cues": "كتفيك مضغوطان لأسفل — صدرك للعارضة — لا تتأرجح",
+        "scaling": {
+          "easier": "Band-Assisted Pull-up أو Australian Pull-up",
+          "harder": "Weighted Pull-up أو Archer Pull-up"
         }
-      ]
-    }
-  ],
+      }
+    ]
+  },
   "metcon": {
     "title": "الميتكون — التكييف القلبي",
     "format": "AMRAP | For Time | EMOM | Rounds",
@@ -119,26 +146,42 @@ export async function POST(req: NextRequest) {
         "name": "اسم التمرين",
         "nameEn": "Exercise name",
         "reps": "10",
-        "notes": ""
+        "notes": "scaling للمبتدئين وللمتقدمين"
       }
     ],
-    "scoreType": "كيف يُحسب النتيجة"
+    "scoreType": "كيف يُحسب النتيجة — جولات أو وقت"
   },
   "cooldown": {
     "duration": 8,
     "stretches": [
       {
-        "name": "اسم التمطيط",
-        "duration": "45 ث",
-        "focus": "المنطقة المستهدفة"
+        "name": "تمطيط الصدر والكتفين",
+        "duration": "60 ث",
+        "focus": "عضلات الضغط — صدر وأمام الكتف"
+      },
+      {
+        "name": "تمطيط الظهر العلوي",
+        "duration": "60 ث",
+        "focus": "عضلات السحب — Lats والظهر العلوي"
+      },
+      {
+        "name": "تمطيط الرسغ والساعد",
+        "duration": "45 ث × كل يد",
+        "focus": "تعافي الرسغ من حمل وزن الجسم"
       }
     ]
   },
-  "weeklyPlacement": "متى تُدرج هذه الجلسة في الأسبوع (مثل: يوم A/B، بعد الراحة)",
-  "progressionPath": "كيف تتطور في الأسابيع القادمة",
-  "nutritionTips": "نصائح غذائية مختصرة لدعم هذا النوع من التدريب",
-  "coachNote": "ملاحظة شاملة من المدرب للجلسة"
+  "weeklyPlacement": "متى تُدرج هذه الجلسة بالأسبوع وما قبلها وبعدها",
+  "progressionPath": "خطة التطور على 4 أسابيع قادمة — محددة وعملية",
+  "nutritionTips": "توصيات غذائية مخصصة لهذا النوع من التدريب",
+  "coachNote": "ملاحظة شاملة: هدف الجلسة، كيف تعرف أنك أديت بشكل جيد، الأخطاء الشائعة"
 }
+
+**قواعد مهمة:**
+- mainWork: يجب أن يكون object بـ {title, format, duration, exercises:[]} وليس array من blocks
+- في كل تمرين: اذكر scaling أسهل وأصعب في كل تمرين
+- skillWork: ضعها دائماً حتى في جلسات غير skills — حتى 5 دقائق من المهارات مفيدة
+- جميع التمارين وزن الجسم فقط — لا أثقال حديدية
 
 أرجع JSON فقط.`;
 

@@ -26,23 +26,35 @@ export async function POST(req: NextRequest) {
     dates.push({ date: d.toISOString().split('T')[0], dayName: DAY_NAMES[d.getDay()] || '' });
   }
 
-  const prompt = `أنت مدرب Kettlebell Athletics محترف ومعتمد من IUKL (الاتحاد الدولي لرياضة الكيتل بيل).
+  const prompt = `أنت مدرب Kettlebell Athletics محترف ومعتمد من IUKL، متخصص في بناء الخطط الأسبوعية بأسلوب التدرج المنهجي. تعرف كيف توزع الحجم والشدة عبر الأسبوع لتحقيق أقصى تكيّف مع أدنى خطر إصابة.
 
-**مهمتك:** توليد خطة تدريب Kettlebell لـ ${days} أيام بدءاً من ${startDate} بمستوى: ${difficulty}
+═══════════════════════════════
+النادي: مجموعة المطانيخ CrossFit
+المدة: ${days} أيام من ${startDate}
+المستوى: ${difficulty}
+═══════════════════════════════
 
-**أنواع الجلسات المتاحة:**
-- biathlon: Jerk + Snatch (المسابقة الكلاسيكية)
-- jerk: Long Cycle Jerk فقط
-- snatch: Snatch فقط
-- longcycle: Long Cycle (Clean + Jerk)
-- strength: تدريب قوة بالكيتل بيل
+**أنواع الجلسات:**
+▶ biathlon: Jerk (أداتان) + Snatch (أداة واحدة) — الحدث التنافسي الكلاسيكي
+▶ snatch: Snatch فقط — تحسين التقنية والتحمل الخاص
+▶ longcycle: Clean + Jerk (أداتان) — القوة والتنسيق
+▶ strength: تدريب قوة KB (Swing, Deadlift, Press, Squat) — بناء الأساس
+▶ conditioning: دوائر تدريبية (Swing + Goblet Squat + Turkish Get-Up)
 
-**قواعد البرمجة:**
-- 3 جلسات تدريب فعلي في الأسبوع كحد أقصى
-- باقي الأيام: راحة أو راحة نشطة
-- تنويع بين Jerk وSnatch وLong Cycle
-- التدرج في الحجم والشدة على مدار الأسبوع
-- لا يومين متتاليين بنفس الشدة
+**فلسفة توزيع الأسبوع:**
+يوم 1 (حجم عالٍ): مجموعات طويلة بوزن خفيف نسبياً — بناء التحمل
+يوم 2: راحة نشطة — تمطيط خاص للمعصم والكتف (إلزامي!)
+يوم 3 (شدة عالية): مجموعات قصيرة بوزن أثقل — بناء القوة والسرعة
+يوم 4: راحة كاملة — لا تدريب
+يوم 5 (تقنية): أوزان خفيفة بتركيز على الشكل — quality over quantity
+
+**جدول الأوزان والـ RPM المرجعي:**
+| المستوى | الوزن | Jerk RPM | Snatch RPM | LC RPM |
+|---------|-------|----------|------------|--------|
+| مبتدئ | 8-12كجم | 6-8 | 8-10 | 5-6 |
+| متوسط | 16كجم | 8-10 | 10-12 | 6-8 |
+| متقدم | 20-24كجم | 10-12 | 12-14 | 8-10 |
+| نخبة | 28-32كجم | 12+ | 14+ | 10+ |
 
 **الأيام المطلوبة:**
 ${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
@@ -54,40 +66,59 @@ ${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
       "date": "YYYY-MM-DD",
       "dayName": "اسم اليوم",
       "isRest": false,
-      "title": "عنوان الجلسة",
-      "eventType": "biathlon | jerk | snatch | longcycle | strength",
-      "focus": "التحمل | القوة | التقنية | السرعة",
+      "title": "عنوان الجلسة — محدد ومعبّر",
+      "eventType": "biathlon | snatch | longcycle | strength | conditioning",
+      "focus": "التحمل | القوة | التقنية | السرعة | التكييف",
       "difficulty": "${difficulty}",
-      "coachNote": "ملاحظة المدرب",
-      "breathingPattern": "وصف نمط التنفس",
+      "coachNote": "هدف الجلسة + الاستراتيجية + ما تركز عليه اليوم",
+      "breathingPattern": "نمط التنفس المقترح: متى تشهق، متى تزفر، الإيقاع الأمثل",
       "warmup": {
-        "duration": "10 دقائق",
-        "movements": ["حركة 1", "حركة 2"]
+        "duration": 12,
+        "movements": [
+          {"name": "تدوير المعصم", "nameEn": "Wrist Circles", "sets": "2", "reps": "20 دورة", "notes": "إلزامي — يمنع إصابة الرسغ"},
+          {"name": "Halo", "nameEn": "KB Halo", "sets": "2", "reps": "8 × كل اتجاه", "notes": "8-12كجم — تنشيط الكتف"},
+          {"name": "سوينج خفيف", "nameEn": "Easy Swing", "sets": "2", "reps": "10", "notes": "تفعيل السلسلة الخلفية"}
+        ]
       },
       "mainWork": [
         {
           "exercise": "Jerk",
           "exerciseAr": "الجيرك",
           "sets": 5,
-          "reps": 10,
-          "weight": "16 كجم",
-          "restBetweenSets": "2 دقيقة",
-          "targetRPM": 8,
-          "technique": "نصيحة تقنية"
+          "reps": "5 دقائق",
+          "weight": "مبتدئ: 16كجم | متوسط: 24كجم | متقدم: 32كجم",
+          "restBetweenSets": "3 دقائق",
+          "targetRPM": "مبتدئ: 8 | متوسط: 10 | متقدم: 12",
+          "technique": "تثبيت كامل في الأعلى — استرح في Rack — ادفع بالساقين"
         }
       ],
-      "techniqueNotes": ["ملاحظة تقنية 1", "ملاحظة تقنية 2"],
-      "progressionNote": "كيفية التطور في المرحلة التالية"
+      "techniqueNotes": [
+        "نقطة تقنية محددة 1 لهذا الحدث",
+        "الخطأ الشائع وكيف تتجنبه",
+        "نصيحة متقدمة للمستوى الأعلى"
+      ],
+      "progressionNote": "في الأسبوع القادم: زد المدة بـ 1-2 دقيقة أو الوزن بمستوى واحد",
+      "cooldown": {
+        "duration": 10,
+        "movements": [
+          {"name": "تمطيط الساعد والرسغ", "duration": "90 ث × كل يد"},
+          {"name": "تمطيط الكتف", "duration": "60 ث × كل كتف"},
+          {"name": "تنفس عميق", "duration": "2 دقيقة"}
+        ]
+      }
     }
   ],
-  "weekSummary": "ملخص فلسفة الأسبوع",
+  "weekSummary": "ملخص فلسفة الأسبوع: التوزيع، كيف تتكامل الجلسات، والهدف التراكمي",
   "weeklyVolume": "خفيف | متوسط | ثقيل"
 }
 
 **ملاحظات مهمة:**
 - أيام الراحة: isRest: true، mainWork: []، warmup.movements: []
-- الأوزان القياسية: مبتدئ 8-12 كجم، متوسط 16-20 كجم، متقدم 24-28 كجم، نخبة 32 كجم+
-- RPM المرجعية: مبتدئ 6-8، متوسط 8-10، متقدم 10-12، نخبة 12-14`;
+- mainWork: مصفوفة مباشرة (بدون block wrapper)
+- كل تمرين: exercise, exerciseAr, sets, reps, weight, restBetweenSets, targetRPM, technique
+- الأوزان: دائماً اذكر 3 مستويات (مبتدئ | متوسط | متقدم)
+- لا يومين متتاليين بنفس الشدة العالية
+- يوم الراحة النشطة يشمل تمطيط المعصم والكتف حصراً`;
 
   try {
     const message = await client.messages.create({

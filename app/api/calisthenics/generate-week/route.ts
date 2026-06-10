@@ -26,22 +26,34 @@ export async function POST(req: NextRequest) {
     dates.push({ date: d.toISOString().split('T')[0], dayName: DAY_NAMES[d.getDay()] || '' });
   }
 
-  const prompt = `أنت مدرب Calisthenics محترف بخبرة تزيد عن 10 سنوات في برمجة تمارين وزن الجسم والجمناستيكس.
+  const prompt = `أنت مدرب Calisthenics محترف متخصص في GST (Gymnastics Strength Training) وتصميم الخطط الأسبوعية الاحترافية. تعرف كيف توزع القوة والمهارات والتحمل عبر الأسبوع لتحقيق تطور مستمر دون إرهاق أو إصابة.
 
-**مهمتك:** توليد خطة تدريب Calisthenics أسبوعية لـ ${days} أيام بدءاً من ${startDate} بمستوى: ${difficulty}
+═══════════════════════════════
+النادي: مجموعة المطانيخ CrossFit
+المدة: ${days} أيام من ${startDate}
+المستوى: ${difficulty}
+═══════════════════════════════
 
-**أنواع الجلسات المتاحة:**
-- strength: قوة وزن الجسم (pull-up progressions, push-up progressions, dips, pistol squat)
-- skills: مهارات جمناستيكية (handstand, planche, front lever, muscle-up)
-- endurance: تحمل (تكرارات عالية، دوائر، EMOM)
-- mixed: مختلط (قوة + مهارات + تحمل)
-- hiit: تدريب متقطع عالي الكثافة بحركات وزن الجسم
+**أنواع الجلسات:**
+▶ strength: قوة وزن الجسم (Pull-up, Dips, HSPU, Pistol Squat) — مجموعات ثقيلة × تكرارات منخفضة
+▶ skills: مهارات جمناستيكية (Handstand, Planche, Front Lever, Muscle-up) — جودة لا كمية
+▶ endurance: تحمل (تكرارات عالية، EMOM، دوائر) — ضغط على القلب والأوعية
+▶ mixed: مختلط (قوة + مهارات + تحمل) — الجلسة الأكثر شمولاً
+▶ hiit: تدريب متقطع عالي الكثافة (Tabata، intervals) — حرق وقوة متفجرة
 
-**قواعد البرمجة:**
-- 4 جلسات تدريب أسبوعياً كحد أقصى
-- لا يومين قوة متتاليين
-- يوم مهارات بعد كل يومين قوة/تحمل
-- باقي الأيام: راحة نشطة أو راحة كاملة
+**فلسفة التوزيع الاحترافي للأسبوع:**
+يوم 1 (قوة الجزء العلوي): Pull + Push بحجم عالٍ
+يوم 2: راحة كاملة أو active recovery (مشي + تمطيط)
+يوم 3 (مهارات): Handstand + Front Lever + Core — جودة مطلقة
+يوم 4 (تحمل/HIIT): تكرارات عالية أو circuits
+يوم 5: راحة نشطة (mobility + light movement)
+يوم 6 (مختلط): قوة + مهارة + cardio
+يوم 7: راحة كاملة — إلزامية
+
+**جدول التدرج الأسبوعي:**
+جلسة قوة بعد جلسة قوة: زد تكرار واحد أو مجموعة واحدة
+جلسة مهارات: ابقَ على نفس الهدف لأسبوعين قبل الرفع
+مهارة جديدة: ابدأ من أسهل regression حتى تُتقن 3×10 ث قبل التطور
 
 **الأيام المطلوبة:**
 ${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
@@ -53,32 +65,34 @@ ${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
       "date": "YYYY-MM-DD",
       "dayName": "اسم اليوم",
       "isRest": false,
-      "title": "عنوان الجلسة",
+      "title": "عنوان الجلسة — واضح ومحدد",
       "sessionType": "strength | skills | endurance | mixed | hiit",
       "focus": "الجزء العلوي | الجزء السفلي | كامل الجسم | المهارات",
       "difficulty": "${difficulty}",
       "totalDuration": 60,
-      "equipment": ["المعدات المطلوبة"],
-      "coachNote": "ملاحظة المدرب",
+      "equipment": ["عارضة سحب", "أرضية"],
+      "coachNote": "هدف الجلسة + الاستراتيجية + ما تركز عليه اليوم",
       "warmup": {
         "duration": 10,
         "exercises": [
-          { "name": "اسم التمرين", "nameEn": "Exercise Name", "sets": 2, "reps": "10", "rest": "30 ث", "notes": "" }
+          { "name": "دوائر الكتف", "nameEn": "Shoulder Circles", "sets": 1, "reps": "20 × كل اتجاه", "rest": "بدون", "notes": "تنشيط مفصلي" },
+          { "name": "Scapular Pull-ups", "nameEn": "Scapular Pull-ups", "sets": 2, "reps": "8", "rest": "30 ث", "notes": "تفعيل لوح الكتف" },
+          { "name": "Hollow Body", "nameEn": "Hollow Body Hold", "sets": 2, "reps": "20 ث", "rest": "30 ث", "notes": "تنشيط الوسط" }
         ]
       },
       "skillWork": {
-        "title": "عنوان عمل المهارة",
-        "duration": 10,
+        "title": "عمل المهارة — جودة قبل الكمية",
+        "duration": 12,
         "exercises": [
-          { "name": "اسم التمرين", "nameEn": "Exercise Name", "sets": 3, "hold": "10 ث", "rest": "60 ث", "notes": "", "regression": "نسخة مبسطة", "progression": "نسخة متقدمة" }
+          { "name": "اسم المهارة", "nameEn": "Skill Name", "sets": 5, "hold": "10-15 ث", "rest": "60 ث", "notes": "تقنية مهمة", "regression": "نسخة أسهل للمبتدئين", "progression": "الخطوة التالية" }
         ]
       },
       "mainWork": {
         "title": "عنوان العمل الرئيسي",
-        "format": "وصف التنسيق",
-        "duration": 30,
+        "format": "وصف التنسيق والأسلوب",
+        "duration": 25,
         "exercises": [
-          { "name": "اسم التمرين", "nameEn": "Exercise Name", "sets": 4, "reps": "8-10", "rest": "90 ث", "notes": "", "regression": "نسخة مبسطة", "progression": "نسخة متقدمة" }
+          { "name": "اسم التمرين", "nameEn": "Exercise Name", "sets": 4, "reps": "6-8", "rest": "90 ث", "notes": "نقطة تقنية", "regression": "نسخة أسهل", "progression": "نسخة أصعب" }
         ]
       },
       "metcon": {
@@ -86,21 +100,29 @@ ${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
         "duration": 10,
         "timecap": 12,
         "exercises": [
-          { "name": "اسم التمرين", "nameEn": "Exercise Name", "reps": "10" }
+          { "name": "اسم التمرين", "nameEn": "Exercise Name", "reps": "10", "notes": "scaling للمستويات" }
         ]
       },
-      "progressionNote": "كيفية التطور في المرحلة التالية"
+      "cooldown": {
+        "duration": 8,
+        "stretches": [
+          { "name": "اسم التمطيط", "duration": "60 ث", "focus": "المنطقة المستهدفة" }
+        ]
+      },
+      "progressionNote": "كيفية التطور في الأسبوع القادم — محدد وعملي"
     }
   ],
-  "weekSummary": "ملخص فلسفة الأسبوع",
-  "weeklyFocus": "وصف التركيز الأسبوعي"
+  "weekSummary": "ملخص فلسفة الأسبوع: التوزيع، الهدف التراكمي، كيف تتكامل الجلسات",
+  "weeklyFocus": "مهارة الأسبوع أو التركيز الرئيسي (مثال: هذا الأسبوع نطور الـ Handstand)"
 }
 
 **ملاحظات مهمة:**
-- أيام الراحة: isRest: true، mainWork.exercises: []، warmup.exercises: []
-- skillWork وmetcon اختياريان — ضعهما فقط إذا كانا مناسبين لنوع الجلسة
-- جميع التمارين بوزن الجسم فقط — لا حديد ولا أثقال
-- حركات Calisthenics: pull-up, chin-up, muscle-up, push-up, dips, handstand push-up, L-sit, front lever, back lever, planche, pistol squat, nordic curl, dragon flag`;
+- أيام الراحة: isRest: true، mainWork.exercises: []، warmup.exercises: []، cooldown.stretches: []
+- جميع التمارين بوزن الجسم فقط — لا أثقال حديدية
+- skillWork: اجعله حاضراً في كل جلسة (حتى 5-8 دقائق مفيدة)
+- cooldown: إلزامي في كل جلسة — تمطيط الصدر + الظهر + الرسغ
+- في كل تمرين: regression للمبتدئين وprogression للمتقدمين
+- لا يومين قوة متتاليين — احترم التعافي العضلي`;
 
   try {
     const message = await client.messages.create({
