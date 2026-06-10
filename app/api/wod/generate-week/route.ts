@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
   const prompt = `أنت مبرمج CrossFit محترف على مستوى CompTrain وPRVN Athletics، بخبرة أكثر من 10 سنوات في تصميم الخطط الأسبوعية. تبرمج بفلسفة الـ Conjugate Method المعدّلة لـ CrossFit: تنويع منهجي بين القوة القصوى والقوة المتفجرة والتحمل.
 
 ═══════════════════════════════
-النادي: مجموعة المطانيخ CrossFit
+النادي: مجموعة المطانيخ CrossFit — غالبيتهم رجال (18-40 سنة)، أوزان RX للرجال مع scaling للنساء
 الخطة: ${weekMode === 'mixed' ? `أسبوع مختلط CrossFit + ${calisthenicsDays === 2 ? 'يومان' : 'يوم'} Calisthenics` : 'أسبوع CrossFit متكامل'}
 المدة: ${days} أيام من ${startDate}
 المستوى: ${difficulty}

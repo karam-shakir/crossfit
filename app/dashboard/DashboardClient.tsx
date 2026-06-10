@@ -218,9 +218,29 @@ function KettlebellTodayCard({ sessions }: { sessions: any[] }) {
           {(tab === 'warmup' || tab === 'all') && s.warmup?.movements?.length > 0 && (
             <div>
               {tab === 'all' && <h4 className="text-xs font-semibold text-yellow-400 mb-2">🔆 الإحماء — {s.warmup.duration}</h4>}
-              <div className="flex flex-wrap gap-2">
-                {s.warmup.movements.map((m: string, i: number) => (
-                  <span key={i} className="text-xs bg-gray-800 text-gray-300 px-2 py-1 rounded-lg">{m}</span>
+              <div className="space-y-1.5">
+                {s.warmup.movements.map((m: any, i: number) => (
+                  typeof m === 'string'
+                    ? <span key={i} className="inline-block text-xs bg-gray-800 text-gray-300 px-2 py-1 rounded-lg mr-1 mb-1">{m}</span>
+                    : <div key={i} className="flex items-center justify-between bg-gray-800/60 rounded-xl px-3 py-2">
+                        <span className="text-xs text-gray-400">{m.sets && `${m.sets}×`}{m.reps}</span>
+                        <div className="text-right"><span className="text-sm text-white">{m.name}</span></div>
+                      </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Cooldown */}
+          {(tab === 'all') && s.cooldown?.length > 0 && (
+            <div>
+              <h4 className="text-xs font-semibold text-teal-400 mb-2">🧘 التهدئة</h4>
+              <div className="space-y-1.5">
+                {s.cooldown.map((ex: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between bg-gray-800/40 rounded-xl px-3 py-2">
+                    <span className="text-xs text-gray-400">{ex.duration}</span>
+                    <div className="text-right"><span className="text-sm text-white">{ex.name}</span>{ex.focus && <span className="text-xs text-teal-400 mr-2">({ex.focus})</span>}</div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -360,12 +380,12 @@ function CalisthenicsTodayCard({ sessions }: { sessions: any[] }) {
             </div>
           )}
 
-          {/* Main Work */}
-          {(tab === 'main' || tab === 'all') && s.mainWork?.exercises?.length > 0 && (
+          {/* Main Work — يدعم البنية الجديدة (object) والقديمة (array) */}
+          {(tab === 'main' || tab === 'all') && s.mainWork && (Array.isArray(s.mainWork) ? s.mainWork.length > 0 : s.mainWork.exercises?.length > 0) && (
             <div>
-              {tab === 'all' && <h4 className="text-xs font-semibold text-emerald-400 mb-2">💪 {s.mainWork.title || 'العمل الرئيسي'} — {s.mainWork.duration} د</h4>}
+              {tab === 'all' && <h4 className="text-xs font-semibold text-emerald-400 mb-2">💪 {Array.isArray(s.mainWork) ? 'العمل الرئيسي' : (s.mainWork.title || 'العمل الرئيسي')} {!Array.isArray(s.mainWork) && s.mainWork.duration ? `— ${s.mainWork.duration} د` : ''}</h4>}
               <div className="space-y-2">
-                {s.mainWork.exercises.map((ex: any, i: number) => (
+                {(Array.isArray(s.mainWork) ? s.mainWork : s.mainWork.exercises).map((ex: any, i: number) => (
                   <div key={i} className="bg-gray-800/60 rounded-xl p-3 border border-emerald-900/30">
                     <div className="flex items-center justify-between mb-1">
                       <YtBtn nameEn={ex.nameEn || ex.name} sport="calisthenics" />
@@ -396,6 +416,21 @@ function CalisthenicsTodayCard({ sessions }: { sessions: any[] }) {
                       <span className="text-sm text-white">{ex.name}</span>
                       <span className="text-xs text-gray-400 mr-2">{ex.reps}</span>
                     </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Cooldown */}
+          {tab === 'all' && s.cooldown?.stretches?.length > 0 && (
+            <div>
+              <h4 className="text-xs font-semibold text-teal-400 mb-2">🧘 التهدئة — {s.cooldown.duration} د</h4>
+              <div className="space-y-1.5">
+                {s.cooldown.stretches.map((st: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between bg-gray-800/40 rounded-xl px-3 py-2">
+                    <span className="text-xs text-gray-400">{st.duration}</span>
+                    <div className="text-right"><span className="text-sm text-white">{st.name}</span>{st.focus && <span className="text-xs text-teal-400 mr-2">({st.focus})</span>}</div>
                   </div>
                 ))}
               </div>

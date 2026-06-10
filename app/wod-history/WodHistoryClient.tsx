@@ -237,6 +237,37 @@ function HyroxCard({ rec }: { rec: any }) {
               </div>
             </div>
           )}
+
+          {/* Cooldown */}
+          {s.cooldown?.exercises?.length > 0 && (
+            <div>
+              <h3 className="font-semibold text-sm text-teal-400 mb-2">🧘 التهدئة — {s.cooldown.duration}</h3>
+              <div className="space-y-1">
+                {s.cooldown.exercises.map((ex: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between bg-gray-800/40 rounded-lg px-3 py-2">
+                    <span className="text-xs text-gray-400">{ex.duration}</span>
+                    <span className="text-sm text-white">{ex.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Nutrition */}
+          {(s.nutritionBefore || s.nutritionAfter) && (
+            <div className="bg-green-900/10 border border-green-700/20 rounded-xl p-3 space-y-1">
+              <h4 className="text-xs font-semibold text-green-400 mb-1">🥗 التغذية</h4>
+              {s.nutritionBefore && <p className="text-xs text-gray-300"><span className="text-green-400">قبل: </span>{s.nutritionBefore}</p>}
+              {s.nutritionAfter  && <p className="text-xs text-gray-300"><span className="text-green-400">بعد: </span>{s.nutritionAfter}</p>}
+            </div>
+          )}
+
+          {/* Next session recommendation */}
+          {s.nextSessionRecommendation && (
+            <div className="bg-blue-900/20 border border-blue-700/30 rounded-xl p-3 text-xs text-blue-300">
+              🔜 {s.nextSessionRecommendation}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -281,9 +312,14 @@ function KettlebellCard({ rec }: { rec: any }) {
           {s.warmup?.movements?.length > 0 && (
             <div>
               <h3 className="font-semibold text-sm text-yellow-400 mb-2">🔆 الإحماء — {s.warmup.duration}</h3>
-              <div className="flex flex-wrap gap-2">
-                {s.warmup.movements.map((m: string, i: number) => (
-                  <span key={i} className="text-xs bg-gray-800 text-gray-300 px-2 py-1 rounded-lg">{m}</span>
+              <div className="space-y-1.5">
+                {s.warmup.movements.map((m: any, i: number) => (
+                  typeof m === 'string'
+                    ? <span key={i} className="inline-block text-xs bg-gray-800 text-gray-300 px-2 py-1 rounded-lg mr-1 mb-1">{m}</span>
+                    : <div key={i} className="flex items-center justify-between bg-gray-800/50 rounded-lg px-3 py-2">
+                        <span className="text-xs text-gray-400">{m.sets && `${m.sets}×`}{m.reps}</span>
+                        <span className="text-sm text-white">{m.name}</span>
+                      </div>
                 ))}
               </div>
             </div>
@@ -301,11 +337,12 @@ function KettlebellCard({ rec }: { rec: any }) {
                         className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1">▶ يوتيوب</a>
                       <div className="font-semibold text-white text-sm">{ex.exerciseAr || ex.exercise}</div>
                     </div>
-                    <div className="flex gap-3 text-xs text-gray-400 justify-end">
+                    <div className="flex gap-3 text-xs text-gray-400 justify-end flex-wrap">
                       {ex.sets && <span>{ex.sets} مجموعة</span>}
-                      {ex.reps && <span>{ex.reps} تكرار</span>}
+                      {ex.reps && <span>{ex.reps}</span>}
                       {ex.weight && <span>⚖️ {ex.weight}</span>}
                       {ex.targetRPM && <span>🔄 {ex.targetRPM} RPM</span>}
+                      {ex.restBetweenSets && <span>راحة {ex.restBetweenSets}</span>}
                     </div>
                     {ex.technique && <p className="text-xs text-yellow-300 mt-1 text-right">💡 {ex.technique}</p>}
                   </div>
@@ -316,9 +353,31 @@ function KettlebellCard({ rec }: { rec: any }) {
 
           {s.techniqueNotes?.length > 0 && (
             <div className="bg-gray-800/40 rounded-xl p-3 space-y-1">
+              <h4 className="text-xs font-semibold text-gray-400 mb-1">💡 ملاحظات تقنية</h4>
               {s.techniqueNotes.map((n: string, i: number) => (
                 <p key={i} className="text-xs text-gray-300">• {n}</p>
               ))}
+            </div>
+          )}
+
+          {/* Cooldown */}
+          {s.cooldown?.length > 0 && (
+            <div>
+              <h3 className="font-semibold text-sm text-teal-400 mb-2">🧘 التهدئة</h3>
+              <div className="space-y-1">
+                {s.cooldown.map((ex: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between bg-gray-800/40 rounded-lg px-3 py-2">
+                    <span className="text-xs text-gray-400">{ex.duration}</span>
+                    <div className="text-right"><span className="text-sm text-white">{ex.name}</span>{ex.focus && <span className="text-xs text-teal-400 mr-2">({ex.focus})</span>}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {s.progressionNote && (
+            <div className="bg-blue-900/20 border border-blue-700/30 rounded-xl p-3 text-xs text-blue-300">
+              📈 {s.progressionNote}
             </div>
           )}
         </div>
@@ -399,12 +458,12 @@ function CalisthenicsCard({ rec }: { rec: any }) {
             </div>
           )}
 
-          {/* Main Work */}
-          {s.mainWork?.exercises?.length > 0 && (
+          {/* Main Work — يدعم البنية الجديدة (object) والقديمة (array) */}
+          {s.mainWork && (Array.isArray(s.mainWork) ? s.mainWork.length > 0 : s.mainWork.exercises?.length > 0) && (
             <div>
-              <h3 className="font-semibold text-sm text-emerald-400 mb-2">💪 {s.mainWork.title || 'العمل الرئيسي'} — {s.mainWork.duration} د</h3>
+              <h3 className="font-semibold text-sm text-emerald-400 mb-2">💪 {Array.isArray(s.mainWork) ? 'العمل الرئيسي' : (s.mainWork.title || 'العمل الرئيسي')} {!Array.isArray(s.mainWork) && s.mainWork.duration ? `— ${s.mainWork.duration} د` : ''}</h3>
               <div className="space-y-2">
-                {s.mainWork.exercises.map((ex: any, i: number) => (
+                {(Array.isArray(s.mainWork) ? s.mainWork : s.mainWork.exercises).map((ex: any, i: number) => (
                   <div key={i} className="bg-gray-800/60 rounded-xl p-3 border border-emerald-900/30">
                     <div className="flex items-center justify-between mb-1">
                       <a href={ytLink(ex.nameEn, 'calisthenics')} target="_blank" rel="noopener noreferrer"
@@ -440,6 +499,33 @@ function CalisthenicsCard({ rec }: { rec: any }) {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Cooldown */}
+          {s.cooldown?.stretches?.length > 0 && (
+            <div>
+              <h3 className="font-semibold text-sm text-teal-400 mb-2">🧘 التهدئة — {s.cooldown.duration} د</h3>
+              <div className="space-y-1">
+                {s.cooldown.stretches.map((st: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between bg-gray-800/40 rounded-lg px-3 py-2">
+                    <span className="text-xs text-gray-400">{st.duration}</span>
+                    <div className="text-right"><span className="text-sm text-white">{st.name}</span>{st.focus && <span className="text-xs text-teal-400 mr-2">({st.focus})</span>}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Nutrition + Progression */}
+          {s.nutritionTips && (
+            <div className="bg-green-900/10 border border-green-700/20 rounded-xl p-3 text-xs text-gray-300">
+              🥗 <span className="text-green-400 font-semibold">تغذية: </span>{s.nutritionTips}
+            </div>
+          )}
+          {s.progressionPath && (
+            <div className="bg-blue-900/20 border border-blue-700/30 rounded-xl p-3 text-xs text-blue-300">
+              📈 {s.progressionPath}
             </div>
           )}
         </div>
