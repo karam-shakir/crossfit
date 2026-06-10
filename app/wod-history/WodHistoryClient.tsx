@@ -68,10 +68,12 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
       lines.push(`${sec.icon} ${sec.label}:`);
       items.forEach((ex: any, i: number) => {
         const name   = ex.exercise?.nameAr || ex.exerciseId;
+        const nameEn = ex.exercise?.nameEn || ex.exerciseId || '';
         const reps   = ex.reps   ? ` — ${ex.reps}`   : '';
         const weight = ex.weight ? ` (${ex.weight})`  : '';
         const sets   = ex.sets   ? ` × ${ex.sets} مج` : '';
         lines.push(`  ${i + 1}. ${name}${sets}${reps}${weight}`);
+        if (nameEn) lines.push(`     ▶️ ${ytLink(nameEn, 'crossfit')}`);
       });
     }
     lines.push('');
@@ -182,6 +184,7 @@ function HyroxCard({ rec }: { rec: any }) {
       lines.push(''); lines.push(`🔆 الإحماء${s.warmup.duration ? ' — ' + s.warmup.duration + 'د' : ''}:`);
       s.warmup.exercises.forEach((ex: any, i: number) => {
         lines.push(`  ${i + 1}. ${ex.name}${ex.reps ? ' — ' + ex.reps : ''}${ex.duration ? ' — ' + ex.duration : ''}`);
+        if (ex.nameEn) lines.push(`     ▶️ ${ytLink(ex.nameEn, 'hyrox')}`);
       });
     }
     // المحطات
@@ -193,6 +196,7 @@ function HyroxCard({ rec }: { rec: any }) {
         const t   = st.target   ? ` | 🎯 ${st.target}`       : '';
         lines.push(`  ${i + 1}. ${st.name}${run}${w}${t}`);
         if (st.tips) lines.push(`     💡 ${st.tips}`);
+        if (st.nameEn || st.name) lines.push(`     ▶️ ${ytLink(st.nameEn || st.name, 'hyrox')}`);
       });
     }
     // التهدئة
@@ -200,6 +204,7 @@ function HyroxCard({ rec }: { rec: any }) {
       lines.push(''); lines.push('🧘 التهدئة:');
       s.cooldown.exercises.forEach((ex: any, i: number) => {
         lines.push(`  ${i + 1}. ${ex.name}${ex.duration ? ' — ' + ex.duration : ''}`);
+        if (ex.nameEn) lines.push(`     ▶️ ${ytLink(ex.nameEn, 'hyrox')}`);
       });
     }
     // التغذية
@@ -367,6 +372,7 @@ function KettlebellCard({ rec }: { rec: any }) {
           lines.push(`  ${i + 1}. ${m}`);
         } else {
           lines.push(`  ${i + 1}. ${m.name}${m.sets ? ' — ' + m.sets + '×' : ''}${m.reps ? m.reps : ''}${m.notes ? ' | ' + m.notes : ''}`);
+          if (m.nameEn) lines.push(`     ▶️ ${ytLink(m.nameEn, 'kettlebell')}`);
         }
       });
     }
@@ -382,6 +388,7 @@ function KettlebellCard({ rec }: { rec: any }) {
         const rest  = ex.restBetweenSets ? ` | راحة ${ex.restBetweenSets}` : '';
         lines.push(`  ${i + 1}. ${name}${sets}${reps}${w}${rpm}${rest}`);
         if (ex.technique) lines.push(`     💡 ${ex.technique}`);
+        if (ex.exercise)  lines.push(`     ▶️ ${ytLink(ex.exercise, 'kettlebell')}`);
       });
     }
     // ملاحظات تقنية
@@ -541,6 +548,7 @@ function CalisthenicsCard({ rec }: { rec: any }) {
       lines.push(''); lines.push(`🔆 الإحماء${s.warmup.duration ? ' — ' + s.warmup.duration + 'د' : ''}:`);
       s.warmup.exercises.forEach((ex: any, i: number) => {
         lines.push(`  ${i + 1}. ${ex.name}${ex.sets ? ' — ' + ex.sets + '×' : ''}${ex.reps || ''}${ex.notes ? ' | ' + ex.notes : ''}`);
+        if (ex.nameEn) lines.push(`     ▶️ ${ytLink(ex.nameEn, 'calisthenics')}`);
       });
     }
     // عمل المهارات
@@ -549,6 +557,7 @@ function CalisthenicsCard({ rec }: { rec: any }) {
       s.skillWork.exercises.forEach((ex: any, i: number) => {
         const target = ex.target || ex.hold || '';
         lines.push(`  ${i + 1}. ${ex.name}${target ? ' — ' + target : ''}${ex.sets ? ' | ' + ex.sets + ' مج' : ''}`);
+        if (ex.nameEn)      lines.push(`     ▶️ ${ytLink(ex.nameEn, 'calisthenics')}`);
         if (ex.regression)  lines.push(`     ⬇️ ${ex.regression}`);
         if (ex.progression) lines.push(`     ⬆️ ${ex.progression}`);
       });
@@ -566,6 +575,7 @@ function CalisthenicsCard({ rec }: { rec: any }) {
         const rest  = ex.rest  ? ` | راحة ${ex.rest}`   : '';
         const tempo = ex.tempo ? ` | Tempo ${ex.tempo}` : '';
         lines.push(`  ${i + 1}. ${ex.name}${sets}${reps}${rest}${tempo}`);
+        if (ex.nameEn)      lines.push(`     ▶️ ${ytLink(ex.nameEn, 'calisthenics')}`);
         if (ex.cues)        lines.push(`     💡 ${ex.cues}`);
         if (ex.regression || ex.scaling?.easier)  lines.push(`     ⬇️ ${ex.regression || ex.scaling?.easier}`);
         if (ex.progression || ex.scaling?.harder) lines.push(`     ⬆️ ${ex.progression || ex.scaling?.harder}`);
@@ -576,7 +586,8 @@ function CalisthenicsCard({ rec }: { rec: any }) {
       lines.push(''); lines.push(`🔥 ${s.metcon.format || 'الميتكون'}${s.metcon.duration ? ' — ' + s.metcon.duration + 'د' : ''}:`);
       s.metcon.exercises.forEach((ex: any, i: number) => {
         lines.push(`  ${i + 1}. ${ex.name}${ex.reps ? ' — ' + ex.reps : ''}`);
-        if (ex.notes) lines.push(`     💡 ${ex.notes}`);
+        if (ex.nameEn) lines.push(`     ▶️ ${ytLink(ex.nameEn, 'calisthenics')}`);
+        if (ex.notes)  lines.push(`     💡 ${ex.notes}`);
       });
     }
     // التهدئة
