@@ -63,9 +63,9 @@ export default function SkillsClient({ member }: { member: any }) {
   const inProgress = records.filter(r => r.level > 0).length;
 
   return (
-    <div className="min-h-dvh flex overflow-x-clip">
+    <div className="min-h-dvh flex w-full">
       <Navbar member={member} />
-      <main className="flex-1 lg:mr-56 pb-safe-nav lg:pb-0 overflow-x-clip">
+      <main className="flex-1 min-w-0 lg:mr-56 pb-safe-nav lg:pb-0 overflow-hidden">
         <div className="max-w-2xl mx-auto px-4 pt-safe pb-6 space-y-5">
 
           {/* Header */}
@@ -191,4 +191,5 @@ export default function SkillsClient({ member }: { member: any }) {
     </div>
   );
 }
+
 

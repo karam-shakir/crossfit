@@ -732,38 +732,25 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
   }
 
   return (
-    <div className="min-h-dvh flex overflow-x-clip">
+    <div className="min-h-dvh flex w-full">
       <Navbar member={member} />
 
-      <main className="flex-1 lg:mr-56 overflow-x-clip">
+      <main className="flex-1 min-w-0 lg:mr-56 pb-safe-nav lg:pb-0 overflow-hidden">
+        <div className="w-full max-w-2xl mx-auto px-4 pt-safe pb-6 space-y-4">
 
-        {/* ══ هيدر ثابت — يشبه تطبيقات الجوال ══════════════════════════ */}
-        <div className="sticky top-0 z-30 bg-gray-950/95 backdrop-blur-md border-b border-gray-800/60 px-4 pt-safe pb-3">
-          <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div className="text-[11px] text-gray-500 font-medium tracking-wide">{dateStr}</div>
-              <h1 className="text-lg font-bold text-white leading-tight truncate">
-                أهلاً {member.nameAr} {member.avatar}
-              </h1>
+          {/* Header */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="text-[11px] text-gray-500">{dateStr}</div>
+              <h1 className="text-lg font-bold text-white truncate">أهلاً {member.nameAr} {member.avatar}</h1>
             </div>
             <button onClick={checkIn} disabled={checkedIn || checkLoading}
-              className={`tap-scale flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
-                checkedIn
-                  ? 'bg-green-900/60 text-green-400 border border-green-800'
-                  : 'bg-orange-500 hover:bg-orange-400 text-white shadow-lg shadow-orange-500/30'
+              className={`tap-scale flex-shrink-0 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                checkedIn ? 'bg-green-900/60 text-green-400 border border-green-800' : 'bg-orange-500 hover:bg-orange-400 text-white'
               }`}>
-              {checkedIn
-                ? <><span className="text-base">✅</span><span className="text-xs">حضرت</span></>
-                : checkLoading
-                  ? <span className="text-xs">...</span>
-                  : <><span className="text-base">📅</span><span className="text-xs">سجّل حضور</span></>
-              }
+              {checkedIn ? '✅ حضرت' : checkLoading ? '...' : '📅 سجّل'}
             </button>
           </div>
-        </div>
-
-        {/* ══ المحتوى القابل للتمرير ═══════════════════════════════════ */}
-        <div className="max-w-2xl mx-auto px-4 pb-safe-nav lg:pb-6 pt-4 space-y-4">
 
           {/* Stats — شريط إحصائيات بشكل app */}
           <div className="grid grid-cols-3 gap-2">
@@ -786,25 +773,20 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
               <h2 className="text-sm font-semibold text-gray-400">📅 تمارين اليوم</h2>
 
               {/* Sport tabs */}
-              <div className="grid grid-cols-4 gap-1 bg-gray-900 p-1 rounded-2xl border border-gray-800">
+              <div className="grid grid-cols-4 gap-1 bg-gray-900 p-1 rounded-2xl border border-gray-800 w-full">
                 {([
-                  { id: 'crossfit',     emoji: '🏋️', label: 'CrossFit',     color: 'bg-orange-500',  has: !!wod },
-                  { id: 'hyrox',        emoji: '🏁', label: 'Hyrox',        color: 'bg-red-600',     has: todayHyrox.length > 0 },
-                  { id: 'kettlebell',   emoji: '🔔', label: 'Kettlebell',   color: 'bg-yellow-500',  has: todayKettlebell.length > 0 },
-                  { id: 'calisthenics', emoji: '🤸', label: 'Calisthenics', color: 'bg-emerald-600', has: todayCalisthenics.length > 0 },
+                  { id: 'crossfit',     emoji: '🏋️', label: 'CF',    color: 'bg-orange-500',  has: !!wod },
+                  { id: 'hyrox',        emoji: '🏁', label: 'Hyrox', color: 'bg-red-600',     has: todayHyrox.length > 0 },
+                  { id: 'kettlebell',   emoji: '🔔', label: 'KB',    color: 'bg-yellow-500',  has: todayKettlebell.length > 0 },
+                  { id: 'calisthenics', emoji: '🤸', label: 'Calis', color: 'bg-emerald-600', has: todayCalisthenics.length > 0 },
                 ] as const).map(t => (
                   <button key={t.id} onClick={() => setSportTab(t.id)}
-                    className={`tap-scale relative flex flex-col items-center py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    className={`tap-scale relative flex flex-col items-center justify-center py-2.5 px-1 rounded-xl overflow-hidden transition-all ${
                       sportTab === t.id ? t.color + ' text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'
                     }`}>
                     <span className="text-xl leading-none">{t.emoji}</span>
-                    <span className="mt-1 text-[10px] block">{t.label}</span>
-                    {t.has && (
-                      <span className={`absolute top-1 left-1 w-2 h-2 rounded-full ${sportTab === t.id ? 'bg-white/60' : 'bg-green-400'}`} />
-                    )}
-                    {!t.has && (
-                      <span className="absolute top-1 left-1 w-2 h-2 rounded-full bg-gray-700" />
-                    )}
+                    <span className="mt-0.5 text-[9px] font-semibold truncate w-full text-center leading-none">{t.label}</span>
+                    <span className={`absolute top-1 right-1 w-1.5 h-1.5 rounded-full ${t.has ? (sportTab === t.id ? 'bg-white/70' : 'bg-green-400') : 'bg-gray-700'}`} />
                   </button>
                 ))}
               </div>

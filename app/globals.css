@@ -7,11 +7,11 @@
 
 html {
   background: #030712;
-  /* منع التمرير الأفقي على iOS Safari */
-  overflow-x: hidden;
+  /* RTL: overflow يتراكم على اليسار — نمنعه هنا */
+  overflow: hidden;
   width: 100%;
-  /* يمنع الـ bounce الأفقي */
-  overscroll-behavior-x: none;
+  max-width: 100%;
+  overscroll-behavior: none;
 }
 
 body {
@@ -19,14 +19,21 @@ body {
   color: #f9fafb;
   font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
   overflow-x: hidden;
+  overflow-y: auto;
   width: 100%;
-  min-height: 100dvh;         /* dvh يأخذ بعين الاعتبار شريط المتصفح */
-  overscroll-behavior-x: none;
-  /* تحسين الخطوط على iOS/Android */
+  max-width: 100%;
+  min-height: 100dvh;
+  overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* منع التكبير عند النقر على الحقول في iOS */
   touch-action: manipulation;
+}
+
+/* منع أي عنصر من تجاوز عرض الشاشة */
+#__next, [data-nextjs-scroll-focus-boundary] {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 /* ══ زر يشبه اللمس في التطبيقات الأصلية ══════════════════════════════════ */

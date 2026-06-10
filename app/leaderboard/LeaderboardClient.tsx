@@ -37,9 +37,9 @@ export default function LeaderboardClient({ member, currentUserId }: { member: a
   }
 
   return (
-    <div className="min-h-dvh flex overflow-x-clip">
+    <div className="min-h-dvh flex w-full">
       <Navbar member={member} />
-      <main className="flex-1 lg:mr-56 pb-safe-nav lg:pb-0 overflow-x-clip">
+      <main className="flex-1 min-w-0 lg:mr-56 pb-safe-nav lg:pb-0 overflow-hidden">
         <div className="max-w-2xl mx-auto px-4 pt-safe pb-6 space-y-6">
 
           <h1 className="text-xl font-bold text-white">🥇 لوحة الترتيب</h1>
@@ -98,4 +98,5 @@ export default function LeaderboardClient({ member, currentUserId }: { member: a
     </div>
   );
 }
+
 
