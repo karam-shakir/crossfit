@@ -51,11 +51,47 @@ function YtBtn({ nameEn, sport }: { nameEn: string; sport: string }) {
 
 // ── بطاقة Hyrox اليوم ────────────────────────────────────────────────────────
 function HyroxTodayCard({ sessions }: { sessions: any[] }) {
-  const [open, setOpen]   = useState(false);
-  const [tab,  setTab]    = useState('stations');
+  const [open, setOpen]     = useState(false);
+  const [tab,  setTab]      = useState('stations');
+  const [copied, setCopied] = useState(false);
   if (!sessions.length) return null;
   const rec = sessions[0];
   const s   = rec.sessionData || rec;
+
+  function ytLink(nameEn: string) {
+    return `https://www.youtube.com/results?search_query=${encodeURIComponent(nameEn + ' hyrox tutorial')}`;
+  }
+  function buildText() {
+    const now = new Date();
+    const dateStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
+    const lines: string[] = [];
+    lines.push(`🏁 Hyrox — ${dateStr}`);
+    lines.push(`📌 ${s.title || 'جلسة Hyrox'}${s.totalDuration ? ' | ⏱'+s.totalDuration+'د' : ''}`);
+    if (s.coachNote) lines.push(`💬 ${s.coachNote}`);
+    if (s.warmup?.exercises?.length) {
+      lines.push(`\n🔆 الإحماء${s.warmup.duration ? ' — '+s.warmup.duration+'د' : ''}:`);
+      s.warmup.exercises.forEach((ex: any, i: number) => {
+        lines.push(`  ${i+1}. ${ex.name}${ex.reps ? ' — '+ex.reps : ''}${ex.duration ? ' — '+ex.duration : ''}`);
+        if (ex.nameEn) lines.push(`     ▶️ ${ytLink(ex.nameEn)}`);
+      });
+    }
+    if (s.stations?.length) {
+      lines.push('\n🏁 المحطات:');
+      s.stations.forEach((st: any, i: number) => {
+        lines.push(`  ${i+1}. ${st.name}${st.runBefore ? ' | جري '+st.runBefore : ''}${st.weight ? ' | ⚖️ '+st.weight : ''}${st.target ? ' | 🎯 '+st.target : ''}`);
+        if (st.tips) lines.push(`     💡 ${st.tips}`);
+        if (st.nameEn || st.name) lines.push(`     ▶️ ${ytLink(st.nameEn || st.name)}`);
+      });
+    }
+    if (s.nutritionBefore) lines.push(`\n🥗 قبل: ${s.nutritionBefore}`);
+    if (s.nutritionAfter)  lines.push(`🥗 بعد: ${s.nutritionAfter}`);
+    lines.push('\n💪 مجموعة المطانيخ CrossFit');
+    return lines.join('\n');
+  }
+  async function copyText() {
+    await navigator.clipboard.writeText(buildText());
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  }
 
   const tabs = [
     s.warmup?.exercises?.length   && { key: 'warmup',   label: '🔆 إحماء' },
@@ -85,6 +121,18 @@ function HyroxTodayCard({ sessions }: { sessions: any[] }) {
 
       {open && (
         <div className="border-t border-gray-800 p-4 space-y-3">
+          {/* أزرار المشاركة */}
+          <div className="flex gap-2">
+            <button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(buildText())}`, '_blank')}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-green-700 hover:bg-green-600 text-white text-xs font-semibold transition-colors">
+              📲 واتساب
+            </button>
+            <button onClick={copyText}
+              className="px-3 py-2 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-xs font-semibold transition-colors">
+              {copied ? '✅' : '📋'} نسخ
+            </button>
+          </div>
+
           {s.coachNote && <div className="bg-red-900/20 border border-red-700/30 rounded-xl p-3 text-xs text-red-300">💬 {s.coachNote}</div>}
 
           {/* Section tabs */}
@@ -167,11 +215,55 @@ function HyroxTodayCard({ sessions }: { sessions: any[] }) {
 
 // ── بطاقة Kettlebell اليوم ───────────────────────────────────────────────────
 function KettlebellTodayCard({ sessions }: { sessions: any[] }) {
-  const [open, setOpen] = useState(false);
-  const [tab,  setTab]  = useState('main');
+  const [open, setOpen]     = useState(false);
+  const [tab,  setTab]      = useState('main');
+  const [copied, setCopied] = useState(false);
   if (!sessions.length) return null;
   const rec = sessions[0];
   const s   = rec.sessionData || rec;
+
+  function ytLink(nameEn: string) {
+    return `https://www.youtube.com/results?search_query=${encodeURIComponent(nameEn + ' kettlebell tutorial')}`;
+  }
+  function buildText() {
+    const now = new Date();
+    const dateStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
+    const lines: string[] = [];
+    lines.push(`🔔 Kettlebell — ${dateStr}`);
+    lines.push(`📌 ${s.title || 'جلسة Kettlebell'}`);
+    if (s.coachNote)        lines.push(`💬 ${s.coachNote}`);
+    if (s.breathingPattern) lines.push(`🌬️ ${s.breathingPattern}`);
+    if (s.warmup?.movements?.length) {
+      lines.push(`\n🔆 الإحماء${s.warmup.duration ? ' — '+s.warmup.duration+'د' : ''}:`);
+      s.warmup.movements.forEach((m: any, i: number) => {
+        if (typeof m === 'string') {
+          lines.push(`  ${i+1}. ${m}`);
+        } else {
+          lines.push(`  ${i+1}. ${m.name}${m.sets ? ' — '+m.sets+'×' : ''}${m.reps || ''}${m.notes ? ' | '+m.notes : ''}`);
+          if (m.nameEn) lines.push(`     ▶️ ${ytLink(m.nameEn)}`);
+        }
+      });
+    }
+    if (s.mainWork?.length) {
+      lines.push('\n🔔 العمل الرئيسي:');
+      s.mainWork.forEach((ex: any, i: number) => {
+        const name = ex.exerciseAr || ex.exercise;
+        lines.push(`  ${i+1}. ${name}${ex.sets ? ' | '+ex.sets+' مج' : ''}${ex.reps ? ' × '+ex.reps : ''}${ex.weight ? ' | ⚖️ '+ex.weight : ''}${ex.targetRPM ? ' | 🔄 '+ex.targetRPM+' RPM' : ''}${ex.restBetweenSets ? ' | راحة '+ex.restBetweenSets : ''}`);
+        if (ex.technique)   lines.push(`     💡 ${ex.technique}`);
+        if (ex.exercise)    lines.push(`     ▶️ ${ytLink(ex.exercise)}`);
+      });
+    }
+    if (s.techniqueNotes?.length) {
+      lines.push('\n💡 ملاحظات تقنية:');
+      s.techniqueNotes.forEach((n: string) => lines.push(`  • ${n}`));
+    }
+    lines.push('\n💪 مجموعة المطانيخ CrossFit');
+    return lines.join('\n');
+  }
+  async function copyText() {
+    await navigator.clipboard.writeText(buildText());
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  }
 
   const tabs = [
     s.warmup?.movements?.length   && { key: 'warmup', label: '🔆 إحماء'    },
@@ -201,6 +293,18 @@ function KettlebellTodayCard({ sessions }: { sessions: any[] }) {
 
       {open && (
         <div className="border-t border-gray-800 p-4 space-y-3">
+          {/* أزرار المشاركة */}
+          <div className="flex gap-2">
+            <button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(buildText())}`, '_blank')}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-green-700 hover:bg-green-600 text-white text-xs font-semibold transition-colors">
+              📲 واتساب
+            </button>
+            <button onClick={copyText}
+              className="px-3 py-2 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-xs font-semibold transition-colors">
+              {copied ? '✅' : '📋'} نسخ
+            </button>
+          </div>
+
           {s.coachNote && <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-xl p-3 text-xs text-yellow-300">💬 {s.coachNote}</div>}
           {s.breathingPattern && <div className="bg-gray-800/50 rounded-xl p-3 text-xs text-gray-300">🌬️ {s.breathingPattern}</div>}
 
@@ -296,11 +400,72 @@ function KettlebellTodayCard({ sessions }: { sessions: any[] }) {
 
 // ── بطاقة Calisthenics اليوم ─────────────────────────────────────────────────
 function CalisthenicsTodayCard({ sessions }: { sessions: any[] }) {
-  const [open, setOpen] = useState(false);
-  const [tab,  setTab]  = useState('main');
+  const [open, setOpen]     = useState(false);
+  const [tab,  setTab]      = useState('main');
+  const [copied, setCopied] = useState(false);
   if (!sessions.length) return null;
   const rec = sessions[0];
   const s   = rec.sessionData || rec;
+
+  function ytLink(nameEn: string) {
+    return `https://www.youtube.com/results?search_query=${encodeURIComponent(nameEn + ' calisthenics tutorial')}`;
+  }
+  function buildText() {
+    const now = new Date();
+    const dateStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
+    const lines: string[] = [];
+    lines.push(`🤸 Calisthenics — ${dateStr}`);
+    lines.push(`📌 ${s.title || 'جلسة Calisthenics'}${rec.sessionType ? ' | ' + rec.sessionType : ''}${s.totalDuration ? ' | ⏱' + s.totalDuration + 'د' : ''}`);
+    if (s.coachNote) lines.push(`💬 ${s.coachNote}`);
+    if (s.warmup?.exercises?.length) {
+      lines.push(`\n🔆 الإحماء${s.warmup.duration ? ' — ' + s.warmup.duration + 'د' : ''}:`);
+      s.warmup.exercises.forEach((ex: any, i: number) => {
+        lines.push(`  ${i+1}. ${ex.name}${ex.sets ? ' — '+ex.sets+'×' : ''}${ex.reps || ''}`);
+        if (ex.nameEn) lines.push(`     ▶️ ${ytLink(ex.nameEn)}`);
+      });
+    }
+    if (s.skillWork?.exercises?.length) {
+      lines.push(`\n🤸 ${s.skillWork.title || 'مهارات'}${s.skillWork.duration ? ' — '+s.skillWork.duration+'د' : ''}:`);
+      s.skillWork.exercises.forEach((ex: any, i: number) => {
+        lines.push(`  ${i+1}. ${ex.name}${ex.target ? ' — '+ex.target : ''}`);
+        if (ex.nameEn)      lines.push(`     ▶️ ${ytLink(ex.nameEn)}`);
+        if (ex.regression)  lines.push(`     ⬇️ ${ex.regression}`);
+        if (ex.progression) lines.push(`     ⬆️ ${ex.progression}`);
+      });
+    }
+    const mainEx = Array.isArray(s.mainWork) ? s.mainWork : (s.mainWork?.exercises || []);
+    if (mainEx.length) {
+      const mwTitle = !Array.isArray(s.mainWork) ? (s.mainWork?.title || 'العمل الرئيسي') : 'العمل الرئيسي';
+      lines.push(`\n💪 ${mwTitle}:`);
+      if (!Array.isArray(s.mainWork) && s.mainWork?.format) lines.push(`  📋 ${s.mainWork.format}`);
+      mainEx.forEach((ex: any, i: number) => {
+        lines.push(`  ${i+1}. ${ex.name}${ex.sets ? ' | '+ex.sets+' مج' : ''}${ex.reps ? ' × '+ex.reps : ''}${ex.rest ? ' | راحة '+ex.rest : ''}`);
+        if (ex.nameEn)                             lines.push(`     ▶️ ${ytLink(ex.nameEn)}`);
+        if (ex.cues)                               lines.push(`     💡 ${ex.cues}`);
+        if (ex.regression || ex.scaling?.easier)   lines.push(`     ⬇️ ${ex.regression || ex.scaling?.easier}`);
+        if (ex.progression || ex.scaling?.harder)  lines.push(`     ⬆️ ${ex.progression || ex.scaling?.harder}`);
+      });
+    }
+    if (s.metcon?.exercises?.length) {
+      lines.push(`\n🔥 ${s.metcon.format || 'Metcon'}${s.metcon.duration ? ' — '+s.metcon.duration+'د' : ''}:`);
+      s.metcon.exercises.forEach((ex: any, i: number) => {
+        lines.push(`  ${i+1}. ${ex.name}${ex.reps ? ' — '+ex.reps : ''}`);
+        if (ex.nameEn) lines.push(`     ▶️ ${ytLink(ex.nameEn)}`);
+      });
+    }
+    if (s.cooldown?.stretches?.length) {
+      lines.push(`\n🧘 التهدئة:`);
+      s.cooldown.stretches.forEach((st: any, i: number) => {
+        lines.push(`  ${i+1}. ${st.name}${st.duration ? ' — '+st.duration : ''}${st.focus ? ' | '+st.focus : ''}`);
+      });
+    }
+    lines.push('\n💪 مجموعة المطانيخ CrossFit');
+    return lines.join('\n');
+  }
+  async function copyText() {
+    await navigator.clipboard.writeText(buildText());
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  }
 
   const tabs = [
     s.warmup?.exercises?.length      && { key: 'warmup',  label: '🔆 إحماء'    },
@@ -331,6 +496,18 @@ function CalisthenicsTodayCard({ sessions }: { sessions: any[] }) {
 
       {open && (
         <div className="border-t border-gray-800 p-4 space-y-3">
+          {/* أزرار المشاركة */}
+          <div className="flex gap-2">
+            <button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(buildText())}`, '_blank')}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-green-700 hover:bg-green-600 text-white text-xs font-semibold transition-colors">
+              📲 واتساب
+            </button>
+            <button onClick={copyText}
+              className="px-3 py-2 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-xs font-semibold transition-colors">
+              {copied ? '✅' : '📋'} نسخ
+            </button>
+          </div>
+
           {s.coachNote && <div className="bg-emerald-900/20 border border-emerald-700/30 rounded-xl p-3 text-xs text-emerald-300">💬 {s.coachNote}</div>}
 
           {/* Section tabs */}
