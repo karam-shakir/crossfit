@@ -34,6 +34,32 @@ const EXERCISES = [
   { id: 'rope-climb',        nameEn: 'Rope Climb',        nameAr: 'تسلق الحبل',          category: 'gymnastics' },
 ];
 
+// تحليل شدة الأسبوع الماضي
+function analyzeWeekIntensity(recentWods: any[]): { label: string; recommendation: string; musclesHit: string[] } {
+  const last7 = recentWods.slice(0, 7);
+  const count = last7.length;
+  const musclesHit: string[] = [];
+
+  last7.forEach(w => {
+    const all = [...(w.strength || []), ...(w.metcon || [])];
+    all.forEach((e: any) => {
+      const id = e.exerciseId || '';
+      if (['back-squat','front-squat','overhead-squat'].includes(id)) musclesHit.push('الرجل/القرفصاء');
+      if (['deadlift'].includes(id)) musclesHit.push('السلسلة الخلفية/الرفعة الميتة');
+      if (['power-clean','clean-and-jerk','snatch'].includes(id)) musclesHit.push('الأولمبي/الظهر');
+      if (['pull-up','kipping-pull-up','muscle-up','rope-climb'].includes(id)) musclesHit.push('السحب/الظهر');
+      if (['handstand-pushup','shoulder-press','push-press'].includes(id)) musclesHit.push('الكتف/الضغط');
+      if (['thruster','wall-ball'].includes(id)) musclesHit.push('كامل الجسم');
+    });
+  });
+
+  const unique = [...new Set(musclesHit)];
+
+  if (count >= 5) return { label: 'ثقيل', recommendation: 'أسبوع ثقيل — يجب أن تكون هذه جلسة خفيفة أو متوسطة للتعافي', musclesHit: unique };
+  if (count >= 3) return { label: 'متوسط', recommendation: 'أسبوع متوسط — يمكن جلسة متوسطة إلى ثقيلة', musclesHit: unique };
+  return { label: 'خفيف', recommendation: 'أسبوع خفيف — الجسم جاهز لجلسة ثقيلة', musclesHit: unique };
+}
+
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session || session.role !== 'admin')
@@ -42,182 +68,242 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const { date, focus, difficulty = 'متوسط', wodMode = 'crossfit' } = body;
 
-  // Calisthenics: bodyweight only — exclude barbell/machine exercises (row = machine)
-  const CALISTHENICS_EXERCISES = EXERCISES.filter(e =>
-    e.category === 'gymnastics' ||
-    ['run', 'double-under', 'burpee', 'box-jump'].includes(e.id)
+  const CALIS_EXERCISES = EXERCISES.filter(e =>
+    e.category === 'gymnastics' || ['run','double-under','burpee','box-jump'].includes(e.id)
   );
 
   const exerciseList = EXERCISES.map(e => `- ${e.id} (${e.nameEn} / ${e.nameAr}) [${e.category}]`).join('\n');
-  const calisExerciseList = CALISTHENICS_EXERCISES.map(e => `- ${e.id} (${e.nameEn} / ${e.nameAr}) [${e.category}]`).join('\n');
+  const calisExerciseList = CALIS_EXERCISES.map(e => `- ${e.id} (${e.nameEn} / ${e.nameAr}) [${e.category}]`).join('\n');
 
-  // جلب آخر 5 تمارين CrossFit للسياق التاريخي
   const allWods = await getWods();
   const recentWods = allWods
     .filter(w => date ? w.date < date : true)
-    .slice(0, 5)
-    .map(w => ({
-      date: w.date,
-      title: w.title,
-      type: w.type,
-      strength: (w.strength || []).map((e: any) => e.exerciseId).join(', '),
-      metcon: (w.metcon || []).map((e: any) => e.exerciseId).join(', '),
-    }));
-  const recentContext = recentWods.length > 0
-    ? `\n**التمارين السابقة (تجنب التكرار المباشر):**\n${JSON.stringify(recentWods, null, 2)}\n`
-    : '';
+    .slice(0, 7);
 
-  const calisthenicsPrompt = `أنت مدرب Calisthenics محترف بخبرة أكثر من 10 سنوات، متخصص في برمجة تمارين وزن الجسم والجمناستيكس على المستوى التنافسي. أسلوبك يشبه أفضل مدربي Street Workout وGymnastics Strength Training (GST).
+  const weekAnalysis = analyzeWeekIntensity(recentWods);
 
-═══════════════════════════════
-النادي: مجموعة المطانيخ CrossFit
-الجمهور: غالبيتهم رجال (18-40 سنة) — مع وجود نساء
-الأوزان: مبنية على معايير الرجال — مع ذكر scaling للنساء في الـ notes
-═══════════════════════════════
+  const recentSummary = recentWods.slice(0, 5).map(w => ({
+    date: w.date,
+    title: w.title,
+    type: w.type,
+    strength: (w.strength || []).map((e: any) => e.exerciseId).join(', '),
+    metcon: (w.metcon || []).map((e: any) => e.exerciseId).join(', '),
+    isCalisthenics: w.isCalisthenics || false,
+  }));
 
-**تفاصيل الجلسة:**
-- نوع الجلسة: Calisthenics — وزن الجسم البحت
-- الصعوبة: ${difficulty}
-${focus ? `- التركيز: ${focus}` : '- التركيز: كامل الجسم'}
-${date ? `- التاريخ: ${date}` : ''}
+  const weekContext = `
+**═══ تحليل الأسبوع الماضي ═══**
+- عدد جلسات آخر 7 أيام: ${recentWods.length}
+- شدة الأسبوع: ${weekAnalysis.label}
+- المجموعات العضلية التي تم تدريبها: ${weekAnalysis.musclesHit.join(' | ') || 'لا يوجد بيانات'}
+- توصية المدرب: ${weekAnalysis.recommendation}
 
-**التمارين المتاحة (وزن الجسم فقط — استخدم IDs هذه حصراً):**
-${calisExerciseList}
-${recentContext}
-**فلسفة البرمجة الاحترافية:**
-- الإحماء: تنشيط مفصلي تدريجي + تفعيل عضلي (shoulder circles، hip circles، inchworm، scapular pull-ups)
-- القوة / Skill Work: تمارين تقنية مهارية بمجموعات قصيرة عالية الجودة (Strict Pull-up، HSPU، Muscle-up Progression)
-- الميتكون: circuit مكثف يرفع معدل ضربات القلب، تمارين تدفق بدون توقف
-- التهدئة: تمطيط إيزومتري عميق للعضلات الأكثر استخداماً
+**التمارين السابقة (تجنب تكرار نفس التمارين المذكورة):**
+${JSON.stringify(recentSummary, null, 2)}
+`;
 
-**قواعد حقلَي duration و rounds:**
-- "للوقت" مع جولات → rounds = عدد الجولات، duration = التايم كاب بالدقائق
-- "AMRAP" → rounds = null، duration = مدة الـ AMRAP بالدقائق
-- "تدريب" (Skill) → rounds = عدد المجموعات، duration = الوقت التقديري
-- duration يجب أن يكون دائماً رقماً
-
-**مستويات الصعوبة في الأوزان والتمارين:**
-- مبتدئ: تمارين مساعدة (band pull-up, knee push-up, negative pull-up)
-- متوسط: تمارين كاملة (strict pull-up, push-up, dips)
-- متقدم: تمارين مركبة (muscle-up, handstand push-up, toes-to-bar)
-- نخبة: تمارين مهارية متقدمة (strict HSPU, kipping muscle-up, rope climb)
-
-أرجع JSON بهذا التنسيق بالضبط بدون أي نص خارجه:
-{
-  "title": "عنوان التمرين بالعربية — يوم Calisthenics",
-  "type": "للوقت | AMRAP | تدريب",
-  "duration": 20,
-  "rounds": null,
-  "notes": "ملاحظات تفصيلية للمتدربين تشمل: استراتيجية الجلسة، كيفية تقسيم التكرارات، نقاط الأمان",
-  "theme": "الفكرة المحورية للجلسة (مثال: بناء قوة السحب مع تحمل وزن الجسم)",
-  "warmup": [
-    {"exerciseId": "run", "reps": "400م", "weight": "", "distance": "400م", "time": "", "notes": "إيقاع هادئ — تنشيط الدورة الدموية"},
-    {"exerciseId": "push-up", "reps": "10", "weight": "", "distance": "", "time": "", "notes": "بطيء — تفعيل الكتف والصدر"},
-    {"exerciseId": "sit-up", "reps": "15", "weight": "", "distance": "", "time": "", "notes": "تفعيل العضلة الوسطى"}
-  ],
-  "strength": [
-    {"exerciseId": "pull-up", "reps": "5×3", "weight": "", "distance": "", "time": "", "notes": "Strict فقط — توقف 3 ث في الأعلى، متوسط: Banded، متقدم: Weighted BW"},
-    {"exerciseId": "handstand-pushup", "reps": "4×5", "weight": "", "distance": "", "time": "", "notes": "Strict HSPU — متوسط: Pike Push-up، نخبة: Freestanding HSPU"}
-  ],
-  "metcon": [
-    {"exerciseId": "pull-up", "reps": "21-15-9", "weight": "", "distance": "", "time": "", "notes": "Kipping مسموح — لا تصل للفشل الكامل"},
-    {"exerciseId": "push-up", "reps": "21-15-9", "weight": "", "distance": "", "time": "", "notes": "صدر للأرض في كل تكرار"},
-    {"exerciseId": "burpee", "reps": "21-15-9", "weight": "", "distance": "", "time": "", "notes": "استمر في الحركة — لا توقف"}
-  ],
-  "cooldown": [
-    {"exerciseId": "sit-up", "reps": "10", "weight": "", "distance": "", "time": "45 ث", "notes": "تمطيط الصدر والكتفين — أمسك 45 ث"}
-  ]
-}
-
-**قواعد صارمة:**
-- استخدم فقط IDs التمارين المتاحة أعلاه
-- weight يبقى فارغاً دائماً (وزن الجسم)
-- الإحماء: 3-4 تمارين ديناميكية تُهيئ للعمل الرئيسي
-- القوة/Skill: 2-3 تمارين مهارية عالية الجودة
-- الميتكون: 3-5 تمارين مكثفة 7-20 دقيقة
-- في كل notes: اذكر scaling للمبتدئين وللمتقدمين
-- التهدئة: 2-3 تمطيطات للعضلات الأكثر استخداماً
-
-أرجع JSON فقط، بدون أي كلام قبله أو بعده.`;
-
-  const crossfitPrompt = `أنت مبرمج CrossFit محترف على مستوى CompTrain وPRVN Athletics، بخبرة أكثر من 10 سنوات في برمجة الجداول اليومية لأندية CrossFit. تبرمج بأسلوب مدرب ذكي يفهم التوازن بين القوة والتحمل ويراعي تعافي الأعضاء.
+  const crossfitPrompt = `أنت مبرمج CrossFit على مستوى CompTrain وPRVN Athletics. تعرف مبادئ الحمل التدريجي (Progressive Overload) والدورات التدريبية (Periodization). مهمتك: توليد تمرين واحد يخدم جميع مستويات الصالة في نفس الوقت، مع تركيز حقيقي على الحركات الوظيفية والأثقال لبناء القوة العضلية.
 
 ═══════════════════════════════
 النادي: مجموعة المطانيخ CrossFit
-الجمهور: غالبيتهم رجال (18-40 سنة) — متوسط إلى متقدم
-الأوزان: مبنية على معايير الرجال (RX للرجال) — اذكر scaling للنساء في كل تمرين
+الجمهور: رجال وبعض النساء (18-40 سنة)
+فلسفة النادي: القوة أولاً ثم التحمل — نبني متدربين أقوياء ووظيفيين
 ═══════════════════════════════
 
-**تفاصيل التمرين المطلوب:**
-- الصعوبة: ${difficulty}
-${focus ? `- التركيز: ${focus}` : '- التركيز: حسب تقدير المدرب'}
+${weekContext}
+
+**الجلسة المطلوبة:**
+- الصعوبة العامة: ${difficulty}
+${focus ? `- التركيز: ${focus}` : '- التركيز: حسب تحليل الأسبوع'}
 ${date ? `- التاريخ: ${date}` : ''}
 
 **قائمة التمارين المتاحة (استخدم ID المطابق حصراً):**
 ${exerciseList}
-${recentContext}
-**فلسفة البرمجة الاحترافية:**
-✦ الإحماء: تهيئة تدريجية تُفعّل العضلات المستخدمة في الجلسة (dynamic warm-up، mobility، activation)
-✦ القوة: بناء الأساس — compound movements بنسب 70-85% من الـ 1RM، مجموعات 3-5 × 3-6 تكرارات
-✦ الميتكون: اختر نوع WOD يناسب التركيز:
-   - "Hero/Benchmark": 21-15-9 أو Cindy-style أو تابطا
-   - "Chipper": تسلسل من 5-7 تمارين يُنجز مرة واحدة
-   - "EMOM": x تمارين في كل دقيقة لـ 10-20 دقيقة
-   - "AMRAP": أقصى جولات في وقت محدد
-✦ التهدئة: تمطيط هادئ للمجموعات العضلية المُستنزفة
 
-**قواعد حقلَي duration و rounds — مهم جداً:**
-- "للوقت" مع جولات محددة → rounds = عدد الجولات، duration = التايم كاب بالدقائق
-- "AMRAP" → rounds = null، duration = مدة الـ AMRAP بالدقائق
-- "للوقت" بدون جولات (21-15-9) → rounds = null، duration = التايم كاب
-- "قوة" فقط → rounds = عدد المجموعات، duration = الوقت التقديري
-- duration يجب أن يكون دائماً رقماً صحيحاً
+**══ قواعد البرمجة الذهبية ══**
 
-**جدول الأوزان المرجعية لتمارين القوة:**
-| التمرين | مبتدئ | متوسط | متقدم | نخبة |
-|---------|-------|-------|-------|------|
-| Back Squat | 40-50كجم | 60-80كجم | 90-110كجم | 120كجم+ |
-| Deadlift | 50-60كجم | 80-100كجم | 110-140كجم | 150كجم+ |
-| Thruster | 20-30كجم | 35-45كجم | 50-65كجم | 70كجم+ |
-| Clean & Jerk | 30-40كجم | 50-65كجم | 70-90كجم | 95كجم+ |
+1. **التمرين الواحد لجميع المستويات:**
+   كل تمرين له مستويات 4 واضحة — يدخل الجميع نفس الصالة ويؤدون نفس الحركة بأوزان مختلفة.
+   المبتدئ يتعلم الحركة، المتقدم يبني القوة، النخبة يتحدى حدوده.
+
+2. **القوة وظيفية حقيقية:**
+   الإحماء: تفعيل عضلي هادئ يهيئ للحركة الرئيسية
+   القوة: تمارين compound ثقيلة (squat/deadlift/press/pull) — 70-85% من الـ 1RM
+   الميتكون: يكمّل القوة، لا يلغيها — 8-15 دقيقة كافية
+   التهدئة: تمطيط إيزومتري للعضلات المُستنزفة
+
+3. **مبدأ التدرج:**
+   - إذا كان الأسبوع ثقيل: اجعل القوة متوسطة (3×5 بـ 70%) والميتكون قصير (أقل من 12 دقيقة)
+   - إذا كان الأسبوع متوسط: ثقّل القوة (5×3 بـ 80-85%) وميتكون متوسط (12-18 دقيقة)
+   - إذا كان الأسبوع خفيف: اجعلها ثقيلة — قوة قصوى + ميتكون مكثف
+
+4. **المجموعات العضلية:**
+   - تجنب تدريب نفس المجموعة العضلية يومَين متتاليَين
+   - بعد تمارين الساق الثقيلة: اليوم التالي للجسم العلوي
+   - بعد الأولمبي: اليوم التالي للجمناستيكس أو الكارديو
+
+**══ معايير الأوزان الدقيقة ══**
+
+تمارين القوة:
+| التمرين | مبتدئ (1 سنة-) | متوسط (2-3 سنة) | متقدم (4+ سنة) | نخبة (منافس) |
+|---------|---------------|----------------|----------------|--------------|
+| Back Squat | 40-50كجم | 65-80كجم | 90-110كجم | 120كجم+ |
+| Front Squat | 30-40كجم | 50-65كجم | 70-90كجم | 100كجم+ |
+| Deadlift | 50-70كجم | 85-105كجم | 115-140كجم | 155كجم+ |
+| Clean & Jerk | 30-40كجم | 55-70كجم | 80-95كجم | 105كجم+ |
+| Snatch | 20-30كجم | 40-55كجم | 65-80كجم | 90كجم+ |
+| Shoulder Press | 25-35كجم | 45-60كجم | 65-80كجم | 85كجم+ |
+| Thruster | 20-30كجم | 35-50كجم | 55-65كجم | 70كجم+ |
+| Wall Ball | 6كجم/3م | 9كجم/3م | 9كجم/3م | 9كجم/3م (Rx) |
+| KB Swing | 12-16كجم | 20-24كجم | 28-32كجم | 32كجم+ |
+
+**قواعد duration و rounds:**
+- "للوقت" مع جولات → rounds = العدد، duration = التايم كاب
+- "AMRAP" → rounds = null، duration = مدة الـ AMRAP
+- "للوقت" بدون جولات → rounds = null، duration = التايم كاب
+- "قوة" فقط → rounds = مجموعات القوة، duration = وقت الجلسة
+- duration: رقم صحيح دائماً
 
 أرجع JSON بهذا التنسيق بدون أي نص خارجه:
 {
-  "title": "عنوان التمرين اليومي بالعربية — احترافي ومُلهم",
-  "type": "للوقت | AMRAP | قوة | تدريب",
+  "title": "عنوان التمرين بالعربية — احترافي يعكس الحركة الرئيسية",
+  "type": "للوقت | AMRAP | قوة | EMOM",
   "duration": 20,
-  "rounds": 5,
-  "notes": "ملاحظات تفصيلية: كيف تُقسّم الجهد، متى تتنفس، ما هو الهدف الزمني المقترح لكل مستوى",
-  "theme": "الرابط التدريبي بين القوة والميتكون — لماذا اخترنا هذه التمارين معاً",
+  "rounds": null,
+  "weekIntensity": "${weekAnalysis.label}",
+  "theme": "الفكرة المحورية: لماذا هذه التمارين معاً، ما الذي تبنيه فيزيولوجياً",
+  "notes": "ملاحظات للمتدربين: استراتيجية الجلسة، متى تتنفس، علامات الأداء الجيد",
   "warmup": [
-    {"exerciseId": "run", "reps": "400م", "weight": "", "distance": "400م", "time": "", "notes": "هادئ جداً — إيقاع المحادثة"},
-    {"exerciseId": "back-squat", "reps": "10", "weight": "الوزن الخفيف جداً", "distance": "", "time": "", "notes": "حرك المفصل — بدون إجهاد"},
-    {"exerciseId": "pull-up", "reps": "5", "weight": "", "distance": "", "time": "", "notes": "تنشيط الكتف والظهر"}
+    {
+      "exerciseId": "run",
+      "reps": "400م",
+      "weight": "",
+      "distance": "400م",
+      "time": "",
+      "notes": "إيقاع 60% — تنشيط الدورة الدموية فقط، ليس سباقاً"
+    }
   ],
   "strength": [
-    {"exerciseId": "back-squat", "reps": "5×5", "weight": "75% — مبتدئ: 50كجم | متوسط: 70كجم | متقدم: 90كجم", "distance": "", "time": "", "notes": "ركز على العمق الكامل — ركبتيك تتبعان أصابع قدميك"},
-    {"exerciseId": "deadlift", "reps": "3×3", "weight": "80% — مبتدئ: 60كجم | متوسط: 90كجم | متقدم: 120كجم", "distance": "", "time": "", "notes": "ظهر مستقيم — التعامل القوي مع البار"}
+    {
+      "exerciseId": "back-squat",
+      "reps": "5×4",
+      "weight": "75-80%",
+      "distance": "",
+      "time": "",
+      "levels": {
+        "beginner":     { "weight": "50كجم", "reps": "5×4", "cue": "عمق موازٍ — خذ وقتك" },
+        "intermediate": { "weight": "75كجم", "reps": "5×4", "cue": "عمق كامل — ركبتيك خارجاً" },
+        "advanced":     { "weight": "95كجم", "reps": "5×4", "cue": "بحزام — تفعيل البطن قبل النزول" },
+        "elite":        { "weight": "115كجم", "reps": "5×4", "cue": "Pause Squat 2 ث في الأسفل" }
+      },
+      "notes": "راحة 2-3 دقائق بين المجموعات — جودة الحركة قبل الثقل"
+    }
   ],
   "metcon": [
-    {"exerciseId": "thruster", "reps": "21-15-9", "weight": "مبتدئ: 30كجم | متوسط: 43كجم | متقدم: 55كجم", "distance": "", "time": "", "notes": "قسّمها: 15-6 ثم 9-6 ثم 5-4"},
-    {"exerciseId": "pull-up", "reps": "21-15-9", "weight": "", "distance": "", "time": "", "notes": "مبتدئ: Banded | متوسط: Kipping | متقدم: Strict"}
+    {
+      "exerciseId": "thruster",
+      "reps": "21-15-9",
+      "weight": "",
+      "distance": "",
+      "time": "",
+      "levels": {
+        "beginner":     { "weight": "30كجم", "scaling": "Push Press مع كرة إلى الأمام بدلاً من Thruster" },
+        "intermediate": { "weight": "43كجم", "scaling": "" },
+        "advanced":     { "weight": "55كجم", "scaling": "" },
+        "elite":        { "weight": "65كجم", "scaling": "Squat Clean into Thruster" }
+      },
+      "notes": "قسّم التكرارات: 12-9 ثم 8-7 ثم لا تتوقف في الـ 9"
+    }
   ],
   "cooldown": [
-    {"exerciseId": "run", "reps": "", "weight": "", "distance": "400م", "time": "", "notes": "مشي هادئ — خفّف معدل القلب"},
-    {"exerciseId": "sit-up", "reps": "10", "weight": "", "distance": "", "time": "30 ث", "notes": "تمطيط الوتر الرباعي والظهر السفلي"}
+    {
+      "exerciseId": "sit-up",
+      "reps": "",
+      "weight": "",
+      "distance": "",
+      "time": "60 ث",
+      "notes": "تمطيط الوتر الرباعي والظهر السفلي — أمسك بثبات"
+    }
   ]
 }
 
-**قواعد مهمة:**
-- استخدم فقط IDs من القائمة أعلاه
-- في كل تمرين قوة: اذكر الوزن لـ 3 مستويات (مبتدئ | متوسط | متقدم)
-- في الميتكون: اذكر scaling واضح لكل تمرين في الـ notes
-- الإحماء: 3-4 تمارين، الأول cardio خفيف ثم تفعيل عضلي
-- القوة: 2-4 تمارين compound مع أوزان محددة ومرجعية
-- الميتكون: 3-5 تمارين مكثفة 7-20 دقيقة، مترابطة مع القوة
-- التهدئة: 2-3 تمارين تمطيط للعضلات الأكثر إجهاداً
+**قواعد صارمة:**
+- استخدم IDs من القائمة أعلاه فقط
+- كل تمرين في strength و metcon يجب أن يحتوي على حقل "levels" بـ 4 مستويات
+- كل مستوى يحتوي على: weight, reps (أو scaling), cue (نقطة تقنية مخصصة)
+- الإحماء: 3-4 تمارين، الأول cardio ثم تفعيل عضلي مرتبط بتمارين القوة
+- القوة: 2-3 تمارين compound ثقيلة مع أوزان حقيقية لكل مستوى
+- الميتكون: 3-5 تمارين، مكثف ومرتبط بالقوة (تجنب تكرار نفس المجموعة العضلية)
+- التهدئة: 2-3 تمارين للمناطق الأكثر إجهاداً
 
-أرجع JSON فقط، بدون أي كلام قبله أو بعده.`;
+أرجع JSON فقط، بدون أي نص قبله أو بعده.`;
+
+  const calisthenicsPrompt = `أنت مدرب Calisthenics وGST (Gymnastics Strength Training) محترف. فلسفتك: بناء قوة حقيقية بوزن الجسم — الجسم هو الوزن، والتدرج هو الأداة. كل جلسة تخدم جميع المستويات في نفس الوقت.
+
+═══════════════════════════════
+النادي: مجموعة المطانيخ CrossFit
+الفلسفة: Calisthenics = قوة وظيفية كاملة، ليس مجرد تكرارات
+التركيز: حركات مقاومة (weighted options متاحة للمتقدمين)
+═══════════════════════════════
+
+${weekContext}
+
+**الجلسة المطلوبة:**
+- الصعوبة العامة: ${difficulty}
+${focus ? `- التركيز: ${focus}` : '- التركيز: حسب تحليل الأسبوع'}
+${date ? `- التاريخ: ${date}` : ''}
+
+**قائمة التمارين المتاحة:**
+${calisExerciseList}
+
+**══ منهج الـ 4 مستويات في Calisthenics ══**
+
+| الحركة | مبتدئ | متوسط | متقدم | نخبة |
+|--------|-------|-------|-------|------|
+| Pull | Band Pull-up | Strict Pull-up | Weighted Pull-up (+10كجم) | Muscle-up |
+| Push | Knee Push-up | Strict Push-up | Weighted Push-up (+15كجم) | Handstand Push-up |
+| Core | Sit-up | Toes-to-Bar (بند) | Toes-to-Bar (strict) | L-Sit 30 ث |
+| Hinge | Good Morning | KB Swing | Single-leg Deadlift | GHD |
+| Skill | Negative Pull-up | Kipping Pull-up | Strict HSPU | Freestanding HSPU |
+| Carry | Bodyweight Lunges | Box Jump | Weighted Vest Lunge | Pistol Squat |
+
+**قواعد البرمجة:**
+- Skill Work أولاً (حركات تقنية عندما تكون الطاقة كاملة)
+- Strength ثانياً (حركات مقاومة — weighted options للمتقدمين والنخبة)
+- Metcon آخراً (التحمل العضلي والقلبي)
+- التهدئة: إطالة عميقة للمجموعات المُستنزفة
+
+أرجع JSON بنفس بنية CrossFit بالضبط (مع levels لكل تمرين):
+{
+  "title": "...",
+  "type": "للوقت | AMRAP | تدريب",
+  "duration": 20,
+  "rounds": null,
+  "weekIntensity": "${weekAnalysis.label}",
+  "theme": "...",
+  "notes": "...",
+  "warmup": [ { "exerciseId": "...", "reps": "...", "weight": "", "distance": "", "time": "", "notes": "..." } ],
+  "strength": [
+    {
+      "exerciseId": "pull-up",
+      "reps": "5×4",
+      "weight": "",
+      "distance": "", "time": "",
+      "levels": {
+        "beginner":     { "weight": "Band مساعدة 20كجم", "reps": "5×4", "cue": "Negative فقط إذا تعذّر الإتمام" },
+        "intermediate": { "weight": "وزن الجسم", "reps": "5×4", "cue": "Strict — لا kipping في القوة" },
+        "advanced":     { "weight": "+10كجم حزام", "reps": "5×3", "cue": "تحكم كامل في الصعود والنزول" },
+        "elite":        { "weight": "+20كجم حزام", "reps": "4×3", "cue": "Pause 2 ث في الأعلى" }
+      },
+      "notes": "راحة 90 ث — جودة الحركة أهم من العدد"
+    }
+  ],
+  "metcon": [ { "exerciseId": "...", "reps": "...", "weight": "", "distance": "", "time": "", "levels": { "beginner": {"weight":"","scaling":""}, "intermediate":{"weight":"","scaling":""}, "advanced":{"weight":"","scaling":""}, "elite":{"weight":"","scaling":""} }, "notes": "..." } ],
+  "cooldown": [ { "exerciseId": "...", "reps": "", "weight": "", "distance": "", "time": "60 ث", "notes": "..." } ]
+}
+
+قواعد صارمة: استخدم IDs من القائمة فقط، weight فارغ في الإحماء والتهدئة، كل تمرين في strength/metcon له levels.
+أرجع JSON فقط.`;
 
   const prompt = wodMode === 'calisthenics' ? calisthenicsPrompt : crossfitPrompt;
 
@@ -240,28 +326,29 @@ ${recentContext}
 
     const validateSection = (items: any[]) =>
       (items || []).filter((item: any) => item && validIds.has(item.exerciseId)).map((item: any) => ({
-        ...item,
         exerciseId: item.exerciseId,
-        reps: item.reps || '',
-        weight: item.weight || '',
-        distance: item.distance || '',
-        time: item.time || '',
-        notes: item.notes || '',
+        reps:       item.reps || '',
+        weight:     item.weight || '',
+        distance:   item.distance || '',
+        time:       item.time || '',
+        notes:      item.notes || '',
+        levels:     item.levels || null,
       }));
 
     const wodData = {
-      date: date || new Date().toISOString().split('T')[0],
-      title: generated.title || (wodMode === 'calisthenics' ? 'تمرين Calisthenics' : 'تمرين يومي'),
-      type: generated.type || 'للوقت',
+      date:           date || new Date().toISOString().split('T')[0],
+      title:          generated.title || (wodMode === 'calisthenics' ? 'تمرين Calisthenics' : 'تمرين يومي'),
+      type:           generated.type || 'للوقت',
       isCalisthenics: wodMode === 'calisthenics',
-      duration: generated.duration ?? 20,
-      rounds: generated.rounds ?? null,
-      notes: generated.notes || '',
-      aiTheme: generated.theme || '',
-      warmup: validateSection(generated.warmup),
-      strength: validateSection(generated.strength),
-      metcon: validateSection(generated.metcon),
-      cooldown: validateSection(generated.cooldown),
+      duration:       generated.duration ?? 20,
+      rounds:         generated.rounds ?? null,
+      weekIntensity:  generated.weekIntensity || weekAnalysis.label,
+      notes:          generated.notes || '',
+      aiTheme:        generated.theme || '',
+      warmup:         validateSection(generated.warmup),
+      strength:       validateSection(generated.strength),
+      metcon:         validateSection(generated.metcon),
+      cooldown:       validateSection(generated.cooldown),
     };
 
     return NextResponse.json({ wod: wodData, theme: generated.theme });

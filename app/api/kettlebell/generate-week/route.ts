@@ -42,35 +42,45 @@ export async function POST(req: NextRequest) {
     ? `\n**الأسابيع السابقة — نوّع الأحداث وابنِ على الحجم السابق تدريجياً:**\n${JSON.stringify(recentKB, null, 2)}\n`
     : '';
 
-  const prompt = `أنت مدرب Kettlebell Athletics محترف ومعتمد من IUKL، متخصص في بناء الخطط الأسبوعية بأسلوب التدرج المنهجي. تعرف كيف توزع الحجم والشدة عبر الأسبوع لتحقيق أقصى تكيّف مع أدنى خطر إصابة.
+  const prompt = `أنت مدرب Kettlebell Sport محترف معتمد (IUKL/WAKSC). فلسفتك: القوة + التقنية + التنفس = بطل Kettlebell. تصمم أسابيع تدريبية متكاملة تخدم جميع المستويات في نفس الجلسة مع تركيز حقيقي على بناء القوة العضلية والحركات الوظيفية.
 
 ═══════════════════════════════
-النادي: مجموعة المطانيخ CrossFit — غالبيتهم رجال (18-40 سنة)، أوزان 16-24كجم كـ RX مع scaling للنساء
+النادي: مجموعة المطانيخ Kettlebell
+الجمهور: مبتدئون إلى نخبة (18-40 سنة)
+الفلسفة: الوزن يحترم التقنية — التقنية تصنع القوة — القوة تصنع البطل
 المدة: ${days} أيام من ${startDate}
-المستوى: ${difficulty}
+المستوى العام: ${difficulty}
 ═══════════════════════════════
 
 **أنواع الجلسات:**
-▶ biathlon: Jerk (أداتان) + Snatch (أداة واحدة) — الحدث التنافسي الكلاسيكي
-▶ snatch: Snatch فقط — تحسين التقنية والتحمل الخاص
-▶ longcycle: Clean + Jerk (أداتان) — القوة والتنسيق
-▶ strength: تدريب قوة KB (Swing, Deadlift, Press, Squat) — بناء الأساس
-▶ conditioning: دوائر تدريبية (Swing + Goblet Squat + Turkish Get-Up)
+▶ biathlon: Jerk (أداتان) + Snatch — الحدث التنافسي الكلاسيكي + كتلة قوة
+▶ snatch: Snatch فقط — تقنية + حجم + strength مكمّلة
+▶ longcycle: Clean & Jerk — القوة الكاملة + Strength Block ثقيل
+▶ strength: قوة وظيفية بالكيتل بيل (Deadlift, Press, Squat, Carry)
+▶ conditioning: GPP — دوائر مختلطة + TGU + Swing
+▶ rest: راحة كاملة أو mobility + تمطيط الرسغ والكتف
 
-**فلسفة توزيع الأسبوع:**
-يوم 1 (حجم عالٍ): مجموعات طويلة بوزن خفيف نسبياً — بناء التحمل
-يوم 2: راحة نشطة — تمطيط خاص للمعصم والكتف (إلزامي!)
-يوم 3 (شدة عالية): مجموعات قصيرة بوزن أثقل — بناء القوة والسرعة
-يوم 4: راحة كاملة — لا تدريب
-يوم 5 (تقنية): أوزان خفيفة بتركيز على الشكل — quality over quantity
+**══ 4 مستويات في كل جلسة ══**
 
-**جدول الأوزان والـ RPM المرجعي:**
-| المستوى | الوزن | Jerk RPM | Snatch RPM | LC RPM |
-|---------|-------|----------|------------|--------|
+| المستوى | الوزن الحدث | Jerk RPM | Snatch RPM | LC RPM |
+|---------|------------|----------|------------|--------|
 | مبتدئ | 8-12كجم | 6-8 | 8-10 | 5-6 |
 | متوسط | 16كجم | 8-10 | 10-12 | 6-8 |
 | متقدم | 20-24كجم | 10-12 | 12-14 | 8-10 |
-| نخبة | 28-32كجم | 12+ | 14+ | 10+ |
+| نخبة | 28-32كجم | 12-14+ | 14-16+ | 10-12+ |
+
+| القوة | مبتدئ | متوسط | متقدم | نخبة |
+|-------|-------|-------|-------|------|
+| KB Deadlift | 2×16كجم | 2×24كجم | 2×32كجم | 2×40كجم |
+| KB Press | 12كجم | 16كجم | 20-24كجم | 28-32كجم |
+| KB Swing | 12-16كجم | 20-24كجم | 28-32كجم | 32-40كجم |
+| Goblet Squat | 12-16كجم | 20-24كجم | 28-32كجم | 36-40كجم |
+
+**فلسفة التوزيع الأسبوعي:**
+يوم STRENGTH HEAVY: كتلة قوة ثقيلة (Deadlift/Press/Squat) + حدث خفيف
+يوم SPORT WORK: الحدث الرئيسي + strength خفيفة
+يوم TECHNIQUE: أوزان خفيفة، تركيز على الجودة والتنفس
+يوم REST: راحة كاملة أو تمطيط رسغ وكتف + foam roll
 
 ${recentContext}
 **الأيام المطلوبة:**
@@ -83,59 +93,90 @@ ${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
       "date": "YYYY-MM-DD",
       "dayName": "اسم اليوم",
       "isRest": false,
-      "title": "عنوان الجلسة — محدد ومعبّر",
-      "eventType": "biathlon | snatch | longcycle | strength | conditioning",
-      "focus": "التحمل | القوة | التقنية | السرعة | التكييف",
+      "title": "عنوان احترافي يعكس الحدث والهدف",
+      "eventType": "biathlon | snatch | longcycle | strength | conditioning | rest",
+      "focus": "القوة | التحمل | التقنية | السرعة | التعافي",
       "difficulty": "${difficulty}",
-      "coachNote": "هدف الجلسة + الاستراتيجية + ما تركز عليه اليوم",
-      "breathingPattern": "نمط التنفس المقترح: متى تشهق، متى تزفر، الإيقاع الأمثل",
+      "coachNote": "هدف الجلسة + الاستراتيجية + النقطة الأهم لهذه الجلسة",
+      "breathingPattern": "دورة التنفس الكاملة: متى تشهق، متى تزفر، الإيقاع الأمثل لهذا الحدث",
       "warmup": {
         "duration": 12,
         "movements": [
-          {"name": "تدوير المعصم", "nameEn": "Wrist Circles", "sets": "2", "reps": "20 دورة", "notes": "إلزامي — يمنع إصابة الرسغ"},
-          {"name": "Halo", "nameEn": "KB Halo", "sets": "2", "reps": "8 × كل اتجاه", "notes": "8-12كجم — تنشيط الكتف"},
-          {"name": "سوينج خفيف", "nameEn": "Easy Swing", "sets": "2", "reps": "10", "notes": "تفعيل السلسلة الخلفية"}
+          {
+            "name": "Wrist Circles & Flexion",
+            "sets": "2",
+            "reps": "20 دورة + 10 ث ثبات",
+            "notes": "إلزامي — يمنع إصابة الرسغ",
+            "levels": {
+              "beginner": "دوائر بطيئة فقط",
+              "intermediate": "دوائر + ضغط خفيف على الرسغ",
+              "advanced": "Bottom-up Hold 15 ث بوزن 12كجم",
+              "elite": "نفس المتقدم + Wrist Roller"
+            }
+          }
+        ]
+      },
+      "strengthBlock": {
+        "description": "كتلة القوة الوظيفية — تأتي قبل الحدث دائماً",
+        "exercises": [
+          {
+            "name": "KB Deadlift",
+            "scheme": "4×5",
+            "levels": {
+              "beginner":     { "weight": "2×16كجم", "rest": "90 ث", "cue": "Hinge — ظهر مستقيم" },
+              "intermediate": { "weight": "2×24كجم", "rest": "90 ث", "cue": "ضغط الوسط قبل الرفع" },
+              "advanced":     { "weight": "2×32كجم", "rest": "120 ث", "cue": "Brace 360 درجة" },
+              "elite":        { "weight": "2×40كجم+", "rest": "120 ث", "cue": "انفجار + تحكم في النزول" }
+            },
+            "coachNote": "لماذا هذا التمرين في هذا التوقيت"
+          }
         ]
       },
       "mainWork": [
         {
-          "exercise": "Jerk",
-          "exerciseAr": "الجيرك",
-          "sets": 5,
-          "reps": "5 دقائق",
-          "weight": "مبتدئ: 16كجم | متوسط: 24كجم | متقدم: 32كجم",
+          "exercise": "Long Cycle",
+          "exerciseAr": "Long Cycle — Clean & Jerk",
+          "sets": 4,
+          "reps": "4 دقائق",
           "restBetweenSets": "3 دقائق",
-          "targetRPM": "مبتدئ: 8 | متوسط: 10 | متقدم: 12",
-          "technique": "تثبيت كامل في الأعلى — استرح في Rack — ادفع بالساقين"
+          "levels": {
+            "beginner":     { "weight": "12كجم", "rpm": "6 RPM", "totalLifts": "24 رفعة/مجموعة", "cue": "تأكد من الوقوف الكامل قبل الـ Jerk" },
+            "intermediate": { "weight": "16كجم", "rpm": "8 RPM", "totalLifts": "32 رفعة/مجموعة", "cue": "Rack Position مريح — رسغ محايد" },
+            "advanced":     { "weight": "24كجم", "rpm": "10 RPM", "totalLifts": "40 رفعة/مجموعة", "cue": "Dip صغير وانفجاري — لا تنزل عميقاً" },
+            "elite":        { "weight": "32كجم", "rpm": "12 RPM", "totalLifts": "48 رفعة/مجموعة", "cue": "وتيرة ثابتة من الثانية 1 إلى الأخيرة" }
+          },
+          "technique": "نقطة تقنية مهمة لهذا الحدث تحديداً"
         }
       ],
       "techniqueNotes": [
-        "نقطة تقنية محددة 1 لهذا الحدث",
+        "نقطة تقنية 1 لهذه الجلسة",
         "الخطأ الشائع وكيف تتجنبه",
-        "نصيحة متقدمة للمستوى الأعلى"
+        "نصيحة للمستوى المتقدم"
       ],
-      "progressionNote": "في الأسبوع القادم: زد المدة بـ 1-2 دقيقة أو الوزن بمستوى واحد",
+      "progressionNote": "في الأسبوع القادم: ماذا تزيد؟ المدة؟ الوزن؟ الـ RPM؟",
       "cooldown": {
         "duration": 10,
         "movements": [
-          {"name": "تمطيط الساعد والرسغ", "duration": "90 ث × كل يد"},
-          {"name": "تمطيط الكتف", "duration": "60 ث × كل كتف"},
-          {"name": "تنفس عميق", "duration": "2 دقيقة"}
+          { "name": "Forearm & Wrist Stretch", "duration": "90 ث × كل يد", "notes": "ضغط على راحة اليد للخلف" },
+          { "name": "Shoulder Cross-body Stretch", "duration": "60 ث × كل كتف", "notes": "الدلتا الخلفي — يُهمل دائماً" },
+          { "name": "Deep Breathing", "duration": "2 دقيقة", "notes": "تنشيط الجهاز العصبي الباراسمباثاوي" }
         ]
       }
     }
   ],
-  "weekSummary": "ملخص فلسفة الأسبوع: التوزيع، كيف تتكامل الجلسات، والهدف التراكمي",
+  "weekSummary": "فلسفة الأسبوع: التوزيع، الهدف التراكمي، كيف تتكامل الجلسات",
   "weeklyVolume": "خفيف | متوسط | ثقيل"
 }
 
-**ملاحظات مهمة:**
-- أيام الراحة: isRest: true، mainWork: []، warmup.movements: []
-- mainWork: مصفوفة مباشرة (بدون block wrapper)
-- كل تمرين: exercise, exerciseAr, sets, reps, weight, restBetweenSets, targetRPM, technique
-- الأوزان: دائماً اذكر 3 مستويات (مبتدئ | متوسط | متقدم)
-- لا يومين متتاليين بنفس الشدة العالية
-- يوم الراحة النشطة يشمل تمطيط المعصم والكتف حصراً`;
+**قواعد صارمة:**
+- كل تمرين في strengthBlock وكل حدث في mainWork له levels بـ 4 مستويات
+- strengthBlock قبل mainWork في كل جلسة نشطة
+- الأوزان أرقام حقيقية محددة، ليس "حسب مستواك"
+- RPM واقعي ومدروس — لا مبالغة
+- أيام الراحة: isRest: true وكل المصفوفات فارغة
+- لا يومَي حدث ثقيل متتاليَين
+
+أرجع JSON فقط، بدون أي نص قبله أو بعده.`;
 
   try {
     const message = await client.messages.create({

@@ -42,39 +42,41 @@ export async function POST(req: NextRequest) {
     ? `\n**الأسابيع السابقة — تجنب تكرار نفس التوزيع وانتبه للحمل التراكمي:**\n${JSON.stringify(recentHyrox, null, 2)}\n`
     : '';
 
-  const prompt = `أنت مدرب Hyrox محترف متخصص في بناء خطط تدريبية أسبوعية لسباقات Hyrox. تعمل بفلسفة التدريج المنهجي: كل جلسة تبني على السابقة، والأسبوع مُصمَّم كوحدة متكاملة لا مجرد أيام عشوائية.
+  const prompt = `أنت مدرب HYROX محترف معتمد ومبرمج أسابيع تدريبية لبطولات HYROX. فلسفتك الأساسية: القوة الوظيفية أولاً — كل جلسة تخدم جميع المستويات مع أهداف وأوزان مختلفة لكل مستوى.
 
 ═══════════════════════════════
-النادي: مجموعة المطانيخ CrossFit — غالبيتهم رجال (18-40 سنة)، Men Open كـ RX مع scaling للنساء
+النادي: مجموعة المطانيخ HYROX
+الجمهور: مبتدئون إلى نخبة، رجال ونساء (18-40 سنة)
+الفلسفة: القوة الوظيفية + التحمل + الكفاءة = HYROX Champion
 المدة: ${days} أيام من ${startDate}
-المستوى: ${difficulty}
+المستوى العام: ${difficulty}
 ═══════════════════════════════
 
-**أنواع الجلسات وتعريفها:**
-▶ simulation: محاكاة كاملة — 8 محطات + جري بين كل محطة (بأوزان مخففة 70-80%)
-▶ strength: تدريب محطات مكثف — 3-5 محطات بأوزان 90-100% مع تكرارات أكثر
-▶ running: جري متقطع — intervals + تمرين cardio + محطة أو اثنتان خفيفتان
-▶ rest: راحة كاملة أو تعافٍ نشط (mobility + stretching)
-
-**توزيع الأسبوع الاحترافي:**
-يوم 1: جلسة قوة المحطات (strength) — ثقيل وبطيء
-يوم 2: راحة نشطة (jogging خفيف 20 دقيقة + تمطيط)
-يوم 3: محاكاة كاملة (simulation) — وزن كامل بإيقاع تنافسي
-يوم 4: راحة كاملة — تعافٍ إلزامي
-يوم 5: جري متقطع (running) — intervals + zone 2
+**أنواع الجلسات:**
+▶ strength: كتلة قوة وظيفية ثقيلة (Deadlift/Squat/Press) + 2-3 محطات بأوزان 90-100%
+▶ simulation: محاكاة سباق — 5-8 محطات + جري بأوزان 70-80% + strength خفيفة في البداية
+▶ running: intervals + Zone 2 + تقنية الجري + محطة واحدة خفيفة
+▶ rest: راحة كاملة أو mobility + foam roll
 
 ${recentContext}
 **الأيام المطلوبة:**
 ${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
 
-**جدول الأوزان المرجعية:**
-| المحطة | Men Open | Women Open | Simulation (70%) |
-|--------|----------|------------|-----------------|
-| Sled Push | 102كجم | 72كجم | 70-72كجم / 50كجم |
-| Sled Pull | 78كجم | 53كجم | 55كجم / 37كجم |
-| Farmers Carry | 2×24كجم | 2×16كجم | 2×20كجم / 2×12كجم |
-| Sandbag Lunges | 20كجم | 10كجم | 15كجم / 8كجم |
-| Wall Balls | 6كجم/9م | 4كجم/9م | 6كجم / 4كجم |
+**══ الأوزان الرسمية وتعديلات كل مستوى ══**
+| المحطة | مبتدئ (50%) | متوسط (75%) | متقدم (90%) | نخبة (100%) |
+|--------|------------|------------|------------|------------|
+| Sled Push | 51كجم | 77كجم | 92كجم | 102كجم |
+| Sled Pull | 51كجم | 77كجم | 92كجم | 102كجم |
+| Farmers Carry | 2×16كجم | 2×24كجم | 2×29كجم | 2×32كجم |
+| Sandbag Lunges | 10كجم/50م | 15كجم/100م | 18كجم/150م | 20كجم/200م |
+| Wall Balls | 4كجم/30 | 6كجم/70 | 6كجم/100 | 6كجم/100 Rx |
+
+**أوزان كتلة القوة:**
+| التمرين | مبتدئ | متوسط | متقدم | نخبة |
+|---------|-------|-------|-------|------|
+| Deadlift | 50كجم | 80كجم | 110كجم | 140كجم |
+| Back Squat | 40كجم | 70كجم | 95كجم | 120كجم |
+| Farmer Carry Walk | 2×16كجم | 2×24كجم | 2×32كجم | 2×40كجم |
 
 أرجع JSON بالتنسيق التالي بالضبط بدون أي نص خارجه:
 {
@@ -83,60 +85,77 @@ ${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
       "date": "YYYY-MM-DD",
       "dayName": "اسم اليوم",
       "isRest": false,
-      "title": "عنوان الجلسة — احترافي ومحدد",
-      "sessionType": "simulation | strength | running | rest",
+      "title": "عنوان احترافي يعكس محاور الجلسة",
+      "sessionType": "strength | simulation | running | rest",
       "difficulty": "${difficulty}",
       "totalDuration": 75,
-      "coachNote": "ملاحظة المدرب: هدف الجلسة، استراتيجية الأداء، النقاط التقنية الأهم",
-      "warmup": {
-        "duration": 15,
+      "coachNote": "هدف الجلسة + استراتيجية + النقطة التقنية الأهم",
+      "strengthBlock": {
+        "description": "لماذا هذه القوة قبل المحطات",
         "exercises": [
-          { "name": "دوائر الكتف", "nameEn": "Shoulder Circles", "duration": "90 ث", "notes": "تنشيط قبل SkiErg" },
-          { "name": "تفعيل الكفل", "nameEn": "Glute Bridge", "duration": "15 تكرار", "notes": "تنشيط قبل Sled Push" },
-          { "name": "جري تدريجي", "nameEn": "Progressive Jog", "duration": "400م", "notes": "60% → 80% من الأقصى" }
+          {
+            "name": "Deadlift",
+            "scheme": "4×5",
+            "levels": {
+              "beginner":     { "weight": "50كجم", "rest": "90 ث", "cue": "ظهر مستقيم — رقبة محايدة" },
+              "intermediate": { "weight": "80كجم", "rest": "120 ث", "cue": "Brace قبل الرفع — نفَس عميق" },
+              "advanced":     { "weight": "110كجم", "rest": "150 ث", "cue": "ادفع الأرض — لا تشد الظهر" },
+              "elite":        { "weight": "140كجم+", "rest": "180 ث", "cue": "قوة انفجارية مع تحكم في النزول" }
+            }
+          }
+        ]
+      },
+      "warmup": {
+        "duration": 12,
+        "exercises": [
+          { "name": "جري تدريجي", "duration": "400م", "notes": "60% → 80% — تنشيط تدريجي" }
         ]
       },
       "stations": [
         {
           "number": 1,
-          "name": "سكي إرج",
-          "nameEn": "SkiErg",
-          "runBefore": "1 كيلومتر",
-          "target": "1000م",
-          "weight": "وزن الجسم",
-          "targetTime": "مبتدئ: 5:30 | متوسط: 4:30 | متقدم: 3:45",
-          "tips": "اسحب بالجسم كله — ابدأ بالورك ثم الذراعين"
+          "name": "Ski Erg",
+          "runBefore": "1000م",
+          "levels": {
+            "beginner":     { "distance": "300م", "weight": "", "targetPace": "2:30/500م", "scaling": "إيقاع ثابت — لا sprint" },
+            "intermediate": { "distance": "500م", "weight": "", "targetPace": "2:05/500م", "scaling": "" },
+            "advanced":     { "distance": "500م", "weight": "", "targetPace": "1:55/500م", "scaling": "" },
+            "elite":        { "distance": "500م", "weight": "", "targetPace": "1:45/500م", "scaling": "Hip-drive dominant" }
+          },
+          "technique": "نقطة تقنية مهمة",
+          "tips": "استراتيجية المحطة"
         }
       ],
       "cooldown": {
         "duration": 10,
         "exercises": [
-          { "name": "مشي هادئ", "nameEn": "Easy Walk", "duration": "3 دقائق", "notes": "خفّف معدل القلب" },
-          { "name": "تمطيط الوتر العرقوبي", "nameEn": "Hamstring Stretch", "duration": "60 ث × كل ساق", "notes": "الأكثر توتراً بعد الجري" }
+          { "name": "مشي هادئ", "duration": "3 دقائق", "notes": "تخفيض معدل القلب" },
+          { "name": "Hamstring Stretch", "duration": "60 ث كل ساق", "notes": "ضروري بعد الجري والـ Sled" }
         ]
       },
       "targetTimes": {
-        "elite": "65 دقيقة",
-        "advanced": "80 دقيقة",
-        "intermediate": "95 دقيقة",
-        "beginner": "110 دقيقة"
+        "beginner": "لا يهم — إنهاء سليم",
+        "intermediate": "حدد وقتاً محدداً",
+        "advanced": "حدد وقتاً محدداً",
+        "elite": "حدد وقتاً تنافسياً"
       },
-      "nutrition": { "pre": "نصيحة تغذية قبل الجلسة", "post": "نصيحة تغذية بعد الجلسة" },
-      "recoveryTips": ["نصيحة تعافٍ محددة 1", "نصيحة تعافٍ محددة 2"]
+      "nutrition": { "pre": "نصيحة تغذية قبل", "post": "نصيحة تغذية بعد" }
     }
   ],
-  "weekSummary": "ملخص فلسفة الأسبوع: التوزيع، الهدف، كيف تبني الجلسات على بعضها",
+  "weekSummary": "ملخص فلسفة الأسبوع: التوزيع، التدرج، الهدف الرئيسي",
   "weeklyLoad": "خفيف | متوسط | ثقيل"
 }
 
-**ملاحظات مهمة:**
-- totalDuration يجب أن يكون رقماً بالدقائق
-- أيام الراحة: isRest: true، stations: []، warmup.exercises: []، cooldown.exercises: []
-- كل جلسة فعلية تحتوي على إحماء + محطات + تهدئة
-- جلسات strength: 3-5 محطات فقط بأوزان مرتفعة (بدون جري كامل)
-- جلسات running: جري متقطع + محطتان خفيفتان فقط
-- أوزان simulation: 70-80% من الأوزان الرسمية
-- اذكر scaling للمبتدئين في tips كل محطة`;
+**قواعد صارمة:**
+- strengthBlock يأتي قبل stations في كل جلسة نشطة (حتى simulation)
+- كل محطة وكل تمرين قوة لها levels بـ 4 مستويات
+- totalDuration رقم بالدقائق
+- أيام الراحة: isRest: true، stations: []، strengthBlock: {}، warmup.exercises: []
+- simulation: 5-6 محطات + strengthBlock خفيف
+- strength: 3-4 محطات فقط + strengthBlock ثقيل
+- running: محطة واحدة فقط (SkiErg أو Row) + strengthBlock خفيف + تركيز على الجري
+
+أرجع JSON فقط، بدون أي نص قبله أو بعده.`;
 
   try {
     const message = await client.messages.create({

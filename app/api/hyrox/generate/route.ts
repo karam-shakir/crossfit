@@ -5,151 +5,193 @@ import { getAllHyroxSessions } from '@/lib/db';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+function analyzeWeekIntensity(sessions: any[]) {
+  const last7 = sessions.slice(0, 7);
+  const count = last7.length;
+  const stationsUsed: string[] = [];
+  last7.forEach(s => {
+    (s.stations || []).forEach((st: any) => { if (st.name) stationsUsed.push(st.name); });
+    if (s.strengthBlock?.exercises) {
+      s.strengthBlock.exercises.forEach((ex: any) => { if (ex.name) stationsUsed.push(ex.name); });
+    }
+  });
+  if (count >= 4) return { label: 'ثقيل', recommendation: 'أسبوع ثقيل — جلسة تقنية خفيفة أو تعافٍ نشط', usedMovements: [...new Set(stationsUsed)] };
+  if (count >= 2) return { label: 'متوسط', recommendation: 'أسبوع متوسط — جلسة متوسطة مع كتلة قوة', usedMovements: [...new Set(stationsUsed)] };
+  return { label: 'خفيف', recommendation: 'أسبوع خفيف — Race Simulation كامل أو Strength Heavy', usedMovements: [...new Set(stationsUsed)] };
+}
+
 export async function POST(req: NextRequest) {
-  // أي عضو مسجّل دخوله يستطيع توليد جلسة Hyrox
   const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: 'يجب تسجيل الدخول أولاً' }, { status: 401 });
-  }
+  if (!session || session.role !== 'admin')
+    return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
-  const {
-    date,
-    difficulty   = 'متوسط',
-    focus        = 'كامل',
-    sessionType  = 'full',
-  } = body;
+  const { date, sessionType, difficulty = 'متوسط' } = body;
 
-  // جلب آخر 4 جلسات Hyrox للسياق التاريخي
-  const allHyrox = await getAllHyroxSessions();
-  const recentHyrox = allHyrox
-    .filter((s: any) => date ? s.date < date : true)
-    .slice(0, 4)
-    .map((s: any) => ({
-      date: s.date,
-      sessionType: s.sessionType || s.sessionData?.sessionType,
-      title: s.sessionData?.title || s.title,
-      stations: (s.sessionData?.stations || []).map((st: any) => st.nameEn || st.name).join(', '),
-    }));
-  const recentContext = recentHyrox.length > 0
-    ? `\n**الجلسات السابقة (تجنب تكرار نفس نوع الجلسة مباشرة — نوّع المحطات والتركيز):**\n${JSON.stringify(recentHyrox, null, 2)}\n`
-    : '';
+  const allSessions = await getAllHyroxSessions();
+  const recentSessions = allSessions
+    .filter(s => date ? s.date < date : true)
+    .slice(0, 7);
 
-  const prompt = `أنت مدرب Hyrox محترف ومعتمد على المستوى الدولي، بخبرة في تدريب الرياضيين للمشاركة في سباقات Hyrox. تعرف الرياضة من الداخل — أوزان المحطات الرسمية، الأوقات المستهدفة، والاستراتيجية الصحيحة لكل مستوى.
+  const weekAnalysis = analyzeWeekIntensity(recentSessions);
+
+  const recentSummary = recentSessions.slice(0, 4).map(s => ({
+    date: s.date,
+    sessionType: s.sessionType,
+    stations: (s.stations || []).map((st: any) => st.name).join(', '),
+    strength: (s.strengthBlock?.exercises || []).map((ex: any) => ex.name).join(', '),
+  }));
+
+  const prompt = `أنت مدرب HYROX محترف معتمد ومبرمج بطولات عالمية. فلسفتك الأساسية: القوة الوظيفية أولاً — الفائز في HYROX هو الأقوى، ليس الأسرع فقط. مهمتك: تصميم جلسة واحدة تخدم جميع المستويات مع أهداف ومتطلبات مختلفة لكل مستوى.
 
 ═══════════════════════════════
-النادي: مجموعة المطانيخ CrossFit — غالبيتهم رجال (18-40 سنة)، أوزان Men Open كـ RX مع scaling للنساء
+النادي: مجموعة المطانيخ HYROX
+الجمهور: مبتدئون إلى نخبة (رجال ونساء)
+الفلسفة: القوة + التحمل + الكفاءة = HYROX Champion
 ═══════════════════════════════
 
-**Hyrox — المواصفات الرسمية للسباق:**
-8 جولات، كل جولة = 1 كيلومتر جري + محطة:
-  1. SkiErg — 1000م (مستمر بدون توقف)
-  2. Sled Push — 50م (ذهاباً وإياباً)
-  3. Sled Pull — 50م (بحبل)
-  4. Burpee Broad Jump — 80م (القفز عريض مع البيربي)
-  5. Rowing — 1000م (مستمر)
-  6. Farmers Carry — 200م (حمل كيتل بيل في كلتا اليدين)
-  7. Sandbag Lunges — 100م (مشي بالطعن مع الكيس الرملي)
-  8. Wall Balls — 100 تكرار (رمي الكرة للحائط)
+**══ تحليل الأسبوع الماضي ══**
+عدد الجلسات في آخر 7 أيام: ${recentSessions.length}
+شدة الأسبوع: ${weekAnalysis.label}
+الحركات التي تدربنا عليها: ${weekAnalysis.usedMovements.slice(0,8).join(' | ') || 'لا توجد بيانات'}
+توصية المدرب: ${weekAnalysis.recommendation}
 
-**جدول الأوزان الرسمية لكل فئة:**
-| المحطة | Men Pro | Men Open | Women Pro | Women Open |
-|--------|---------|----------|-----------|------------|
-| Sled Push | 152كجم | 102كجم | 102كجم | 72كجم |
-| Sled Pull | 103كجم | 78كجم | 78كجم | 53كجم |
-| Farmers Carry | 2×32كجم | 2×24كجم | 2×24كجم | 2×16كجم |
-| Sandbag Lunges | 30كجم | 20كجم | 20كجم | 10كجم |
-| Wall Balls | 9كجم/9م | 6كجم/9م | 6كجم/9م | 4كجم/9م |
-| Kettlebell (Doubles) | 2×32كجم | 2×24كجم | 2×24كجم | 2×16كجم |
+الجلسات الأخيرة (تجنب تكرار نفس المحطات):
+${JSON.stringify(recentSummary, null, 2)}
 
-**أوقات الإنجاز المرجعية لسباق كامل:**
-- النخبة العالمية: 60-70 دقيقة
-- المتقدم: 75-90 دقيقة
-- المتوسط: 90-105 دقيقة
-- المبتدئ: 105-120 دقيقة
-
-${recentContext}
 **الجلسة المطلوبة:**
-- نوع الجلسة: ${sessionType}
-  * full = محاكاة سباق كامل (8 محطات + 8 جولات جري)
-  * simulation = محاكاة بأوزان مخففة (70% من الرسمية)
-  * strength = تدريب محطات فقط (3-4 محطات مع أوزان مرتفعة، بدون جري)
-  * running = جري متقطع + 2 محطات فقط
-- مستوى الصعوبة: ${difficulty}
-- التركيز: ${focus}
-- التاريخ: ${date || 'اليوم'}
+نوع الجلسة: ${sessionType || 'حسب تحليل الأسبوع'}
+الصعوبة العامة: ${difficulty}
+${date ? `التاريخ: ${date}` : ''}
 
-**الإحماء الاحترافي لـ Hyrox (15-20 دقيقة):**
-- تنشيط الكتف للـ SkiErg: band pull-apart، shoulder circles، scapular depression
-- تنشيط الورك للـ Sled: hip hinge، glute activation، lateral band walk
-- تنشيط الساق للجري: leg swing، calf raise، high knees تدريجية
-- ارفع معدل القلب تدريجياً: ابدأ 60% → 70% → 80%
+**══ المحطات الرسمية وأوزانها ══**
 
-**قاعدة Hyrox الذهبية:** لا تتوقف عند المحطة — الحركة البطيئة المستمرة أفضل من التوقف للراحة.
+| المحطة | رجال (Rx) | نساء (Rx) | المسافة |
+|--------|-----------|-----------|---------|
+| Ski Erg | — | — | 1000م |
+| Sled Push | 102كجم | 72كجم | 50م |
+| Sled Pull | 102كجم | 72كجم | 50م |
+| Burpee Broad Jumps | — | — | 80م |
+| Rowing | — | — | 1000م |
+| Farmers Carry | 32كجم/يد | 24كجم/يد | 200م |
+| Sandbag Lunges | 20كجم | 10كجم | 200م |
+| Wall Balls | 6كجم/3م | 4كجم/3م | 100 تكرار |
 
-أرجع JSON بهذا التنسيق بالضبط بدون أي نص خارجه:
+**══ تعديلات الأوزان لكل مستوى ══**
+
+| المستوى | تعديل الوزن | تعديل المسافة | هدف الوقت (البطولة) |
+|---------|------------|--------------|---------------------|
+| مبتدئ | 50% Rx | 50% المسافة | 110-130 دقيقة |
+| متوسط | 75% Rx | 75% المسافة | 90-110 دقيقة |
+| متقدم | 90% Rx | 100% المسافة | 75-90 دقيقة |
+| نخبة | 100% Rx | 100% + لا توقف | 55-75 دقيقة |
+
+**══ بنية الجلسة الاحترافية ══**
+
+1. **كتلة القوة (قبل الكارديو — دائماً):**
+   - 15-25 دقيقة
+   - تمارين compound: Deadlift, Squat, Carry, Press
+   - 4 مستويات لكل تمرين بأوزان حقيقية
+   - هذه الكتلة تميزنا عن مراكز التحمل العادية
+
+2. **المحطات:**
+   - 2-5 محطات حسب شدة الأسبوع
+   - بين كل محطة: 1000م جري (إلا إذا كانت جلسة تقنية)
+   - كل محطة لها 4 مستويات بأوزان ومسافات محددة
+
+3. **التهدئة:**
+   - تمطيط نشط للعضلات المُستنزفة
+   - عمل على الأنسجة (Foam Roll)
+
+أرجع JSON بهذا التنسيق بدون أي نص خارجه:
 {
-  "title": "عنوان جلسة Hyrox احترافي ومحفز",
-  "sessionType": "${sessionType}",
-  "difficulty": "${difficulty}",
-  "totalDuration": 90,
+  "title": "عنوان احترافي يعكس محاور الجلسة",
+  "sessionType": "strength | race-sim | intervals | technique",
+  "totalDuration": 65,
+  "weekIntensity": "${weekAnalysis.label}",
   "warmup": {
-    "duration": 15,
+    "duration": 12,
+    "description": "لماذا هذا الإحماء تحديداً لهذه الجلسة",
+    "movements": [
+      {
+        "name": "Hip Hinge Activation",
+        "duration": "90 ث",
+        "intensity": "60%",
+        "levels": {
+          "beginner": "Good Morning ببار خفيف 20كجم — ظهر مستقيم",
+          "intermediate": "Romanian Deadlift 40كجم — تحكم في النزول",
+          "advanced": "Single-leg Deadlift وزن الجسم — توازن كامل",
+          "elite": "Kettlebell Swing 24كجم × 20 تكرار — ربط حركي"
+        }
+      }
+    ]
+  },
+  "strengthBlock": {
+    "duration": 20,
+    "description": "كتلة القوة الوظيفية — أساس أداء HYROX",
     "exercises": [
-      {"name": "دوائر الكتف", "nameEn": "Shoulder Circles", "duration": "90 ث", "notes": "تنشيط الكتف قبل SkiErg — 10 للأمام + 10 للخلف"},
-      {"name": "تفعيل الورك الجانبي", "nameEn": "Lateral Band Walk", "duration": "2×20 خطوة", "notes": "تنشيط الأوتار الخلفية والكفل قبل Sled"},
-      {"name": "جري تدريجي", "nameEn": "Progressive Run", "duration": "400م", "notes": "60% → 80% — ارفع الإيقاع تدريجياً"},
-      {"name": "تمطيط الوتر العرقوبي الديناميكي", "nameEn": "Dynamic Hamstring Stretch", "duration": "10 × كل ساق", "notes": "استعداد لـ Sandbag Lunges وRowing"}
+      {
+        "name": "Deadlift",
+        "scheme": "4×5",
+        "levels": {
+          "beginner":     { "weight": "50كجم", "rest": "90 ث", "cue": "رقبتك محايدة — عيناك للأمام" },
+          "intermediate": { "weight": "80كجم", "rest": "120 ث", "cue": "الحزام فوق 80كجم — ابدأ بالأرداف" },
+          "advanced":     { "weight": "110كجم", "rest": "150 ث", "cue": "ضغط على الأرض — لا تشد الظهر" },
+          "elite":        { "weight": "140كجم+", "rest": "180 ث", "cue": "Brace كامل — 360 درجة ضغط" }
+        },
+        "coachNote": "الرفعة الميتة هي أساس Sled Push وFarmers Carry — من يدرب الرفعة بجدية يتفوق في البطولة"
+      }
     ]
   },
   "stations": [
     {
-      "number": 1,
-      "name": "سكي إرج",
-      "nameEn": "SkiErg",
-      "runBefore": "1 كيلومتر",
-      "target": "1000م",
-      "weight": "وزن الجسم",
-      "targetTime": "مبتدئ: 5:30 | متوسط: 4:30 | متقدم: 3:45 | نخبة: 3:15",
-      "tips": "اسحب بالجسم كله — ابدأ بالورك ثم الذراعين، نفَس مع كل سحبة، لا تنحني للأمام كثيراً",
-      "scaling": "مبتدئ: 700م بدلاً من 1000م"
+      "order": 1,
+      "name": "Ski Erg",
+      "runBefore": "1000م",
+      "levels": {
+        "beginner":     { "distance": "300م", "weight": "", "targetPace": "2:30/500م", "scaling": "إذا لم تعرف الجهاز: شاهد المدرب أولاً" },
+        "intermediate": { "distance": "500م", "weight": "", "targetPace": "2:05/500م", "scaling": "" },
+        "advanced":     { "distance": "500م", "weight": "", "targetPace": "1:55/500م", "scaling": "" },
+        "elite":        { "distance": "500م", "weight": "", "targetPace": "1:45/500م", "scaling": "الدفع بالورك والجسم كله — لا الذراع فقط" }
+      },
+      "technique": "ابدأ من الأعلى — دع الجاذبية تساعدك في الشد",
+      "coachNote": "Ski Erg بعد الجري = تحدٍ حقيقي — حافظ على إيقاعك"
     }
   ],
   "cooldown": {
-    "duration": 12,
-    "exercises": [
-      {"name": "مشي هادئ", "nameEn": "Easy Walk", "duration": "3 دقائق", "notes": "خفّف معدل القلب تدريجياً"},
-      {"name": "تمطيط الوتر العرقوبي", "nameEn": "Hamstring Stretch", "duration": "60 ث × كل ساق", "notes": "الأكثر توتراً بعد الجري والـ Sled"},
-      {"name": "تمطيط الصدر والكتفين", "nameEn": "Chest & Shoulder Stretch", "duration": "60 ث", "notes": "للـ SkiErg والـ Rowing"},
-      {"name": "تمطيط الرباعية", "nameEn": "Quad Stretch", "duration": "60 ث × كل ساق", "notes": "بعد Wall Balls والـ Lunges"}
+    "duration": 10,
+    "movements": [
+      "Hip Flexor Stretch — 60 ث لكل جانب",
+      "Hamstring Stretch — 60 ث لكل جانب",
+      "Thoracic Rotation — 45 ث لكل جانب",
+      "Calf Raises Slow — 20 تكرار بطيء للتعافي"
     ]
   },
   "targetTimes": {
-    "elite": "65-70 دقيقة",
-    "advanced": "80-90 دقيقة",
-    "intermediate": "95-105 دقيقة",
-    "beginner": "110-120 دقيقة"
+    "beginner": "لا يهم الوقت — الهدف: إنهاء كل محطة بشكل صحيح",
+    "intermediate": "أذكر وقتاً محدداً يناسب الجلسة",
+    "advanced": "أذكر وقتاً محدداً يناسب الجلسة",
+    "elite": "أذكر وقتاً تنافسياً محدداً"
   },
-  "nutritionBefore": "2-3 ساعات قبل: وجبة كربوهيدرات معقدة + بروتين خفيف. 30 دقيقة قبل: موزة أو تمرة + ماء. لا دهون قبل التمرين مباشرة.",
-  "nutritionAfter": "خلال 30 دقيقة: بروتين سريع (شيك أو بيض) + كربوهيدرات بسيطة. ملح وإلكتروليتات لتعويض العرق. 1.5L ماء على الأقل بعد الجلسة.",
-  "coachNote": "ملاحظة شاملة من المدرب: استراتيجية الجلسة، النقاط التقنية الأهم، الأخطاء الشائعة وكيف تتجنبها",
-  "nextSessionRecommendation": "توصية محددة للجلسة القادمة بناءً على هذه الجلسة — ماذا تعمل بعد يومين من التعافي"
+  "nutritionBefore": "وجبة غنية بالكارب 2-3 ساعات قبل: أرز + بروتين خفيف. 30 دقيقة قبل: موزة + قهوة",
+  "nutritionAfter": "خلال 30 دقيقة: بروتين سريع الامتصاص + كارب — Whey Shake + موزة أو تمر",
+  "coachNote": "نصيحة مخصصة لهذه الجلسة تحديداً تساعد المتدربين على الأداء الأفضل"
 }
 
-**قواعد مهمة:**
-- totalDuration يجب أن يكون رقماً (بالدقائق) وليس نصاً
-- ضع جميع محطات Hyrox الثمانية في stations[] مرتبة 1-8
-- لكل محطة: اذكر الوزن حسب الفئة (Open/Pro) والـ scaling للمبتدئين
-- الإحماء: 4 تمارين تغطي الكتف + الورك + القلب والأوعية
-- التهدئة: 4 تمارين تمطيط للمناطق الأكثر إجهاداً
+**قواعد صارمة:**
+- كل محطة وكل تمرين في strengthBlock يجب أن يحتوي على levels بـ 4 مستويات
+- strengthBlock يأتي قبل stations دائماً
+- لا تكرر هذه الحركات التي ظهرت مؤخراً: ${weekAnalysis.usedMovements.slice(0,6).join(', ') || 'لا شيء'}
+- الأوزان والمسافات أرقام حقيقية محددة، ليس "حسب مستواك"
+- الوقت الإجمالي واقعي ومحسوب بدقة
 
-أرجع JSON فقط.`;
+أرجع JSON فقط، بدون أي نص قبله أو بعده.`;
 
   try {
     const message = await client.messages.create({
-      model:      'claude-opus-4-8',
-      max_tokens: 8000,
-      messages:   [{ role: 'user', content: prompt }],
+      model: 'claude-opus-4-8',
+      max_tokens: 6000,
+      messages: [{ role: 'user', content: prompt }],
     });
 
     let jsonText = '';
@@ -157,14 +199,29 @@ ${recentContext}
       if (block.type === 'text') { jsonText = block.text.trim(); break; }
     }
     jsonText = jsonText.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
-    jsonText = jsonText.replace(/^```\n?/,     '').replace(/\n?```$/,  '').trim();
+    jsonText = jsonText.replace(/^```\n?/, '').replace(/\n?```$/, '').trim();
 
-    const result = JSON.parse(jsonText);
-    return NextResponse.json({
-      session: result,
-      date:    date || new Date().toISOString().split('T')[0],
-    });
+    const generated = JSON.parse(jsonText);
+
+    const result = {
+      date: date || new Date().toISOString().split('T')[0],
+      type: 'hyrox',
+      title: generated.title || 'جلسة HYROX',
+      sessionType: generated.sessionType || sessionType || 'race-sim',
+      totalDuration: generated.totalDuration ?? 65,
+      weekIntensity: generated.weekIntensity || weekAnalysis.label,
+      warmup: generated.warmup || {},
+      strengthBlock: generated.strengthBlock || {},
+      stations: generated.stations || [],
+      cooldown: generated.cooldown || {},
+      targetTimes: generated.targetTimes || {},
+      nutritionBefore: generated.nutritionBefore || '',
+      nutritionAfter: generated.nutritionAfter || '',
+      coachNote: generated.coachNote || '',
+    };
+
+    return NextResponse.json({ wod: result });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'خطأ في التوليد' }, { status: 500 });
   }
 }
