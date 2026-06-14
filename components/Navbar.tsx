@@ -385,21 +385,40 @@ export default function Navbar({ member }: {
       {open && (
         <div className="lg:hidden fixed inset-0 z-50" onClick={() => setOpen(false)}>
           <div
-            className="absolute left-0 right-0 bg-gray-900 border-t border-gray-700 shadow-2xl overflow-y-auto"
-            style={{ bottom: 'calc(64px + env(safe-area-inset-bottom))', maxHeight: '70vh', padding: '12px 12px 16px' }}
-            onClick={e => e.stopPropagation()}>
+            onClick={e => e.stopPropagation()}
+            style={{
+              position: 'absolute', left: 0, right: 0,
+              bottom: 'calc(64px + env(safe-area-inset-bottom))',
+              maxHeight: '70vh', overflowY: 'auto',
+              padding: '12px 12px 16px',
+              backgroundColor: '#ffffff',
+              borderTop: '1px solid #e2e8f0',
+              boxShadow: '0 -4px 24px rgba(0,0,0,0.10)',
+            }}>
             <div className="grid grid-cols-2 gap-2.5">
               {mobileMoreFiltered.map(l => {
                 const col = linkColor(l.href);
                 const isActive = pathname === l.href;
-                let activeCls = 'bg-orange-500 text-white';
-                let inactiveCls = 'text-gray-200 bg-gray-800';
-                if (col === 'red')     { activeCls = 'bg-red-600 text-white';     inactiveCls = 'text-red-300 bg-gray-800'; }
-                if (col === 'amber')   { activeCls = 'bg-amber-600 text-white';   inactiveCls = 'text-amber-300 bg-gray-800'; }
-                if (col === 'emerald') { activeCls = 'bg-emerald-600 text-white'; inactiveCls = 'text-emerald-300 bg-gray-800'; }
+
+                let activeBg   = '#f97316'; // orange
+                let inactiveBg = '#f1f5f9'; // slate-100
+                let activeText = '#ffffff';
+                let inactiveText = '#334155'; // slate-700
+
+                if (col === 'red')     { activeBg = '#dc2626'; inactiveBg = '#fef2f2'; inactiveText = '#991b1b'; }
+                if (col === 'amber')   { activeBg = '#d97706'; inactiveBg = '#fffbeb'; inactiveText = '#92400e'; }
+                if (col === 'emerald') { activeBg = '#059669'; inactiveBg = '#ecfdf5'; inactiveText = '#065f46'; }
+
                 return (
                   <Link key={l.href} href={l.href} onClick={() => setOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-medium transition-colors ${isActive ? activeCls : inactiveCls}`}>
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '10px',
+                      padding: '12px 14px', borderRadius: '16px',
+                      fontSize: '14px', fontWeight: 500,
+                      backgroundColor: isActive ? activeBg : inactiveBg,
+                      color: isActive ? activeText : inactiveText,
+                      textDecoration: 'none',
+                    }}>
                     <NavIcon iconKey={l.iconKey} className="w-5 h-5 flex-shrink-0"/>
                     <span>{l.label}</span>
                   </Link>
@@ -407,16 +426,27 @@ export default function Navbar({ member }: {
               })}
               {isAdmin && (
                 <Link href="/admin" onClick={() => setOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-medium col-span-2 transition-colors ${
-                    pathname === '/admin' ? 'bg-purple-600 text-white' : 'text-purple-300 bg-gray-800'
-                  }`}>
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '12px 14px', borderRadius: '16px',
+                    fontSize: '14px', fontWeight: 500, gridColumn: 'span 2',
+                    backgroundColor: pathname === '/admin' ? '#7c3aed' : '#f5f3ff',
+                    color: pathname === '/admin' ? '#ffffff' : '#5b21b6',
+                    textDecoration: 'none',
+                  }}>
                   <IcSliders className="w-5 h-5 flex-shrink-0"/>
                   <span>لوحة التحكم</span>
                 </Link>
               )}
             </div>
             <button onClick={logout}
-              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-medium text-red-400 bg-gray-800 mt-2.5 transition-colors">
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '12px 14px', borderRadius: '16px',
+                fontSize: '14px', fontWeight: 500, marginTop: '10px',
+                backgroundColor: '#fff1f2', color: '#b91c1c',
+                border: 'none', cursor: 'pointer',
+              }}>
               <IcLogout className="w-5 h-5 flex-shrink-0"/>
               <span>تسجيل الخروج</span>
             </button>
