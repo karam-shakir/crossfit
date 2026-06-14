@@ -226,11 +226,13 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
           body: JSON.stringify({
             date: wod.date,
             title: wod.title,
+            titleEn: wod.titleEn || '',
             type: wod.type,
             duration: wod.duration,
             rounds: wod.rounds,
             notes: wod.notes || '',
             aiTheme: wod.aiTheme || '',
+            isCalisthenics: wod.isCalisthenics || false,
             warmup: wod.warmup || [],
             strength: wod.strength || [],
             metcon: wod.metcon || [],
@@ -854,7 +856,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                                     <span className="font-bold text-white text-sm">{wod.dayName}</span>
                                     <span className="text-xs text-gray-500">{wod.date}</span>
                                   </div>
-                                  <div className="text-xs text-gray-400">{wod.title}</div>
+                                  <div className="text-xs text-gray-400">{wod.titleEn || wod.title}</div>
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">

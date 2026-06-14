@@ -156,7 +156,8 @@ KB Swing: مبتدئ 16كجم | متوسط 24كجم | متقدم 28كجم | نخ
     {
       "date": "YYYY-MM-DD",
       "dayName": "اسم اليوم",
-      "title": "عنوان احترافي يعكس الحركة الرئيسية والهدف",
+      "title": "عنوان احترافي بالعربية يعكس الحركة الرئيسية والهدف",
+      "titleEn": "Professional English title — e.g. 'Heavy Front Squat + Anterior Chain MetCon'",
       "type": "للوقت | AMRAP | قوة | تدريب | راحة | راحة نشطة",
       "duration": 20,
       "rounds": null,
