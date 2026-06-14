@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
       metcon: (w.metcon || []).map((e: any) => e.exerciseId).join(', '),
     }));
 
-  const exerciseList = EXERCISES.map(e => `${e.id} | ${e.nameAr} | ${e.nameEn} | ${e.category}`).join('\n');
+  const exerciseList = EXERCISES.map(e => `${e.id} | ${e.nameEn} | ${e.category}`).join('\n');
 
   // Build programming rules based on weekMode
   const programmingRules = weekMode === 'mixed'

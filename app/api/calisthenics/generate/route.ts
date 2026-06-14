@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
     metcon: (s.metcon || []).map((e: any) => e.exerciseId).join(', '),
   }));
 
-  const exerciseList = EXERCISES.map(e => `- ${e.id} (${e.nameEn} / ${e.nameAr}) [${e.category}]`).join('\n');
+  const exerciseList = EXERCISES.map(e => `- ${e.id} (${e.nameEn}) [${e.category}]`).join('\n');
 
   const prompt = `أنت مدرب Calisthenics وGST (Gymnastics Strength Training) محترف. فلسفتك: الجسم نفسه هو الوزن والأداة والمعلم — والتدرج هو الطريق الوحيد للقوة الحقيقية. مهمتك: جلسة واحدة تخدم جميع المستويات في نفس الوقت، مع تركيز حقيقي على بناء القوة العضلية بالحركات الوظيفية.
 
