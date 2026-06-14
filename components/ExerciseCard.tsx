@@ -15,7 +15,6 @@ interface LevelSpec {
   weight?: string;
   reps?: string;
   cue?: string;
-  scaling?: string;
 }
 
 type LevelKey = 'beginner' | 'intermediate' | 'advanced' | 'elite';
@@ -205,10 +204,10 @@ export default function ExerciseCard({
       </div>
 
       {/* ── Coaching cue from level ── */}
-      {levelData && (levelData.cue || levelData.scaling) && (
+      {levelData && (levelData.cue) && (
         <div className="px-3 pb-2">
           <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-800">
-            💬 {levelData.cue || levelData.scaling}
+            💬 {levelData.cue}
           </div>
         </div>
       )}
@@ -279,9 +278,9 @@ export default function ExerciseCard({
                     </span>
                   )}
                 </div>
-                {(lv.cue || lv.scaling) && (
+                {(lv.cue) && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-800">
-                    💬 {lv.cue || lv.scaling}
+                    💬 {lv.cue}
                   </div>
                 )}
               </div>
