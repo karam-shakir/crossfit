@@ -300,8 +300,8 @@ ${recentContext}
     }
   ],
   "cooldown": [
-    {"exerciseId": "run", "reps": "", "weight": "", "distance": "400م", "time": "", "notes": "مشي هادئ — خفّف معدل القلب"},
-    {"exerciseId": "sit-up", "reps": "10", "weight": "", "distance": "", "time": "30 ث", "notes": "تمطيط الوتر الرباعي والظهر السفلي"}
+    {"exerciseId": "run", "reps": "", "weight": "", "distance": "400م", "time": "", "notes": "مشي هادئ جداً — خفّف معدل القلب تدريجياً"},
+    {"exerciseId": "push-up", "reps": "10", "weight": "", "distance": "", "time": "45 ث", "notes": "بطيء جداً — تمطيط الصدر والكتف في الأسفل"}
   ]
 }
 
@@ -314,6 +314,7 @@ ${recentContext}
 - القوة: 2-3 تمارين barbell compound
 - الميتكون: 3-5 تمارين مكثفة 7-20 دقيقة، تجمع barbell مع gymnastics
 - targetTimes: أوقات واقعية لإنهاء الميتكون لكل مستوى
+- التهدئة: 2-3 تمارين تختلف كل يوم حسب العضلات المُستنزفة — اختر ما يناسب جلسة اليوم تحديداً، لا تكرر نفس تمارين التهدئة دائماً
 
 أرجع JSON فقط، بدون أي كلام قبله أو بعده.`;
 
