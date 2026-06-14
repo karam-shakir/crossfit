@@ -191,7 +191,7 @@ ${recentContext}
 ═══════════════════════════════
 النادي: مجموعة المطانيخ CrossFit
 الجمهور: غالبيتهم رجال (18-40 سنة) — متوسط إلى متقدم
-الأوزان: مبنية على معايير الرجال (RX للرجال) — اذكر scaling للنساء في كل تمرين
+الأوزان: مبنية على معايير الرجال (RX للرجال)
 ═══════════════════════════════
 
 **تفاصيل التمرين المطلوب:**
@@ -205,7 +205,7 @@ ${recentContext}
 **فلسفة البرمجة الاحترافية:**
 ✦ استخدم تحليل الأسبوع أعلاه لتحديد: (1) شدة اليوم (2) المجموعات العضلية المستهدفة
 ✦ الإحماء: تهيئة تدريجية تُفعّل العضلات التي ستستهدفها اليوم تحديداً
-✦ القوة: compound movements بنسب تتناسب مع شدة الأسبوع (إذا ثقيل → 65-70%، إذا خفيف → 80-85%)
+✦ القوة: compound movements بالبار (barbell) بنسب تتناسب مع شدة الأسبوع
 ✦ الميتكون: اختر نوع WOD يناسب الشدة المقررة:
    - "Hero/Benchmark": 21-15-9 أو Cindy-style أو تابطا
    - "Chipper": تسلسل من 5-7 تمارين يُنجز مرة واحدة
@@ -213,20 +213,12 @@ ${recentContext}
    - "AMRAP": أقصى جولات في وقت محدد
 ✦ التهدئة: تمطيط هادئ للمجموعات العضلية المُستنزفة اليوم
 
-**قواعد حقلَي duration و rounds — مهم جداً:**
+**قواعد حقلَي duration و rounds:**
 - "للوقت" مع جولات محددة → rounds = عدد الجولات، duration = التايم كاب بالدقائق
 - "AMRAP" → rounds = null، duration = مدة الـ AMRAP بالدقائق
 - "للوقت" بدون جولات (21-15-9) → rounds = null، duration = التايم كاب
 - "قوة" فقط → rounds = عدد المجموعات، duration = الوقت التقديري
 - duration يجب أن يكون دائماً رقماً صحيحاً
-
-**جدول الأوزان المرجعية لتمارين القوة:**
-| التمرين | مبتدئ | متوسط | متقدم | نخبة |
-|---------|-------|-------|-------|------|
-| Back Squat | 40-50كجم | 60-80كجم | 90-110كجم | 120كجم+ |
-| Deadlift | 50-60كجم | 80-100كجم | 110-140كجم | 150كجم+ |
-| Thruster | 20-30كجم | 35-45كجم | 50-65كجم | 70كجم+ |
-| Clean & Jerk | 30-40كجم | 50-65كجم | 70-90كجم | 95كجم+ |
 
 أرجع JSON بهذا التنسيق بدون أي نص خارجه:
 {
@@ -234,20 +226,77 @@ ${recentContext}
   "type": "للوقت | AMRAP | قوة | تدريب",
   "duration": 20,
   "rounds": 5,
-  "notes": "ملاحظات تفصيلية: كيف تُقسّم الجهد، متى تتنفس، ما هو الهدف الزمني المقترح لكل مستوى",
-  "theme": "الرابط التدريبي بين القوة والميتكون — لماذا اخترنا هذه التمارين معاً",
+  "notes": "ملاحظات تفصيلية: كيف تُقسّم الجهد، متى تتنفس",
+  "theme": "الرابط التدريبي بين القوة والميتكون",
+  "targetTimes": {
+    "beginner": "25-30 دقيقة",
+    "intermediate": "18-22 دقيقة",
+    "advanced": "14-17 دقيقة",
+    "elite": "10-13 دقيقة"
+  },
   "warmup": [
     {"exerciseId": "run", "reps": "400م", "weight": "", "distance": "400م", "time": "", "notes": "هادئ جداً — إيقاع المحادثة"},
-    {"exerciseId": "back-squat", "reps": "10", "weight": "الوزن الخفيف جداً", "distance": "", "time": "", "notes": "حرك المفصل — بدون إجهاد"},
-    {"exerciseId": "pull-up", "reps": "5", "weight": "", "distance": "", "time": "", "notes": "تنشيط الكتف والظهر"}
+    {"exerciseId": "back-squat", "reps": "10", "weight": "", "distance": "", "time": "", "notes": "حرك المفصل — بدون إجهاد"}
   ],
   "strength": [
-    {"exerciseId": "back-squat", "reps": "5×5", "weight": "75% — مبتدئ: 50كجم | متوسط: 70كجم | متقدم: 90كجم", "distance": "", "time": "", "notes": "ركز على العمق الكامل — ركبتيك تتبعان أصابع قدميك"},
-    {"exerciseId": "deadlift", "reps": "3×3", "weight": "80% — مبتدئ: 60كجم | متوسط: 90كجم | متقدم: 120كجم", "distance": "", "time": "", "notes": "ظهر مستقيم — التعامل القوي مع البار"}
+    {
+      "exerciseId": "back-squat",
+      "reps": "5×5",
+      "weight": "",
+      "distance": "",
+      "time": "",
+      "notes": "ركز على العمق الكامل — ركبتيك تتبعان أصابع قدميك",
+      "levels": {
+        "beginner":     {"weight": "50كجم", "reps": "5×4", "cue": "عمق موازٍ — ظهر مستقيم"},
+        "intermediate": {"weight": "70كجم", "reps": "5×5", "cue": "عمق كامل — ركبة وفق القدم"},
+        "advanced":     {"weight": "90كجم", "reps": "5×5", "cue": "سرعة في الصعود — حزام"},
+        "elite":        {"weight": "110كجم+", "reps": "5×5", "cue": "Pause Squat 2ث — انفجاري للأعلى"}
+      }
+    },
+    {
+      "exerciseId": "deadlift",
+      "reps": "3×3",
+      "weight": "",
+      "distance": "",
+      "time": "",
+      "notes": "ظهر مستقيم — التعامل القوي مع البار",
+      "levels": {
+        "beginner":     {"weight": "60كجم", "reps": "3×3", "cue": "شد الكتفين للخلف قبل الرفع"},
+        "intermediate": {"weight": "90كجم", "reps": "3×3", "cue": "حزام فوق 80% — ابدأ بالأرداف"},
+        "advanced":     {"weight": "120كجم", "reps": "3×3", "cue": "Brace 360 درجة — لا ترتخِ"},
+        "elite":        {"weight": "150كجم+", "reps": "3×3", "cue": "Reset كامل بين كل تكرار"}
+      }
+    }
   ],
   "metcon": [
-    {"exerciseId": "thruster", "reps": "21-15-9", "weight": "مبتدئ: 30كجم | متوسط: 43كجم | متقدم: 55كجم", "distance": "", "time": "", "notes": "قسّمها: 15-6 ثم 9-6 ثم 5-4"},
-    {"exerciseId": "pull-up", "reps": "21-15-9", "weight": "", "distance": "", "time": "", "notes": "مبتدئ: Banded | متوسط: Kipping | متقدم: Strict"}
+    {
+      "exerciseId": "thruster",
+      "reps": "21-15-9",
+      "weight": "",
+      "distance": "",
+      "time": "",
+      "notes": "قسّمها: 15-6 ثم 9-6 ثم 5-4",
+      "levels": {
+        "beginner":     {"weight": "30كجم", "reps": "21-15-9", "cue": "Push Press بدل Thruster عند الإرهاق"},
+        "intermediate": {"weight": "43كجم", "reps": "21-15-9", "cue": "حافظ على إيقاعك — لا تتوقف طويلاً"},
+        "advanced":     {"weight": "55كجم", "reps": "21-15-9", "cue": "Unbroken أول جولة"},
+        "elite":        {"weight": "65كجم", "reps": "21-15-9", "cue": "Squat Clean into Thruster للأول"}
+      }
+    },
+    {
+      "exerciseId": "pull-up",
+      "reps": "21-15-9",
+      "weight": "",
+      "distance": "",
+      "time": "",
+      "notes": "قسّم التكرارات — لا تصل للفشل الكامل",
+      "levels": {
+        "beginner":     {"weight": "", "reps": "21-15-9", "cue": "Banded Pull-up أو Ring Row"},
+        "intermediate": {"weight": "", "reps": "21-15-9", "cue": "Kipping مسموح — مجموعات صغيرة"},
+        "advanced":     {"weight": "", "reps": "21-15-9", "cue": "Butterfly للسرعة"},
+        "elite":        {"weight": "", "reps": "21-15-9", "cue": "Chest-to-Bar — Unbroken أكثر ما يمكن"}
+      }
+    }
   ],
   "cooldown": [
     {"exerciseId": "run", "reps": "", "weight": "", "distance": "400م", "time": "", "notes": "مشي هادئ — خفّف معدل القلب"},
@@ -255,14 +304,15 @@ ${recentContext}
   ]
 }
 
-**قواعد مهمة:**
+**قواعد صارمة:**
 - استخدم فقط IDs من القائمة أعلاه
-- في كل تمرين قوة: اذكر الوزن لـ 3 مستويات (مبتدئ | متوسط | متقدم)
-- في الميتكون: اذكر scaling واضح لكل تمرين في الـ notes
+- تمارين القوة (strength) يجب أن تكون بالبار حصراً (back-squat, deadlift, power-clean, clean-and-jerk, snatch, overhead-squat, shoulder-press, push-press, thruster) — لا تضع pull-up أو handstand-pushup في القوة
+- كل تمرين في strength وmetcon يجب أن يحتوي على حقل "levels" بالمستويات الأربعة مع الوزن والتكرارات والنصيحة
+- الإحماء والتهدئة: بدون levels (تُضاف في notes فقط)
 - الإحماء: 3-4 تمارين، الأول cardio خفيف ثم تفعيل عضلي
-- القوة: 2-4 تمارين compound مع أوزان محددة ومرجعية
-- الميتكون: 3-5 تمارين مكثفة 7-20 دقيقة، مترابطة مع القوة
-- التهدئة: 2-3 تمارين تمطيط للعضلات الأكثر إجهاداً
+- القوة: 2-3 تمارين barbell compound
+- الميتكون: 3-5 تمارين مكثفة 7-20 دقيقة، تجمع barbell مع gymnastics
+- targetTimes: أوقات واقعية لإنهاء الميتكون لكل مستوى
 
 أرجع JSON فقط، بدون أي كلام قبله أو بعده.`;
 
@@ -294,6 +344,7 @@ ${recentContext}
         distance: item.distance || '',
         time: item.time || '',
         notes: item.notes || '',
+        levels: item.levels || null,
       }));
 
     const wodData = {
@@ -305,6 +356,7 @@ ${recentContext}
       rounds: generated.rounds ?? null,
       notes: generated.notes || '',
       aiTheme: generated.theme || '',
+      targetTimes: generated.targetTimes || null,
       warmup: validateSection(generated.warmup),
       strength: validateSection(generated.strength),
       metcon: validateSection(generated.metcon),

@@ -920,6 +920,23 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                   {s.items.map((item: any, i: number) => (
                     <ExerciseCard key={i} item={item} index={i} />
                   ))}
+                  {/* أوقات المستويات */}
+                  {wod.targetTimes && (
+                    <div className="bg-gray-800/40 rounded-xl p-3 mt-2">
+                      <h4 className="text-xs font-semibold text-gray-400 mb-2">⏱ أوقات الأداء المرجعية</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {Object.entries(wod.targetTimes).map(([k, v]: [string, any]) => {
+                          const labels: Record<string,string> = {elite:'نخبة 🥇',advanced:'متقدم 🥈',intermediate:'متوسط 🥉',beginner:'مبتدئ'};
+                          return (
+                            <div key={k} className="bg-gray-800 rounded-lg px-3 py-2 text-right">
+                              <div className="text-xs text-gray-400">{labels[k]||k}</div>
+                              <div className="text-sm font-semibold text-white">{v}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
 

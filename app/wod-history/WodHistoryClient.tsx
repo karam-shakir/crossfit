@@ -129,6 +129,22 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
           </div>
           {wod.aiTheme && <div className="bg-purple-900/20 border border-purple-700/30 rounded-xl p-3 text-xs text-purple-300">🤖 {wod.aiTheme}</div>}
           {wod.notes   && <div className="bg-gray-800/50 rounded-xl p-3 text-xs text-gray-300">📝 {wod.notes}</div>}
+          {wod.targetTimes && (
+            <div className="bg-gray-800/40 rounded-xl p-3">
+              <h4 className="text-xs font-semibold text-gray-400 mb-2">⏱ أوقات الأداء المرجعية</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(wod.targetTimes).map(([k, v]: [string, any]) => {
+                  const labels: Record<string,string> = {elite:'نخبة 🥇',advanced:'متقدم 🥈',intermediate:'متوسط 🥉',beginner:'مبتدئ'};
+                  return (
+                    <div key={k} className="bg-gray-800 rounded-lg px-3 py-2 text-right">
+                      <div className="text-xs text-gray-400">{labels[k]||k}</div>
+                      <div className="text-sm font-semibold text-white">{v}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {(['warmup','strength','metcon','cooldown'] as const).map(sec => {
             const items = wod[sec]?.filter((e: any) => e.exerciseId);
             if (!items?.length) return null;
