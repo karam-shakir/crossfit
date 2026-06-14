@@ -950,53 +950,51 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                   )}
                 </div>
               )}
-            </div>
-          )}
 
-          {/* Fix Cooldown Section — inside weekly tab, after plan */}
-          {tab === 'weekly' && (
-            <div className="bg-gray-900 border border-yellow-700/40 rounded-2xl p-5 space-y-4 mt-2">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🧘</span>
-                <div>
-                  <h2 className="font-bold text-yellow-300 text-base">إصلاح التهدئة للجلسات الحالية</h2>
-                  <p className="text-xs text-gray-400">يصلح قسم التهدئة فقط للجلسات المولَّدة دون إعادة توليد التمرين كاملاً</p>
-                </div>
-              </div>
-              <div className="flex gap-3 items-end flex-wrap">
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs text-gray-400">من تاريخ</label>
-                  <input type="date" value={fixCooldownFrom} onChange={e => setFixCooldownFrom(e.target.value)}
-                    className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs text-gray-400">إلى تاريخ</label>
-                  <input type="date" value={fixCooldownTo} onChange={e => setFixCooldownTo(e.target.value)}
-                    className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white" />
-                </div>
-                <button onClick={handleFixCooldown} disabled={fixCooldownLoading}
-                  className="bg-yellow-600 hover:bg-yellow-500 disabled:opacity-50 text-white font-semibold px-5 py-2 rounded-xl text-sm transition-colors">
-                  {fixCooldownLoading ? '⏳ جاري الإصلاح...' : '🔧 إصلاح التهدئة'}
-                </button>
-              </div>
-              {fixCooldownError && (
-                <p className="text-red-400 text-sm">{fixCooldownError}</p>
-              )}
-              {fixCooldownResult && (
-                <div className="bg-gray-800 rounded-xl p-4 space-y-2">
-                  <p className="text-green-400 font-semibold text-sm">
-                    تم إصلاح {fixCooldownResult.fixed} من أصل {fixCooldownResult.total} جلسة
-                  </p>
-                  <div className="space-y-1">
-                    {fixCooldownResult.results?.map((r: any, i: number) => (
-                      <div key={i} className="flex justify-between text-xs">
-                        <span className="text-gray-400">{r.date}</span>
-                        <span className={r.status.startsWith('تم') ? 'text-green-400' : r.status.startsWith('خطأ') ? 'text-red-400' : 'text-gray-500'}>{r.status}</span>
-                      </div>
-                    ))}
+              {/* Fix Cooldown Section */}
+              <div className="bg-gray-900 border border-yellow-700/40 rounded-2xl p-5 space-y-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🧘</span>
+                  <div>
+                    <h2 className="font-bold text-yellow-300 text-base">إصلاح التهدئة للجلسات الحالية</h2>
+                    <p className="text-xs text-gray-400">يصلح قسم التهدئة فقط للجلسات المولَّدة دون إعادة توليد التمرين كاملاً</p>
                   </div>
                 </div>
-              )}
+                <div className="flex gap-3 items-end flex-wrap">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-400">من تاريخ</label>
+                    <input type="date" value={fixCooldownFrom} onChange={e => setFixCooldownFrom(e.target.value)}
+                      className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-400">إلى تاريخ</label>
+                    <input type="date" value={fixCooldownTo} onChange={e => setFixCooldownTo(e.target.value)}
+                      className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white" />
+                  </div>
+                  <button onClick={handleFixCooldown} disabled={fixCooldownLoading}
+                    className="bg-yellow-600 hover:bg-yellow-500 disabled:opacity-50 text-white font-semibold px-5 py-2 rounded-xl text-sm transition-colors">
+                    {fixCooldownLoading ? '⏳ جاري الإصلاح...' : '🔧 إصلاح التهدئة'}
+                  </button>
+                </div>
+                {fixCooldownError && (
+                  <p className="text-red-400 text-sm">{fixCooldownError}</p>
+                )}
+                {fixCooldownResult && (
+                  <div className="bg-gray-800 rounded-xl p-4 space-y-2">
+                    <p className="text-green-400 font-semibold text-sm">
+                      تم إصلاح {fixCooldownResult.fixed} من أصل {fixCooldownResult.total} جلسة
+                    </p>
+                    <div className="space-y-1">
+                      {fixCooldownResult.results?.map((r: any, i: number) => (
+                        <div key={i} className="flex justify-between text-xs">
+                          <span className="text-gray-400">{r.date}</span>
+                          <span className={r.status.startsWith('تم') ? 'text-green-400' : r.status.startsWith('خطأ') ? 'text-red-400' : 'text-gray-500'}>{r.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
