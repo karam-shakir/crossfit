@@ -583,15 +583,28 @@ function KettlebellCard({ rec }: { rec: any }) {
   );
 }
 
+const CAL_LEVEL_TABS: { key: LevelKey; label: string; active: string; idle: string }[] = [
+  { key: 'beginner',     label: 'مبتدئ', active: 'bg-green-600 text-white',  idle: 'bg-gray-800 text-green-400 border border-green-700'  },
+  { key: 'intermediate', label: 'متوسط', active: 'bg-blue-600 text-white',   idle: 'bg-gray-800 text-blue-400 border border-blue-700'    },
+  { key: 'advanced',     label: 'متقدم', active: 'bg-orange-500 text-white',  idle: 'bg-gray-800 text-orange-400 border border-orange-700' },
+  { key: 'elite',        label: 'نخبة',  active: 'bg-purple-600 text-white',  idle: 'bg-gray-800 text-purple-400 border border-purple-700' },
+];
+
 // ── Calisthenics Session Card ────────────────────────────────────────────────
 function CalisthenicsCard({ rec }: { rec: any }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [selectedLevel, setSelectedLevel] = useState<LevelKey | undefined>(undefined);
   const s = rec.sessionData || rec;
   const today = todaySA();
   const isFuture = rec.date > today;
   const isToday  = rec.date === today;
   const colors   = SPORT_COLORS.calisthenics;
+
+  const hasLevels = [
+    ...(s.skillWork?.exercises || []),
+    ...(Array.isArray(s.mainWork) ? s.mainWork : (s.mainWork?.exercises || [])),
+  ].some((ex: any) => ex.levels);
 
   function buildText() {
     const lines: string[] = [];
@@ -698,6 +711,22 @@ function CalisthenicsCard({ rec }: { rec: any }) {
 
           {s.coachNote && <div className="bg-emerald-900/20 border border-emerald-700/30 rounded-xl p-3 text-xs text-emerald-300">💬 {s.coachNote}</div>}
 
+          {/* Level Tabs */}
+          {hasLevels && (
+            <div className="bg-gray-800/50 rounded-xl p-3">
+              <div className="text-xs text-gray-400 mb-2">اختر مستواك</div>
+              <div className="grid grid-cols-4 gap-1.5">
+                {CAL_LEVEL_TABS.map(t => (
+                  <button key={t.key}
+                    onClick={() => setSelectedLevel(selectedLevel === t.key ? undefined : t.key)}
+                    className={`py-1.5 rounded-lg text-xs font-bold transition-all ${selectedLevel === t.key ? t.active : t.idle}`}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Warmup */}
           {s.warmup?.exercises?.length > 0 && (
             <div>
@@ -722,17 +751,26 @@ function CalisthenicsCard({ rec }: { rec: any }) {
             <div>
               <h3 className="font-semibold text-sm text-purple-400 mb-2">🤸 {s.skillWork.title || 'عمل المهارة'} — {s.skillWork.duration} د</h3>
               <div className="space-y-2">
-                {s.skillWork.exercises.map((ex: any, i: number) => (
-                  <div key={i} className="bg-gray-800/60 rounded-xl p-3 border border-purple-900/30">
-                    <div className="flex items-center justify-between mb-1">
-                      <a href={ytLink(ex.nameEn, 'calisthenics')} target="_blank" rel="noopener noreferrer"
-                        className="text-xs text-red-400 hover:text-red-300">▶ يوتيوب</a>
-                      <div className="font-semibold text-white text-sm">{ex.name}</div>
+                {s.skillWork.exercises.map((ex: any, i: number) => {
+                  const lvl = selectedLevel && ex.levels ? ex.levels[selectedLevel] : null;
+                  return (
+                    <div key={i} className="bg-gray-800/60 rounded-xl p-3 border border-purple-900/30">
+                      <div className="flex items-center justify-between mb-1">
+                        <a href={ytLink(ex.nameEn, 'calisthenics')} target="_blank" rel="noopener noreferrer"
+                          className="text-xs text-red-400 hover:text-red-300">▶ يوتيوب</a>
+                        <div className="font-semibold text-white text-sm">{ex.name}</div>
+                      </div>
+                      {lvl ? (
+                        <div className="text-xs text-emerald-300 bg-emerald-900/20 rounded-lg px-2 py-1 text-right">{typeof lvl === 'string' ? lvl : (lvl.reps || lvl.scaling || '')}{lvl.cue ? ` — ${lvl.cue}` : ''}</div>
+                      ) : (
+                        <>
+                          {ex.regression && <p className="text-xs text-blue-300 text-right">⬇️ {ex.regression}</p>}
+                          {ex.progression && <p className="text-xs text-green-300 text-right">⬆️ {ex.progression}</p>}
+                        </>
+                      )}
                     </div>
-                    {ex.regression && <p className="text-xs text-blue-300 text-right">⬇️ {ex.regression}</p>}
-                    {ex.progression && <p className="text-xs text-green-300 text-right">⬆️ {ex.progression}</p>}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -742,22 +780,35 @@ function CalisthenicsCard({ rec }: { rec: any }) {
             <div>
               <h3 className="font-semibold text-sm text-emerald-400 mb-2">💪 {Array.isArray(s.mainWork) ? 'العمل الرئيسي' : (s.mainWork.title || 'العمل الرئيسي')} {!Array.isArray(s.mainWork) && s.mainWork.duration ? `— ${s.mainWork.duration} د` : ''}</h3>
               <div className="space-y-2">
-                {(Array.isArray(s.mainWork) ? s.mainWork : s.mainWork.exercises).map((ex: any, i: number) => (
-                  <div key={i} className="bg-gray-800/60 rounded-xl p-3 border border-emerald-900/30">
-                    <div className="flex items-center justify-between mb-1">
-                      <a href={ytLink(ex.nameEn, 'calisthenics')} target="_blank" rel="noopener noreferrer"
-                        className="text-xs text-red-400 hover:text-red-300">▶ يوتيوب</a>
-                      <div className="font-semibold text-white text-sm">{ex.name}</div>
+                {(Array.isArray(s.mainWork) ? s.mainWork : s.mainWork.exercises).map((ex: any, i: number) => {
+                  const lvl = selectedLevel && ex.levels ? ex.levels[selectedLevel] : null;
+                  return (
+                    <div key={i} className="bg-gray-800/60 rounded-xl p-3 border border-emerald-900/30">
+                      <div className="flex items-center justify-between mb-1">
+                        <a href={ytLink(ex.nameEn, 'calisthenics')} target="_blank" rel="noopener noreferrer"
+                          className="text-xs text-red-400 hover:text-red-300">▶ يوتيوب</a>
+                        <div className="font-semibold text-white text-sm">{ex.name}</div>
+                      </div>
+                      {lvl ? (
+                        <div className="bg-gray-700/50 rounded-lg px-3 py-2 space-y-1 text-right">
+                          {lvl.weight && <div className="text-xs text-gray-300">⚖️ <span className="font-semibold text-white">{lvl.weight}</span></div>}
+                          {(lvl.reps || lvl.scaling) && <div className="text-xs text-gray-300">🔢 <span className="font-semibold text-white">{lvl.reps || lvl.scaling}</span></div>}
+                          {lvl.cue && <div className="text-xs text-emerald-300">💬 {lvl.cue}</div>}
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex gap-3 text-xs text-gray-400 justify-end">
+                            {ex.sets && <span>{ex.sets} مج</span>}
+                            {ex.reps && <span>{ex.reps}</span>}
+                            {ex.rest && <span>راحة {ex.rest}</span>}
+                          </div>
+                          {ex.regression && <p className="text-xs text-blue-300 text-right mt-1">⬇️ {ex.regression}</p>}
+                          {ex.progression && <p className="text-xs text-green-300 text-right mt-1">⬆️ {ex.progression}</p>}
+                        </>
+                      )}
                     </div>
-                    <div className="flex gap-3 text-xs text-gray-400 justify-end">
-                      {ex.sets && <span>{ex.sets} مج</span>}
-                      {ex.reps && <span>{ex.reps}</span>}
-                      {ex.rest && <span>راحة {ex.rest}</span>}
-                    </div>
-                    {ex.regression && <p className="text-xs text-blue-300 text-right mt-1">⬇️ {ex.regression}</p>}
-                    {ex.progression && <p className="text-xs text-green-300 text-right mt-1">⬆️ {ex.progression}</p>}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
