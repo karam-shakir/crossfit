@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
-  const { date, sessionType, difficulty = 'متوسط' } = body;
+  const { date, sessionType } = body;
 
   const allSessions = await getAllHyroxSessions();
   const recentSessions = allSessions
@@ -94,7 +94,7 @@ ${weekAnalysis.sessionLog.map((s: any) => `${s.date}: [${s.stations.join(' + ') 
 
 **الجلسة المطلوبة:**
 نوع الجلسة: ${sessionType || 'حسب تحليل الأسبوع'}
-الصعوبة العامة: ${difficulty}
+المستويات: ولّد جميع المستويات الأربعة (beginner/intermediate/advanced/elite) في كل تمرين
 ${date ? `التاريخ: ${date}` : ''}
 
 **══ المحطات الرسمية وأوزانها ══**

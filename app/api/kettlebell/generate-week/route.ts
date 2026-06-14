@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
-  const { fromDate, days = 5, difficulty = 'متوسط' } = body;
+  const { fromDate, days = 5 } = body;
 
   const startDate = fromDate || todaySA();
 
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
 الجمهور: مبتدئون إلى نخبة (18-40 سنة)
 الفلسفة: الوزن يحترم التقنية — التقنية تصنع القوة — القوة تصنع البطل
 المدة: ${days} أيام من ${startDate}
-المستوى العام: ${difficulty}
+المستويات: مبتدئ / متوسط / متقدم / نخبة — ولّد الأربعة في كل تمرين
 ═══════════════════════════════
 
 **أنواع الجلسات:**
@@ -97,7 +97,7 @@ ${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
       "title": "عنوان احترافي يعكس الحدث والهدف",
       "eventType": "biathlon | snatch | longcycle | strength | conditioning | rest",
       "focus": "القوة | التحمل | التقنية | السرعة | التعافي",
-      "difficulty": "${difficulty}",
+      "difficulty": "جميع المستويات",
       "coachNote": "هدف الجلسة + الاستراتيجية + النقطة الأهم لهذه الجلسة",
       "breathingPattern": "دورة التنفس الكاملة: متى تشهق، متى تزفر، الإيقاع الأمثل لهذا الحدث",
       "warmup": {

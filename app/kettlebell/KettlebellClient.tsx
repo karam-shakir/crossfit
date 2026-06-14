@@ -3,7 +3,14 @@ import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 
-const DIFFICULTY_OPTIONS = ['مبتدئ', 'متوسط', 'متقدم', 'نخبة'];
+const LEVEL_TABS = [
+  { key: 'beginner'     as const, label: 'مبتدئ', active: 'bg-green-600 text-white',  idle: 'bg-gray-800 text-green-400 border border-green-700'  },
+  { key: 'intermediate' as const, label: 'متوسط', active: 'bg-blue-600 text-white',   idle: 'bg-gray-800 text-blue-400 border border-blue-700'    },
+  { key: 'advanced'     as const, label: 'متقدم', active: 'bg-orange-500 text-white',  idle: 'bg-gray-800 text-orange-400 border border-orange-700' },
+  { key: 'elite'        as const, label: 'نخبة',  active: 'bg-purple-600 text-white',  idle: 'bg-gray-800 text-purple-400 border border-purple-700' },
+];
+type LevelKey = 'beginner' | 'intermediate' | 'advanced' | 'elite';
+
 const EVENT_TYPES = [
   { value: 'biathlon',     label: 'Biathlon 🏆',     desc: 'Jerk + Snatch — ثنائي الأحداث' },
   { value: 'long_cycle',   label: 'Long Cycle 🔄',   desc: 'Clean & Jerk — الدورة الطويلة' },
@@ -17,10 +24,10 @@ const EVENT_LABELS: Record<string, string> = {
   snatch: 'Snatch ⚡', strength: 'قوة 💪', conditioning: 'تكييف 🔥',
 };
 
-function buildShareText(s: any, meta: { date: string; eventType: string; difficulty: string; focus: string }): string {
+function buildShareText(s: any, meta: { date: string; eventType: string; focus: string }): string {
   const lines: string[] = [
     `🏋️ *${s.title}*`,
-    `📅 ${meta.date}  |  ${EVENT_LABELS[meta.eventType] || meta.eventType}  |  ${meta.difficulty}`,
+    `📅 ${meta.date}  |  ${EVENT_LABELS[meta.eventType] || meta.eventType}`,
     `⏱ المدة: ${s.totalDuration}  |  التركيز: ${meta.focus}`,
     '',
   ];
@@ -84,9 +91,9 @@ const WA_ICON = (
 export default function KettlebellClient({ member }: { member: any }) {
   const [generating, setGenerating]   = useState(false);
   const [session, setSession]         = useState<any>(null);
-  const [sessionMeta, setSessionMeta] = useState<{ date: string; eventType: string; difficulty: string; focus: string } | null>(null);
+  const [sessionMeta, setSessionMeta] = useState<{ date: string; eventType: string; focus: string } | null>(null);
   const [error, setError]             = useState('');
-  const [difficulty, setDifficulty]   = useState('متوسط');
+  const [selectedLevel, setSelectedLevel] = useState<LevelKey | undefined>(undefined);
   const [eventType, setEventType]     = useState('biathlon');
   const [focus, setFocus]             = useState('التحمل');
   const [date, setDate]               = useState(todaySA());
@@ -109,10 +116,10 @@ export default function KettlebellClient({ member }: { member: any }) {
   async function generate() {
     setGenerating(true); setError(''); setSaved(false);
     try {
-      const res = await fetch('/api/kettlebell/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date, difficulty, eventType, focus }) });
+      const res = await fetch('/api/kettlebell/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date, eventType, focus }) });
       const data = await res.json();
       if (!res.ok) { setError(data.error); return; }
-      setSession(data.session); setSessionMeta({ date, eventType, difficulty, focus }); setShowSettings(false);
+      setSession(data.session); setSessionMeta({ date, eventType, focus }); setSelectedLevel(undefined); setShowSettings(false);
     } catch (e: any) { setError(e.message); } finally { setGenerating(false); }
   }
 
@@ -120,7 +127,7 @@ export default function KettlebellClient({ member }: { member: any }) {
     if (!session || saving || saved) return;
     setSaving(true);
     try {
-      await fetch('/api/kettlebell/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: sessionMeta?.date || date, eventType: sessionMeta?.eventType || eventType, difficulty: sessionMeta?.difficulty || difficulty, focus: sessionMeta?.focus || focus, sessionData: session }) });
+      await fetch('/api/kettlebell/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: sessionMeta?.date || date, eventType: sessionMeta?.eventType || eventType, difficulty: 'جميع المستويات', focus: sessionMeta?.focus || focus, sessionData: session }) });
       setSaved(true);
     } catch {}
     setSaving(false);
@@ -132,8 +139,8 @@ export default function KettlebellClient({ member }: { member: any }) {
   }
 
   function viewRecord(rec: any) {
-    setSession(rec.sessionData); setSessionMeta({ date: rec.date, eventType: rec.eventType, difficulty: rec.difficulty, focus: rec.focus });
-    setSaved(true); setShowSettings(false); setActiveTab('generate');
+    setSession(rec.sessionData); setSessionMeta({ date: rec.date, eventType: rec.eventType, focus: rec.focus });
+    setSelectedLevel(undefined); setSaved(true); setShowSettings(false); setActiveTab('generate');
   }
 
   function shareWhatsApp() {
@@ -195,13 +202,7 @@ export default function KettlebellClient({ member }: { member: any }) {
                       ))}
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <label className="text-xs text-gray-400 mb-1 block">الصعوبة</label>
-                      <select value={difficulty} onChange={e => setDifficulty(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500">
-                        {DIFFICULTY_OPTIONS.map(d => <option key={d} value={d}>{d}</option>)}
-                      </select>
-                    </div>
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs text-gray-400 mb-1 block">التركيز</label>
                       <select value={focus} onChange={e => setFocus(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500">
@@ -224,6 +225,20 @@ export default function KettlebellClient({ member }: { member: any }) {
 
               {session && !showSettings && (
                 <div className="space-y-4">
+
+                  {/* Level Tabs */}
+                  <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
+                    <div className="text-xs text-gray-400 mb-3">اختر مستواك لعرض الأوزان والإيقاع المخصص</div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {LEVEL_TABS.map(t => (
+                        <button key={t.key}
+                          onClick={() => setSelectedLevel(selectedLevel === t.key ? undefined : t.key)}
+                          className={`py-2 rounded-xl text-xs font-bold transition-all ${selectedLevel === t.key ? t.active : t.idle}`}>
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
                   {/* Action Bar */}
                   <div className="flex gap-2">
@@ -282,21 +297,37 @@ export default function KettlebellClient({ member }: { member: any }) {
                   {session.mainWork && (
                     <div className="space-y-3">
                       <h3 className="font-semibold text-white flex items-center gap-2"><span>💪</span> العمل الرئيسي</h3>
-                      {session.mainWork.map((block: any, i: number) => (
-                        <div key={i} className="bg-gray-900 rounded-2xl border border-yellow-700/20 p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <div><div className="font-semibold text-white">{block.exercise || block.movement}</div><div className="text-xs text-gray-500">{block.exerciseAr || block.movementEn}</div></div>
-                            <div className="text-right"><div className="text-lg font-bold text-yellow-400">{block.weight}</div><div className="text-xs text-gray-500">الوزن</div></div>
+                      {session.mainWork.map((block: any, i: number) => {
+                        const lvl = selectedLevel && block.levels ? block.levels[selectedLevel] : null;
+                        return (
+                          <div key={i} className="bg-gray-900 rounded-2xl border border-yellow-700/20 p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <div><div className="font-semibold text-white">{block.exercise || block.movement}</div><div className="text-xs text-gray-500">{block.exerciseAr || block.movementEn}</div></div>
+                              <div className="text-right">
+                                <div className="text-lg font-bold text-yellow-400">{lvl?.weight || block.weight}</div>
+                                <div className="text-xs text-gray-500">الوزن</div>
+                              </div>
+                            </div>
+                            {lvl ? (
+                              <div className="bg-gray-800 rounded-xl p-3 space-y-1.5">
+                                {lvl.rpm        && <div className="flex justify-between text-xs"><span className="text-gray-400">الإيقاع (RPM)</span><span className="text-orange-400 font-semibold">{lvl.rpm}</span></div>}
+                                {lvl.totalLifts && <div className="flex justify-between text-xs"><span className="text-gray-400">إجمالي الرفعات</span><span className="text-white font-semibold">{lvl.totalLifts}</span></div>}
+                                {lvl.sets       && <div className="flex justify-between text-xs"><span className="text-gray-400">المجموعات</span><span className="text-white font-semibold">{lvl.sets}</span></div>}
+                                {lvl.rest       && <div className="flex justify-between text-xs"><span className="text-gray-400">الراحة</span><span className="text-white font-semibold">{lvl.rest}</span></div>}
+                                {lvl.cue        && <div className="text-xs text-yellow-300 bg-yellow-900/20 rounded-lg px-2 py-1 mt-1">💬 {lvl.cue}</div>}
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-3 gap-2">
+                                <div className="bg-gray-800 rounded-xl p-2 text-center"><div className="text-xs text-gray-500">المجموعات</div><div className="text-sm text-white font-semibold">{block.sets}</div></div>
+                                <div className="bg-gray-800 rounded-xl p-2 text-center"><div className="text-xs text-gray-500">التكرارات / الوقت</div><div className="text-sm text-white font-semibold">{block.reps}</div></div>
+                                <div className="bg-gray-800 rounded-xl p-2 text-center"><div className="text-xs text-gray-500">الراحة</div><div className="text-sm text-white font-semibold">{block.restBetweenSets}</div></div>
+                              </div>
+                            )}
+                            {block.targetRPM && !lvl && <div className="mt-2 bg-orange-900/20 rounded-xl p-2 text-center"><span className="text-xs text-orange-400">🎯 الهدف: {block.targetRPM}</span></div>}
+                            {block.technique && <div className="mt-2 text-xs text-yellow-400 bg-yellow-900/10 rounded-lg p-2">💡 {block.technique}</div>}
                           </div>
-                          <div className="grid grid-cols-3 gap-2">
-                            <div className="bg-gray-800 rounded-xl p-2 text-center"><div className="text-xs text-gray-500">المجموعات</div><div className="text-sm text-white font-semibold">{block.sets}</div></div>
-                            <div className="bg-gray-800 rounded-xl p-2 text-center"><div className="text-xs text-gray-500">التكرارات / الوقت</div><div className="text-sm text-white font-semibold">{block.reps}</div></div>
-                            <div className="bg-gray-800 rounded-xl p-2 text-center"><div className="text-xs text-gray-500">الراحة</div><div className="text-sm text-white font-semibold">{block.restBetweenSets}</div></div>
-                          </div>
-                          {block.targetRPM && <div className="mt-2 bg-orange-900/20 rounded-xl p-2 text-center"><span className="text-xs text-orange-400">🎯 الهدف: {block.targetRPM}</span></div>}
-                          {block.technique && <div className="mt-2 text-xs text-yellow-400 bg-yellow-900/10 rounded-lg p-2">💡 {block.technique}</div>}
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
 

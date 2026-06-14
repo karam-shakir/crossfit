@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
-  const { date, eventType, difficulty = 'متوسط' } = body;
+  const { date, eventType } = body;
 
   const allSessions = await getAllKettlebellSessions();
   const recentSessions = allSessions
@@ -98,7 +98,7 @@ ${JSON.stringify(recentSummary, null, 2)}
 
 **الجلسة المطلوبة:**
 الحدث: ${eventType || 'حسب التحليل'}
-الصعوبة: ${difficulty}
+المستويات: ولّد جميع المستويات الأربعة (beginner/intermediate/advanced/elite) في كل تمرين
 ${date ? `التاريخ: ${date}` : ''}
 
 **══ أحداث Kettlebell Sport ══**

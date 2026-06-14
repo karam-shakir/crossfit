@@ -3,7 +3,14 @@ import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 
-const DIFFICULTY_OPTIONS = ['مبتدئ', 'متوسط', 'متقدم', 'نخبة'];
+const LEVEL_TABS = [
+  { key: 'beginner'     as const, label: 'مبتدئ', active: 'bg-green-600 text-white',  idle: 'bg-gray-800 text-green-400 border border-green-700'  },
+  { key: 'intermediate' as const, label: 'متوسط', active: 'bg-blue-600 text-white',   idle: 'bg-gray-800 text-blue-400 border border-blue-700'    },
+  { key: 'advanced'     as const, label: 'متقدم', active: 'bg-orange-500 text-white',  idle: 'bg-gray-800 text-orange-400 border border-orange-700' },
+  { key: 'elite'        as const, label: 'نخبة',  idle: 'bg-gray-800 text-purple-400 border border-purple-700', active: 'bg-purple-600 text-white' },
+];
+type LevelKey = 'beginner' | 'intermediate' | 'advanced' | 'elite';
+
 const SESSION_TYPES = [
   { value: 'full',       label: 'كامل 🏁',        desc: 'السباق الكامل 8 محطات + 8 كم' },
   { value: 'simulation', label: 'محاكاة 🎯',       desc: 'نفس البنية بأوزان تدريبية' },
@@ -16,11 +23,11 @@ const SESSION_TYPE_LABELS: Record<string, string> = {
 };
 
 // ——— بناء نص المشاركة ———
-function buildShareText(s: any, meta: { date: string; sessionType: string; difficulty: string }): string {
+function buildShareText(s: any, meta: { date: string; sessionType: string }): string {
   const typeLabel = SESSION_TYPE_LABELS[meta.sessionType] || meta.sessionType;
   const lines: string[] = [
     `🏁 *${s.title}*`,
-    `📅 ${meta.date}  |  ${typeLabel}  |  ${meta.difficulty}`,
+    `📅 ${meta.date}  |  ${typeLabel}`,
     `⏱ المدة: ${s.totalDuration} دقيقة`,
     '',
   ];
@@ -120,12 +127,12 @@ export default function HyroxClient({ member }: { member: any }) {
   // ——— توليد ———
   const [generating, setGenerating]   = useState(false);
   const [session, setSession]         = useState<any>(null);
-  const [sessionMeta, setSessionMeta] = useState<{ date: string; sessionType: string; difficulty: string } | null>(null);
+  const [sessionMeta, setSessionMeta] = useState<{ date: string; sessionType: string } | null>(null);
   const [error, setError]             = useState('');
-  const [difficulty, setDifficulty]   = useState('متوسط');
   const [sessionType, setSessionType] = useState('simulation');
   const [date, setDate]               = useState(todaySA());
   const [showSettings, setShowSettings] = useState(true);
+  const [selectedLevel, setSelectedLevel] = useState<LevelKey | undefined>(undefined);
 
   // ——— حفظ ———
   const [saving, setSaving] = useState(false);
@@ -162,12 +169,13 @@ export default function HyroxClient({ member }: { member: any }) {
       const res = await fetch('/api/hyrox/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, difficulty, sessionType }),
+        body: JSON.stringify({ date, sessionType }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error); return; }
       setSession(data.session);
-      setSessionMeta({ date, sessionType, difficulty });
+      setSelectedLevel(undefined);
+      setSessionMeta({ date, sessionType });
       setShowSettings(false);
     } catch (e: any) {
       setError(e.message);
@@ -186,7 +194,7 @@ export default function HyroxClient({ member }: { member: any }) {
         body: JSON.stringify({
           date: sessionMeta?.date || date,
           sessionType: sessionMeta?.sessionType || sessionType,
-          difficulty: sessionMeta?.difficulty || difficulty,
+          difficulty: 'جميع المستويات',
           sessionData: session,
         }),
       });
@@ -202,7 +210,8 @@ export default function HyroxClient({ member }: { member: any }) {
 
   function viewRecord(rec: any) {
     setSession(rec.sessionData);
-    setSessionMeta({ date: rec.date, sessionType: rec.sessionType, difficulty: rec.difficulty });
+    setSessionMeta({ date: rec.date, sessionType: rec.sessionType });
+    setSelectedLevel(undefined);
     setSaved(true);
     setShowSettings(false);
     setActiveTab('generate');
@@ -300,19 +309,10 @@ export default function HyroxClient({ member }: { member: any }) {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs text-gray-400 mb-1 block">مستوى الصعوبة</label>
-                      <select value={difficulty} onChange={e => setDifficulty(e.target.value)}
-                        className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500">
-                        {DIFFICULTY_OPTIONS.map(d => <option key={d} value={d}>{d}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-400 mb-1 block">تاريخ الجلسة</label>
-                      <input type="date" value={date} onChange={e => setDate(e.target.value)}
-                        className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
-                    </div>
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">تاريخ الجلسة</label>
+                    <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
                   </div>
 
                   {error && (
@@ -338,6 +338,20 @@ export default function HyroxClient({ member }: { member: any }) {
               {/* Generated Session */}
               {session && !showSettings && (
                 <div className="space-y-4">
+
+                  {/* Level Tabs */}
+                  <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
+                    <div className="text-xs text-gray-400 mb-3">اختر مستواك لعرض الأوزان والأهداف المخصصة</div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {LEVEL_TABS.map(t => (
+                        <button key={t.key}
+                          onClick={() => setSelectedLevel(selectedLevel === t.key ? undefined : t.key)}
+                          className={`py-2 rounded-xl text-xs font-bold transition-all ${selectedLevel === t.key ? t.active : t.idle}`}>
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
                   {/* Action Bar: حفظ + مشاركة + جلسة جديدة */}
                   <div className="flex gap-2">
@@ -390,9 +404,6 @@ export default function HyroxClient({ member }: { member: any }) {
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-xs bg-red-900/50 border border-red-700/40 text-red-300 px-2 py-0.5 rounded-full">
                             ⏱ {session.totalDuration} دقيقة
-                          </span>
-                          <span className="text-xs bg-orange-900/50 border border-orange-700/40 text-orange-300 px-2 py-0.5 rounded-full">
-                            {session.difficulty}
                           </span>
                           {sessionMeta && (
                             <span className="text-xs text-gray-500">{sessionMeta.date}</span>
@@ -453,24 +464,34 @@ export default function HyroxClient({ member }: { member: any }) {
                                 <span className="text-xs text-orange-400 bg-orange-900/30 px-2 py-1 rounded-lg">⏱ {st.targetTime}</span>
                               )}
                             </div>
-                            <div className="grid grid-cols-3 gap-2 mt-3">
-                              <div className="bg-gray-800 rounded-xl p-2 text-center">
-                                <div className="text-xs text-gray-500">الهدف</div>
-                                <div className="text-sm text-white font-semibold">{st.target}</div>
+                            {/* عرض بيانات المستوى المحدد */}
+                            {selectedLevel && st.levels?.[selectedLevel] ? (
+                              <div className="mt-3 bg-gray-800 rounded-xl p-3 space-y-1.5">
+                                {st.levels[selectedLevel].distance && <div className="flex justify-between text-xs"><span className="text-gray-400">المسافة</span><span className="text-white font-semibold">{st.levels[selectedLevel].distance}</span></div>}
+                                {st.levels[selectedLevel].weight    && <div className="flex justify-between text-xs"><span className="text-gray-400">الوزن</span><span className="text-white font-semibold">{st.levels[selectedLevel].weight}</span></div>}
+                                {st.levels[selectedLevel].targetPace && <div className="flex justify-between text-xs"><span className="text-gray-400">الإيقاع المستهدف</span><span className="text-orange-400 font-semibold">{st.levels[selectedLevel].targetPace}</span></div>}
+                                {st.levels[selectedLevel].scaling   && <div className="text-xs text-green-400 bg-green-900/20 rounded-lg px-2 py-1 mt-1">{st.levels[selectedLevel].scaling}</div>}
                               </div>
-                              {st.weight && (
+                            ) : (
+                              <div className="grid grid-cols-3 gap-2 mt-3">
                                 <div className="bg-gray-800 rounded-xl p-2 text-center">
-                                  <div className="text-xs text-gray-500">الوزن</div>
-                                  <div className="text-sm text-white font-semibold">{st.weight}</div>
+                                  <div className="text-xs text-gray-500">الهدف</div>
+                                  <div className="text-sm text-white font-semibold">{st.target}</div>
                                 </div>
-                              )}
-                              {st.scaling && (
-                                <div className="bg-green-900/20 rounded-xl p-2 text-center">
-                                  <div className="text-xs text-gray-500">تعديل</div>
-                                  <div className="text-xs text-green-400">{st.scaling}</div>
-                                </div>
-                              )}
-                            </div>
+                                {st.weight && (
+                                  <div className="bg-gray-800 rounded-xl p-2 text-center">
+                                    <div className="text-xs text-gray-500">الوزن</div>
+                                    <div className="text-sm text-white font-semibold">{st.weight}</div>
+                                  </div>
+                                )}
+                                {st.scaling && (
+                                  <div className="bg-green-900/20 rounded-xl p-2 text-center">
+                                    <div className="text-xs text-gray-500">تعديل</div>
+                                    <div className="text-xs text-green-400">{st.scaling}</div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                             {st.tips && (
                               <div className="mt-2 text-xs text-yellow-400 bg-yellow-900/10 rounded-lg p-2">
                                 💡 {st.tips}

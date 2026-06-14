@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
-  const { fromDate, days = 5, difficulty = 'متوسط' } = body;
+  const { fromDate, days = 5 } = body;
 
   const startDate = fromDate || todaySA();
 
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
 الجمهور: مبتدئون إلى نخبة، رجال ونساء (18-40 سنة)
 الفلسفة: القوة الوظيفية + التحمل + الكفاءة = HYROX Champion
 المدة: ${days} أيام من ${startDate}
-المستوى العام: ${difficulty}
+المستويات: مبتدئ / متوسط / متقدم / نخبة — ولّد الأربعة في كل تمرين
 ═══════════════════════════════
 
 **أنواع الجلسات:**
@@ -88,7 +88,7 @@ ${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
       "isRest": false,
       "title": "عنوان احترافي يعكس محاور الجلسة",
       "sessionType": "strength | simulation | running | rest",
-      "difficulty": "${difficulty}",
+      "difficulty": "جميع المستويات",
       "totalDuration": 75,
       "coachNote": "هدف الجلسة + استراتيجية + النقطة التقنية الأهم",
       "strengthBlock": {
