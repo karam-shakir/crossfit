@@ -1,4 +1,5 @@
 ﻿'use client';
+import { todaySA } from '@/lib/timezone';
 import { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import ExerciseCard from '@/components/ExerciseCard';
@@ -53,7 +54,7 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [copied, setCopied] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState<LevelKey | undefined>(undefined);
-  const today = new Date().toISOString().split('T')[0];
+  const today = todaySA();
   function hasMultiLevel(s: string) { return (s.includes('|') || s.includes('مبتدئ')) && s.includes('متوسط'); }
   const hasLevels = [...(wod.strength || []), ...(wod.metcon || [])].some((e: any) =>
     e.levels ||
@@ -224,7 +225,7 @@ function HyroxCard({ rec }: { rec: any }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const s = rec.sessionData || rec;
-  const today = new Date().toISOString().split('T')[0];
+  const today = todaySA();
   const isFuture = rec.date > today;
   const isToday  = rec.date === today;
   const colors   = SPORT_COLORS.hyrox;
@@ -408,7 +409,7 @@ function KettlebellCard({ rec }: { rec: any }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const s = rec.sessionData || rec;
-  const today = new Date().toISOString().split('T')[0];
+  const today = todaySA();
   const isFuture = rec.date > today;
   const isToday  = rec.date === today;
   const colors   = SPORT_COLORS.kettlebell;
@@ -587,7 +588,7 @@ function CalisthenicsCard({ rec }: { rec: any }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const s = rec.sessionData || rec;
-  const today = new Date().toISOString().split('T')[0];
+  const today = todaySA();
   const isFuture = rec.date > today;
   const isToday  = rec.date === today;
   const colors   = SPORT_COLORS.calisthenics;
@@ -820,7 +821,7 @@ function UnifiedCalendar({
   onSelect: (sport: string, date: string) => void;
 }) {
   const [cursor, setCursor] = useState(new Date());
-  const today = new Date().toISOString().split('T')[0];
+  const today = todaySA();
 
   const year  = cursor.getFullYear();
   const month = cursor.getMonth();
@@ -921,7 +922,7 @@ export default function WodHistoryClient({
   const [wods, setWods] = useState(initialWods);
   const [search, setSearch] = useState('');
   const isAdmin = member.role === 'admin';
-  const today = new Date().toISOString().split('T')[0];
+  const today = todaySA();
 
   const cfUpcoming = wods.filter(w => w.date >= today).sort((a, b) => a.date.localeCompare(b.date));
   const cfPast     = wods.filter(w => w.date < today).sort((a, b) => b.date.localeCompare(a.date));

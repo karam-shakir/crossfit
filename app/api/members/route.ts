@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { getMembers, saveMembers } from '@/lib/db';
 import { getSession } from '@/lib/auth';
+import { todaySA } from '@/lib/timezone';
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
 
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
     password: await bcrypt.hash(body.password, 10),
     nameAr: body.nameAr,
     role: 'member' as const,
-    joinDate: new Date().toISOString().split('T')[0],
+    joinDate: todaySA(),
     avatar: AVATARS[members.length % AVATARS.length],
   };
   members.push(member);

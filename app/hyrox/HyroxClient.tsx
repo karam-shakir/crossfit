@@ -1,4 +1,5 @@
 ﻿'use client';
+import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 
@@ -123,7 +124,7 @@ export default function HyroxClient({ member }: { member: any }) {
   const [error, setError]             = useState('');
   const [difficulty, setDifficulty]   = useState('متوسط');
   const [sessionType, setSessionType] = useState('simulation');
-  const [date, setDate]               = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate]               = useState(todaySA());
   const [showSettings, setShowSettings] = useState(true);
 
   // ——— حفظ ———

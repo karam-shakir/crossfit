@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
+import { todaySA } from '@/lib/timezone';
 import { getWods } from '@/lib/db';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const { fromDate, days = 7, difficulty = 'متوسط', weekMode = 'crossfit', calisthenicsDays = 1 } = body;
 
-  const startDate = fromDate || new Date().toISOString().split('T')[0];
+  const startDate = fromDate || todaySA();
 
   // Build list of dates
   const dates: { date: string; dayName: string }[] = [];

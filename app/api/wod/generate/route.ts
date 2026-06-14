@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
+import { todaySA } from '@/lib/timezone';
 import { getWods } from '@/lib/db';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -350,7 +351,7 @@ ${recentContext}
       }));
 
     const wodData = {
-      date: date || new Date().toISOString().split('T')[0],
+      date: date || todaySA(),
       title:   generated.title   || (wodMode === 'calisthenics' ? 'تمرين Calisthenics' : 'تمرين يومي'),
       titleEn: generated.titleEn || '',
       type: generated.type || 'للوقت',

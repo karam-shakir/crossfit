@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import { todaySA } from '@/lib/timezone';
 import { saveKettlebellSession, getMemberKettlebellSessions, deleteKettlebellSession } from '@/lib/db';
 import { randomUUID } from 'crypto';
 
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
   const record = {
     id: randomUUID(),
     memberId: session.id,
-    date: date || new Date().toISOString().split('T')[0],
+    date: date || todaySA(),
     eventType: eventType || 'biathlon',
     difficulty: difficulty || 'متوسط',
     focus: focus || 'التحمل',

@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import { todaySA } from '@/lib/timezone';
 import {
   saveCalisthenicsSession,
   getMemberCalisthenicsSessions,
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
     id: randomUUID(),
     memberId: session.id,
     memberName: (session as any).nameAr || '',
-    date: date || new Date().toISOString().split('T')[0],
+    date: date || todaySA(),
     sessionType,
     difficulty,
     title: sessionData?.title || 'جلسة Calisthenics',

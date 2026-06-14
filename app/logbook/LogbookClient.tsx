@@ -1,4 +1,5 @@
 ﻿'use client';
+import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 
@@ -9,7 +10,7 @@ export default function LogbookClient({ member }: { member: any }) {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     wodTitle: '', result: '', weight: '', rounds: '', time: '', reps: '',
-    notes: '', rxd: false, date: new Date().toISOString().split('T')[0]
+    notes: '', rxd: false, date: todaySA()
   });
 
   useEffect(() => {
@@ -27,7 +28,7 @@ export default function LogbookClient({ member }: { member: any }) {
       const entry = await res.json();
       setEntries(prev => [entry, ...prev]);
       setShowForm(false);
-      setForm({ wodTitle: '', result: '', weight: '', rounds: '', time: '', reps: '', notes: '', rxd: false, date: new Date().toISOString().split('T')[0] });
+      setForm({ wodTitle: '', result: '', weight: '', rounds: '', time: '', reps: '', notes: '', rxd: false, date: todaySA() });
     }
     setSaving(false);
   }

@@ -1,4 +1,5 @@
 ﻿'use client';
+import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
@@ -91,7 +92,7 @@ export default function MeasurementsClient({ member }: { member: any }) {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<any>({ date: new Date().toISOString().split('T')[0] });
+  const [form, setForm] = useState<any>({ date: todaySA() });
   const [chartField, setChartField] = useState('weight');
 
   useEffect(() => {
@@ -115,7 +116,7 @@ export default function MeasurementsClient({ member }: { member: any }) {
       const record = await res.json();
       setRecords(prev => [record, ...prev]);
       setShowForm(false);
-      setForm({ date: new Date().toISOString().split('T')[0] });
+      setForm({ date: todaySA() });
     }
     setSaving(false);
   }

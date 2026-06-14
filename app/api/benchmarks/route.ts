@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { getBenchmarks, addBenchmarkResult, getExercises } from '@/lib/db';
 import { getSession } from '@/lib/auth';
+import { todaySA } from '@/lib/timezone';
 
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
     id: generateId(),
     memberId: session.id,
     benchmarkId: body.benchmarkId,
-    date: body.date || new Date().toISOString().split('T')[0],
+    date: body.date || todaySA(),
     result: body.result,
     rxd: body.rxd || false,
     notes: body.notes || ''

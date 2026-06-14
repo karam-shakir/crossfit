@@ -1,4 +1,5 @@
 ﻿'use client';
+import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 
@@ -88,7 +89,7 @@ export default function KettlebellClient({ member }: { member: any }) {
   const [difficulty, setDifficulty]   = useState('متوسط');
   const [eventType, setEventType]     = useState('biathlon');
   const [focus, setFocus]             = useState('التحمل');
-  const [date, setDate]               = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate]               = useState(todaySA());
   const [showSettings, setShowSettings] = useState(true);
   const [saving, setSaving]           = useState(false);
   const [saved, setSaved]             = useState(false);

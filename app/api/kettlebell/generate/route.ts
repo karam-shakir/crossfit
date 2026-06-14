@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
+import { todaySA } from '@/lib/timezone';
 import { getAllKettlebellSessions } from '@/lib/db';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -244,7 +245,7 @@ ${date ? `التاريخ: ${date}` : ''}
     const generated = JSON.parse(jsonText);
 
     const result = {
-      date: date || new Date().toISOString().split('T')[0],
+      date: date || todaySA(),
       type: 'kettlebell',
       title: generated.title || 'جلسة Kettlebell',
       eventType: generated.eventType || eventType || 'long-cycle',

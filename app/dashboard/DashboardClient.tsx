@@ -1,4 +1,5 @@
 ﻿'use client';
+import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import ExerciseCard from '@/components/ExerciseCard';
@@ -671,7 +672,7 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
   const [posting, setPosting] = useState(false);
   const [showComments, setShowComments] = useState(false);
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = todaySA();
   const now = new Date();
   const dateStr = `${DAYS_AR[now.getDay()]}، ${now.getDate()} ${MONTHS_AR[now.getMonth()]} ${now.getFullYear()}`;
 

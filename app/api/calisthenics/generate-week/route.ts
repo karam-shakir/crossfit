@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
+import { todaySA } from '@/lib/timezone';
 import { getAllCalisthenicsSessions } from '@/lib/db';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const { fromDate, days = 5, difficulty = 'متوسط' } = body;
 
-  const startDate = fromDate || new Date().toISOString().split('T')[0];
+  const startDate = fromDate || todaySA();
 
   const dates: { date: string; dayName: string }[] = [];
   for (let i = 0; i < days; i++) {
@@ -183,10 +184,21 @@ ${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
 
 أرجع JSON فقط، بدون أي نص قبله أو بعده.`;
 
+  function sanitizeJson(raw: string): string {
+    // Remove markdown fences
+    let s = raw.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
+    s = s.replace(/^```\n?/, '').replace(/\n?```$/, '').trim();
+    // Remove trailing commas before } or ]
+    s = s.replace(/,(\s*[}\]])/g, '$1');
+    // Quote unquoted keys: replace { word: or , word: patterns
+    s = s.replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)(\s*:)/g, '$1"$2"$3');
+    return s;
+  }
+
   try {
     const message = await client.messages.create({
       model: 'claude-opus-4-8',
-      max_tokens: 10000,
+      max_tokens: 16000,
       messages: [{ role: 'user', content: prompt }],
     });
 
@@ -194,10 +206,23 @@ ${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
     for (const block of message.content) {
       if (block.type === 'text') { jsonText = block.text.trim(); break; }
     }
-    jsonText = jsonText.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
-    jsonText = jsonText.replace(/^```\n?/, '').replace(/\n?```$/, '').trim();
 
-    const result = JSON.parse(jsonText);
+    jsonText = sanitizeJson(jsonText);
+
+    let result: any;
+    try {
+      result = JSON.parse(jsonText);
+    } catch {
+      // If still failing, try to extract the sessions array at least
+      const match = jsonText.match(/"sessions"\s*:\s*(\[[\s\S]*?\])\s*[,}]/);
+      if (match) {
+        const sessions = JSON.parse(sanitizeJson(match[1]));
+        result = { sessions, weekSummary: '', weeklyFocus: '' };
+      } else {
+        throw new Error('فشل تحليل JSON المُولَّد — حاول مرة أخرى');
+      }
+    }
+
     return NextResponse.json(result);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

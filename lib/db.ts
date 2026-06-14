@@ -214,8 +214,8 @@ export async function deleteWodById(id: string): Promise<void> {
 }
 
 export async function getTodayWod(): Promise<Wod | undefined> {
-  const today = new Date().toISOString().split('T')[0];
-  return getWodByDate(today);
+  const { todaySA } = await import('./timezone');
+  return getWodByDate(todaySA());
 }
 
 // ===================== LOGBOOK =====================

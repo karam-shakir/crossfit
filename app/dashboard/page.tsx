@@ -1,4 +1,5 @@
-import { redirect } from 'next/navigation';
+﻿import { redirect } from 'next/navigation';
+import { todaySA } from '@/lib/timezone';
 import { getSession } from '@/lib/auth';
 import {
   getMemberById, getTodayWod, getExercises,
@@ -14,7 +15,7 @@ export default async function DashboardPage() {
   const member = await getMemberById(session.id);
   if (!member) redirect('/login');
 
-  const today     = new Date().toISOString().split('T')[0];
+  const today     = todaySA();
   const thisMonth = today.slice(0, 7);
 
   const [exercises, rawWod, logs, prs, attendance, allHyrox, allKettlebell, allCalisthenics] = await Promise.all([

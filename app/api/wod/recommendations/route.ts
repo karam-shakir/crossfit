@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
+import { todaySA } from '@/lib/timezone';
 import { getWods } from '@/lib/db';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest) {
 
   // Get last 14 WODs for context
   const allWods = await getWods();
-  const startDate = fromDate || new Date().toISOString().split('T')[0];
+  const startDate = fromDate || todaySA();
   const recentWods = allWods
     .filter(w => w.date <= startDate)
     .sort((a, b) => b.date.localeCompare(a.date))

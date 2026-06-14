@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { getMemberPRs, addPR, deletePR, getPRs, getExercises } from '@/lib/db';
 import { getSession } from '@/lib/auth';
+import { todaySA } from '@/lib/timezone';
 
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
     exerciseId: body.exerciseId,
     value: body.value,
     unit: body.unit,
-    date: body.date || new Date().toISOString().split('T')[0],
+    date: body.date || todaySA(),
     notes: body.notes || ''
   };
 

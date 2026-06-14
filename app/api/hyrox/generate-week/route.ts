@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
+import { todaySA } from '@/lib/timezone';
 import { getAllHyroxSessions } from '@/lib/db';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const { fromDate, days = 5, difficulty = 'متوسط' } = body;
 
-  const startDate = fromDate || new Date().toISOString().split('T')[0];
+  const startDate = fromDate || todaySA();
 
   const dates: { date: string; dayName: string }[] = [];
   for (let i = 0; i < days; i++) {

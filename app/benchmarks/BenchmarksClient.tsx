@@ -1,4 +1,5 @@
 ﻿'use client';
+import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import ExerciseCard from '@/components/ExerciseCard';
@@ -32,7 +33,7 @@ export default function BenchmarksClient({ member }: { member: any }) {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<any>(null);
   const [showAddResult, setShowAddResult] = useState(false);
-  const [resultForm, setResultForm] = useState({ result: '', rxd: false, date: new Date().toISOString().split('T')[0], notes: '' });
+  const [resultForm, setResultForm] = useState({ result: '', rxd: false, date: todaySA(), notes: '' });
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<'girls' | 'heroes'>('girls');
 
@@ -55,7 +56,7 @@ export default function BenchmarksClient({ member }: { member: any }) {
       ));
       setSelected((prev: any) => prev ? { ...prev, myResults: [...(prev.myResults || []), result] } : prev);
       setShowAddResult(false);
-      setResultForm({ result: '', rxd: false, date: new Date().toISOString().split('T')[0], notes: '' });
+      setResultForm({ result: '', rxd: false, date: todaySA(), notes: '' });
     }
     setSaving(false);
   }

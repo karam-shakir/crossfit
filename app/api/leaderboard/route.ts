@@ -2,13 +2,14 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/mongodb';
 import { getMembers } from '@/lib/db';
 import { getSession } from '@/lib/auth';
+import { thisMonthSA } from '@/lib/timezone';
 
 export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
 
   const db = await getDb();
-  const thisMonth = new Date().toISOString().slice(0, 7);
+  const thisMonth = thisMonthSA();
 
   // جلب الأعضاء واستخدام MongoDB aggregation بدلاً من filter في JavaScript
   const [members, prsAgg, logsAgg, attendanceAgg] = await Promise.all([

@@ -1,4 +1,5 @@
-'use client';
+﻿'use client';
+import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 
@@ -89,7 +90,7 @@ export default function CalisthenicsClient({ member }: { member: any }) {
   const [sessionType, setSessionType] = useState('strength');
   const [difficulty,  setDifficulty]  = useState('متوسط');
   const [focus,       setFocus]       = useState('كامل الجسم');
-  const [date,        setDate]        = useState(new Date().toISOString().split('T')[0]);
+  const [date,        setDate]        = useState(todaySA());
   const [loading,     setLoading]     = useState(false);
   const [saving,      setSaving]      = useState(false);
   const [saved,       setSaved]       = useState(false);

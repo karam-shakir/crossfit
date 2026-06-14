@@ -1,4 +1,5 @@
 ﻿'use client';
+import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import {
@@ -17,7 +18,7 @@ export default function PRsClient({ member, exercises }: { member: any; exercise
   const [prs, setPRs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ exerciseId: '', value: '', unit: 'kg', date: new Date().toISOString().split('T')[0], notes: '' });
+  const [form, setForm] = useState({ exerciseId: '', value: '', unit: 'kg', date: todaySA(), notes: '' });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -36,7 +37,7 @@ export default function PRsClient({ member, exercises }: { member: any; exercise
       const ex = exercises.find(e => e.id === newPR.exerciseId);
       setPRs(prev => [...prev, { ...newPR, exercise: ex }]);
       setShowForm(false);
-      setForm({ exerciseId: '', value: '', unit: 'kg', date: new Date().toISOString().split('T')[0], notes: '' });
+      setForm({ exerciseId: '', value: '', unit: 'kg', date: todaySA(), notes: '' });
     }
     setSaving(false);
   }

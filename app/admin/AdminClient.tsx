@@ -1,4 +1,5 @@
 ﻿'use client';
+import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 
@@ -21,7 +22,7 @@ function emptyExercise() {
 
 export default function AdminClient({ member, exercises }: { member: any; exercises: any[] }) {
   const [tab, setTab] = useState<AdminTab>('wod');
-  const [wod, setWod] = useState<any>(emptyWod(new Date().toISOString().split('T')[0]));
+  const [wod, setWod] = useState<any>(emptyWod(todaySA()));
   const [wodLoading, setWodLoading] = useState(false);
   const [wodSaved, setWodSaved] = useState(false);
   const [activeSection, setActiveSection] = useState('metcon');
@@ -34,7 +35,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   const [weeklyLoading, setWeeklyLoading] = useState(false);
   const [weeklyPlan, setWeeklyPlan] = useState<any>(null);
   const [weeklyError, setWeeklyError] = useState('');
-  const [weeklyFromDate, setWeeklyFromDate] = useState(new Date().toISOString().split('T')[0]);
+  const [weeklyFromDate, setWeeklyFromDate] = useState(todaySA());
   const [weeklyDays, setWeeklyDays] = useState(7);
   const [weekMode, setWeekMode] = useState<'crossfit' | 'mixed'>('crossfit');
   const [calisthenicsDays, setCalisthenicsDays] = useState(1);
@@ -57,7 +58,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   // ===== Sports Weekly Plans =====
   type SportsTab = 'hyrox' | 'kettlebell' | 'calisthenics';
   const [sportsTab, setSportsTab] = useState<SportsTab>('hyrox');
-  const [sportsFromDate, setSportsFromDate] = useState(new Date().toISOString().split('T')[0]);
+  const [sportsFromDate, setSportsFromDate] = useState(todaySA());
   const [sportsDays, setSportsDays] = useState(5);
   const [sportsDifficulty, setSportsDifficulty] = useState('متوسط');
   const [sportsLoading, setSportsLoading] = useState(false);
