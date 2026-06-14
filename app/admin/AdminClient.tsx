@@ -73,7 +73,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
       const res = await fetch(`/api/${sportsTab}/generate-week`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fromDate: sportsFromDate, days: sportsDays, difficulty: sportsDifficulty }),
+        body: JSON.stringify({ fromDate: sportsFromDate, days: sportsDays, ...(sportsTab !== 'calisthenics' && { difficulty: sportsDifficulty }) }),
       });
       const data = await res.json();
       if (!res.ok) { setSportsError(data.error || 'خطأ في التوليد'); return; }
@@ -963,17 +963,19 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                     </select>
                   </div>
                 </div>
-                <div>
-                  <label className="text-xs text-gray-400 mb-1 block">مستوى الصعوبة</label>
-                  <div className="flex gap-2">
-                    {DIFFICULTY_OPTIONS.map(d => (
-                      <button key={d} onClick={() => setSportsDifficulty(d)}
-                        className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors ${sportsDifficulty === d ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
-                        {d}
-                      </button>
-                    ))}
+                {sportsTab !== 'calisthenics' && (
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">مستوى الصعوبة</label>
+                    <div className="flex gap-2">
+                      {DIFFICULTY_OPTIONS.map(d => (
+                        <button key={d} onClick={() => setSportsDifficulty(d)}
+                          className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors ${sportsDifficulty === d ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+                          {d}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <button onClick={generateSportsPlan} disabled={sportsLoading}
                   className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2">
