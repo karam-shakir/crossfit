@@ -38,6 +38,29 @@ const LEVEL_TABS: { key: LevelKey; label: string; color: string; activeRing: str
   { key: 'elite',        label: 'نخبة',  color: 'bg-red-600    text-white', activeRing: 'ring-red-400'    },
 ];
 
+const LEVEL_LABELS: Record<LevelKey, string> = {
+  beginner: 'مبتدئ', intermediate: 'متوسط', advanced: 'متقدم', elite: 'نخبة',
+};
+
+// Detect if weight string contains multiple levels (old WOD format)
+function isMultiLevelWeight(w: string): boolean {
+  return w.includes('|') || w.includes('مبتدئ') || w.includes('متوسط');
+}
+
+// Parse "مبتدئ: 40كجم | متوسط: 60كجم | متقدم: 80كجم | نخبة: 95كجم" into object
+function parseMultiLevelWeight(w: string): Partial<Record<LevelKey, string>> {
+  const result: Partial<Record<LevelKey, string>> = {};
+  const pairs = w.split('|');
+  for (const p of pairs) {
+    const cleaned = p.trim();
+    if (cleaned.includes('مبتدئ'))     result.beginner     = cleaned.replace(/.*مبتدئ\s*[:：]?\s*/, '').trim();
+    if (cleaned.includes('متوسط'))     result.intermediate = cleaned.replace(/.*متوسط\s*[:：]?\s*/, '').trim();
+    if (cleaned.includes('متقدم'))     result.advanced     = cleaned.replace(/.*متقدم\s*[:：]?\s*/, '').trim();
+    if (cleaned.includes('نخبة'))      result.elite        = cleaned.replace(/.*نخبة\s*[:：]?\s*/, '').trim();
+  }
+  return result;
+}
+
 export default function ExerciseCard({
   item,
   index,
@@ -51,70 +74,63 @@ export default function ExerciseCard({
   const [showLevels, setShowLevels] = useState(false);
   const [activeLevel, setActiveLevel] = useState<LevelKey>('intermediate');
   const ex = item.exercise;
-  const hasLevels = !!item.levels && Object.keys(item.levels).length > 0;
 
-  // Level to show: either from parent (section-level selector) or internal toggle
+  // Structured levels (new WODs)
+  const hasStructuredLevels = !!item.levels && Object.keys(item.levels).length > 0;
+
+  // Legacy multi-level weight string (old WODs)
+  const weightIsMultiLevel = item.weight ? isMultiLevelWeight(item.weight) : false;
+  const parsedWeights = weightIsMultiLevel && item.weight ? parseMultiLevelWeight(item.weight) : null;
+
+  const hasAnyLevels = hasStructuredLevels || !!parsedWeights;
+
+  // What level data to show
   const displayLevel = selectedLevel ?? (showLevels ? activeLevel : null);
-  const levelData = displayLevel && item.levels?.[displayLevel];
+
+  // Get level data from structured levels OR parsed old weight
+  function getLevelData(level: LevelKey): { weight?: string; reps?: string; cue?: string } | null {
+    if (hasStructuredLevels && item.levels?.[level]) return item.levels[level]!;
+    if (parsedWeights && parsedWeights[level]) {
+      return { weight: parsedWeights[level], reps: item.reps || undefined };
+    }
+    return null;
+  }
+
+  const levelData = displayLevel ? getLevelData(displayLevel) : null;
 
   return (
     <div className="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-      {/* Header row */}
-      <div className="flex items-center gap-3 p-3">
-        <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-sm font-bold flex-shrink-0 text-white">
+
+      {/* ── Row 1: رقم + اسم + أزرار الإجراءات ── */}
+      <div className="flex items-start gap-3 p-3 pb-2">
+        {/* رقم */}
+        <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-sm font-bold flex-shrink-0 text-white mt-0.5">
           {index + 1}
         </div>
 
+        {/* اسم + عضلات */}
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-slate-800 text-base">
+          <div className="font-bold text-slate-800 text-base leading-tight">
             {ex?.nameEn || item.exerciseId}
           </div>
           {ex?.muscles && (
-            <div className="text-sm text-slate-500">{ex.muscles}</div>
+            <div className="text-sm text-slate-500 mt-0.5">{ex.muscles}</div>
           )}
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Spec badge — default weight/reps */}
-          {!levelData && (item.reps || item.weight || item.distance || item.time) && (
-            <div className="text-sm bg-orange-50 border border-orange-200 px-2 py-1 rounded-lg text-orange-700 font-mono">
-              {item.reps && `${item.reps}`}
-              {item.weight && ` × ${item.weight}`}
-              {item.distance && `${item.distance}`}
-              {item.time && `${item.time}`}
-            </div>
-          )}
-
-          {/* Level data badge (when level selected from section selector) */}
-          {levelData && (
-            <div className="flex items-center gap-1.5">
-              {levelData.weight && (
-                <span className="text-sm bg-slate-100 border border-slate-300 px-2 py-1 rounded-lg text-slate-700 font-mono">
-                  ⚖️ {levelData.weight}
-                </span>
-              )}
-              {levelData.reps && (
-                <span className="text-sm bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg text-blue-700 font-mono">
-                  🔁 {levelData.reps}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Internal ⚡ toggle — only when no parent selectedLevel */}
-          {!selectedLevel && hasLevels && (
+        {/* أزرار فقط (بدون specs) */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {!selectedLevel && hasAnyLevels && (
             <button
               onClick={() => setShowLevels(!showLevels)}
-              className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-colors ${
-                showLevels ? 'bg-purple-500 text-white' : 'bg-slate-100 text-purple-500 hover:bg-purple-100'
+              className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-colors ${
+                showLevels ? 'bg-purple-500 text-white' : 'bg-slate-100 text-purple-600 hover:bg-purple-100'
               }`}
               title="عرض المستويات"
             >
               {showLevels ? '×' : '⚡'}
             </button>
           )}
-
-          {/* GIF toggle */}
           {ex?.gif && (
             <button
               onClick={() => setShowGif(!showGif)}
@@ -124,8 +140,6 @@ export default function ExerciseCard({
               {showGif ? '×' : '▶'}
             </button>
           )}
-
-          {/* YouTube link */}
           {ex?.youtube && (
             <a
               href={ex.youtube}
@@ -140,90 +154,129 @@ export default function ExerciseCard({
         </div>
       </div>
 
-      {/* Coaching cue from level (when level selected) */}
+      {/* ── Row 2: specs (رپس + وزن) — تحت الاسم مباشرة ── */}
+      <div className="px-3 pb-2">
+        {!levelData && (
+          <div className="flex flex-wrap gap-1.5">
+            {item.reps && (
+              <span className="text-sm bg-orange-50 border border-orange-200 text-orange-700 px-2 py-0.5 rounded-lg font-mono">
+                🔁 {item.reps}
+              </span>
+            )}
+            {item.weight && !weightIsMultiLevel && (
+              <span className="text-sm bg-slate-100 border border-slate-300 text-slate-700 px-2 py-0.5 rounded-lg font-mono">
+                ⚖️ {item.weight}
+              </span>
+            )}
+            {item.distance && (
+              <span className="text-sm bg-slate-100 border border-slate-300 text-slate-700 px-2 py-0.5 rounded-lg font-mono">
+                📍 {item.distance}
+              </span>
+            )}
+            {item.time && (
+              <span className="text-sm bg-slate-100 border border-slate-300 text-slate-700 px-2 py-0.5 rounded-lg font-mono">
+                ⏱ {item.time}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Level data (when section-level selector active) */}
+        {levelData && (
+          <div className="flex flex-wrap gap-1.5">
+            {levelData.reps && (
+              <span className="text-sm bg-orange-50 border border-orange-200 text-orange-700 px-2 py-0.5 rounded-lg font-mono">
+                🔁 {levelData.reps}
+              </span>
+            )}
+            {levelData.weight && (
+              <span className="text-sm bg-blue-50 border border-blue-200 text-blue-700 px-2 py-0.5 rounded-lg font-mono font-bold">
+                ⚖️ {levelData.weight}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Coaching cue from level ── */}
       {levelData && (levelData.cue || levelData.scaling) && (
-        <div className="px-3 pb-3">
+        <div className="px-3 pb-2">
           <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-800">
             💬 {levelData.cue || levelData.scaling}
           </div>
         </div>
       )}
 
-      {/* Notes */}
+      {/* ── Notes (default, no level selected) ── */}
       {item.notes && !levelData && (
-        <div className="px-3 pb-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 mx-3 mb-3 rounded-lg py-2">
-          💡 {item.notes}
+        <div className="px-3 pb-3">
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2 text-sm">
+            💡 {item.notes}
+          </div>
         </div>
       )}
 
-      {/* GIF section */}
+      {/* ── GIF ── */}
       {showGif && ex?.gif && (
         <div className="border-t border-slate-200">
-          <div className="relative bg-slate-50 flex items-center justify-center" style={{ minHeight: 200 }}>
-            <img
-              src={ex.gif}
-              alt={ex.nameEn}
-              className="max-h-64 w-full object-contain"
-              loading="lazy"
-            />
+          <div className="bg-slate-50 flex items-center justify-center" style={{ minHeight: 200 }}>
+            <img src={ex.gif} alt={ex.nameEn} className="max-h-64 w-full object-contain" loading="lazy" />
           </div>
           <div className="p-2 flex gap-2">
-            <a
-              href={ex.youtube}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white text-sm py-2 rounded-lg transition-colors font-semibold"
-            >
-              <span>▶</span>
-              <span>شرح مفصل على يوتيوب</span>
+            <a href={ex.youtube} target="_blank" rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white text-sm py-2 rounded-lg font-semibold">
+              ▶ شرح على يوتيوب
             </a>
-            <button
-              onClick={() => setShowGif(false)}
-              className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm rounded-lg transition-colors"
-            >
+            <button onClick={() => setShowGif(false)}
+              className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm rounded-lg">
               إغلاق
             </button>
           </div>
         </div>
       )}
 
-      {/* Internal levels section (when no parent selectedLevel) */}
-      {!selectedLevel && hasLevels && showLevels && (
-        <div className="border-t border-slate-200 px-3 py-3 bg-slate-50">
+      {/* ── Internal levels toggle (when no section-level selected) ── */}
+      {!selectedLevel && hasAnyLevels && showLevels && (
+        <div className="border-t border-slate-200 bg-slate-50 p-3">
+          {/* Tabs */}
           <div className="flex gap-1.5 mb-3">
             {LEVEL_TABS.map(t => {
-              if (!item.levels?.[t.key]) return null;
+              if (!getLevelData(t.key)) return null;
               return (
-                <button
-                  key={t.key}
+                <button key={t.key}
                   onClick={() => setActiveLevel(t.key)}
-                  className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${t.color} ${
-                    activeLevel === t.key ? `ring-2 ${t.activeRing}` : 'opacity-50 hover:opacity-80'
-                  }`}
-                >
+                  className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${t.color} ${
+                    activeLevel === t.key ? `ring-2 ${t.activeRing} opacity-100` : 'opacity-50 hover:opacity-80'
+                  }`}>
                   {t.label}
                 </button>
               );
             })}
           </div>
-          {item.levels?.[activeLevel] && (() => {
-            const lv = item.levels![activeLevel]!;
+
+          {/* Active level content */}
+          {(() => {
+            const lv = getLevelData(activeLevel);
+            if (!lv) return null;
             return (
-              <div className="bg-white rounded-xl p-3 space-y-2 text-right border border-slate-200">
-                <div className="flex gap-2 flex-wrap justify-end">
-                  {lv.weight && (
-                    <span className="bg-orange-50 border border-orange-200 text-orange-700 text-sm px-2.5 py-1 rounded-lg font-mono">
-                      ⚖️ {lv.weight}
+              <div className="bg-white rounded-xl border border-slate-200 p-3 space-y-2">
+                <div className="text-xs font-bold text-slate-500 text-right">{LEVEL_LABELS[activeLevel]}</div>
+                <div className="flex flex-wrap gap-2 justify-end">
+                  {lv.reps && (
+                    <span className="bg-orange-50 border border-orange-200 text-orange-700 text-sm px-3 py-1 rounded-lg font-mono">
+                      🔁 {lv.reps}
                     </span>
                   )}
-                  {lv.reps && (
-                    <span className="bg-blue-50 border border-blue-200 text-blue-700 text-sm px-2.5 py-1 rounded-lg font-mono">
-                      🔁 {lv.reps}
+                  {lv.weight && (
+                    <span className="bg-blue-50 border border-blue-200 text-blue-700 text-sm px-3 py-1 rounded-lg font-mono font-bold">
+                      ⚖️ {lv.weight}
                     </span>
                   )}
                 </div>
                 {(lv.cue || lv.scaling) && (
-                  <p className="text-sm text-slate-600 leading-relaxed">💬 {lv.cue || lv.scaling}</p>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-800">
+                    💬 {lv.cue || lv.scaling}
+                  </div>
                 )}
               </div>
             );
