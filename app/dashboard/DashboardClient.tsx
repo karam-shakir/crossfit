@@ -637,6 +637,13 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
   const [checkedIn, setCheckedIn] = useState(stats.checkedInToday);
   const [checkLoading, setCheckLoading] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('metcon');
+  const [selectedLevel, setSelectedLevel] = useState<'beginner'|'intermediate'|'advanced'|'elite'|undefined>(undefined);
+  const DASH_LEVEL_TABS = [
+    { key: 'beginner'     as const, label: 'مبتدئ', active: 'bg-green-600 text-white',  idle: 'bg-white text-green-700 border border-green-300'  },
+    { key: 'intermediate' as const, label: 'متوسط', active: 'bg-blue-600 text-white',   idle: 'bg-white text-blue-700 border border-blue-300'    },
+    { key: 'advanced'     as const, label: 'متقدم', active: 'bg-orange-500 text-white',  idle: 'bg-white text-orange-700 border border-orange-300' },
+    { key: 'elite'        as const, label: 'نخبة',  active: 'bg-red-600 text-white',     idle: 'bg-white text-red-700 border border-red-300'      },
+  ];
   const [copied, setCopied] = useState(false);
   const [sportTab, setSportTab] = useState<'crossfit' | 'hyrox' | 'kettlebell' | 'calisthenics'>('crossfit');
   const [weeklyActivity, setWeeklyActivity] = useState<{ day: string; count: number; isToday: boolean }[]>([]);
@@ -914,29 +921,34 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                 </div>
               )}
 
-              {sections.map(s => (
-                <div key={s.key} className={activeSection === s.key ? 'space-y-3' : 'hidden'}>
-                  <h3 className="text-sm font-semibold text-gray-400">{s.label}</h3>
-                  {s.items.map((item: any, i: number) => (
-                    <ExerciseCard key={i} item={item} index={i} />
-                  ))}
-                  {/* أوقات المستويات */}
-                  {wod.targetTimes && (
-                    <div className="bg-gray-800/40 rounded-xl p-3 mt-2">
-                      <h4 className="text-xs font-semibold text-gray-400 mb-2">⏱ أوقات الأداء المرجعية</h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        {Object.entries(wod.targetTimes).map(([k, v]: [string, any]) => {
-                          const labels: Record<string,string> = {elite:'نخبة 🥇',advanced:'متقدم 🥈',intermediate:'متوسط 🥉',beginner:'مبتدئ'};
-                          return (
-                            <div key={k} className="bg-gray-800 rounded-lg px-3 py-2 text-right">
-                              <div className="text-xs text-gray-400">{labels[k]||k}</div>
-                              <div className="text-sm font-semibold text-white">{v}</div>
-                            </div>
-                          );
-                        })}
-                      </div>
+              {/* Level selector */}
+              {wod && [...(wod.strength||[]),...(wod.metcon||[])].some((e:any)=>e.levels) && (
+                <div className="bg-slate-100 rounded-2xl p-3 border border-slate-200">
+                  <div className="text-sm font-bold text-slate-600 mb-2 text-right">⚡ اختر مستواك</div>
+                  <div className="flex gap-2">
+                    {DASH_LEVEL_TABS.map(t => (
+                      <button key={t.key}
+                        onClick={() => setSelectedLevel(selectedLevel === t.key ? undefined : t.key)}
+                        className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${selectedLevel === t.key ? t.active : t.idle}`}>
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                  {selectedLevel && wod.targetTimes?.[selectedLevel] && (
+                    <div className="mt-2 text-sm text-slate-600 text-right">
+                      ⏱ وقتك: <span className="font-bold text-slate-800">{wod.targetTimes[selectedLevel]}</span>
                     </div>
                   )}
+                </div>
+              )}
+
+              {sections.map(s => (
+                <div key={s.key} className={activeSection === s.key ? 'space-y-3' : 'hidden'}>
+                  <h3 className="text-sm font-semibold text-slate-500">{s.label}</h3>
+                  {s.items.map((item: any, i: number) => (
+                    <ExerciseCard key={i} item={item} index={i}
+                      selectedLevel={(s.key === 'strength' || s.key === 'metcon') ? selectedLevel : undefined} />
+                  ))}
                 </div>
               ))}
 

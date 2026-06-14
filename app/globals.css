@@ -6,8 +6,8 @@
 *, *::before, *::after { box-sizing: border-box; }
 
 html {
-  background: #030712;
-  /* منع overflow أفقي فقط — التمرير العمودي حر */
+  background: #f1f5f9;
+  font-size: 16px;
   overflow-x: hidden;
   overflow-y: auto;
   width: 100%;
@@ -16,8 +16,8 @@ html {
 }
 
 body {
-  background: #030712;
-  color: #f9fafb;
+  background: #f1f5f9;
+  color: #1e293b;
   font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
   overflow-x: hidden;
   overflow-y: auto;
@@ -29,6 +29,57 @@ body {
   -moz-osx-font-smoothing: grayscale;
   touch-action: manipulation;
 }
+
+/* ══ Light theme — structural overrides ══════════════════════════════════ */
+
+/* Backgrounds */
+.bg-gray-950 { background-color: #ffffff !important; }
+.bg-gray-900 { background-color: #f8fafc !important; }
+.bg-gray-800 { background-color: #f1f5f9 !important; }
+.bg-gray-700 { background-color: #e2e8f0 !important; }
+
+/* Opacity-variant backgrounds */
+.bg-gray-900\/20 { background-color: rgba(248,250,252,0.6) !important; }
+.bg-gray-900\/30 { background-color: rgba(248,250,252,0.7) !important; }
+.bg-gray-900\/40 { background-color: rgba(248,250,252,0.8) !important; }
+.bg-gray-800\/40 { background-color: rgba(241,245,249,0.6) !important; }
+.bg-gray-800\/50 { background-color: rgba(241,245,249,0.75) !important; }
+.bg-gray-800\/60 { background-color: rgba(241,245,249,0.85) !important; }
+.bg-gray-800\/70 { background-color: rgba(241,245,249,0.9) !important; }
+.bg-gray-700\/30 { background-color: rgba(226,232,240,0.5) !important; }
+.bg-gray-700\/40 { background-color: rgba(226,232,240,0.65) !important; }
+
+/* Borders */
+.border-gray-800 { border-color: #e2e8f0 !important; }
+.border-gray-700 { border-color: #cbd5e1 !important; }
+.border-gray-600 { border-color: #94a3b8 !important; }
+.border-gray-700\/30 { border-color: rgba(203,213,225,0.5) !important; }
+.border-gray-800\/30 { border-color: rgba(226,232,240,0.5) !important; }
+.border-gray-800\/40 { border-color: rgba(226,232,240,0.65) !important; }
+.border-gray-800\/50 { border-color: rgba(226,232,240,0.8) !important; }
+
+/* Text — on gray/light backgrounds → dark */
+body .text-white  { color: #0f172a !important; }
+body .text-gray-300 { color: #334155 !important; }
+body .text-gray-400 { color: #475569 !important; }
+body .text-gray-500 { color: #64748b !important; }
+body .text-gray-600 { color: #94a3b8 !important; }
+
+/* Restore white text on colored backgrounds (higher specificity wins) */
+[class*="bg-orange-"] .text-white,  [class*="bg-orange-"].text-white  { color: #ffffff !important; }
+[class*="bg-red-"]    .text-white,  [class*="bg-red-"].text-white     { color: #ffffff !important; }
+[class*="bg-blue-"]   .text-white,  [class*="bg-blue-"].text-white    { color: #ffffff !important; }
+[class*="bg-green-"]  .text-white,  [class*="bg-green-"].text-white   { color: #ffffff !important; }
+[class*="bg-purple-"] .text-white,  [class*="bg-purple-"].text-white  { color: #ffffff !important; }
+[class*="bg-teal-"]   .text-white,  [class*="bg-teal-"].text-white    { color: #ffffff !important; }
+[class*="bg-indigo-"] .text-white,  [class*="bg-indigo-"].text-white  { color: #ffffff !important; }
+[class*="bg-yellow-"] .text-white,  [class*="bg-yellow-"].text-white  { color: #ffffff !important; }
+[class*="bg-pink-"]   .text-white,  [class*="bg-pink-"].text-white    { color: #ffffff !important; }
+
+/* Navbar and fixed bars — keep darker */
+nav.bg-gray-900, header.bg-gray-900 { background-color: #1e293b !important; }
+nav .text-white, header .text-white  { color: #f8fafc !important; }
+nav .text-gray-400, header .text-gray-400 { color: #94a3b8 !important; }
 
 /* منع أي عنصر من تجاوز عرض الشاشة */
 #__next, [data-nextjs-scroll-focus-boundary] {

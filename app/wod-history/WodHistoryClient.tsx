@@ -41,10 +41,20 @@ function ytLink(nameEn: string, sport: string) {
 }
 
 // ── CrossFit WOD Card ────────────────────────────────────────────────────────
+type LevelKey = 'beginner' | 'intermediate' | 'advanced' | 'elite';
+const LEVEL_TABS_WOD: { key: LevelKey; label: string; color: string; active: string }[] = [
+  { key: 'beginner',     label: 'مبتدئ', color: 'bg-slate-100 text-green-700 border border-green-300',  active: 'bg-green-600 text-white border-transparent'  },
+  { key: 'intermediate', label: 'متوسط', color: 'bg-slate-100 text-blue-700 border border-blue-300',    active: 'bg-blue-600 text-white border-transparent'    },
+  { key: 'advanced',     label: 'متقدم', color: 'bg-slate-100 text-orange-700 border border-orange-300',active: 'bg-orange-500 text-white border-transparent'  },
+  { key: 'elite',        label: 'نخبة',  color: 'bg-slate-100 text-red-700 border border-red-300',      active: 'bg-red-600 text-white border-transparent'     },
+];
+
 function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; isAdmin?: boolean; onDelete?: (id: string) => void; defaultOpen?: boolean }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [copied, setCopied] = useState(false);
+  const [selectedLevel, setSelectedLevel] = useState<LevelKey | undefined>(undefined);
   const today = new Date().toISOString().split('T')[0];
+  const hasLevels = [...(wod.strength || []), ...(wod.metcon || [])].some((e: any) => e.levels);
   const isFuture = wod.date > today;
   const isToday  = wod.date === today;
   const colors   = SPORT_COLORS.crossfit;
@@ -127,48 +137,72 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
               </>
             )}
           </div>
-          {wod.aiTheme && <div className="bg-purple-900/20 border border-purple-700/30 rounded-xl p-3 text-xs text-purple-300">🤖 {wod.aiTheme}</div>}
-          {wod.notes   && <div className="bg-gray-800/50 rounded-xl p-3 text-xs text-gray-300">📝 {wod.notes}</div>}
-          {wod.targetTimes && (
-            <div className="bg-gray-800/40 rounded-xl p-3">
-              <h4 className="text-xs font-semibold text-gray-400 mb-2">⏱ أوقات الأداء المرجعية</h4>
+          {wod.aiTheme && <div className="bg-purple-50 border border-purple-200 rounded-xl p-3 text-sm text-purple-700">🤖 {wod.aiTheme}</div>}
+          {wod.notes   && <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">📝 {wod.notes}</div>}
+
+          {/* Level selector — يظهر فقط عند وجود بيانات مستويات */}
+          {hasLevels && (
+            <div className="bg-slate-100 rounded-2xl p-3 border border-slate-200">
+              <div className="text-sm font-bold text-slate-600 mb-2 text-right">⚡ اختر مستواك — سيتغير التمرين كاملاً</div>
+              <div className="flex gap-2">
+                {LEVEL_TABS_WOD.map(t => (
+                  <button
+                    key={t.key}
+                    onClick={() => setSelectedLevel(selectedLevel === t.key ? undefined : t.key)}
+                    className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all border ${
+                      selectedLevel === t.key ? t.active : t.color
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              {selectedLevel && wod.targetTimes?.[selectedLevel] && (
+                <div className="mt-2 text-sm text-slate-600 text-right">
+                  ⏱ وقتك المرجعي: <span className="font-bold text-slate-800">{wod.targetTimes[selectedLevel]}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Target times (if no levels data) */}
+          {!hasLevels && wod.targetTimes && (
+            <div className="bg-slate-100 rounded-xl p-3 border border-slate-200">
+              <h4 className="text-sm font-semibold text-slate-500 mb-2">⏱ أوقات الأداء المرجعية</h4>
               <div className="grid grid-cols-2 gap-2">
                 {Object.entries(wod.targetTimes).map(([k, v]: [string, any]) => {
                   const labels: Record<string,string> = {elite:'نخبة 🥇',advanced:'متقدم 🥈',intermediate:'متوسط 🥉',beginner:'مبتدئ'};
                   return (
-                    <div key={k} className="bg-gray-800 rounded-lg px-3 py-2 text-right">
-                      <div className="text-xs text-gray-400">{labels[k]||k}</div>
-                      <div className="text-sm font-semibold text-white">{v}</div>
+                    <div key={k} className="bg-white rounded-lg px-3 py-2 text-right border border-slate-200">
+                      <div className="text-xs text-slate-500">{labels[k]||k}</div>
+                      <div className="text-sm font-bold text-slate-800">{v}</div>
                     </div>
                   );
                 })}
               </div>
             </div>
           )}
+
           {(['warmup','strength','metcon','cooldown'] as const).map(sec => {
             const items = wod[sec]?.filter((e: any) => e.exerciseId);
             if (!items?.length) return null;
-            const labels: Record<string, {label:string;icon:string;color:string}> = {
-              warmup:{label:'الإحماء',icon:'🔆',color:'text-yellow-400'},
-              strength:{label:'القوة',icon:'🏋️',color:'text-blue-400'},
-              metcon:{label:'الـ WOD',icon:'🔥',color:'text-orange-400'},
-              cooldown:{label:'التهدئة',icon:'🧘',color:'text-teal-400'},
+            const secMeta: Record<string, {label:string;icon:string;color:string;bg:string}> = {
+              warmup:   {label:'الإحماء',icon:'🔆',color:'text-amber-700',  bg:'bg-amber-50 border-amber-200'},
+              strength: {label:'القوة',  icon:'🏋️',color:'text-blue-700',   bg:'bg-blue-50 border-blue-200'},
+              metcon:   {label:'الـ WOD',icon:'🔥',color:'text-orange-700', bg:'bg-orange-50 border-orange-200'},
+              cooldown: {label:'التهدئة',icon:'🧘',color:'text-teal-700',   bg:'bg-teal-50 border-teal-200'},
             };
-            const {label,icon,color} = labels[sec];
+            const {label,icon,color,bg} = secMeta[sec];
+            const showLevel = (sec === 'strength' || sec === 'metcon') ? selectedLevel : undefined;
             return (
               <div key={sec}>
-                <h3 className={`font-semibold text-sm mb-2 flex items-center gap-2 ${color}`}><span>{icon}</span>{label}</h3>
+                <div className={`flex items-center gap-2 rounded-xl px-3 py-2 mb-2 border ${bg}`}>
+                  <span className="text-lg">{icon}</span>
+                  <h3 className={`font-bold text-base ${color}`}>{label}</h3>
+                </div>
                 <div className="space-y-2">
                   {items.map((ex: any, i: number) => (
-                    <div key={i}>
-                      <ExerciseCard item={ex} index={i} />
-                      {ex.exercise?.youtube && (
-                        <a href={ex.exercise.youtube} target="_blank" rel="noopener noreferrer"
-                          className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 mt-1 mr-2">
-                          ▶ شاهد الشرح على يوتيوب
-                        </a>
-                      )}
-                    </div>
+                    <ExerciseCard key={i} item={ex} index={i} selectedLevel={showLevel} />
                   ))}
                 </div>
               </div>
