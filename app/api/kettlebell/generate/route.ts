@@ -8,14 +8,42 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 function analyzeWeekIntensity(sessions: any[]) {
   const last7 = sessions.slice(0, 7);
   const count = last7.length;
-  const eventsUsed: string[] = [];
+
+  // تتبع تفصيلي لكل جلسة: الحدث + حجم التدريب + القوة
+  const sessionLog: { date: string; event: string; sets: number; strengthEx: string[] }[] = [];
   last7.forEach(s => {
-    (s.mainWork || []).forEach((w: any) => { if (w.eventType || w.name) eventsUsed.push(w.eventType || w.name); });
-    if (s.eventType) eventsUsed.push(s.eventType);
+    const event = s.eventType || (s.mainWork?.[0]?.eventType) || 'غير محدد';
+    const sets = (s.mainWork || []).reduce((acc: number, w: any) => acc + (parseInt(w.sets) || 0), 0);
+    const strengthEx = (s.strengthBlock?.exercises || []).map((ex: any) => ex.name).filter(Boolean);
+    sessionLog.push({ date: s.date, event, sets, strengthEx });
   });
-  if (count >= 5) return { label: 'ثقيل', recommendation: 'أسبوع ثقيل — جلسة Deload أو تقنية خفيفة بوزن صغير', eventsUsed: [...new Set(eventsUsed)] };
-  if (count >= 3) return { label: 'متوسط', recommendation: 'أسبوع متوسط — جلسة قوة متوسطة أو تحمل عضلي', eventsUsed: [...new Set(eventsUsed)] };
-  return { label: 'خفيف', recommendation: 'أسبوع خفيف — جلسة ثقيلة بحجم تدريبي عالٍ', eventsUsed: [...new Set(eventsUsed)] };
+
+  // الأحداث المستخدمة مؤخراً
+  const eventsUsed = [...new Set(sessionLog.map(s => s.event).filter(e => e !== 'غير محدد'))];
+  // الأحداث الغائبة (فرصة لاستهدافها)
+  const allEvents = ['biathlon', 'long-cycle', 'snatch', 'strength', 'conditioning'];
+  const missingEvents = allEvents.filter(e => !eventsUsed.includes(e));
+  // قوة القوة: هل كانت الجلسات السابقة تحتوي قوة وظيفية؟
+  const sessionsWithStrength = sessionLog.filter(s => s.strengthEx.length > 0).length;
+  const recentStrength = [...new Set(sessionLog.flatMap(s => s.strengthEx))];
+
+  // حجم التدريب الكلي هذا الأسبوع
+  const totalSets = sessionLog.reduce((acc, s) => acc + s.sets, 0);
+
+  let label: string;
+  let recommendation: string;
+  if (count >= 5 || totalSets >= 20) {
+    label = 'ثقيل';
+    recommendation = `أسبوع ثقيل جداً (${count} جلسات، ${totalSets} مجموعة إجمالية) — اجعل هذه جلسة Deload أو تقنية خفيفة. لا جلسات Long Cycle أو Biathlon الثقيلة اليوم.`;
+  } else if (count >= 3 || totalSets >= 10) {
+    label = 'متوسط';
+    recommendation = `أسبوع متوسط (${count} جلسات) — يمكن جلسة متوسطة. ${sessionsWithStrength < 2 ? 'لاحظ أن القوة الوظيفية كانت قليلة هذا الأسبوع، أضف strengthBlock ثقيل اليوم.' : 'القوة كانت كافية، ركز على الحدث الرئيسي.'}`;
+  } else {
+    label = 'خفيف';
+    recommendation = `أسبوع خفيف (${count} جلسات فقط) — الجسم جاهز. اجعلها جلسة ثقيلة بحجم عالٍ وstrengthBlock قوي.`;
+  }
+
+  return { label, recommendation, eventsUsed, missingEvents, recentStrength, sessionLog, totalSets };
 }
 
 export async function POST(req: NextRequest) {
@@ -47,11 +75,22 @@ export async function POST(req: NextRequest) {
 الفلسفة: الوزن يحترم التقنية — التقنية تصنع القوة
 ═══════════════════════════════
 
-**══ تحليل الأسبوع الماضي ══**
+**═══ تحليل الأسبوع الماضي ═══**
 عدد الجلسات في آخر 7 أيام: ${recentSessions.length}
 شدة الأسبوع: ${weekAnalysis.label}
-الأحداث المُدرَّبة مؤخراً: ${weekAnalysis.eventsUsed.slice(0,6).join(' | ') || 'لا توجد بيانات'}
-توصية المدرب: ${weekAnalysis.recommendation}
+توصية اليوم: ${weekAnalysis.recommendation}
+
+الأحداث المُدرَّبة مؤخراً (قلّل منها):
+${weekAnalysis.eventsUsed.length ? weekAnalysis.eventsUsed.map((e: string) => `- ${e}`).join('\n') : '- لا توجد بيانات'}
+
+الأحداث الغائبة (استهدفها اليوم بأولوية):
+${weekAnalysis.missingEvents.length ? weekAnalysis.missingEvents.map((e: string) => `- ${e}`).join('\n') : '- جميع الأحداث تدربت مؤخراً'}
+
+تمارين القوة الأخيرة (تجنب التكرار):
+${weekAnalysis.recentStrength.length ? weekAnalysis.recentStrength.map((e: string) => `- ${e}`).join('\n') : '- لم تُدرَّب قوة وظيفية مؤخراً — أضفها اليوم'}
+
+سجل الجلسات:
+${weekAnalysis.sessionLog.map((s: any) => `${s.date}: حدث [${s.event}] | ${s.sets} مجموعة | قوة: [${s.strengthEx.join(', ') || 'لا'}]`).join('\n') || 'لا توجد جلسات'}
 
 الجلسات الأخيرة (تجنب التكرار):
 ${JSON.stringify(recentSummary, null, 2)}

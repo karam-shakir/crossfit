@@ -24,19 +24,59 @@ const EXERCISES = [
 function analyzeWeekIntensity(sessions: any[]) {
   const last7 = sessions.slice(0, 7);
   const count = last7.length;
-  const patternsUsed: string[] = [];
+
+  // تتبع تفصيلي: الأنماط الحركية + التمارين المحددة + الشدة
+  const sessionLog: { date: string; patterns: string[]; exercises: string[]; hasSkill: boolean }[] = [];
+
+  const PULL_EX = ['pull-up','kipping-pull-up','muscle-up','rope-climb'];
+  const PUSH_EX = ['handstand-pushup','push-up'];
+  const CORE_EX = ['toes-to-bar','sit-up'];
+  const LOWER_EX = ['box-jump'];
+  const CARDIO_EX = ['double-under','run','burpee'];
+  const SKILL_EX = ['muscle-up','handstand-pushup','handstand-walk','rope-climb'];
+
   last7.forEach(s => {
-    [...(s.strength || []), ...(s.metcon || [])].forEach((e: any) => {
-      if (['pull-up','kipping-pull-up','muscle-up','rope-climb'].includes(e.exerciseId)) patternsUsed.push('سحب/ظهر');
-      if (['handstand-pushup','push-up'].includes(e.exerciseId)) patternsUsed.push('دفع/كتف');
-      if (['toes-to-bar','sit-up'].includes(e.exerciseId)) patternsUsed.push('جذع/بطن');
-      if (['box-jump'].includes(e.exerciseId)) patternsUsed.push('رجل/قفز');
-      if (['double-under','run','burpee'].includes(e.exerciseId)) patternsUsed.push('كارديو');
-    });
+    const allEx = [...(s.strength || []), ...(s.skillWork || []), ...(s.metcon || [])].map((e: any) => e.exerciseId);
+    const patterns: string[] = [];
+    if (allEx.some(id => PULL_EX.includes(id))) patterns.push('سحب/ظهر');
+    if (allEx.some(id => PUSH_EX.includes(id))) patterns.push('دفع/كتف');
+    if (allEx.some(id => CORE_EX.includes(id))) patterns.push('جذع/بطن');
+    if (allEx.some(id => LOWER_EX.includes(id))) patterns.push('رجل/قفز');
+    if (allEx.some(id => CARDIO_EX.includes(id))) patterns.push('كارديو');
+    const hasSkill = allEx.some(id => SKILL_EX.includes(id));
+    sessionLog.push({ date: s.date, patterns, exercises: allEx, hasSkill });
   });
-  if (count >= 5) return { label: 'ثقيل', recommendation: 'أسبوع ثقيل — جلسة Skill خفيفة أو Mobility', patternsUsed: [...new Set(patternsUsed)] };
-  if (count >= 3) return { label: 'متوسط', recommendation: 'أسبوع متوسط — جلسة قوة متوسطة أو Skill', patternsUsed: [...new Set(patternsUsed)] };
-  return { label: 'خفيف', recommendation: 'أسبوع خفيف — جلسة ثقيلة بحجم عالٍ', patternsUsed: [...new Set(patternsUsed)] };
+
+  // تجميع الأنماط وحساب التكرار
+  const allPatterns = sessionLog.flatMap(s => s.patterns);
+  const patternFreq: Record<string, number> = {};
+  allPatterns.forEach(p => { patternFreq[p] = (patternFreq[p] || 0) + 1; });
+
+  const overtrainedPatterns = Object.entries(patternFreq).filter(([, v]) => v >= 2).map(([k]) => k);
+  const allPossiblePatterns = ['سحب/ظهر', 'دفع/كتف', 'جذع/بطن', 'رجل/قفز', 'كارديو'];
+  const neglectedPatterns = allPossiblePatterns.filter(p => !allPatterns.includes(p));
+
+  // آخر مرة تدرب كل نمط
+  const lastTrainedPull = sessionLog.find(s => s.patterns.includes('سحب/ظهر'))?.date;
+  const lastTrainedPush = sessionLog.find(s => s.patterns.includes('دفع/كتف'))?.date;
+  const daysSincePull = lastTrainedPull ? Math.round((new Date().getTime() - new Date(lastTrainedPull).getTime()) / 86400000) : 99;
+  const daysSincePush = lastTrainedPush ? Math.round((new Date().getTime() - new Date(lastTrainedPush).getTime()) / 86400000) : 99;
+
+  let label: string;
+  let recommendation: string;
+  if (count >= 5) {
+    label = 'ثقيل';
+    recommendation = `أسبوع ثقيل (${count} جلسات) — اجعل هذه جلسة Skill خفيفة أو Mobility. ${overtrainedPatterns.length ? `تجنب خاصة: ${overtrainedPatterns.join(' و')}` : ''}`;
+  } else if (count >= 3) {
+    label = 'متوسط';
+    const focus = neglectedPatterns.length ? `ركز اليوم على: ${neglectedPatterns.join(' و')}` : 'جميع الأنماط تدربت — تنوع بين القوة والمهارة';
+    recommendation = `أسبوع متوسط (${count} جلسات) — ${focus}. ${daysSincePull >= 2 && daysSincePush >= 2 ? 'السحب والدفع متعافيان.' : daysSincePull >= 2 ? 'يوم السحب مناسب.' : daysSincePush >= 2 ? 'يوم الدفع مناسب.' : ''}`;
+  } else {
+    label = 'خفيف';
+    recommendation = `أسبوع خفيف (${count} جلسات فقط) — الجسم جاهز. اجعلها جلسة قوة ثقيلة. ${neglectedPatterns.length ? `استهدف: ${neglectedPatterns.join(' و')}` : 'اختر المجموعة التي تريد تطويرها.'}`;
+  }
+
+  return { label, recommendation, overtrainedPatterns, neglectedPatterns, sessionLog, daysSincePull, daysSincePush };
 }
 
 export async function POST(req: NextRequest) {
@@ -71,14 +111,22 @@ export async function POST(req: NextRequest) {
 الفلسفة: من Push-up إلى Muscle-up — كل شيء مبني على الأساس
 ═══════════════════════════════
 
-**══ تحليل الأسبوع الماضي ══**
+**═══ تحليل الأسبوع الماضي ═══**
 عدد الجلسات في آخر 7 أيام: ${recentSessions.length}
 شدة الأسبوع: ${weekAnalysis.label}
-الأنماط الحركية المُدرَّبة مؤخراً: ${weekAnalysis.patternsUsed.join(' | ') || 'لا توجد بيانات'}
-توصية المدرب: ${weekAnalysis.recommendation}
+توصية اليوم: ${weekAnalysis.recommendation}
 
-الجلسات الأخيرة (تجنب التكرار):
-${JSON.stringify(recentSummary, null, 2)}
+الأنماط الحركية المُجهَدة (قلّل منها اليوم):
+${weekAnalysis.overtrainedPatterns.length ? weekAnalysis.overtrainedPatterns.map((p: string) => `- ${p}`).join('\n') : '- لا يوجد إجهاد تراكمي'}
+
+الأنماط المُهمَلة (استهدفها اليوم بأولوية):
+${weekAnalysis.neglectedPatterns.length ? weekAnalysis.neglectedPatterns.map((p: string) => `- ${p}`).join('\n') : '- جميع الأنماط تدربت بشكل متوازن'}
+
+آخر تدريب للسحب: ${weekAnalysis.daysSincePull < 99 ? `منذ ${weekAnalysis.daysSincePull} أيام` : 'لم يُدرَّب هذا الأسبوع'}
+آخر تدريب للدفع: ${weekAnalysis.daysSincePush < 99 ? `منذ ${weekAnalysis.daysSincePush} أيام` : 'لم يُدرَّب هذا الأسبوع'}
+
+سجل الجلسات:
+${weekAnalysis.sessionLog.map((s: any) => `${s.date}: [${s.patterns.join(' + ') || 'لا أنماط'}]${s.hasSkill ? ' + Skill Work' : ''}`).join('\n') || 'لا توجد جلسات'}
 
 **الجلسة المطلوبة:**
 التركيز: ${focus || 'حسب التحليل'}

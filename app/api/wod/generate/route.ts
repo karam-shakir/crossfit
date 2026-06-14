@@ -51,21 +51,67 @@ export async function POST(req: NextRequest) {
   const exerciseList = EXERCISES.map(e => `- ${e.id} (${e.nameEn} / ${e.nameAr}) [${e.category}]`).join('\n');
   const calisExerciseList = CALISTHENICS_EXERCISES.map(e => `- ${e.id} (${e.nameEn} / ${e.nameAr}) [${e.category}]`).join('\n');
 
-  // جلب آخر 5 تمارين CrossFit للسياق التاريخي
   const allWods = await getWods();
-  const recentWods = allWods
+  const last7Wods = allWods
     .filter(w => date ? w.date < date : true)
-    .slice(0, 5)
-    .map(w => ({
-      date: w.date,
-      title: w.title,
-      type: w.type,
-      strength: (w.strength || []).map((e: any) => e.exerciseId).join(', '),
-      metcon: (w.metcon || []).map((e: any) => e.exerciseId).join(', '),
-    }));
-  const recentContext = recentWods.length > 0
-    ? `\n**التمارين السابقة (تجنب التكرار المباشر):**\n${JSON.stringify(recentWods, null, 2)}\n`
-    : '';
+    .slice(0, 7);
+
+  // تحليل المجموعات العضلية المُدرَّبة في آخر 7 أيام
+  const muscleGroupLog: { date: string; muscles: string[]; intensity: string }[] = [];
+  for (const w of last7Wods) {
+    const allEx = [...(w.strength || []), ...(w.metcon || [])].map((e: any) => e.exerciseId);
+    const muscles: string[] = [];
+    if (allEx.some(id => ['back-squat','front-squat','overhead-squat','deadlift'].includes(id))) muscles.push('الساق/السلسلة الخلفية');
+    if (allEx.some(id => ['power-clean','clean-and-jerk','snatch'].includes(id))) muscles.push('الأولمبي/الجسم الكامل');
+    if (allEx.some(id => ['pull-up','kipping-pull-up','muscle-up','rope-climb'].includes(id))) muscles.push('الظهر/السحب');
+    if (allEx.some(id => ['shoulder-press','push-press','handstand-pushup'].includes(id))) muscles.push('الكتف/الدفع');
+    if (allEx.some(id => ['thruster','wall-ball'].includes(id))) muscles.push('الجسم الكامل');
+    if (allEx.some(id => ['row','run','double-under','burpee'].includes(id))) muscles.push('القلب/التحمل');
+    // قياس شدة الجلسة: عدد التمارين وحجم القوة
+    const hasHeavyStrength = (w.strength || []).length >= 2;
+    const intensity = hasHeavyStrength ? 'ثقيلة' : (w.metcon || []).length >= 4 ? 'تحمل' : 'متوسطة';
+    muscleGroupLog.push({ date: w.date, muscles, intensity });
+  }
+
+  // تحديد شدة الأسبوع الكلية
+  const sessionCount = last7Wods.length;
+  const heavyCount = muscleGroupLog.filter(d => d.intensity === 'ثقيلة').length;
+  let weekIntensity: string;
+  let intensityRecommendation: string;
+  if (sessionCount >= 5 || heavyCount >= 3) {
+    weekIntensity = 'ثقيل';
+    intensityRecommendation = 'الأسبوع كان ثقيلاً — اجعل هذه الجلسة متوسطة أو خفيفة للتعافي، ركز على التقنية والحجم لا على الحد الأقصى';
+  } else if (sessionCount >= 3 || heavyCount >= 1) {
+    weekIntensity = 'متوسط';
+    intensityRecommendation = 'الأسبوع متوسط — يمكن جلسة ثقيلة إلى متوسطة، تأكد من استهداف مجموعات عضلية مختلفة عن السابق';
+  } else {
+    weekIntensity = 'خفيف';
+    intensityRecommendation = 'الأسبوع خفيف — الجسم جاهز تماماً، اجعلها جلسة ثقيلة وطموحة';
+  }
+
+  // تحديد المجموعات العضلية الأكثر تدريباً لتجنبها
+  const allRecentMuscles = muscleGroupLog.flatMap(d => d.muscles);
+  const muscleFreq: Record<string, number> = {};
+  allRecentMuscles.forEach(m => { muscleFreq[m] = (muscleFreq[m] || 0) + 1; });
+  const overtrained = Object.entries(muscleFreq).filter(([, v]) => v >= 2).map(([k]) => k);
+  const undertrained = ['الساق/السلسلة الخلفية','الأولمبي/الجسم الكامل','الظهر/السحب','الكتف/الدفع','الجسم الكامل','القلب/التحمل']
+    .filter(m => !allRecentMuscles.includes(m));
+
+  const recentContext = `
+**═══ تحليل الأسبوع الماضي (آخر 7 أيام) ═══**
+عدد الجلسات: ${sessionCount} جلسات
+شدة الأسبوع: ${weekIntensity}
+توصية اليوم: ${intensityRecommendation}
+
+المجموعات العضلية التي تدربت كثيراً (تجنبها أو قللها):
+${overtrained.length ? overtrained.map(m => `- ${m}`).join('\n') : '- لا يوجد إجهاد تراكمي'}
+
+المجموعات العضلية المُهمَلة (استهدفها اليوم بأولوية):
+${undertrained.length ? undertrained.map(m => `- ${m}`).join('\n') : '- جميع المجموعات تدربت بشكل متوازن'}
+
+سجل الجلسات التفصيلي:
+${muscleGroupLog.map(d => `${d.date}: [${d.muscles.join(' + ')}] — شدة: ${d.intensity}`).join('\n') || 'لا توجد جلسات سابقة'}
+`;
 
   const calisthenicsPrompt = `أنت مدرب Calisthenics محترف بخبرة أكثر من 10 سنوات، متخصص في برمجة تمارين وزن الجسم والجمناستيكس على المستوى التنافسي. أسلوبك يشبه أفضل مدربي Street Workout وGymnastics Strength Training (GST).
 
@@ -157,14 +203,15 @@ ${date ? `- التاريخ: ${date}` : ''}
 ${exerciseList}
 ${recentContext}
 **فلسفة البرمجة الاحترافية:**
-✦ الإحماء: تهيئة تدريجية تُفعّل العضلات المستخدمة في الجلسة (dynamic warm-up، mobility، activation)
-✦ القوة: بناء الأساس — compound movements بنسب 70-85% من الـ 1RM، مجموعات 3-5 × 3-6 تكرارات
-✦ الميتكون: اختر نوع WOD يناسب التركيز:
+✦ استخدم تحليل الأسبوع أعلاه لتحديد: (1) شدة اليوم (2) المجموعات العضلية المستهدفة
+✦ الإحماء: تهيئة تدريجية تُفعّل العضلات التي ستستهدفها اليوم تحديداً
+✦ القوة: compound movements بنسب تتناسب مع شدة الأسبوع (إذا ثقيل → 65-70%، إذا خفيف → 80-85%)
+✦ الميتكون: اختر نوع WOD يناسب الشدة المقررة:
    - "Hero/Benchmark": 21-15-9 أو Cindy-style أو تابطا
    - "Chipper": تسلسل من 5-7 تمارين يُنجز مرة واحدة
    - "EMOM": x تمارين في كل دقيقة لـ 10-20 دقيقة
    - "AMRAP": أقصى جولات في وقت محدد
-✦ التهدئة: تمطيط هادئ للمجموعات العضلية المُستنزفة
+✦ التهدئة: تمطيط هادئ للمجموعات العضلية المُستنزفة اليوم
 
 **قواعد حقلَي duration و rounds — مهم جداً:**
 - "للوقت" مع جولات محددة → rounds = عدد الجولات، duration = التايم كاب بالدقائق

@@ -8,16 +8,40 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 function analyzeWeekIntensity(sessions: any[]) {
   const last7 = sessions.slice(0, 7);
   const count = last7.length;
-  const stationsUsed: string[] = [];
+
+  // تتبع المحطات والعضلات المُدرَّبة مع تاريخ كل جلسة
+  const sessionLog: { date: string; stations: string[]; strengthEx: string[]; type: string }[] = [];
   last7.forEach(s => {
-    (s.stations || []).forEach((st: any) => { if (st.name) stationsUsed.push(st.name); });
-    if (s.strengthBlock?.exercises) {
-      s.strengthBlock.exercises.forEach((ex: any) => { if (ex.name) stationsUsed.push(ex.name); });
-    }
+    const stations = (s.stations || []).map((st: any) => st.name).filter(Boolean);
+    const strengthEx = (s.strengthBlock?.exercises || []).map((ex: any) => ex.name).filter(Boolean);
+    sessionLog.push({ date: s.date, stations, strengthEx, type: s.sessionType || '' });
   });
-  if (count >= 4) return { label: 'ثقيل', recommendation: 'أسبوع ثقيل — جلسة تقنية خفيفة أو تعافٍ نشط', usedMovements: [...new Set(stationsUsed)] };
-  if (count >= 2) return { label: 'متوسط', recommendation: 'أسبوع متوسط — جلسة متوسطة مع كتلة قوة', usedMovements: [...new Set(stationsUsed)] };
-  return { label: 'خفيف', recommendation: 'أسبوع خفيف — Race Simulation كامل أو Strength Heavy', usedMovements: [...new Set(stationsUsed)] };
+
+  // المحطات التي تدربنا عليها مؤخراً (الأخيرتان بوزن أكبر)
+  const recentStations = [...new Set(sessionLog.flatMap(s => s.stations))];
+  const recentStrength = [...new Set(sessionLog.flatMap(s => s.strengthEx))];
+
+  // قياس نوع الحمل: كم جلسة simulation (ثقيلة) مقابل strength أو running
+  const heavySessions = sessionLog.filter(s => s.type === 'race-sim' || s.type === 'simulation').length;
+
+  // المحطات الغائبة (فرصة لاستهدافها)
+  const allStations = ['Ski Erg', 'Sled Push', 'Sled Pull', 'Burpee Broad Jumps', 'Rowing', 'Farmers Carry', 'Sandbag Lunges', 'Wall Balls'];
+  const missingStations = allStations.filter(st => !recentStations.includes(st));
+
+  let label: string;
+  let recommendation: string;
+  if (count >= 4 || heavySessions >= 2) {
+    label = 'ثقيل';
+    recommendation = `الأسبوع كان ثقيلاً (${count} جلسات، ${heavySessions} simulation) — اجعل هذه جلسة strength أو technique خفيفة. تجنب race-sim اليوم.`;
+  } else if (count >= 2 || heavySessions >= 1) {
+    label = 'متوسط';
+    recommendation = `الأسبوع متوسط — يمكن جلسة strength متوسطة أو simulation بأوزان 75%. استهدف المحطات الغائبة.`;
+  } else {
+    label = 'خفيف';
+    recommendation = `الأسبوع خفيف جداً — الجسم جاهز. اجعلها race-sim كاملة أو strength ثقيلة مع 4-5 محطات.`;
+  }
+
+  return { label, recommendation, recentStations, missingStations, recentStrength, sessionLog };
 }
 
 export async function POST(req: NextRequest) {
@@ -50,14 +74,22 @@ export async function POST(req: NextRequest) {
 الفلسفة: القوة + التحمل + الكفاءة = HYROX Champion
 ═══════════════════════════════
 
-**══ تحليل الأسبوع الماضي ══**
+**═══ تحليل الأسبوع الماضي ═══**
 عدد الجلسات في آخر 7 أيام: ${recentSessions.length}
 شدة الأسبوع: ${weekAnalysis.label}
-الحركات التي تدربنا عليها: ${weekAnalysis.usedMovements.slice(0,8).join(' | ') || 'لا توجد بيانات'}
-توصية المدرب: ${weekAnalysis.recommendation}
+توصية اليوم: ${weekAnalysis.recommendation}
 
-الجلسات الأخيرة (تجنب تكرار نفس المحطات):
-${JSON.stringify(recentSummary, null, 2)}
+المحطات التي تدربنا عليها مؤخراً (قلّل منها أو تجنبها):
+${weekAnalysis.recentStations.length ? weekAnalysis.recentStations.map((s: string) => `- ${s}`).join('\n') : '- لا توجد بيانات'}
+
+المحطات الغائبة (استهدفها اليوم بأولوية):
+${weekAnalysis.missingStations.length ? weekAnalysis.missingStations.map((s: string) => `- ${s}`).join('\n') : '- جميع المحطات تدربت مؤخراً'}
+
+تمارين القوة الأخيرة (تجنب التكرار):
+${weekAnalysis.recentStrength.length ? weekAnalysis.recentStrength.map((s: string) => `- ${s}`).join('\n') : '- لا توجد بيانات'}
+
+سجل الجلسات:
+${weekAnalysis.sessionLog.map((s: any) => `${s.date}: [${s.stations.join(' + ') || 'لا محطات'}] | قوة: [${s.strengthEx.join(' + ') || 'لا'}] | نوع: ${s.type}`).join('\n') || 'لا توجد جلسات'}
 
 **الجلسة المطلوبة:**
 نوع الجلسة: ${sessionType || 'حسب تحليل الأسبوع'}
