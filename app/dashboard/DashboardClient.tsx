@@ -993,7 +993,6 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                             <div className="space-y-2">
                               {sec.items.map((ex: any, i: number) => {
                                 const nameEn = ex.exercise?.nameEn || ex.exerciseId || '—';
-                                const nameAr = ex.exercise?.nameAr || '';
                                 const ytUrl = YOUTUBE_LINKS[ex.exerciseId] ||
                                   `https://www.youtube.com/results?search_query=${encodeURIComponent((nameEn) + ' crossfit tutorial')}`;
                                 return (
@@ -1001,7 +1000,6 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                                     <span className="text-gray-500 font-mono text-xs w-5">{i + 1}</span>
                                     <div className="flex-1 min-w-0">
                                       <div className="font-semibold text-white text-sm">{nameEn}</div>
-                                      {nameAr && <div className="text-xs text-gray-500">{nameAr}</div>}
                                     </div>
                                     <div className="flex items-center gap-2 flex-shrink-0">
                                       {ex.reps && (

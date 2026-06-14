@@ -67,7 +67,7 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
       lines.push('');
       lines.push(`${sec.icon} ${sec.label}:`);
       items.forEach((ex: any, i: number) => {
-        const name   = ex.exercise?.nameAr || ex.exerciseId;
+        const name   = ex.exercise?.nameEn || ex.exerciseId;
         const nameEn = ex.exercise?.nameEn || ex.exerciseId || '';
         const reps   = ex.reps   ? ` — ${ex.reps}`   : '';
         const weight = ex.weight ? ` (${ex.weight})`  : '';

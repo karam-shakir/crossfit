@@ -57,10 +57,10 @@ export default function ExerciseCard({ item, index }: { item: WodExercise; index
 
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-white text-sm">
-            {ex?.nameAr || item.exerciseId}
+            {ex?.nameEn || item.exerciseId}
           </div>
           {ex && (
-            <div className="text-xs text-gray-400">{ex.nameEn} • {ex.muscles}</div>
+            <div className="text-xs text-gray-400">{ex.muscles}</div>
           )}
         </div>
 
@@ -116,7 +116,7 @@ export default function ExerciseCard({ item, index }: { item: WodExercise; index
           <div className="relative bg-gray-900 flex items-center justify-center" style={{ minHeight: 200 }}>
             <img
               src={ex.gif}
-              alt={ex.nameAr}
+              alt={ex.nameEn}
               className="max-h-64 w-full object-contain"
               loading="lazy"
             />
