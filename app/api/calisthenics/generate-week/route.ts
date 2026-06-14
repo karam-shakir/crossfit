@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
-  const { fromDate, days = 5, difficulty = 'متوسط' } = body;
+  const { fromDate, days = 5 } = body;
 
   const startDate = fromDate || todaySA();
 
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
 الجمهور: مبتدئون إلى نخبة (18-40 سنة)
 الفلسفة: من Negative Pull-up إلى Muscle-up — كل شيء مبني على الأساس
 المدة: ${days} أيام من ${startDate}
-المستوى العام: ${difficulty}
+المستويات: مبتدئ / متوسط / متقدم / نخبة — كل تمرين يخدمهم جميعاً
 ═══════════════════════════════
 
 **أنواع الجلسات:**
@@ -87,7 +87,7 @@ ${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
       "title": "عنوان احترافي يعكس الهدف الرئيسي",
       "sessionType": "strength | skills | endurance | mixed | rest",
       "focus": "Pull | Push | Core | Full Body | Skills | Recovery",
-      "difficulty": "${difficulty}",
+      "difficulty": "جميع المستويات",
       "totalDuration": 60,
       "coachNote": "هدف الجلسة + الاستراتيجية + النقطة التقنية الأهم",
       "warmup": {

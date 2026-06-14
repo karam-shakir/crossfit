@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
-  const { date, focus, difficulty = 'متوسط' } = body;
+  const { date, focus } = body;
 
   const allSessions = await getAllCalisthenicsSessions();
   const recentSessions = allSessions
@@ -131,8 +131,8 @@ ${weekAnalysis.sessionLog.map((s: any) => `${s.date}: [${s.patterns.join(' + ') 
 
 **الجلسة المطلوبة:**
 التركيز: ${focus || 'حسب التحليل'}
-الصعوبة: ${difficulty}
 ${date ? `التاريخ: ${date}` : ''}
+تنبيه: ولّد جميع المستويات الأربعة في كل تمرين (beginner/intermediate/advanced/elite) — لا تُحدد مستوى واحداً
 
 **قائمة التمارين المتاحة (استخدم ID فقط):**
 ${exerciseList}

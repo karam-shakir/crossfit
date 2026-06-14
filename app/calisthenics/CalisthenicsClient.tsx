@@ -17,11 +17,21 @@ const SESSION_TYPES = [
 ];
 
 const FOCUS_OPTIONS     = ['كامل الجسم','الجزء العلوي','الجزء السفلي','القلب والكور','مهارات الجمناستيكس','الكتفين والضغط','الظهر والسحب','تدريب الحلقات'];
-const DIFFICULTY_OPTIONS = ['مبتدئ','متوسط','متقدم','نخبة'];
+const LEVEL_TABS = [
+  { key: 'beginner'     as const, label: 'مبتدئ', active: 'bg-green-600 text-white',  idle: 'bg-white text-green-700 border border-green-300'  },
+  { key: 'intermediate' as const, label: 'متوسط', active: 'bg-blue-600 text-white',   idle: 'bg-white text-blue-700 border border-blue-300'    },
+  { key: 'advanced'     as const, label: 'متقدم', active: 'bg-orange-500 text-white',  idle: 'bg-white text-orange-700 border border-orange-300' },
+  { key: 'elite'        as const, label: 'نخبة',  active: 'bg-red-600 text-white',     idle: 'bg-white text-red-700 border border-red-300'      },
+];
+
+type LevelKey = 'beginner' | 'intermediate' | 'advanced' | 'elite';
 
 // ── بطاقة تمرين ────────────────────────────────────────────────────────────
-function ExerciseRow({ ex, index }: { ex: any; index: number }) {
+function ExerciseRow({ ex, index, selectedLevel }: { ex: any; index: number; selectedLevel?: LevelKey }) {
   const [open, setOpen] = useState(false);
+
+  const lvl = selectedLevel && ex.levels ? ex.levels[selectedLevel] : null;
+
   return (
     <div className="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
       <button onClick={() => setOpen(o => !o)} className="w-full flex items-center gap-3 px-4 py-3 text-right">
@@ -29,10 +39,16 @@ function ExerciseRow({ ex, index }: { ex: any; index: number }) {
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-slate-800 text-sm">{ex.name}</div>
           {ex.nameEn && <div className="text-xs text-slate-400">{ex.nameEn}</div>}
+          {lvl && (
+            <div className="text-xs text-slate-600 mt-0.5 truncate">
+              {lvl.reps || lvl.scaling || ''}{lvl.weight ? ` · ${lvl.weight}` : ''}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          {ex.sets && <span className="text-xs bg-slate-100 border border-slate-200 text-slate-600 px-2 py-0.5 rounded-full">{ex.sets} مج</span>}
-          {ex.reps && <span className="text-xs bg-orange-50 border border-orange-200 text-orange-700 px-2 py-0.5 rounded-full font-mono">{ex.reps}</span>}
+          {!selectedLevel && ex.sets && <span className="text-xs bg-slate-100 border border-slate-200 text-slate-600 px-2 py-0.5 rounded-full">{ex.sets} مج</span>}
+          {!selectedLevel && ex.reps && <span className="text-xs bg-orange-50 border border-orange-200 text-orange-700 px-2 py-0.5 rounded-full font-mono">{ex.reps}</span>}
+          {ex.levels && <span className="text-xs bg-purple-50 text-purple-600 border border-purple-200 px-1.5 py-0.5 rounded-full">4 مستويات</span>}
           <span className="text-slate-400 text-xs">{open ? '▲' : '▼'}</span>
         </div>
       </button>
@@ -40,16 +56,41 @@ function ExerciseRow({ ex, index }: { ex: any; index: number }) {
         <div className="px-4 pb-4 space-y-2 border-t border-slate-100 pt-3 bg-slate-50">
           {ex.rest     && <div className="text-xs text-slate-500">⏱ راحة: <span className="text-slate-800 font-medium">{ex.rest}</span></div>}
           {ex.tempo    && <div className="text-xs text-slate-500">🎵 إيقاع: <span className="text-slate-800 font-medium">{ex.tempo}</span></div>}
-          {ex.target   && <div className="text-xs text-slate-500">🎯 الهدف: <span className="text-slate-800 font-medium">{ex.target}</span></div>}
           {ex.notes    && <div className="text-xs text-slate-600">💡 {ex.notes}</div>}
           {ex.cues     && <div className="text-xs text-slate-600">🔑 {ex.cues}</div>}
           {ex.duration && <div className="text-xs text-slate-500">⏳ المدة: <span className="text-slate-800 font-medium">{ex.duration}</span></div>}
-          {ex.scaling && (
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              {ex.scaling.easier && <div className="bg-green-50 border border-green-200 rounded-lg px-2 py-1.5"><div className="text-xs text-green-700 font-medium mb-0.5">↓ أسهل</div><div className="text-xs text-slate-700">{ex.scaling.easier}</div></div>}
-              {ex.scaling.harder && <div className="bg-red-50 border border-red-200 rounded-lg px-2 py-1.5"><div className="text-xs text-red-700 font-medium mb-0.5">↑ أصعب</div><div className="text-xs text-slate-700">{ex.scaling.harder}</div></div>}
+
+          {/* عرض المستوى المحدد */}
+          {selectedLevel && lvl && (
+            <div className="mt-2 rounded-xl border border-slate-200 bg-white overflow-hidden">
+              <div className="px-3 py-2 space-y-1">
+                {lvl.weight  && <div className="text-xs text-slate-500">⚖️ الوزن: <span className="font-semibold text-slate-800">{lvl.weight}</span></div>}
+                {(lvl.reps || lvl.scaling) && <div className="text-xs text-slate-500">🔢 التكرار: <span className="font-semibold text-slate-800">{lvl.reps || lvl.scaling}</span></div>}
+                {lvl.cue     && <div className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-2 py-1">💬 {lvl.cue}</div>}
+              </div>
             </div>
           )}
+
+          {/* عرض جميع المستويات إذا لم يُحدد مستوى */}
+          {!selectedLevel && ex.levels && (
+            <div className="mt-2 grid grid-cols-1 gap-1.5">
+              {LEVEL_TABS.map(t => {
+                const d = ex.levels[t.key];
+                if (!d) return null;
+                return (
+                  <div key={t.key} className="rounded-lg border border-slate-200 bg-white px-3 py-2">
+                    <div className={`inline-block text-xs font-bold px-2 py-0.5 rounded-full mb-1 ${t.active}`}>{t.label}</div>
+                    <div className="text-xs text-slate-700">
+                      {d.weight && <span className="ml-2">⚖️ {d.weight}</span>}
+                      {(d.reps || d.scaling) && <span>· {d.reps || d.scaling}</span>}
+                      {d.cue && <div className="text-slate-500 mt-0.5">💬 {d.cue}</div>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {ex.progression && <div className="text-xs bg-purple-50 border border-purple-200 rounded-lg px-2 py-1.5 text-purple-800">🚀 التطور: {ex.progression}</div>}
           {ex.regression  && <div className="text-xs bg-blue-50 border border-blue-200 rounded-lg px-2 py-1.5 text-blue-800">📉 البديل: {ex.regression}</div>}
         </div>
@@ -86,18 +127,18 @@ function SavedCard({ rec, onDelete, onView }: { rec: any; onDelete: () => void; 
 }
 
 export default function CalisthenicsClient({ member }: { member: any }) {
-  const [tab,         setTab]         = useState<'generate'|'history'>('generate');
-  const [sessionType, setSessionType] = useState('strength');
-  const [difficulty,  setDifficulty]  = useState('متوسط');
-  const [focus,       setFocus]       = useState('كامل الجسم');
-  const [date,        setDate]        = useState(todaySA());
-  const [loading,     setLoading]     = useState(false);
-  const [saving,      setSaving]      = useState(false);
-  const [saved,       setSaved]       = useState(false);
-  const [error,       setError]       = useState('');
-  const [session,     setSession]     = useState<any>(null);
-  const [history,     setHistory]     = useState<any[]>([]);
-  const [historyLoad, setHistoryLoad] = useState(false);
+  const [tab,           setTab]           = useState<'generate'|'history'>('generate');
+  const [sessionType,   setSessionType]   = useState('strength');
+  const [focus,         setFocus]         = useState('كامل الجسم');
+  const [date,          setDate]          = useState(todaySA());
+  const [loading,       setLoading]       = useState(false);
+  const [saving,        setSaving]        = useState(false);
+  const [saved,         setSaved]         = useState(false);
+  const [error,         setError]         = useState('');
+  const [session,       setSession]       = useState<any>(null);
+  const [history,       setHistory]       = useState<any[]>([]);
+  const [historyLoad,   setHistoryLoad]   = useState(false);
+  const [selectedLevel, setSelectedLevel] = useState<LevelKey | undefined>(undefined);
 
   const selectedType = SESSION_TYPES.find(t => t.id === sessionType)!;
 
@@ -118,7 +159,7 @@ export default function CalisthenicsClient({ member }: { member: any }) {
     try {
       const res  = await fetch('/api/calisthenics/generate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, difficulty, sessionType, focus }),
+        body: JSON.stringify({ date, sessionType, focus }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'خطأ في التوليد');
@@ -133,7 +174,7 @@ export default function CalisthenicsClient({ member }: { member: any }) {
     try {
       const res = await fetch('/api/calisthenics/sessions', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionData: session, date, sessionType, difficulty }),
+        body: JSON.stringify({ sessionData: session, date, sessionType, difficulty: 'جميع المستويات' }),
       });
       if (res.ok) setSaved(true);
     } catch {}
@@ -152,14 +193,13 @@ export default function CalisthenicsClient({ member }: { member: any }) {
     setSession(rec.sessionData);
     setDate(rec.date);
     setSessionType(rec.sessionType);
-    setDifficulty(rec.difficulty);
     setSaved(true);
     setTab('generate');
   }
 
   function buildWhatsApp() {
     if (!session) return '';
-    const lines = [`🤸 *${session.title}*`, `📅 ${date}  |  🎯 ${session.focus}  |  ⚡ ${session.difficulty}`, `⏱ المدة: ${session.totalDuration} دقيقة`, ''];
+    const lines = [`🤸 *${session.title}*`, `📅 ${date}  |  🎯 ${session.focus}`, `⏱ المدة: ${session.totalDuration} دقيقة`, ''];
     if (session.metcon) {
       lines.push(`🔥 *الميتكون — ${session.metcon.format}*`);
       if (session.metcon.timecap) lines.push(`تايم كاب: ${session.metcon.timecap} دقيقة`);
@@ -229,21 +269,10 @@ export default function CalisthenicsClient({ member }: { member: any }) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="text-xs text-slate-500 font-medium">الصعوبة</label>
-                    <div className="flex gap-1.5 flex-wrap">
-                      {DIFFICULTY_OPTIONS.map(d => (
-                        <button key={d} onClick={() => setDifficulty(d)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${difficulty===d ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-slate-100 text-slate-600 border-slate-200 hover:border-emerald-300'}`}>{d}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs text-slate-500 font-medium">التاريخ</label>
-                    <input type="date" value={date} onChange={e => setDate(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 text-sm focus:outline-none focus:border-emerald-400"/>
-                  </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs text-slate-500 font-medium">التاريخ</label>
+                  <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 text-sm focus:outline-none focus:border-emerald-400"/>
                 </div>
 
                 <div className="space-y-2">
@@ -275,6 +304,22 @@ export default function CalisthenicsClient({ member }: { member: any }) {
               {session && (
                 <div className="space-y-4">
 
+                  {/* Level Tabs */}
+                  {(session.strength?.some((e: any) => e.levels) || session.skillWork?.some((e: any) => e.levels) || session.metcon?.some((e: any) => e.levels)) && (
+                    <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+                      <div className="text-xs text-slate-500 font-medium mb-3">اختر مستواك لعرض التفاصيل المخصصة</div>
+                      <div className="grid grid-cols-4 gap-2">
+                        {LEVEL_TABS.map(t => (
+                          <button key={t.key}
+                            onClick={() => setSelectedLevel(selectedLevel === t.key ? undefined : t.key)}
+                            className={`py-2 rounded-xl text-xs font-bold transition-all ${selectedLevel === t.key ? t.active : t.idle}`}>
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Header */}
                   <div className="bg-gradient-to-l from-emerald-50 to-white rounded-2xl border border-emerald-200 p-5">
                     <div className="flex items-start justify-between gap-3 mb-3">
@@ -282,7 +327,6 @@ export default function CalisthenicsClient({ member }: { member: any }) {
                         <h2 className="text-lg font-black text-slate-800 leading-tight">{session.title}</h2>
                         <div className="flex flex-wrap gap-2 mt-2">
                           <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full border border-emerald-200 font-medium">🤸 {session.sessionType}</span>
-                          <span className="text-xs text-slate-500">⚡ {session.difficulty}</span>
                           <span className="text-xs text-slate-500">🎯 {session.focus}</span>
                           {session.totalDuration && <span className="text-xs text-slate-500">⏱ {session.totalDuration} دقيقة</span>}
                         </div>
@@ -323,7 +367,7 @@ export default function CalisthenicsClient({ member }: { member: any }) {
                   {session.warmup?.exercises?.length > 0 && (
                     <Section title={`الإحماء — ${session.warmup.duration} دقيقة`} icon="🔆"
                       bg="bg-amber-50" border="border-amber-200" titleColor="text-amber-800">
-                      {session.warmup.exercises.map((ex: any, i: number) => <ExerciseRow key={i} ex={ex} index={i}/>)}
+                      {session.warmup.exercises.map((ex: any, i: number) => <ExerciseRow key={i} ex={ex} index={i} selectedLevel={selectedLevel}/>)}
                     </Section>
                   )}
 
@@ -331,7 +375,7 @@ export default function CalisthenicsClient({ member }: { member: any }) {
                   {session.skillWork?.exercises?.length > 0 && (
                     <Section title={`${session.skillWork.title || 'العمل على المهارة'} — ${session.skillWork.duration} دقيقة`} icon="🤸"
                       bg="bg-purple-50" border="border-purple-200" titleColor="text-purple-800">
-                      {session.skillWork.exercises.map((ex: any, i: number) => <ExerciseRow key={i} ex={ex} index={i}/>)}
+                      {session.skillWork.exercises.map((ex: any, i: number) => <ExerciseRow key={i} ex={ex} index={i} selectedLevel={selectedLevel}/>)}
                     </Section>
                   )}
 
@@ -342,14 +386,14 @@ export default function CalisthenicsClient({ member }: { member: any }) {
                           <Section key={bi} title={`${block.block || block.title || 'العمل الرئيسي'}${block.duration ? ` — ${block.duration} دقيقة` : ''}`} icon="💪"
                             bg="bg-blue-50" border="border-blue-200" titleColor="text-blue-800">
                             {block.type && <div className="text-xs text-blue-600 font-semibold mb-2 uppercase tracking-wider">{block.type}</div>}
-                            {(block.exercises || []).map((ex: any, ei: number) => <ExerciseRow key={ei} ex={ex} index={ei}/>)}
+                            {(block.exercises || []).map((ex: any, ei: number) => <ExerciseRow key={ei} ex={ex} index={ei} selectedLevel={selectedLevel}/>)}
                           </Section>
                         ))
                       : (
                           <Section title={`${(session.mainWork as any).title || 'العمل الرئيسي'}${(session.mainWork as any).duration ? ` — ${(session.mainWork as any).duration} دقيقة` : ''}`} icon="💪"
                             bg="bg-blue-50" border="border-blue-200" titleColor="text-blue-800">
                             {(session.mainWork as any).format && <div className="text-xs text-blue-600 font-semibold mb-2 uppercase tracking-wider">{(session.mainWork as any).format}</div>}
-                            {((session.mainWork as any).exercises || []).map((ex: any, ei: number) => <ExerciseRow key={ei} ex={ex} index={ei}/>)}
+                            {((session.mainWork as any).exercises || []).map((ex: any, ei: number) => <ExerciseRow key={ei} ex={ex} index={ei} selectedLevel={selectedLevel}/>)}
                           </Section>
                         )
                   )}
