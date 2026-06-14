@@ -89,13 +89,16 @@ export async function POST(req: NextRequest) {
 - لا تكرر نفس التمارين في يومين متتاليين
 - اجعل القوة والميتكون مترابطَين في أيام CrossFit
 - أيام الراحة: warmup وstrength وmetcon وcooldown = مصفوفات فارغة []`
-    : `**قواعد البرمجة:**
-- وزّع: 2-3 أيام CrossFit كلاسيكي، يوم Calisthenics (وزن جسم + جمناستيكس)، يوم Hyrox أو Kettlebell، يوم راحة أو راحة نشطة
-- في يوم Calisthenics: اجعل strength عبارة عن تمارين وزن الجسم (pull-up, push-up, dips, pistol-squat) وأضف skill work (handstand, muscle-up progression) في notes
-- في بعض الأيام (مرة أسبوعياً): ادمج الكاليسثينكس مع CrossFit بوضع pull-up/muscle-up/handstand-pushup في الميتكون بجانب تمارين الحديد
+    : `**قواعد البرمجة — CrossFit كامل (بدون Calisthenics):**
+- هذا أسبوع CrossFit خالص — لا يوم Calisthenics ولا يوم Hyrox ولا Kettlebell
+- كل يوم نشاط هو CrossFit كلاسيكي: قوة بالبار + ميتكون مع أوزان
+- تمارين القوة (strength): يجب أن تكون بالبار حصراً (back-squat, deadlift, front-squat, overhead-squat, power-clean, clean-and-jerk, snatch, shoulder-press, push-press, thruster)
+- الميتكون: يجمع تمارين الحديد مع cardio وgymnastics — مسموح بـ pull-up وtoes-to-bar ودبل أندر في الميتكون فقط
+- وزّع الأيام: HEAVY (1-2 مرة) + MEDIUM (2-3 مرة) + SKILL (مرة) + REST (1-2 مرة)
+- يوم SKILL: تقنية أولمبية (snatch, clean) أو جمناستيكس (muscle-up, handstand) — مع ميتكون قصير
 - لا تكرر نفس التمارين في يومين متتاليين
 - اجعل القوة والميتكون مترابطَين (نفس مجموعة العضلات أو نفس الحركة)
-- أيام الراحة: warmup وstrength وmetcon وcooldown = مصفوفات فارغة []`;
+- أيام الراحة: isRest: true وكل المصفوفات فارغة []`;
 
   const prompt = `أنت مبرمج CrossFit محترف على مستوى CompTrain وPRVN Athletics. تصمم خططاً أسبوعية بفلسفة: القوة الوظيفية أولاً — كل جلسة تخدم جميع المستويات في آن واحد مع أوزان وscaling واضحة لكل مستوى.
 
@@ -103,7 +106,7 @@ export async function POST(req: NextRequest) {
 النادي: مجموعة المطانيخ CrossFit
 الجمهور: رجال ونساء (18-40 سنة)، 4 مستويات
 الفلسفة: تمرين واحد لجميع المستويات — مبتدئ يتعلم، نخبة يتحدى
-الخطة: ${weekMode === 'mixed' ? `أسبوع مختلط CrossFit + ${calisthenicsDays === 2 ? 'يومان' : 'يوم'} Calisthenics` : 'أسبوع CrossFit متكامل'}
+الخطة: ${weekMode === 'mixed' ? `أسبوع مختلط CrossFit + ${calisthenicsDays === 2 ? 'يومان' : 'يوم'} Calisthenics` : 'أسبوع CrossFit خالص — بدون Calisthenics أو Hyrox أو Kettlebell'}
 المدة: ${days} أيام من ${startDate}
 المستوى العام: ${difficulty}
 ═══════════════════════════════
