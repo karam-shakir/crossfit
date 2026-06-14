@@ -301,8 +301,8 @@ ${recentContext}
     }
   ],
   "cooldown": [
-    {"exerciseId": "run", "reps": "", "weight": "", "distance": "400م", "time": "", "notes": "مشي هادئ جداً — خفّف معدل القلب تدريجياً"},
-    {"exerciseId": "push-up", "reps": "10", "weight": "", "distance": "", "time": "45 ث", "notes": "بطيء جداً — تمطيط الصدر والكتف في الأسفل"}
+    {"exerciseId": "run", "reps": "", "weight": "", "distance": "400م", "time": "", "notes": "مشي هادئ 2 دقيقة — خفّف معدل القلب تدريجياً"},
+    {"exerciseId": "sit-up", "reps": "", "weight": "", "distance": "", "time": "60 ث", "notes": "تمطيط Hip Flexor — ركبة أمامية، ورك للأمام، أمسك 60 ث لكل جانب — لأن الـ WOD استنزف الجذع والورك"}
   ]
 }
 
@@ -315,7 +315,7 @@ ${recentContext}
 - القوة: 2-3 تمارين barbell compound
 - الميتكون: 3-5 تمارين مكثفة 7-20 دقيقة، تجمع barbell مع gymnastics
 - targetTimes: أوقات واقعية لإنهاء الميتكون لكل مستوى
-- التهدئة: 2-3 تمارين تختلف كل يوم حسب العضلات المُستنزفة — اختر ما يناسب جلسة اليوم تحديداً، لا تكرر نفس تمارين التهدئة دائماً
+- التهدئة: 2-3 إطالات ثابتة (static stretches) مرتبطة مباشرة بعضلات strength وmetcon هذا اليوم — إذا كان اليوم squat فالإطالة للـ quad وhip flexor وglute، وإذا كان pull-up فالإطالة للـ lat وbicep وshoulder، وإذا كان deadlift فالإطالة للـ hamstring وlow back — اذكر في notes لماذا هذه الإطالة مناسبة لجلسة اليوم
 
 أرجع JSON فقط، بدون أي كلام قبله أو بعده.`;
 

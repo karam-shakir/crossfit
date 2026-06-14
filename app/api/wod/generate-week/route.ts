@@ -210,8 +210,8 @@ KB Swing: مبتدئ 16كجم | متوسط 24كجم | متقدم 28كجم | نخ
         }
       ],
       "cooldown": [
-        { "exerciseId": "run",    "reps": "", "weight": "", "distance": "400م", "notes": "مشي هادئ — خفّف معدل القلب" },
-        { "exerciseId": "push-up","reps": "", "weight": "", "time": "45 ث",     "notes": "بطيء — تمطيط الصدر والكتف" }
+        { "exerciseId": "run",    "reps": "", "weight": "", "distance": "400م", "notes": "مشي هادئ 2 دقيقة — خفّف معدل القلب تدريجياً" },
+        { "exerciseId": "sit-up", "reps": "", "weight": "", "time": "60 ث",     "notes": "تمطيط Hip Flexor — لأن يوم القرفصاء يستنزف الـ quad والـ hip flexor — أمسك 60 ث لكل جانب" }
       ]
     }
   ],
@@ -226,7 +226,7 @@ KB Swing: مبتدئ 16كجم | متوسط 24كجم | متقدم 28كجم | نخ
 - weight في levels: الوزن المحدد لهذا المستوى فقط (مثال: "75كجم") — وليس نص طويل
 - cue في levels: نصيحة تقنية قصيرة للمستوى
 - الإحماء والتهدئة: بدون levels
-- التهدئة: اختر تمارين تمطيط تناسب عضلات اليوم — لا تستخدم sit-up دائماً
+- التهدئة: 2-3 إطالات ثابتة مرتبطة بعضلات strength وmetcon هذا اليوم تحديداً — squat يوم → quad + hip flexor + glute، deadlift يوم → hamstring + low back، pull-up يوم → lat + bicep + shoulder، press يوم → chest + front delt + tricep — اذكر في notes سبب اختيار الإطالة
 - أيام الراحة: isRest: true وكل المصفوفات فارغة []
 - لا تكرر نمط الميتكون في يومين متتاليين (AMRAP/للوقت/EMOM يتناوبان)
 - الإحماء: 3-4 تمارين — الأول cardio ثم activation للعضلات المستهدفة
