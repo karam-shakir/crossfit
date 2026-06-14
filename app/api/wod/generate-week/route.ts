@@ -171,26 +171,45 @@ KB Swing: مبتدئ 16كجم | متوسط 24كجم | متقدم 28كجم | نخ
         {
           "exerciseId": "back-squat",
           "reps": "5×4",
-          "weight": "مبتدئ: 50كجم | متوسط: 75كجم | متقدم: 95كجم | نخبة: 115كجم",
-          "notes": "عمق كامل — ركبة فوق القدم — راحة 2-3 دقيقة"
+          "weight": "",
+          "notes": "عمق كامل — ركبة فوق القدم — راحة 2-3 دقيقة",
+          "levels": {
+            "beginner":     {"weight": "50كجم",  "reps": "5×4", "cue": "عمق موازٍ — ظهر مستقيم"},
+            "intermediate": {"weight": "75كجم",  "reps": "5×4", "cue": "عمق كامل — ركبة وفق القدم"},
+            "advanced":     {"weight": "95كجم",  "reps": "5×4", "cue": "سرعة في الصعود — حزام"},
+            "elite":        {"weight": "115كجم", "reps": "5×4", "cue": "Pause 2ث في الأسفل"}
+          }
         }
       ],
       "metcon": [
         {
           "exerciseId": "thruster",
           "reps": "21-15-9",
-          "weight": "مبتدئ: 30كجم | متوسط: 43كجم | متقدم: 55كجم | نخبة: 65كجم",
-          "notes": "قسّم: 12-9 ثم 8-7 ثم لا توقف في الـ 9"
+          "weight": "",
+          "notes": "قسّم: 12-9 ثم 8-7 ثم لا توقف في الـ 9",
+          "levels": {
+            "beginner":     {"weight": "30كجم", "reps": "21-15-9", "cue": "توقف عند الحاجة — لا تصل للفشل"},
+            "intermediate": {"weight": "43كجم", "reps": "21-15-9", "cue": "قسّم بذكاء — إيقاع ثابت"},
+            "advanced":     {"weight": "55كجم", "reps": "21-15-9", "cue": "Unbroken الـ 9 الأخيرة"},
+            "elite":        {"weight": "65كجم", "reps": "21-15-9", "cue": "Unbroken كامل — سرعة"}
+          }
         },
         {
           "exerciseId": "pull-up",
           "reps": "21-15-9",
           "weight": "",
-          "notes": "مبتدئ: Band مساعدة | متوسط: Kipping | متقدم: Strict | نخبة: C2B"
+          "notes": "مجموعات صغيرة — لا تصل للفشل الكامل",
+          "levels": {
+            "beginner":     {"weight": "", "reps": "21-15-9", "cue": "Banded Pull-up أو Ring Row"},
+            "intermediate": {"weight": "", "reps": "21-15-9", "cue": "Kipping مسموح"},
+            "advanced":     {"weight": "", "reps": "21-15-9", "cue": "Butterfly للسرعة"},
+            "elite":        {"weight": "", "reps": "21-15-9", "cue": "Chest-to-Bar"}
+          }
         }
       ],
       "cooldown": [
-        { "exerciseId": "sit-up", "reps": "", "weight": "", "notes": "تمطيط الوتر الرباعي 60 ث + ظهر سفلي" }
+        { "exerciseId": "run",    "reps": "", "weight": "", "distance": "400م", "notes": "مشي هادئ — خفّف معدل القلب" },
+        { "exerciseId": "push-up","reps": "", "weight": "", "time": "45 ث",     "notes": "بطيء — تمطيط الصدر والكتف" }
       ]
     }
   ],
@@ -201,11 +220,14 @@ KB Swing: مبتدئ 16كجم | متوسط 24كجم | متقدم 28كجم | نخ
 
 **قواعد صارمة:**
 - استخدم exerciseId من القائمة فقط — لا تخترع IDs
-- في كل تمرين قوة: الأوزان بصيغة "مبتدئ: Xكجم | متوسط: Yكجم | متقدم: Zكجم | نخبة: Wكجم"
-- في الميتكون: scaling لكل تمرين في notes بنفس الصيغة
+- كل تمرين في strength وmetcon يجب أن يحتوي على حقل "levels" بالمستويات الأربعة (beginner/intermediate/advanced/elite) مع weight وreps وcue
+- weight في levels: الوزن المحدد لهذا المستوى فقط (مثال: "75كجم") — وليس نص طويل
+- cue في levels: نصيحة تقنية قصيرة للمستوى
+- الإحماء والتهدئة: بدون levels
+- التهدئة: اختر تمارين تمطيط تناسب عضلات اليوم — لا تستخدم sit-up دائماً
 - أيام الراحة: isRest: true وكل المصفوفات فارغة []
 - لا تكرر نمط الميتكون في يومين متتاليين (AMRAP/للوقت/EMOM يتناوبان)
-- الإحماء: 3-4 تمارين — الأول cardio ثم activation للعضلات المستهدفة في القوة
+- الإحماء: 3-4 تمارين — الأول cardio ثم activation للعضلات المستهدفة
 - كل يوم نشاط: strength لا يقل عن تمرينَين compound
 
 أرجع JSON فقط، بدون أي نص قبله أو بعده.`;

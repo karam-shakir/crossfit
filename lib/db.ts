@@ -25,6 +25,12 @@ export interface Exercise {
   muscles: string;
 }
 
+export interface WodLevelSpec {
+  weight?: string;
+  reps?: string;
+  cue?: string;
+}
+
 export interface WodExercise {
   exerciseId: string;
   reps?: string;
@@ -32,12 +38,14 @@ export interface WodExercise {
   distance?: string;
   time?: string;
   notes?: string;
+  levels?: Partial<Record<'beginner'|'intermediate'|'advanced'|'elite', WodLevelSpec>>;
 }
 
 export interface Wod {
   id: string;
   date: string;
   title: string;
+  titleEn?: string;
   type: string;
   duration?: number;
   rounds?: number;
@@ -47,6 +55,8 @@ export interface Wod {
   cooldown: WodExercise[];
   notes?: string;
   aiTheme?: string;
+  targetTimes?: Partial<Record<'beginner'|'intermediate'|'advanced'|'elite', string>>;
+  isCalisthenics?: boolean;
   createdBy: string;
 }
 
