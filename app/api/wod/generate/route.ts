@@ -223,6 +223,7 @@ ${recentContext}
 أرجع JSON بهذا التنسيق بدون أي نص خارجه:
 {
   "title": "عنوان التمرين اليومي بالعربية — احترافي ومُلهم",
+  "titleEn": "Daily workout title in English — professional and inspiring",
   "type": "للوقت | AMRAP | قوة | تدريب",
   "duration": 20,
   "rounds": 5,
@@ -349,7 +350,8 @@ ${recentContext}
 
     const wodData = {
       date: date || new Date().toISOString().split('T')[0],
-      title: generated.title || (wodMode === 'calisthenics' ? 'تمرين Calisthenics' : 'تمرين يومي'),
+      title:   generated.title   || (wodMode === 'calisthenics' ? 'تمرين Calisthenics' : 'تمرين يومي'),
+      titleEn: generated.titleEn || '',
       type: generated.type || 'للوقت',
       isCalisthenics: wodMode === 'calisthenics',
       duration: generated.duration ?? 20,

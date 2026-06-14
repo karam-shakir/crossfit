@@ -42,21 +42,21 @@ const LEVEL_LABELS: Record<LevelKey, string> = {
   beginner: 'مبتدئ', intermediate: 'متوسط', advanced: 'متقدم', elite: 'نخبة',
 };
 
-// Detect if weight string contains multiple levels (old WOD format)
-function isMultiLevelWeight(w: string): boolean {
-  return w.includes('|') || w.includes('مبتدئ') || w.includes('متوسط');
+// Detect if a string contains multiple levels (old WOD format)
+function isMultiLevel(s: string): boolean {
+  return (s.includes('|') || s.includes('مبتدئ')) && s.includes('متوسط');
 }
 
-// Parse "مبتدئ: 40كجم | متوسط: 60كجم | متقدم: 80كجم | نخبة: 95كجم" into object
-function parseMultiLevelWeight(w: string): Partial<Record<LevelKey, string>> {
+// Parse "مبتدئ: knee raises | متوسط: T2B | متقدم: T2B متواصل | نخبة: T2B دون توقف" into object
+function parseMultiLevel(s: string): Partial<Record<LevelKey, string>> {
   const result: Partial<Record<LevelKey, string>> = {};
-  const pairs = w.split('|');
+  const pairs = s.split('|');
   for (const p of pairs) {
-    const cleaned = p.trim();
-    if (cleaned.includes('مبتدئ'))     result.beginner     = cleaned.replace(/.*مبتدئ\s*[:：]?\s*/, '').trim();
-    if (cleaned.includes('متوسط'))     result.intermediate = cleaned.replace(/.*متوسط\s*[:：]?\s*/, '').trim();
-    if (cleaned.includes('متقدم'))     result.advanced     = cleaned.replace(/.*متقدم\s*[:：]?\s*/, '').trim();
-    if (cleaned.includes('نخبة'))      result.elite        = cleaned.replace(/.*نخبة\s*[:：]?\s*/, '').trim();
+    const c = p.trim();
+    if (c.includes('مبتدئ'))  result.beginner     = c.replace(/.*مبتدئ\s*[:：]?\s*/, '').trim();
+    if (c.includes('متوسط'))  result.intermediate = c.replace(/.*متوسط\s*[:：]?\s*/, '').trim();
+    if (c.includes('متقدم'))  result.advanced     = c.replace(/.*متقدم\s*[:：]?\s*/, '').trim();
+    if (c.includes('نخبة'))   result.elite        = c.replace(/.*نخبة\s*[:：]?\s*/, '').trim();
   }
   return result;
 }
@@ -78,20 +78,26 @@ export default function ExerciseCard({
   // Structured levels (new WODs)
   const hasStructuredLevels = !!item.levels && Object.keys(item.levels).length > 0;
 
-  // Legacy multi-level weight string (old WODs)
-  const weightIsMultiLevel = item.weight ? isMultiLevelWeight(item.weight) : false;
-  const parsedWeights = weightIsMultiLevel && item.weight ? parseMultiLevelWeight(item.weight) : null;
+  // Legacy multi-level strings (old WODs) — check both weight and notes
+  const weightIsMultiLevel = item.weight ? isMultiLevel(item.weight) : false;
+  const notesIsMultiLevel  = item.notes  ? isMultiLevel(item.notes)  : false;
+  const parsedWeights = weightIsMultiLevel && item.weight ? parseMultiLevel(item.weight) : null;
+  const parsedNotes   = notesIsMultiLevel  && item.notes  ? parseMultiLevel(item.notes)  : null;
+  const parsedLegacy  = parsedWeights || parsedNotes || null;
 
-  const hasAnyLevels = hasStructuredLevels || !!parsedWeights;
+  const hasAnyLevels = hasStructuredLevels || !!parsedLegacy;
 
   // What level data to show
   const displayLevel = selectedLevel ?? (showLevels ? activeLevel : null);
 
-  // Get level data from structured levels OR parsed old weight
+  // Get level data from structured levels OR parsed legacy strings
   function getLevelData(level: LevelKey): { weight?: string; reps?: string; cue?: string } | null {
     if (hasStructuredLevels && item.levels?.[level]) return item.levels[level]!;
-    if (parsedWeights && parsedWeights[level]) {
-      return { weight: parsedWeights[level], reps: item.reps || undefined };
+    if (parsedLegacy?.[level]) {
+      // weight field → show as weight; notes field → show as cue
+      return parsedWeights
+        ? { weight: parsedLegacy[level], reps: item.reps || undefined }
+        : { cue: parsedLegacy[level], reps: item.reps || undefined };
     }
     return null;
   }
@@ -207,8 +213,8 @@ export default function ExerciseCard({
         </div>
       )}
 
-      {/* ── Notes (default, no level selected) ── */}
-      {item.notes && !levelData && (
+      {/* ── Notes (default, no level selected, not a multi-level string) ── */}
+      {item.notes && !levelData && !notesIsMultiLevel && (
         <div className="px-3 pb-3">
           <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2 text-sm">
             💡 {item.notes}

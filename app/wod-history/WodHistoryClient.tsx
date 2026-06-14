@@ -54,7 +54,12 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
   const [copied, setCopied] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState<LevelKey | undefined>(undefined);
   const today = new Date().toISOString().split('T')[0];
-  const hasLevels = [...(wod.strength || []), ...(wod.metcon || [])].some((e: any) => e.levels);
+  function hasMultiLevel(s: string) { return (s.includes('|') || s.includes('مبتدئ')) && s.includes('متوسط'); }
+  const hasLevels = [...(wod.strength || []), ...(wod.metcon || [])].some((e: any) =>
+    e.levels ||
+    (e.weight && hasMultiLevel(e.weight)) ||
+    (e.notes  && hasMultiLevel(e.notes))
+  );
   const isFuture = wod.date > today;
   const isToday  = wod.date === today;
   const colors   = SPORT_COLORS.crossfit;
@@ -114,7 +119,7 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
             <span className="text-gray-600">{isOpen ? '▲' : '▼'}</span>
           </div>
           <div className="text-right min-w-0">
-            <div className="font-semibold text-white text-sm truncate">{wod.title || 'تمرين'}</div>
+            <div className="font-semibold text-white text-sm truncate">{wod.titleEn || wod.title || 'تمرين'}</div>
             <div className="text-xs text-gray-500 mt-0.5">{formatDate(wod.date)}</div>
           </div>
         </div>

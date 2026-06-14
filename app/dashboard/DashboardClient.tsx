@@ -892,7 +892,7 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                     {wod.rounds && <span className="text-xs text-gray-400">🔄 {wod.rounds} جولات</span>}
                   </div>
                 </div>
-                <div className="text-white font-semibold">{wod.title}</div>
+                <div className="text-white font-semibold">{wod.titleEn || wod.title}</div>
                 {wod.notes && (
                   <div className="mt-2 text-xs text-yellow-400 bg-yellow-900/20 rounded-lg px-3 py-2">💡 {wod.notes}</div>
                 )}
@@ -922,7 +922,11 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
               )}
 
               {/* Level selector */}
-              {wod && [...(wod.strength||[]),...(wod.metcon||[])].some((e:any)=>e.levels) && (
+              {wod && [...(wod.strength||[]),...(wod.metcon||[])].some((e:any)=>
+                e.levels ||
+                (e.weight && (e.weight.includes('|')||e.weight.includes('مبتدئ')) && e.weight.includes('متوسط')) ||
+                (e.notes  && (e.notes.includes('|') ||e.notes.includes('مبتدئ'))  && e.notes.includes('متوسط'))
+              ) && (
                 <div className="bg-slate-100 rounded-2xl p-3 border border-slate-200">
                   <div className="text-sm font-bold text-slate-600 mb-2 text-right">⚡ اختر مستواك</div>
                   <div className="flex gap-2">
@@ -974,7 +978,7 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                   {/* العنوان */}
                   <div className="bg-gray-900 rounded-2xl border border-blue-800/40 overflow-hidden">
                     <div className="bg-blue-900/20 px-4 py-3 border-b border-blue-800/30">
-                      <div className="font-bold text-white text-base">{wod.title}</div>
+                      <div className="font-bold text-white text-base">{wod.titleEn || wod.title}</div>
                       <div className="flex flex-wrap gap-2 mt-1">
                         {wod.type     && <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full">{wod.type}</span>}
                         {wod.duration && <span className="text-xs text-gray-400">⏱ {wod.duration} min</span>}
