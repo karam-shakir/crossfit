@@ -11,6 +11,13 @@ interface Exercise {
   category: string;
 }
 
+interface LevelSpec {
+  weight?: string;
+  reps?: string;
+  cue?: string;
+  scaling?: string;
+}
+
 interface WodExercise {
   exerciseId: string;
   reps?: string;
@@ -19,11 +26,27 @@ interface WodExercise {
   time?: string;
   notes?: string;
   exercise?: Exercise;
+  levels?: {
+    beginner?: LevelSpec;
+    intermediate?: LevelSpec;
+    advanced?: LevelSpec;
+    elite?: LevelSpec;
+  };
 }
+
+const LEVEL_TABS = [
+  { key: 'beginner',     label: 'مبتدئ',  color: 'bg-green-700  text-white', activeRing: 'ring-green-500'  },
+  { key: 'intermediate', label: 'متوسط',  color: 'bg-blue-700   text-white', activeRing: 'ring-blue-500'   },
+  { key: 'advanced',     label: 'متقدم',  color: 'bg-orange-600 text-white', activeRing: 'ring-orange-400' },
+  { key: 'elite',        label: 'نخبة',   color: 'bg-red-700    text-white', activeRing: 'ring-red-400'    },
+] as const;
 
 export default function ExerciseCard({ item, index }: { item: WodExercise; index: number }) {
   const [showGif, setShowGif] = useState(false);
+  const [showLevels, setShowLevels] = useState(false);
+  const [activeLevel, setActiveLevel] = useState<'beginner' | 'intermediate' | 'advanced' | 'elite'>('intermediate');
   const ex = item.exercise;
+  const hasLevels = !!item.levels && Object.keys(item.levels).length > 0;
 
   return (
     <div className="bg-gray-800 rounded-xl overflow-hidden border border-gray-700">
@@ -49,6 +72,17 @@ export default function ExerciseCard({ item, index }: { item: WodExercise; index
             {item.distance && `${item.distance}`}
             {item.time && `${item.time}`}
           </div>
+
+          {/* Levels toggle */}
+          {hasLevels && (
+            <button
+              onClick={() => setShowLevels(!showLevels)}
+              className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-colors ${showLevels ? 'bg-purple-600 text-white' : 'bg-gray-700 text-purple-400 hover:bg-purple-800'}`}
+              title="عرض المستويات"
+            >
+              {showLevels ? '×' : '⚡'}
+            </button>
+          )}
 
           {/* GIF toggle */}
           {ex && (
@@ -110,6 +144,54 @@ export default function ExerciseCard({ item, index }: { item: WodExercise; index
       {item.notes && (
         <div className="px-3 pb-3 text-xs text-yellow-400 bg-yellow-900/20 mx-3 mb-3 rounded-lg py-2">
           💡 {item.notes}
+        </div>
+      )}
+
+      {/* Levels section */}
+      {hasLevels && showLevels && (
+        <div className="border-t border-gray-700 px-3 py-3">
+          {/* Level tabs */}
+          <div className="flex gap-1.5 mb-3">
+            {LEVEL_TABS.map(t => {
+              const levelData = item.levels?.[t.key];
+              if (!levelData) return null;
+              return (
+                <button
+                  key={t.key}
+                  onClick={() => setActiveLevel(t.key)}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${t.color} ${activeLevel === t.key ? `ring-2 ${t.activeRing} opacity-100` : 'opacity-50 hover:opacity-75'}`}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Active level details */}
+          {item.levels?.[activeLevel] && (() => {
+            const lv = item.levels![activeLevel]!;
+            return (
+              <div className="bg-gray-900 rounded-xl p-3 space-y-2 text-right">
+                <div className="flex gap-2 flex-wrap justify-end">
+                  {lv.weight && (
+                    <span className="bg-gray-800 text-orange-300 text-xs px-2.5 py-1 rounded-lg font-mono">
+                      ⚖️ {lv.weight}
+                    </span>
+                  )}
+                  {lv.reps && (
+                    <span className="bg-gray-800 text-blue-300 text-xs px-2.5 py-1 rounded-lg font-mono">
+                      🔁 {lv.reps}
+                    </span>
+                  )}
+                </div>
+                {(lv.cue || lv.scaling) && (
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    💬 {lv.cue || lv.scaling}
+                  </p>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>

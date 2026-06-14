@@ -19,13 +19,13 @@ function analyzeWeekIntensity(sessions: any[]) {
   });
 
   // الأحداث المستخدمة مؤخراً
-  const eventsUsed = [...new Set(sessionLog.map(s => s.event).filter(e => e !== 'غير محدد'))];
+  const eventsUsed = Array.from(new Set(sessionLog.map(s => s.event).filter(e => e !== 'غير محدد')));
   // الأحداث الغائبة (فرصة لاستهدافها)
   const allEvents = ['biathlon', 'long-cycle', 'snatch', 'strength', 'conditioning'];
   const missingEvents = allEvents.filter(e => !eventsUsed.includes(e));
   // قوة القوة: هل كانت الجلسات السابقة تحتوي قوة وظيفية؟
   const sessionsWithStrength = sessionLog.filter(s => s.strengthEx.length > 0).length;
-  const recentStrength = [...new Set(sessionLog.flatMap(s => s.strengthEx))];
+  const recentStrength = Array.from(new Set(sessionLog.flatMap(s => s.strengthEx)));
 
   // حجم التدريب الكلي هذا الأسبوع
   const totalSets = sessionLog.reduce((acc, s) => acc + s.sets, 0);

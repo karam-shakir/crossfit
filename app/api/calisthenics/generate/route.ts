@@ -266,7 +266,7 @@ ${exerciseList}
 - الميتكون لا يكرر نفس عضلات القوة (مثال: إذا القوة pull-up، الميتكون push-up)
 - weight فارغ في warmup و cooldown
 - الوزن الإضافي للمتقدمين والنخبة حزام أو صدرية — لا تخترع أدوات
-- تجنب هذه الأنماط الأخيرة: ${weekAnalysis.patternsUsed.join(', ') || 'لا شيء'}
+- تجنب هذه الأنماط الأخيرة: ${weekAnalysis.overtrainedPatterns.join(', ') || 'لا شيء'}
 
 أرجع JSON فقط، بدون أي نص قبله أو بعده.`;
 

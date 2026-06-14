@@ -18,8 +18,8 @@ function analyzeWeekIntensity(sessions: any[]) {
   });
 
   // المحطات التي تدربنا عليها مؤخراً (الأخيرتان بوزن أكبر)
-  const recentStations = [...new Set(sessionLog.flatMap(s => s.stations))];
-  const recentStrength = [...new Set(sessionLog.flatMap(s => s.strengthEx))];
+  const recentStations = Array.from(new Set(sessionLog.flatMap(s => s.stations)));
+  const recentStrength = Array.from(new Set(sessionLog.flatMap(s => s.strengthEx)));
 
   // قياس نوع الحمل: كم جلسة simulation (ثقيلة) مقابل strength أو running
   const heavySessions = sessionLog.filter(s => s.type === 'race-sim' || s.type === 'simulation').length;
@@ -213,7 +213,7 @@ ${date ? `التاريخ: ${date}` : ''}
 **قواعد صارمة:**
 - كل محطة وكل تمرين في strengthBlock يجب أن يحتوي على levels بـ 4 مستويات
 - strengthBlock يأتي قبل stations دائماً
-- لا تكرر هذه الحركات التي ظهرت مؤخراً: ${weekAnalysis.usedMovements.slice(0,6).join(', ') || 'لا شيء'}
+- لا تكرر هذه الحركات التي ظهرت مؤخراً: ${weekAnalysis.recentStrength.slice(0,6).join(', ') || 'لا شيء'}
 - الأوزان والمسافات أرقام حقيقية محددة، ليس "حسب مستواك"
 - الوقت الإجمالي واقعي ومحسوب بدقة
 
