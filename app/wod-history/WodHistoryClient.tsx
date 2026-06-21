@@ -72,10 +72,11 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
     if (wod.aiTheme) lines.push(`🤖 ${wod.aiTheme}`);
     if (wod.notes)   lines.push(`📝 ${wod.notes}`);
     const sections = [
-      { k: 'warmup',   icon: '🔆', label: 'الإحماء' },
-      { k: 'strength', icon: '🏋️', label: 'القوة' },
-      { k: 'metcon',   icon: '🔥', label: 'الـ WOD' },
-      { k: 'cooldown', icon: '🧘', label: 'التهدئة' },
+      { k: 'warmup',    icon: '🔆', label: 'الإحماء' },
+      { k: 'strength',  icon: '🏋️', label: 'القوة' },
+      { k: 'metcon',    icon: '🔥', label: 'الـ WOD' },
+      { k: 'accessory', icon: '💪', label: 'الأكسسوار' },
+      { k: 'cooldown',  icon: '🧘', label: 'التهدئة' },
     ];
     for (const sec of sections) {
       const items = (wod[sec.k] || []).filter((e: any) => e.exerciseId);
@@ -189,17 +190,18 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
             </div>
           )}
 
-          {(['warmup','strength','metcon','cooldown'] as const).map(sec => {
-            const items = wod[sec]?.filter((e: any) => e.exerciseId);
+          {(['warmup','strength','metcon','accessory','cooldown'] as const).map(sec => {
+            const items = (wod as any)[sec]?.filter((e: any) => e.exerciseId);
             if (!items?.length) return null;
             const secMeta: Record<string, {label:string;icon:string;color:string;bg:string}> = {
-              warmup:   {label:'الإحماء',icon:'🔆',color:'text-amber-700',  bg:'bg-amber-50 border-amber-200'},
-              strength: {label:'القوة',  icon:'🏋️',color:'text-blue-700',   bg:'bg-blue-50 border-blue-200'},
-              metcon:   {label:'الـ WOD',icon:'🔥',color:'text-orange-700', bg:'bg-orange-50 border-orange-200'},
-              cooldown: {label:'التهدئة',icon:'🧘',color:'text-teal-700',   bg:'bg-teal-50 border-teal-200'},
+              warmup:    {label:'الإحماء',    icon:'🔆',color:'text-amber-700',  bg:'bg-amber-50 border-amber-200'},
+              strength:  {label:'القوة',      icon:'🏋️',color:'text-blue-700',   bg:'bg-blue-50 border-blue-200'},
+              metcon:    {label:'الـ WOD',    icon:'🔥',color:'text-orange-700', bg:'bg-orange-50 border-orange-200'},
+              accessory: {label:'الأكسسوار', icon:'💪',color:'text-purple-700', bg:'bg-purple-50 border-purple-200'},
+              cooldown:  {label:'التهدئة',    icon:'🧘',color:'text-teal-700',   bg:'bg-teal-50 border-teal-200'},
             };
             const {label,icon,color,bg} = secMeta[sec];
-            const showLevel = (sec === 'strength' || sec === 'metcon') ? selectedLevel : undefined;
+            const showLevel = (sec === 'strength' || sec === 'metcon' || sec === 'accessory') ? selectedLevel : undefined;
             return (
               <div key={sec}>
                 <div className={`flex items-center gap-2 rounded-xl px-3 py-2 mb-2 border ${bg}`}>

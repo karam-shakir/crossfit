@@ -52,6 +52,7 @@ export interface Wod {
   warmup: WodExercise[];
   strength: WodExercise[];
   metcon: WodExercise[];
+  accessory?: WodExercise[];
   cooldown: WodExercise[];
   notes?: string;
   aiTheme?: string;

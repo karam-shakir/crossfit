@@ -712,10 +712,11 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
   }
 
   const sections = [
-    { key: 'warmup',   label: 'الإحماء 🔆', labelEn: 'Warm-Up',  items: wod?.warmup   || [] },
-    { key: 'strength', label: 'القوة 🏋️',   labelEn: 'Strength', items: wod?.strength || [] },
-    { key: 'metcon',   label: 'الـ WOD 🔥', labelEn: 'WOD',      items: wod?.metcon   || [] },
-    { key: 'cooldown', label: 'التهدئة 🧘', labelEn: 'Cool-Down',items: wod?.cooldown || [] },
+    { key: 'warmup',    label: 'الإحماء 🔆',    labelEn: 'Warm-Up',   items: wod?.warmup    || [] },
+    { key: 'strength',  label: 'القوة 🏋️',      labelEn: 'Strength',  items: wod?.strength  || [] },
+    { key: 'metcon',    label: 'الـ WOD 🔥',    labelEn: 'WOD',       items: wod?.metcon    || [] },
+    { key: 'accessory', label: 'الأكسسوار 💪',  labelEn: 'Accessory', items: wod?.accessory || [] },
+    { key: 'cooldown',  label: 'التهدئة 🧘',    labelEn: 'Cool-Down', items: wod?.cooldown  || [] },
   ].filter(s => s.items.length > 0);
 
   function buildEnglishText() {
@@ -731,7 +732,7 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
     if (wod.rounds)   lines.push(`🔄 Rounds: ${wod.rounds}`);
     if (wod.aiTheme)  lines.push(`\n🔗 ${wod.aiTheme}`);
 
-    const ICONS: Record<string, string> = { warmup: '🔆', strength: '🏋️', metcon: '🔥', cooldown: '🧘' };
+    const ICONS: Record<string, string> = { warmup: '🔆', strength: '🏋️', metcon: '🔥', accessory: '💪', cooldown: '🧘' };
     for (const sec of sections) {
       lines.push(`\n${ICONS[sec.key] || '▸'} ${sec.labelEn.toUpperCase()}:`);
       sec.items.forEach((ex: any, i: number) => {
@@ -994,10 +995,11 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                     <div className="p-4 space-y-5">
                       {sections.map(sec => {
                         const SECTION_STYLE: Record<string, { icon: string; color: string; bg: string }> = {
-                          warmup:   { icon: '🔆', color: 'text-yellow-400', bg: 'bg-yellow-900/10' },
-                          strength: { icon: '🏋️', color: 'text-blue-400',   bg: 'bg-blue-900/10'   },
-                          metcon:   { icon: '🔥', color: 'text-orange-400', bg: 'bg-orange-900/10' },
-                          cooldown: { icon: '🧘', color: 'text-teal-400',   bg: 'bg-teal-900/10'   },
+                          warmup:    { icon: '🔆', color: 'text-yellow-400', bg: 'bg-yellow-900/10'  },
+                          strength:  { icon: '🏋️', color: 'text-blue-400',   bg: 'bg-blue-900/10'    },
+                          metcon:    { icon: '🔥', color: 'text-orange-400', bg: 'bg-orange-900/10'  },
+                          accessory: { icon: '💪', color: 'text-purple-400', bg: 'bg-purple-900/10'  },
+                          cooldown:  { icon: '🧘', color: 'text-teal-400',   bg: 'bg-teal-900/10'    },
                         };
                         const style = SECTION_STYLE[sec.key] || { icon: '▸', color: 'text-gray-400', bg: 'bg-gray-800/30' };
                         return (

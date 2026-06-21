@@ -300,6 +300,22 @@ ${recentContext}
       }
     }
   ],
+  "accessory": [
+    {
+      "exerciseId": "push-up",
+      "reps": "3×15",
+      "weight": "",
+      "distance": "",
+      "time": "",
+      "notes": "تمرين مكمّل للصدر والترايسبس — لأن يوم القرفصاء والعقلة لم يستهدف الصدر والكتف الأمامي",
+      "levels": {
+        "beginner":     {"weight": "", "reps": "3×10", "cue": "ركبتين على الأرض مسموح"},
+        "intermediate": {"weight": "", "reps": "3×15", "cue": "صدر للأرض في كل تكرار"},
+        "advanced":     {"weight": "", "reps": "3×20", "cue": "بطيء في النزول — 3 ث"},
+        "elite":        {"weight": "", "reps": "3×25", "cue": "Ring Push-up للصعوبة"}
+      }
+    }
+  ],
   "cooldown": [
     {"exerciseId": "run", "reps": "", "weight": "", "distance": "400م", "time": "", "notes": "مشي هادئ 2 دقيقة — خفّف معدل القلب تدريجياً"},
     {"exerciseId": "sit-up", "reps": "", "weight": "", "distance": "", "time": "60 ث", "notes": "تمطيط Hip Flexor — ركبة أمامية، ورك للأمام، أمسك 60 ث لكل جانب — لأن الـ WOD استنزف الجذع والورك"}
@@ -315,6 +331,7 @@ ${recentContext}
 - القوة: 2-3 تمارين barbell compound
 - الميتكون: 3-5 تمارين مكثفة 7-20 دقيقة، تجمع barbell مع gymnastics
 - targetTimes: أوقات واقعية لإنهاء الميتكون لكل مستوى
+- الأكسسوار (accessory): 2-3 تمارين للعضلات التي لم تأخذ حقها من strength وmetcon هذا اليوم — إذا كان اليوم ساق (squat/deadlift) فالأكسسوار للصدر والكتف والترايسبس، وإذا كان يوم ظهر وسحب (pull-up/row) فالأكسسوار للصدر والترايسبس والجذع، وإذا كان يوم ضغط (press/push) فالأكسسوار للظهر والبايسبس والجذع — كل تمرين أكسسوار يجب أن يحتوي على levels بـ 4 مستويات — اذكر في notes لماذا هذه العضلة مُهملة اليوم
 - التهدئة: 2-3 إطالات ثابتة (static stretches) مرتبطة مباشرة بعضلات strength وmetcon هذا اليوم — إذا كان اليوم squat فالإطالة للـ quad وhip flexor وglute، وإذا كان pull-up فالإطالة للـ lat وbicep وshoulder، وإذا كان deadlift فالإطالة للـ hamstring وlow back — اذكر في notes لماذا هذه الإطالة مناسبة لجلسة اليوم
 
 أرجع JSON فقط، بدون أي كلام قبله أو بعده.`;
@@ -364,6 +381,7 @@ ${recentContext}
       warmup: validateSection(generated.warmup),
       strength: validateSection(generated.strength),
       metcon: validateSection(generated.metcon),
+      accessory: validateSection(generated.accessory || []),
       cooldown: validateSection(generated.cooldown),
     };
 
