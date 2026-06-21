@@ -157,6 +157,16 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
     setWodLoading(false);
   }
 
+  async function deleteWod() {
+    if (!wod.id) return;
+    if (!confirm(`حذف تمرين ${wod.date}؟`)) return;
+    setWodLoading(true);
+    await fetch(`/api/wod?id=${wod.id}`, { method: 'DELETE' });
+    setWod(emptyWod(wod.date));
+    setAiTheme('');
+    setWodLoading(false);
+  }
+
   function addExercise(section: string) {
     setWod((p: any) => ({ ...p, [section]: [...p[section], emptyExercise()] }));
   }
@@ -425,6 +435,13 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                   className={`px-6 py-2 rounded-xl text-sm font-semibold transition-colors ${wodSaved ? 'bg-green-600 text-white' : 'bg-orange-500 hover:bg-orange-400 text-white disabled:bg-gray-700'}`}>
                   {wodSaved ? '✅ تم الحفظ' : wodLoading ? '...' : 'حفظ WOD'}
                 </button>
+                {wod.id && (
+                  <button onClick={deleteWod} disabled={wodLoading}
+                    className="px-3 py-2 rounded-xl text-sm font-semibold bg-red-900/60 hover:bg-red-700 text-red-300 hover:text-white transition-colors border border-red-800/50"
+                    title="حذف هذا التمرين">
+                    🗑
+                  </button>
+                )}
               </div>
 
               {/* AI Generation Button */}
