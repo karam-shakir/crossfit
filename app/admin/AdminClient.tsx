@@ -873,10 +873,11 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                       const isRest = wod.isRest || wod.type === 'راحة' || wod.type === 'راحة نشطة';
                       const isCalis = wod.isCalisthenics === true;
                       const SECTION_LABELS: Record<string, { label: string; icon: string; color: string }> = {
-                        warmup:   { label: 'الإحماء',  icon: '🔆', color: 'text-yellow-400' },
-                        strength: { label: 'القوة',    icon: '🏋️', color: 'text-blue-400' },
-                        metcon:   { label: 'الـ WOD',  icon: '🔥', color: 'text-orange-400' },
-                        cooldown: { label: 'التهدئة',  icon: '🧘', color: 'text-teal-400' },
+                        warmup:    { label: 'الإحماء',    icon: '🔆', color: 'text-yellow-400' },
+                        strength:  { label: 'القوة',      icon: '🏋️', color: 'text-blue-400' },
+                        metcon:    { label: 'الـ WOD',    icon: '🔥', color: 'text-orange-400' },
+                        accessory: { label: 'الأكسسوار', icon: '💪', color: 'text-purple-400' },
+                        cooldown:  { label: 'التهدئة',    icon: '🧘', color: 'text-teal-400' },
                       };
                       return (
                         <div key={i} className={`rounded-2xl border overflow-hidden ${
@@ -921,8 +922,8 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                           {/* Sections */}
                           {!isRest && (
                             <div className="p-4 space-y-4">
-                              {(['warmup', 'strength', 'metcon', 'cooldown'] as const).map(sec => {
-                                const items = (wod[sec] || []).filter((e: any) => e.exerciseId);
+                              {(['warmup', 'strength', 'metcon', 'accessory', 'cooldown'] as const).map(sec => {
+                                const items = ((wod as any)[sec] || []).filter((e: any) => e.exerciseId);
                                 if (!items.length) return null;
                                 const { label, icon, color } = SECTION_LABELS[sec];
                                 return (

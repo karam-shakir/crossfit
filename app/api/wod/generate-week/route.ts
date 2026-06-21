@@ -250,8 +250,8 @@ KB Swing: مبتدئ 16كجم | متوسط 24كجم | متقدم 28كجم | نخ
 
 أرجع JSON فقط، بدون أي نص قبله أو بعده.`;
 
-  // أيام أكثر = tokens أكثر (~900 لكل يوم نشط)
-  const maxTokens = Math.min(64000, Math.max(16000, days * 1000));
+  // أيام أكثر = tokens أكثر (~900 لكل يوم نشط) — الحد الأقصى للنموذج 32000
+  const maxTokens = Math.min(32000, Math.max(16000, days * 1000));
 
   try {
     const message = await client.messages.create({
