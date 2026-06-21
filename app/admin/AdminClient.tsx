@@ -731,12 +731,29 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                       className="w-full bg-gray-800 border border-indigo-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500" />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-400 mb-1 block">عدد الأيام</label>
-                    <select value={weeklyDays} onChange={e => setWeeklyDays(Number(e.target.value))}
-                      className="w-full bg-gray-800 border border-indigo-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500">
-                      <option value={7}>أسبوع (7 أيام)</option>
-                      <option value={14}>أسبوعان (14 يوم)</option>
-                    </select>
+                    <label className="text-xs text-gray-400 mb-1 block">
+                      عدد الأيام — <span className="text-indigo-300 font-semibold">{weeklyDays} {weeklyDays === 1 ? 'يوم' : weeklyDays <= 10 ? 'أيام' : 'يوماً'}</span>
+                    </label>
+                    <div className="space-y-2">
+                      <input
+                        type="range"
+                        min={1} max={30} step={1}
+                        value={weeklyDays}
+                        onChange={e => setWeeklyDays(Number(e.target.value))}
+                        className="w-full accent-indigo-500 cursor-pointer"
+                      />
+                      <div className="flex justify-between text-[10px] text-gray-600 px-0.5">
+                        <span>1</span><span>7</span><span>14</span><span>21</span><span>30</span>
+                      </div>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {[3,5,7,10,14,21,30].map(n => (
+                          <button key={n} onClick={() => setWeeklyDays(n)}
+                            className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${weeklyDays === n ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-indigo-600 hover:text-indigo-300'}`}>
+                            {n}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
 

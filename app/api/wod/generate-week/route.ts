@@ -107,8 +107,8 @@ export async function POST(req: NextRequest) {
 النادي: مجموعة المطانيخ CrossFit
 الجمهور: رجال ونساء (18-40 سنة)، 4 مستويات
 الفلسفة: تمرين واحد لجميع المستويات — مبتدئ يتعلم، نخبة يتحدى
-الخطة: ${weekMode === 'mixed' ? `أسبوع مختلط CrossFit + ${calisthenicsDays === 2 ? 'يومان' : 'يوم'} Calisthenics` : 'أسبوع CrossFit خالص — بدون Calisthenics أو Hyrox أو Kettlebell'}
-المدة: ${days} أيام من ${startDate}
+الخطة: ${weekMode === 'mixed' ? `${days} أيام مختلطة CrossFit + ${calisthenicsDays === 2 ? 'يومان' : 'يوم'} Calisthenics` : `${days} أيام CrossFit خالص — بدون Calisthenics أو Hyrox أو Kettlebell`}
+المدة: ${days} ${days === 1 ? 'يوم' : 'أيام'} من ${startDate} حتى ${dates[dates.length - 1]?.date || ''}
 المستوى العام: ${difficulty}
 ═══════════════════════════════
 
@@ -127,10 +127,10 @@ ${JSON.stringify(recentWods, null, 2)}
 
 **══ فلسفة توزيع الأسبوع الاحترافية ══**
 
-يوم HEAVY (1-2 مرة/أسبوع): قوة compound ثقيلة (80-90% 1RM) + ميتكون قصير (8-12 دقيقة)
-يوم MEDIUM (2-3 مرة/أسبوع): قوة أوليمبية أو تحمل (65-75%) + ميتكون متوسط (12-18 دقيقة)
-يوم SKILL (مرة/أسبوع): جمناستيكس + تقنية + ميتكون مختلط
-يوم DELOAD/REST: راحة كاملة أو تعافٍ نشط خفيف
+يوم HEAVY   (~${Math.max(1, Math.round(days * 0.2))} مرة): قوة compound ثقيلة (80-90% 1RM) + ميتكون قصير (8-12 دقيقة)
+يوم MEDIUM  (~${Math.max(2, Math.round(days * 0.35))} مرة): قوة أوليمبية أو تحمل (65-75%) + ميتكون متوسط (12-18 دقيقة)
+يوم SKILL   (~${Math.max(1, Math.round(days * 0.15))} مرة): جمناستيكس + تقنية + ميتكون مختلط
+يوم DELOAD/REST (~${Math.max(1, Math.round(days * 0.25))} مرة): راحة كاملة أو تعافٍ نشط خفيف
 
 مبدأ التنوع الأسبوعي:
 - الأيام المتتالية: لا تكرر نفس المجموعة العضلية (ساق/ظهر/كتف)
@@ -250,10 +250,13 @@ KB Swing: مبتدئ 16كجم | متوسط 24كجم | متقدم 28كجم | نخ
 
 أرجع JSON فقط، بدون أي نص قبله أو بعده.`;
 
+  // أيام أكثر = tokens أكثر (~900 لكل يوم نشط)
+  const maxTokens = Math.min(64000, Math.max(16000, days * 1000));
+
   try {
     const message = await client.messages.create({
       model: 'claude-opus-4-8',
-      max_tokens: 16000,
+      max_tokens: maxTokens,
       messages: [{ role: 'user', content: prompt }],
     });
 
