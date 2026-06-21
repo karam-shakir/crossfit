@@ -20,10 +20,11 @@ export async function GET(req: NextRequest) {
     }));
     return NextResponse.json({
       ...wod,
-      warmup: enrich(wod.warmup || []),
-      strength: enrich(wod.strength || []),
-      metcon: enrich(wod.metcon || []),
-      cooldown: enrich(wod.cooldown || []),
+      warmup:    enrich(wod.warmup    || []),
+      strength:  enrich(wod.strength  || []),
+      metcon:    enrich(wod.metcon    || []),
+      accessory: enrich(wod.accessory || []),
+      cooldown:  enrich(wod.cooldown  || []),
     });
   }
 

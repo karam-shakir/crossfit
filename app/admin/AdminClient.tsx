@@ -259,10 +259,11 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
             notes: wod.notes || '',
             aiTheme: wod.aiTheme || '',
             isCalisthenics: wod.isCalisthenics || false,
-            warmup: wod.warmup || [],
-            strength: wod.strength || [],
-            metcon: wod.metcon || [],
-            cooldown: wod.cooldown || [],
+            warmup:    wod.warmup    || [],
+            strength:  wod.strength  || [],
+            metcon:    wod.metcon    || [],
+            accessory: wod.accessory || [],
+            cooldown:  wod.cooldown  || [],
           }),
         });
       }
