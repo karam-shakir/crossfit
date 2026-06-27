@@ -1,8 +1,10 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
 import { todaySA } from '@/lib/timezone';
 import { getWods } from '@/lib/db';
+
+export const maxDuration = 300;
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -96,7 +98,7 @@ export async function POST(req: NextRequest) {
 - تمارين القوة (strength): يجب أن تكون بالبار حصراً (back-squat, deadlift, front-squat, overhead-squat, power-clean, clean-and-jerk, snatch, shoulder-press, push-press, thruster)
 - الميتكون: يجمع تمارين الحديد مع cardio وgymnastics — مسموح بـ pull-up وtoes-to-bar ودبل أندر في الميتكون فقط
 - وزّع الأيام: HEAVY (1-2 مرة) + MEDIUM (2-3 مرة) + SKILL (مرة) + REST (1-2 مرة)
-- يوم SKILL: تقنية أولمبية (snatch, clean) أو جمناستيكس (muscle-up, handstand) — مع ميتكون قصير
+- يوم SKILL: تقنية أولمبية (snatch, clean) أو جمناستكس (muscle-up, handstand) — مع ميتكون قصير
 - لا تكرر نفس التمارين في يومين متتاليين
 - اجعل القوة والميتكون مترابطَين (نفس مجموعة العضلات أو نفس الحركة)
 - أيام الراحة: isRest: true وكل المصفوفات فارغة []`;
@@ -129,7 +131,7 @@ ${JSON.stringify(recentWods, null, 2)}
 
 يوم HEAVY   (~${Math.max(1, Math.round(days * 0.2))} مرة): قوة compound ثقيلة (80-90% 1RM) + ميتكون قصير (8-12 دقيقة)
 يوم MEDIUM  (~${Math.max(2, Math.round(days * 0.35))} مرة): قوة أوليمبية أو تحمل (65-75%) + ميتكون متوسط (12-18 دقيقة)
-يوم SKILL   (~${Math.max(1, Math.round(days * 0.15))} مرة): جمناستيكس + تقنية + ميتكون مختلط
+يوم SKILL   (~${Math.max(1, Math.round(days * 0.15))} مرة): جمناستكس + تقنية + ميتكون مختلط
 يوم DELOAD/REST (~${Math.max(1, Math.round(days * 0.25))} مرة): راحة كاملة أو تعافٍ نشط خفيف
 
 مبدأ التنوع الأسبوعي:
@@ -254,21 +256,34 @@ KB Swing: مبتدئ 16كجم | متوسط 24كجم | متقدم 28كجم | نخ
   const maxTokens = Math.min(32000, Math.max(16000, days * 1000));
 
   try {
-    const message = await client.messages.create({
+    const stream = client.messages.stream({
       model: 'claude-opus-4-8',
       max_tokens: maxTokens,
       messages: [{ role: 'user', content: prompt }],
     });
 
-    let jsonText = '';
-    for (const block of message.content) {
-      if (block.type === 'text') { jsonText = block.text.trim(); break; }
-    }
-    jsonText = jsonText.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
-    jsonText = jsonText.replace(/^```\n?/, '').replace(/\n?```$/, '').trim();
+    const readable = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
+        try {
+          for await (const chunk of stream) {
+            if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+              controller.enqueue(encoder.encode(chunk.delta.text));
+            }
+          }
+          controller.close();
+        } catch (err) {
+          controller.error(err);
+        }
+      },
+    });
 
-    const result = JSON.parse(jsonText);
-    return NextResponse.json(result);
+    return new Response(readable, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache',
+      },
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
