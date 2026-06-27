@@ -27,6 +27,49 @@ const SPLIT_ICONS: Record<string, string> = {
   Lower: '🟡', 'Full Body': '🔷', Rest: '😴',
 };
 
+// روابط يوتيوب لكل جهاز Technogym
+const MACHINE_YOUTUBE: Record<string, string> = {
+  'leg-press':        'https://www.youtube.com/results?search_query=technogym+leg+press+how+to+use+proper+form',
+  'leg-extension':    'https://www.youtube.com/results?search_query=technogym+leg+extension+machine+how+to+use',
+  'leg-curl':         'https://www.youtube.com/results?search_query=technogym+leg+curl+machine+how+to+use',
+  'hack-squat':       'https://www.youtube.com/results?search_query=hack+squat+machine+proper+form+technogym',
+  'hip-thrust':       'https://www.youtube.com/results?search_query=hip+thrust+machine+glute+how+to+use',
+  'calf-raise':       'https://www.youtube.com/results?search_query=calf+raise+machine+how+to+use+technogym',
+  'lat-pulldown':     'https://www.youtube.com/results?search_query=technogym+lat+pulldown+how+to+use+proper+form',
+  'seated-row':       'https://www.youtube.com/results?search_query=seated+cable+row+machine+proper+form+technogym',
+  'cable-row':        'https://www.youtube.com/results?search_query=cable+row+machine+back+how+to+use',
+  'chest-press':      'https://www.youtube.com/results?search_query=technogym+chest+press+machine+how+to+use',
+  'pec-deck':         'https://www.youtube.com/results?search_query=pec+deck+machine+chest+fly+how+to+use+technogym',
+  'cable-fly':        'https://www.youtube.com/results?search_query=cable+crossover+fly+chest+how+to+use',
+  'shoulder-press':   'https://www.youtube.com/results?search_query=technogym+shoulder+press+machine+how+to+use',
+  'cable-lateral':    'https://www.youtube.com/results?search_query=cable+lateral+raise+shoulder+how+to+use',
+  'rear-delt':        'https://www.youtube.com/results?search_query=rear+delt+machine+reverse+fly+how+to+use+technogym',
+  'bicep-machine':    'https://www.youtube.com/results?search_query=technogym+bicep+curl+machine+how+to+use',
+  'tricep-pushdown':  'https://www.youtube.com/results?search_query=cable+tricep+pushdown+rope+how+to+use+proper+form',
+  'tricep-overhead':  'https://www.youtube.com/results?search_query=overhead+cable+tricep+extension+how+to+use',
+  'ab-crunch':        'https://www.youtube.com/results?search_query=ab+crunch+machine+how+to+use+technogym',
+  'cable-crunch':     'https://www.youtube.com/results?search_query=cable+crunch+abs+how+to+use+proper+form',
+  'back-extension':   'https://www.youtube.com/results?search_query=back+extension+machine+lower+back+how+to+use',
+  'hip-abduction':    'https://www.youtube.com/results?search_query=hip+abduction+machine+outer+thigh+how+to+use+technogym',
+  'hip-adduction':    'https://www.youtube.com/results?search_query=hip+adduction+machine+inner+thigh+how+to+use+technogym',
+  'treadmill':        'https://www.youtube.com/results?search_query=technogym+treadmill+how+to+use+settings',
+  'bike':             'https://www.youtube.com/results?search_query=technogym+stationary+bike+how+to+use',
+  'elliptical':       'https://www.youtube.com/results?search_query=technogym+elliptical+crosstrainer+how+to+use',
+  'rower':            'https://www.youtube.com/results?search_query=technogym+rowing+machine+proper+form+technique',
+  'barbell-squat':    'https://www.youtube.com/results?search_query=barbell+back+squat+proper+form+tutorial',
+  'barbell-deadlift': 'https://www.youtube.com/results?search_query=conventional+deadlift+proper+form+tutorial',
+  'barbell-bench':    'https://www.youtube.com/results?search_query=barbell+bench+press+proper+form+tutorial',
+  'barbell-row':      'https://www.youtube.com/results?search_query=bent+over+barbell+row+proper+form+tutorial',
+  'barbell-ohp':      'https://www.youtube.com/results?search_query=overhead+press+barbell+proper+form+tutorial',
+  'smith-squat':      'https://www.youtube.com/results?search_query=smith+machine+squat+how+to+use+proper+form',
+  'smith-bench':      'https://www.youtube.com/results?search_query=smith+machine+bench+press+how+to+use',
+  'dumbbell-curl':    'https://www.youtube.com/results?search_query=dumbbell+bicep+curl+proper+form+tutorial',
+  'dumbbell-extension':'https://www.youtube.com/results?search_query=dumbbell+tricep+overhead+extension+proper+form',
+  'dumbbell-lateral': 'https://www.youtube.com/results?search_query=dumbbell+lateral+raise+proper+form+tutorial',
+  'dumbbell-fly':     'https://www.youtube.com/results?search_query=dumbbell+chest+fly+proper+form+tutorial',
+  'dumbbell-row':     'https://www.youtube.com/results?search_query=single+arm+dumbbell+row+proper+form+tutorial',
+};
+
 const GOAL_LABEL: Record<string, string> = {
   weight_loss: 'خسارة الوزن 🔥', muscle_gain: 'بناء العضلة 💪',
   strength: 'القوة 🏋️', general_fitness: 'لياقة عامة ⚡', body_recomp: 'إعادة تشكيل 🎯',
@@ -113,11 +156,20 @@ function SessionCard({ s }: { s: any }) {
                   const lvl = ex.levels?.[level];
                   return (
                     <div key={i} className="bg-gray-800/60 rounded-xl overflow-hidden border border-white/5">
-                      <div className="px-3 py-2.5 flex items-center justify-between">
-                        <div>
+                      <div className="px-3 py-2.5 flex items-center justify-between gap-2">
+                        <div className="flex-1 min-w-0">
                           <div className="font-semibold text-white text-sm">{ex.nameAr}</div>
                           <div className="text-xs text-gray-500">{ex.nameEn} • {ex.muscleGroup} • {ex.sets} مجموعات</div>
                         </div>
+                        {MACHINE_YOUTUBE[ex.machineId] && (
+                          <a href={MACHINE_YOUTUBE[ex.machineId]} target="_blank" rel="noopener noreferrer"
+                            className="flex-shrink-0 flex items-center gap-1 bg-red-900/40 hover:bg-red-700/60 border border-red-700/40 text-red-400 hover:text-white px-2 py-1 rounded-lg text-xs font-medium transition-colors">
+                            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current flex-shrink-0">
+                              <path d="M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 00.5 6.2 31 31 0 000 12a31 31 0 00.5 5.8 3 3 0 002.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 002.1-2.1A31 31 0 0024 12a31 31 0 00-.5-5.8zM9.75 15.5v-7l6.25 3.5-6.25 3.5z"/>
+                            </svg>
+                            <span>شرح</span>
+                          </a>
+                        )}
                       </div>
                       {lvl && (
                         <div className="border-t border-white/5 px-3 py-2 bg-gray-900/40 grid grid-cols-3 gap-2">
