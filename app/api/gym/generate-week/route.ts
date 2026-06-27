@@ -206,7 +206,7 @@ Seated Row: مبتدئ 30كجم | متوسط 50كجم | متقدم 70كجم | م
 
 أرجع JSON فقط بدون أي نص قبله أو بعده.`;
 
-  const maxTokens = Math.min(32000, Math.max(8000, profile.daysPerWeek * 2000));
+  const maxTokens = Math.min(32000, Math.max(16000, profile.daysPerWeek * 3500));
 
   try {
     const message = await client.messages.create({
@@ -222,7 +222,20 @@ Seated Row: مبتدئ 30كجم | متوسط 50كجم | متقدم 70كجم | م
     jsonText = jsonText.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
     jsonText = jsonText.replace(/^```\n?/, '').replace(/\n?```$/, '').trim();
 
-    const result = JSON.parse(jsonText);
+    let result: any;
+    try {
+      result = JSON.parse(jsonText);
+    } catch {
+      // JSON was truncated — try to salvage complete sessions array
+      const match = jsonText.match(/"sessions"\s*:\s*(\[[\s\S]*)/);
+      if (!match) throw new Error('فشل تحليل JSON — حاول مرة أخرى');
+      let arr = match[1];
+      // Find last complete object ending with }
+      const lastBrace = arr.lastIndexOf('},');
+      if (lastBrace === -1) throw new Error('لم يكتمل توليد الجدول — حاول مرة أخرى');
+      arr = arr.slice(0, lastBrace + 1) + ']';
+      result = { sessions: JSON.parse(arr) };
+    }
 
     // حفظ الجلسات في قاعدة البيانات
     const toDate = dates[dates.length - 1].date;
