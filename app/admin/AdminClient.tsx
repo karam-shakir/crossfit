@@ -1397,8 +1397,6 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
               )}
             </div>
           )}
-        </div>
-
           {/* ===== Gym Technogym ===== */}
           {tab === 'gym' && (
             <div className="space-y-4">
