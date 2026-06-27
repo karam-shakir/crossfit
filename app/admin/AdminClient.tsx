@@ -1,1 +1,36 @@
-J3VzZSBjbGllbnQnOwppbXBvcnQgeyB0b2RheVNBIH0gZnJvbSAnQC9saWIvdGltZXpvbmUnOwppbXBvcnQgeyB1c2VTdGF0ZSwgdXNlRWZmZWN0IH0gZnJvbSAncmVhY3QnOwppbXBvcnQgTmF2YmFyIGZyb20gJ0AvY29tcG9uZW50cy9OYXZiYXInOwoKdHlwZSBBZG1pblRhYiA9ICd3b2QnIHwgJ21lbWJlcnMnIHwgJ3dlZWtseScgfCAnc3BvcnRzJyB8ICdsb2dzJzsKCmNvbnN0IFdPRF9UWVBFUyA9IFsnQU1SQVAnLCAn2YTZhNuI2YLYqicsICfZgtbuZdmJZScsICfYqtO/2/Tlj5gnXTsKY29uc3QgRElGRklDVUxUWV9PUFRJT05TID0gWyfZhdKFYtmK2KrZiicsICfZhdezueK1jCcsICfZhdegbrXjuaAnLCAn2KbYuNKFZSddOwpjb25zdCBGT0NVU19PUFRJT05TID0gWwogICcnLCAn2KfZhMOp0pNh2LLYp9mEINuD2K/YrNmI2KMnLCAn2KfZhMOp2KvYp9mEINuD2KfZhM+a2YrZiCcsICfYp9mE2KrZhdKGWc+a2KkgNnjZjycsICfYsdbFYdmE2KfZhMOp2LrYp9mEINOp2YTZic+aYdqIJywKICAnYtmE2KrO3KrZhNuL2YrZiCcsICfYp9mE0pNbZsuKYdmEWc2MYdmF2KrnuaAnLCAn2KfZhNqJWsuRZuqOl2KEnLCAn2KfZhNqDW1nYsdmE 2KfZhtmDJywgJ2tmM0TZhM2JYWbZiicsICfZg9Kx2YTZiSDYp9mE0pNbZ51'
+'use client';
+import { todaySA } from '@/lib/timezone';
+import { useState, useEffect } from 'react';
+import Navbar from '@/components/Navbar';
+
+type AdminTab = 'wod' | 'members' | 'weekly' | 'sports' | 'logs';
+
+const WOD_TYPES = ['AMRAP', 'للوقت', 'قوة', 'تدريب'];
+const DIFFICULTY_OPTIONS = ['مبتدئ', 'متوسط', 'متقدم', 'نخبة'];
+const FOCUS_OPTIONS = [
+  '', 'الأرجل والمؤخرة', 'الأكتاف والضغط', 'الجمناستكس', 'رفع الأثقال الأوليمبي',
+  'التحمل والقلب', 'الرفعة الميتة', 'القرفصاء', 'الظهر والسحب', 'كامل الجسم'
+];
+
+function emptyWod(date: string) {
+  return { date, title: '', type: 'للوقت', duration: '', rounds: '', notes: '', warmup: [], strength: [], metcon: [], cooldown: [] };
+}
+
+function emptyExercise() {
+  return { exerciseId: '', reps: '', weight: '', distance: '', time: '', notes: '' };
+}
+
+export default function AdminClient({ member, exercises }: { member: any; exercises: any[] }) {
+  const [tab, setTab] = useState<AdminTab>('wod');
+  const [wod, setWod] = useState<any>(emptyWod(todaySA()));
+  const [wodLoading, setWodLoading] = useState(false);
+  const [wodSaved, setWodSaved] = useState(false);
+  const [activeSection, setActiveSection] = useState('metcon');
+  const [members, setMembers] = useState<any[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [newMember, setNewMember] = useState({ username: '', nameAr: '', password: '' });
+  const [addingMember, setAddingMember] = useState(false);
+
+  // Weekly AI plan state
+  const [weeklyLoading, setWeeklyLoading] = useState(false);
+  const [weeklyPlan, setWeeklyPlan] = useState<any>(null);
