@@ -3,7 +3,7 @@ import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 
-type AdminTab = 'wod' | 'members' | 'weekly' | 'sports' | 'logs';
+type AdminTab = 'wod' | 'members' | 'weekly' | 'sports' | 'gym' | 'logs';
 
 const WOD_TYPES = ['AMRAP', 'للوقت', 'قوة', 'تدريب'];
 const DIFFICULTY_OPTIONS = ['مبتدئ', 'متوسط', 'متقدم', 'نخبة'];
@@ -77,6 +77,49 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
       setFixCooldownError(e.message);
     } finally {
       setFixCooldownLoading(false);
+    }
+  }
+
+  // ===== Gym Technogym =====
+  const [gymMembers, setGymMembers] = useState<any[]>([]);
+  const [gymSelectedMember, setGymSelectedMember] = useState('');
+  const [gymFromDate, setGymFromDate] = useState(todaySA());
+  const [gymLoading, setGymLoading] = useState(false);
+  const [gymPlan, setGymPlan] = useState<any>(null);
+  const [gymError, setGymError] = useState('');
+  const [gymSaved, setGymSaved] = useState(false);
+  const [gymProfile, setGymProfile] = useState<any>(null);
+
+  useEffect(() => {
+    if (tab === 'gym' && gymMembers.length === 0) {
+      fetch('/api/members').then(r => r.json()).then(m => setGymMembers(Array.isArray(m) ? m.filter((x: any) => x.role !== 'admin') : []));
+    }
+  }, [tab]);
+
+  useEffect(() => {
+    if (gymSelectedMember) {
+      setGymProfile(null);
+      fetch(`/api/gym/profile?memberId=${gymSelectedMember}`).then(r => r.json()).then(d => setGymProfile(d || null));
+    }
+  }, [gymSelectedMember]);
+
+  async function generateGymPlan() {
+    if (!gymSelectedMember) return;
+    setGymLoading(true); setGymPlan(null); setGymError(''); setGymSaved(false);
+    try {
+      const res = await fetch('/api/gym/generate-week', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId: gymSelectedMember, fromDate: gymFromDate }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل التوليد');
+      setGymPlan(data);
+      setGymSaved(true);
+    } catch (e: any) {
+      setGymError(e.message);
+    } finally {
+      setGymLoading(false);
     }
   }
 
@@ -412,6 +455,10 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
             <button onClick={() => setTab('sports')}
               className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'sports' ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
               🏋️ خطة الرياضات
+            </button>
+            <button onClick={() => setTab('gym')}
+              className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'gym' ? 'bg-violet-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+              🏛️ جيم Technogym
             </button>
             <button onClick={() => setTab('members')}
               className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'members' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
@@ -1350,6 +1397,106 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
               )}
             </div>
           )}
+        </div>
+
+          {/* ===== Gym Technogym ===== */}
+          {tab === 'gym' && (
+            <div className="space-y-4">
+              <div className="bg-gradient-to-br from-violet-900/40 to-indigo-900/40 rounded-2xl border border-violet-700/30 p-4 space-y-3">
+                <h2 className="font-bold text-white text-sm">🏛️ توليد جدول Technogym لعضو</h2>
+
+                {/* Member selector */}
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">اختر العضو</label>
+                  <select value={gymSelectedMember} onChange={e => { setGymSelectedMember(e.target.value); setGymPlan(null); setGymSaved(false); setGymError(''); }}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500">
+                    <option value="">-- اختر عضو --</option>
+                    {gymMembers.map(m => (
+                      <option key={m.id} value={m.id}>{m.nameAr} (@{m.username})</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Member profile preview */}
+                {gymSelectedMember && (
+                  gymProfile ? (
+                    <div className="bg-gray-800/60 rounded-xl border border-violet-700/20 px-3 py-2 text-xs space-y-1">
+                      <div className="flex flex-wrap gap-2 text-gray-300">
+                        <span className="bg-violet-900/40 px-2 py-0.5 rounded-lg">🎯 {gymProfile.goal}</span>
+                        <span className="bg-blue-900/40 px-2 py-0.5 rounded-lg">📊 {gymProfile.level}</span>
+                        <span className="bg-green-900/40 px-2 py-0.5 rounded-lg">📅 {gymProfile.daysPerWeek} أيام/أسبوع</span>
+                        {gymProfile.age && <span className="bg-gray-700/50 px-2 py-0.5 rounded-lg">🧑 {gymProfile.age} سنة</span>}
+                        {gymProfile.weight && <span className="bg-gray-700/50 px-2 py-0.5 rounded-lg">⚖️ {gymProfile.weight} كجم</span>}
+                      </div>
+                      {gymProfile.focusAreas?.length > 0 && (
+                        <div className="text-gray-400">💪 التركيز: {gymProfile.focusAreas.join(' • ')}</div>
+                      )}
+                      {gymProfile.limitations && (
+                        <div className="text-yellow-400">⚠️ {gymProfile.limitations}</div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-xl px-3 py-2 text-xs text-yellow-400">
+                      ⚠️ هذا العضو لم يعبّئ بروفايله التدريبي بعد
+                    </div>
+                  )
+                )}
+
+                {/* From date */}
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">تاريخ بداية الجدول</label>
+                  <input type="date" value={gymFromDate} onChange={e => setGymFromDate(e.target.value)}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500" />
+                </div>
+
+                {/* Generate button */}
+                <button onClick={generateGymPlan} disabled={gymLoading || !gymSelectedMember || !gymProfile}
+                  className="w-full py-3 rounded-xl text-white font-bold text-sm transition-colors bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed">
+                  {gymLoading ? '⏳ جاري التوليد...' : '🤖 توليد الجدول بـ Claude AI'}
+                </button>
+
+                {gymError && <div className="text-red-400 text-xs bg-red-900/20 rounded-xl px-3 py-2">❌ {gymError}</div>}
+                {gymSaved && !gymError && <div className="text-green-400 text-xs bg-green-900/20 rounded-xl px-3 py-2">✅ تم توليد وحفظ الجدول للعضو</div>}
+              </div>
+
+              {/* Plan preview */}
+              {gymPlan?.sessions && (
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-white text-sm">📋 الجدول المُولَّد ({gymPlan.sessions.length} جلسة)</h3>
+                  {gymPlan.sessions.map((s: any, i: number) => (
+                    <div key={i} className={`rounded-2xl border overflow-hidden ${s.isRest ? 'border-gray-700/30 bg-gray-900/30' : 'border-violet-700/30 bg-violet-900/10'}`}>
+                      <div className="p-3 flex items-center gap-3">
+                        <span className="text-lg">{s.isRest ? '😴' : '🏋️'}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-white text-sm">{s.dayName}</span>
+                            <span className="text-xs text-gray-500">{s.date}</span>
+                            {!s.isRest && <span className="text-xs bg-violet-900/60 text-violet-300 px-2 py-0.5 rounded-full border border-violet-700/30">{s.splitType}</span>}
+                          </div>
+                          <div className="text-xs text-gray-400 mt-0.5 truncate">
+                            {s.isRest ? 'يوم راحة' : `${s.title} • ${s.exercises?.length || 0} تمارين`}
+                          </div>
+                        </div>
+                        {s.duration && <span className="text-xs text-gray-500 flex-shrink-0">⏱{s.duration}د</span>}
+                      </div>
+                      {!s.isRest && s.exercises?.length > 0 && (
+                        <div className="border-t border-white/5 px-3 py-2 space-y-1">
+                          {s.exercises.map((ex: any, j: number) => (
+                            <div key={j} className="flex items-center gap-2 text-xs text-gray-400">
+                              <span className="text-violet-400">•</span>
+                              <span className="flex-1">{ex.nameAr}</span>
+                              <span className="text-gray-600">{ex.sets} مج</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       </main>
 

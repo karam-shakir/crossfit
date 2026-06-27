@@ -160,6 +160,17 @@ function IcUserShield({ className }: { className?: string }) {
     </svg>
   );
 }
+function IcGym({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="10" width="4" height="5" rx="1"/>
+      <rect x="18" y="10" width="4" height="5" rx="1"/>
+      <line x1="6" y1="12.5" x2="9" y2="12.5"/>
+      <line x1="15" y1="12.5" x2="18" y2="12.5"/>
+      <rect x="9" y="8" width="6" height="9" rx="1"/>
+    </svg>
+  );
+}
 function IcCalisthenics({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
@@ -187,6 +198,7 @@ const mainLinks: NavItem[] = [
   { href: '/prs',            label: 'أرقامي',        iconKey: 'trophy'        },
   { href: '/skills',         label: 'المهارات',      iconKey: 'target'        },
   { href: '/wod-history',    label: 'تاريخ WODs',    iconKey: 'calendar'      },
+  { href: '/gym',            label: 'الجيم',          iconKey: 'gym'           },
   { href: '/hyrox',          label: 'Hyrox',         iconKey: 'run'           },
   { href: '/kettlebell',     label: 'Kettlebell',    iconKey: 'kettlebell'    },
   { href: '/calisthenics',   label: 'Calisthenics',  iconKey: 'calisthenics'  },
@@ -216,6 +228,7 @@ function NavIcon({ iconKey, className }: { iconKey: string; className?: string }
     case 'logout':         return <IcLogout className={cls}/>;
     case 'more':           return <IcMore className={cls}/>;
     case 'usershield':     return <IcUserShield className={cls}/>;
+    case 'gym':            return <IcGym className={cls}/>;
     case 'calisthenics':   return <IcCalisthenics className={cls}/>;
     default:               return <IcHome className={cls}/>;
   }
@@ -226,6 +239,7 @@ function linkColor(href: string) {
   if (href === '/hyrox')        return 'red';
   if (href === '/kettlebell')   return 'amber';
   if (href === '/calisthenics') return 'emerald';
+  if (href === '/gym')          return 'violet';
   return undefined;
 }
 
@@ -246,6 +260,9 @@ function NavLink({ href, iconKey, label, active, color }: {
   } else if (color === 'emerald') {
     activeClass   = 'bg-emerald-600 text-white shadow-sm';
     inactiveClass = 'text-emerald-400 hover:bg-gray-800 hover:text-emerald-300';
+  } else if (color === 'violet') {
+    activeClass   = 'bg-violet-600 text-white shadow-sm';
+    inactiveClass = 'text-violet-400 hover:bg-gray-800 hover:text-violet-300';
   }
 
   return (

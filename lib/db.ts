@@ -501,3 +501,110 @@ export async function deleteKettlebellSession(id: string): Promise<void> {
   const db = await getDb();
   await db.collection('kettlebell_sessions').deleteOne({ id });
 }
+
+// ===================== GYM PROFILES =====================
+
+export interface GymProfile {
+  id: string;
+  memberId: string;
+  goal: 'weight_loss' | 'muscle_gain' | 'strength' | 'general_fitness' | 'body_recomp';
+  level: 'beginner' | 'intermediate' | 'advanced' | 'elite';
+  age?: number;
+  weight?: number;
+  height?: number;
+  daysPerWeek: 3 | 4 | 5 | 6;
+  focusAreas: string[];
+  limitations?: string;
+  updatedAt: string;
+}
+
+export async function getGymProfile(memberId: string): Promise<GymProfile | undefined> {
+  const db = await getDb();
+  const doc = await db.collection('gym_profiles').findOne({ memberId });
+  return doc ? strip_id<GymProfile>(doc) : undefined;
+}
+
+export async function upsertGymProfile(profile: GymProfile): Promise<GymProfile> {
+  const db = await getDb();
+  await db.collection('gym_profiles').replaceOne({ memberId: profile.memberId }, profile, { upsert: true });
+  return profile;
+}
+
+export async function getAllGymProfiles(): Promise<GymProfile[]> {
+  const db = await getDb();
+  const docs = await db.collection('gym_profiles').find({}).toArray();
+  return stripAll<GymProfile>(docs);
+}
+
+// ===================== GYM SESSIONS =====================
+
+export interface GymSession {
+  id: string;
+  memberId: string;
+  date: string;
+  dayName: string;
+  splitType: string;
+  title: string;
+  focus: string;
+  isRest: boolean;
+  duration?: number;
+  exercises: GymExercise[];
+  warmup?: string[];
+  cooldown?: string[];
+  notes?: string;
+  coachNote?: string;
+  createdAt: string;
+}
+
+export interface GymExercise {
+  machineId: string;
+  nameAr: string;
+  nameEn: string;
+  sets: number;
+  levels: {
+    beginner:     GymExerciseLevel;
+    intermediate: GymExerciseLevel;
+    advanced:     GymExerciseLevel;
+    elite:        GymExerciseLevel;
+  };
+  notes?: string;
+  muscleGroup: string;
+}
+
+export interface GymExerciseLevel {
+  weight: string;
+  reps: string;
+  rest: string;
+  cue: string;
+}
+
+export async function getGymSessions(memberId: string): Promise<GymSession[]> {
+  const db = await getDb();
+  const docs = await db.collection('gym_sessions')
+    .find({ memberId })
+    .sort({ date: -1 })
+    .limit(60)
+    .toArray();
+  return stripAll<GymSession>(docs);
+}
+
+export async function getGymSessionByDate(memberId: string, date: string): Promise<GymSession | undefined> {
+  const db = await getDb();
+  const doc = await db.collection('gym_sessions').findOne({ memberId, date });
+  return doc ? strip_id<GymSession>(doc) : undefined;
+}
+
+export async function upsertGymSession(session: GymSession): Promise<GymSession> {
+  const db = await getDb();
+  await db.collection('gym_sessions').replaceOne(
+    { memberId: session.memberId, date: session.date },
+    session,
+    { upsert: true }
+  );
+  return session;
+}
+
+export async function deleteGymSessionsByMember(memberId: string, fromDate: string, toDate: string): Promise<void> {
+  const db = await getDb();
+  await db.collection('gym_sessions').deleteMany({ memberId, date: { $gte: fromDate, $lte: toDate } });
+}
