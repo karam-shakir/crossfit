@@ -67,6 +67,20 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   const [aiFocus, setAiFocus] = useState('');
   const [wodMode, setWodMode] = useState<'crossfit' | 'calisthenics'>('crossfit');
   const [aiGeneratedMode, setAiGeneratedMode] = useState<'crossfit' | 'calisthenics'>('crossfit');
+  // WOD coach override
+  const [wodSessionType, setWodSessionType] = useState('balanced');   // heavy / skill / cardio / deload / balanced
+  const [wodMetconFormat, setWodMetconFormat] = useState('');          // AMRAP / للوقت / EMOM / بالجولات / ''
+  const [wodStrengthPattern, setWodStrengthPattern] = useState('');    // squat / hinge / push / pull / olympic / ''
+  const [wodForbidExercises, setWodForbidExercises] = useState<string[]>([]);
+  const [wodForceExercise, setWodForceExercise] = useState('');        // تمرين يجب أن يظهر
+  const [wodSpecialNotes, setWodSpecialNotes] = useState('');
+  const [wodForbidInput, setWodForbidInput] = useState('');
+  const [wodDuration, setWodDuration] = useState('');                  // مدة الميتكون المرغوبة بالدقائق
+  function addWodForbid() {
+    const v = wodForbidInput.trim().toLowerCase();
+    if (v && !wodForbidExercises.includes(v)) setWodForbidExercises(p => [...p, v]);
+    setWodForbidInput('');
+  }
 
   // ===== Fix Cooldown =====
   const [fixCooldownFrom, setFixCooldownFrom] = useState(todaySA());
@@ -296,6 +310,13 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
           difficulty: aiDifficulty,
           focus: aiFocus || undefined,
           wodMode,
+          sessionType: wodSessionType,
+          metconFormat: wodMetconFormat || undefined,
+          strengthPattern: wodStrengthPattern || undefined,
+          forbidExercises: wodForbidExercises,
+          forceExercise: wodForceExercise || undefined,
+          specialNotes: wodSpecialNotes || undefined,
+          targetDuration: wodDuration ? Number(wodDuration) : undefined,
         }),
       });
       const data = await res.json();
@@ -570,94 +591,214 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
 
                 {/* AI Panel */}
                 {showAiPanel && (
-                  <div className="bg-gradient-to-br from-gray-900 to-purple-950 rounded-2xl border border-purple-700/50 p-4 space-y-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-purple-400 text-lg">🧠</span>
-                      <h3 className="text-purple-300 font-semibold text-sm">إعدادات توليد التمرين</h3>
+                  <div className="bg-gray-900 rounded-2xl border border-purple-700/40 overflow-hidden">
+
+                    {/* Header */}
+                    <div className="bg-gradient-to-r from-purple-900/60 to-indigo-900/60 px-4 py-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">🧠</span>
+                        <h3 className="text-white font-bold text-sm">إعدادات المدرب للتوليد</h3>
+                      </div>
+                      <button onClick={() => setShowAiPanel(false)} className="text-gray-400 hover:text-white text-sm px-2 py-1 rounded-lg hover:bg-white/10 transition-all">✕</button>
                     </div>
 
-                    {/* WOD Mode Toggle */}
-                    <div className="flex rounded-xl overflow-hidden border border-purple-700/40">
-                      <button
-                        onClick={() => setWodMode('crossfit')}
-                        className={`flex-1 py-2.5 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
-                          wodMode === 'crossfit'
-                            ? 'bg-orange-600 text-white'
-                            : 'bg-gray-800/60 text-gray-400 hover:text-gray-200'
-                        }`}>
-                        🔥 CrossFit
-                      </button>
-                      <button
-                        onClick={() => setWodMode('calisthenics')}
-                        className={`flex-1 py-2.5 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
-                          wodMode === 'calisthenics'
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-gray-800/60 text-gray-400 hover:text-gray-200'
-                        }`}>
-                        🤸 Calisthenics
-                      </button>
-                    </div>
+                    <div className="p-4 space-y-4">
 
-                    <div className="text-xs text-gray-400 bg-purple-900/30 rounded-xl p-3 border border-purple-800/40">
-                      {wodMode === 'calisthenics'
-                        ? <>سيولّد الذكاء الاصطناعي <strong className="text-emerald-300">تمرين Calisthenics</strong> كامل — وزن الجسم فقط بدون معدات</>
-                        : <>سيقوم الذكاء الاصطناعي بتوليد <strong className="text-purple-300">تمرين قوة</strong> و<strong className="text-purple-300">ميتكون</strong> مترابطَين بأسلوب CompTrain وPRVN Athletics</>
-                      }
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
+                      {/* نوع الجلسة (CrossFit / Calisthenics) */}
                       <div>
-                        <label className="text-xs text-gray-400 mb-1 block">مستوى الصعوبة</label>
-                        <select value={aiDifficulty} onChange={e => setAiDifficulty(e.target.value)}
-                          className="w-full bg-gray-800 border border-purple-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500">
-                          {DIFFICULTY_OPTIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">🏷️ نوع الجلسة</label>
+                        <div className="flex rounded-xl overflow-hidden border border-purple-700/40">
+                          <button onClick={() => setWodMode('crossfit')}
+                            className={`flex-1 py-2.5 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${wodMode === 'crossfit' ? 'bg-orange-600 text-white' : 'bg-gray-800/60 text-gray-400 hover:text-gray-200'}`}>
+                            🔥 CrossFit
+                          </button>
+                          <button onClick={() => setWodMode('calisthenics')}
+                            className={`flex-1 py-2.5 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${wodMode === 'calisthenics' ? 'bg-emerald-600 text-white' : 'bg-gray-800/60 text-gray-400 hover:text-gray-200'}`}>
+                            🤸 Calisthenics
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* نوع الجلسة (Heavy / Skill / Cardio...) */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">⚡ طابع الجلسة</label>
+                        <div className="grid grid-cols-1 gap-1.5">
+                          {[
+                            { v: 'balanced', l: '⚖️ متوازن',        sub: 'قوة + ميتكون كلاسيكي CompTrain Style' },
+                            { v: 'heavy',    l: '🔴 يوم ثقيل',      sub: 'قوة compound 80-90% + ميتكون قصير 8-12 دق' },
+                            { v: 'skill',    l: '🎯 يوم تقنية',     sub: 'Olympic Lifting / Gymnastics + ميتكون خفيف' },
+                            { v: 'cardio',   l: '🫀 يوم تحمل',      sub: 'ميتكون طويل AMRAP 20+ دقيقة، أوزان خفيفة' },
+                            { v: 'deload',   l: '🔄 يوم تفريغ',     sub: '60-70% شدة — استرداد، تقنية، لا إجهاد' },
+                          ].map(s => (
+                            <button key={s.v} onClick={() => setWodSessionType(s.v)}
+                              className={`flex items-center gap-3 px-3 py-2 rounded-xl border text-right text-sm transition-all ${wodSessionType === s.v ? 'border-orange-500 bg-orange-900/20 text-white' : 'border-gray-700 bg-gray-800/50 text-gray-400 hover:border-gray-600'}`}>
+                              <span className="font-bold flex-1">{s.l}</span>
+                              <span className="text-xs text-gray-500 truncate">{s.sub}</span>
+                              {wodSessionType === s.v && <span className="text-orange-400 flex-shrink-0">✓</span>}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* المستوى والتركيز */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs text-gray-400 font-semibold block mb-2">📊 المستوى</label>
+                          <div className="grid grid-cols-2 gap-1">
+                            {DIFFICULTY_OPTIONS.map(d => (
+                              <button key={d} onClick={() => setAiDifficulty(d)}
+                                className={`py-2 rounded-xl text-xs font-bold border transition-all ${aiDifficulty === d ? 'border-purple-500 bg-purple-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                                {d}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-400 font-semibold block mb-2">🎯 التركيز</label>
+                          <select value={aiFocus} onChange={e => setAiFocus(e.target.value)}
+                            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-2 py-2 text-white text-xs focus:outline-none focus:border-purple-500">
+                            <option value="">كامل الجسم</option>
+                            {FOCUS_OPTIONS.filter(f => f).map(f => <option key={f} value={f}>{f}</option>)}
+                          </select>
+                        </div>
+                      </div>
+
+                      {wodMode === 'crossfit' && (
+                        <>
+                          {/* نمط القوة */}
+                          <div>
+                            <label className="text-xs text-gray-400 font-semibold block mb-2">🏋️ نمط القوة (اختياري)</label>
+                            <div className="grid grid-cols-3 gap-1.5">
+                              {[
+                                { v: '', l: 'تلقائي' },
+                                { v: 'squat', l: '🦵 Squat' },
+                                { v: 'hinge', l: '🔽 Hinge' },
+                                { v: 'push', l: '💥 Push' },
+                                { v: 'pull', l: '⬆️ Pull' },
+                                { v: 'olympic', l: '🥇 Olympic' },
+                              ].map(p => (
+                                <button key={p.v} onClick={() => setWodStrengthPattern(p.v)}
+                                  className={`py-2 rounded-xl text-xs font-semibold border transition-all ${wodStrengthPattern === p.v ? 'border-blue-500 bg-blue-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                                  {p.l}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* صيغة الميتكون */}
+                          <div>
+                            <label className="text-xs text-gray-400 font-semibold block mb-2">⏱️ صيغة الميتكون (اختياري)</label>
+                            <div className="grid grid-cols-3 gap-1.5">
+                              {['', 'AMRAP', 'للوقت', 'EMOM', 'بالجولات', 'Chipper'].map(f => (
+                                <button key={f} onClick={() => setWodMetconFormat(f)}
+                                  className={`py-2 rounded-xl text-xs font-semibold border transition-all ${wodMetconFormat === f ? 'border-teal-500 bg-teal-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                                  {f || 'تلقائي'}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* المدة المرغوبة */}
+                          <div>
+                            <label className="text-xs text-gray-400 font-semibold block mb-2">
+                              ⏱ مدة الميتكون — <span className="text-white">{wodDuration ? wodDuration + ' دقيقة' : 'تلقائي'}</span>
+                            </label>
+                            <div className="flex gap-1.5 flex-wrap">
+                              {['', '8', '10', '12', '15', '18', '20', '25', '30'].map(n => (
+                                <button key={n} onClick={() => setWodDuration(n)}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${wodDuration === n ? 'border-purple-500 bg-purple-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                                  {n || 'تلقائي'}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {/* تمرين مطلوب */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">⚡ تمرين مطلوب إدراجه</label>
+                        <select value={wodForceExercise} onChange={e => setWodForceExercise(e.target.value)}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-green-500">
+                          <option value="">لا يوجد — الـ AI يختار</option>
+                          {(wodMode === 'crossfit' ? [
+                            'back-squat','front-squat','deadlift','power-clean','clean-and-jerk','snatch',
+                            'shoulder-press','push-press','thruster','pull-up','muscle-up','handstand-pushup',
+                            'toes-to-bar','double-under','burpee','wall-ball','kettle-bell-swing','row','run',
+                          ] : [
+                            'pull-up','push-up','muscle-up','handstand-pushup','toes-to-bar','rope-climb',
+                            'double-under','burpee','box-jump','sit-up',
+                          ]).map(id => (
+                            <option key={id} value={id}>{id}</option>
+                          ))}
                         </select>
                       </div>
+
+                      {/* تمارين محظورة */}
                       <div>
-                        <label className="text-xs text-gray-400 mb-1 block">التركيز (اختياري)</label>
-                        <select value={aiFocus} onChange={e => setAiFocus(e.target.value)}
-                          className="w-full bg-gray-800 border border-purple-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500">
-                          <option value="">بدون تركيز محدد</option>
-                          {FOCUS_OPTIONS.filter(f => f).map(f => <option key={f} value={f}>{f}</option>)}
-                        </select>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">🚫 تمارين محظورة اليوم</label>
+                        <div className="flex gap-2">
+                          <select value={wodForbidInput} onChange={e => setWodForbidInput(e.target.value)}
+                            className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-2 py-2 text-white text-xs focus:outline-none focus:border-red-500">
+                            <option value="">اختر تمريناً لحذفه...</option>
+                            {['back-squat','front-squat','deadlift','power-clean','clean-and-jerk','snatch',
+                              'shoulder-press','push-press','thruster','pull-up','kipping-pull-up','muscle-up',
+                              'handstand-pushup','toes-to-bar','double-under','burpee','wall-ball','row','run'].map(id => (
+                              <option key={id} value={id}>{id}</option>
+                            ))}
+                          </select>
+                          <button onClick={addWodForbid} className="px-3 py-2 bg-red-900/40 border border-red-700/50 rounded-xl text-red-300 text-xs font-bold hover:bg-red-900/60">+</button>
+                        </div>
+                        {wodForbidExercises.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {wodForbidExercises.map(ex => (
+                              <span key={ex} onClick={() => setWodForbidExercises(p => p.filter(x => x !== ex))}
+                                className="text-xs px-2 py-0.5 bg-red-900/30 border border-red-700/40 text-red-300 rounded-lg cursor-pointer hover:bg-red-900/50">
+                                {ex} ✕
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    </div>
 
-                    {aiError && (
-                      <div className="bg-red-900/30 border border-red-700/50 rounded-xl p-3 text-red-400 text-xs">
-                        ⚠️ {aiError}
+                      {/* تعليمات خاصة */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">📝 تعليمات خاصة للـ AI</label>
+                        <textarea value={wodSpecialNotes} onChange={e => setWodSpecialNotes(e.target.value)}
+                          placeholder="مثال: الأعضاء مرهقون من أمس — اجعل الميتكون قصيراً&#10;مثال: ركّز على Power Clean اليوم مع ميتكون يتضمنه&#10;مثال: لا تمارين ظهر اليوم بسبب إصابات"
+                          rows={3}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-purple-500 resize-none" />
                       </div>
-                    )}
 
-                    <div className="flex gap-2">
-                      <button
-                        onClick={generateAiWod}
-                        disabled={aiGenerating}
-                        className={`flex-1 py-3 rounded-xl disabled:bg-gray-700 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${
+                      {/* Reset */}
+                      <button onClick={() => { setWodSessionType('balanced'); setWodMetconFormat(''); setWodStrengthPattern(''); setWodForbidExercises([]); setWodForceExercise(''); setWodSpecialNotes(''); setWodDuration(''); setAiDifficulty('متوسط'); setAiFocus(''); }}
+                        className="w-full py-2 rounded-xl border border-gray-700 text-gray-400 text-xs font-semibold hover:border-gray-500 hover:text-gray-300 transition-all">
+                        ↺ إعادة تعيين
+                      </button>
+
+                      {aiError && (
+                        <div className="bg-red-900/30 border border-red-700/50 rounded-xl p-3 text-red-400 text-xs">⚠️ {aiError}</div>
+                      )}
+
+                      {/* Generate Button */}
+                      <button onClick={generateAiWod} disabled={aiGenerating}
+                        className={`w-full py-3.5 rounded-xl disabled:from-gray-700 disabled:to-gray-700 text-white font-extrabold text-sm transition-all flex items-center justify-center gap-2 shadow-lg ${
                           wodMode === 'calisthenics'
-                            ? 'bg-emerald-600 hover:bg-emerald-500'
-                            : 'bg-purple-600 hover:bg-purple-500'
+                            ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-900/30'
+                            : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-purple-900/30'
                         }`}>
                         {aiGenerating ? (
-                          <><span className="animate-spin">⚙️</span> جاري التوليد...</>
+                          <><span className="animate-spin">⚙️</span> يحلل الأسبوع ويولد التمرين...</>
                         ) : wodMode === 'calisthenics' ? (
                           <>🤸 توليد تمرين Calisthenics</>
                         ) : (
-                          <>🤖 توليد تمرين CrossFit</>
+                          <>🤖 توليد WOD بـ Claude AI</>
                         )}
                       </button>
-                      <button
-                        onClick={() => setShowAiPanel(false)}
-                        className="px-4 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm transition-colors">
-                        إلغاء
-                      </button>
+                      {aiGenerating && (
+                        <p className="text-center text-xs text-purple-400 animate-pulse">🏋️ يتم تحليل الأسبوع الماضي وبناء تمرين متكامل...</p>
+                      )}
                     </div>
-
-                    {aiGenerating && (
-                      <div className="text-center text-xs text-purple-400 animate-pulse">
-                        🏋️ يتم تحليل مبادئ البرمجة العالمية وتوليد تمرين متكامل...
-                      </div>
-                    )}
                   </div>
                 )}
 

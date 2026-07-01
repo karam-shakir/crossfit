@@ -41,7 +41,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
-  const { date, focus, difficulty = 'متوسط', wodMode = 'crossfit' } = body;
+  const {
+    date, focus, difficulty = 'متوسط', wodMode = 'crossfit',
+    sessionType = 'balanced',    // heavy / skill / cardio / deload / balanced
+    metconFormat = '',           // AMRAP / للوقت / EMOM / بالجولات / Chipper / ''
+    strengthPattern = '',        // squat / hinge / push / pull / olympic / ''
+    forbidExercises = [] as string[],
+    forceExercise = '',
+    specialNotes = '',
+    targetDuration = 0,
+  } = body;
 
   // Calisthenics: bodyweight only — exclude barbell/machine exercises (row = machine)
   const CALISTHENICS_EXERCISES = EXERCISES.filter(e =>
@@ -125,7 +134,12 @@ ${muscleGroupLog.map(d => `${d.date}: [${d.muscles.join(' + ')}] — شدة: ${d
 **تفاصيل الجلسة:**
 - نوع الجلسة: Calisthenics — وزن الجسم البحت
 - الصعوبة: ${difficulty}
+- طابع الجلسة: ${sessionType === 'heavy' ? 'يوم قوة — weighted calisthenics، مجموعات قصيرة 3-5 reps' : sessionType === 'skill' ? 'يوم مهارة — Handstand/Muscle-up/Lever تقنية عالية' : sessionType === 'cardio' ? 'يوم تحمل — circuit عالية التكرار، لا توقف' : sessionType === 'deload' ? 'يوم تفريغ — 60-70%، تمطيط، mobility' : 'متوازن'}
 ${focus ? `- التركيز: ${focus}` : '- التركيز: كامل الجسم'}
+${metconFormat ? `- صيغة الميتكون: ${metconFormat}` : ''}
+${forceExercise ? `\n⚡ تمرين مطلوب: ${forceExercise}` : ''}
+${forbidExercises.length ? `\n🚫 محظور: ${forbidExercises.join(', ')}` : ''}
+${specialNotes ? `\n📌 تعليمات المدرب: ${specialNotes}` : ''}
 ${date ? `- التاريخ: ${date}` : ''}
 
 **التمارين المتاحة (وزن الجسم فقط — استخدم IDs هذه حصراً):**
@@ -197,7 +211,14 @@ ${recentContext}
 
 **تفاصيل التمرين المطلوب:**
 - الصعوبة: ${difficulty}
-${focus ? `- التركيز: ${focus}` : '- التركيز: حسب تقدير المدرب'}
+- طابع الجلسة: ${sessionType === 'heavy' ? '🔴 يوم ثقيل — قوة compound ثقيلة 80-90% 1RM + ميتكون قصير 8-12 دق' : sessionType === 'skill' ? '🎯 يوم تقنية — Olympic Lifting أو Gymnastics skill + ميتكون خفيف' : sessionType === 'cardio' ? '🫀 يوم تحمل — ميتكون طويل 20+ دقيقة، أوزان خفيفة، معدل قلب مرتفع' : sessionType === 'deload' ? '🔄 يوم تفريغ — 60-70% شدة، تقنية، لا إجهاد' : '⚖️ متوازن — CrossFit كلاسيكي قوة + ميتكون'}
+${focus ? `- التركيز العضلي: ${focus}` : '- التركيز: حسب تقدير المدرب وتحليل الأسبوع'}
+${strengthPattern ? `- نمط القوة المطلوب: ${strengthPattern} pattern` : ''}
+${metconFormat ? `- صيغة الميتكون المطلوبة: ${metconFormat}` : ''}
+${targetDuration ? `- المدة المرغوبة للميتكون: ${targetDuration} دقيقة (التزم بها)` : ''}
+${forceExercise ? `\n⚡ تمرين مطلوب إدراجه بالضرورة: ${forceExercise}` : ''}
+${forbidExercises.length ? `\n🚫 تمارين محظورة اليوم (لا تضعها): ${forbidExercises.join(', ')}` : ''}
+${specialNotes ? `\n📌 تعليمات خاصة من المدرب (أولوية قصوى):\n${specialNotes}` : ''}
 ${date ? `- التاريخ: ${date}` : ''}
 
 **قائمة التمارين المتاحة (استخدم ID المطابق حصراً):**
