@@ -459,6 +459,14 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   // Members
   const [memberStats, setMemberStats] = useState<any[]>([]);
   const [newMemberCredentials, setNewMemberCredentials] = useState<any>(null);
+  const [memberSearch, setMemberSearch] = useState('');
+  const [expandedMember, setExpandedMember] = useState<string | null>(null);
+  const [resetPwdId, setResetPwdId] = useState<string | null>(null);
+  const [resetPwdValue, setResetPwdValue] = useState('');
+  const [resetPwdLoading, setResetPwdLoading] = useState(false);
+  const [impersonating, setImpersonating] = useState<string | null>(null);
+  const [memberNotes, setMemberNotes] = useState<Record<string, string>>({});
+  const [savingNotes, setSavingNotes] = useState<string | null>(null);
 
   useEffect(() => {
     if (tab === 'members') {
@@ -508,6 +516,44 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
     if (res.ok) {
       setMembers(prev => prev.map(m => m.id === id ? { ...m, [perm]: !current } : m));
     }
+  }
+
+  async function impersonateMember(id: string, nameAr: string) {
+    if (!confirm(`ستنتقل للتصفح كـ "${nameAr}" — ستُعاد للوحة الإدارة تلقائياً عند الضغط على "العودة للإدارة". متأكد؟`)) return;
+    setImpersonating(id);
+    const res = await fetch('/api/admin/impersonate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ memberId: id }),
+    });
+    if (res.ok) { window.location.href = '/'; }
+    else { alert('فشل التبديل'); setImpersonating(null); }
+  }
+
+  async function resetPassword(id: string) {
+    if (!resetPwdValue || resetPwdValue.length < 4) return;
+    setResetPwdLoading(true);
+    const res = await fetch('/api/admin/reset-password', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ memberId: id, newPassword: resetPwdValue }),
+    });
+    setResetPwdLoading(false);
+    if (res.ok) { setResetPwdId(null); setResetPwdValue(''); alert('✅ تم تغيير كلمة المرور'); }
+    else { const e = await res.json(); alert(e.error || 'فشل'); }
+  }
+
+  async function saveMemberNotes(id: string) {
+    setSavingNotes(id);
+    await fetch('/api/admin/member-notes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ memberId: id, notes: memberNotes[id] || '' }),
+    });
+    setSavingNotes(null);
+  }
+
+  async function restoreAdmin() {
+    const res = await fetch('/api/admin/restore', { method: 'POST' });
+    if (res.ok) { window.location.href = '/admin'; }
+    else { alert('فشل استعادة حساب المدير'); }
   }
 
   const sections = [
@@ -1759,78 +1805,182 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                 </button>
               </div>
 
+              {/* Search bar */}
+              <div className="relative">
+                <input
+                  type="text"
+                  value={memberSearch}
+                  onChange={e => setMemberSearch(e.target.value)}
+                  placeholder="🔍 بحث بالاسم أو اسم المستخدم..."
+                  className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500"
+                />
+                {memberSearch && (
+                  <button onClick={() => setMemberSearch('')} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white text-xs">✕</button>
+                )}
+              </div>
+
               {/* Members list */}
               {membersLoading ? (
                 <div className="text-center text-gray-500 py-8">جاري التحميل...</div>
               ) : (
                 <div className="space-y-3">
-                  {members.map(m => (
-                    <div key={m.id} className="bg-gray-900 rounded-xl border border-gray-800 p-4 space-y-3">
-                      {/* معلومات العضو */}
-                      {(() => {
-                        const st = memberStats.find(s => s.id === m.id);
-                        return (
-                          <>
-                            <div className="flex items-center gap-3">
-                              <span className="text-2xl">{m.avatar}</span>
-                              <div className="flex-1 min-w-0">
-                                <div className="font-semibold text-white">{m.nameAr}</div>
-                                <div className="text-xs text-gray-400">@{m.username} • {m.role === 'admin' ? '👑 مدير' : '🏋️ عضو'} • انضم {m.joinDate}</div>
+                  {members
+                    .filter(m => !memberSearch || m.nameAr.includes(memberSearch) || m.username.toLowerCase().includes(memberSearch.toLowerCase()))
+                    .map(m => {
+                      const st = memberStats.find(s => s.id === m.id);
+                      const isExpanded = expandedMember === m.id;
+                      const isResetting = resetPwdId === m.id;
+                      return (
+                        <div key={m.id} className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+                          {/* Header row */}
+                          <div className="p-4 flex items-center gap-3">
+                            <span className="text-2xl">{m.avatar}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-semibold text-white flex items-center gap-2">
+                                {m.nameAr}
+                                {m.role === 'admin' && <span className="text-xs bg-yellow-900/40 text-yellow-400 px-2 py-0.5 rounded-full">👑 مدير</span>}
                               </div>
+                              <div className="text-xs text-gray-400">@{m.username} • انضم {m.joinDate}</div>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {/* Impersonate button (non-admin members only) */}
+                              {m.role !== 'admin' && (
+                                <button
+                                  onClick={() => impersonateMember(m.id, m.nameAr)}
+                                  disabled={impersonating === m.id}
+                                  className="text-xs bg-indigo-900/50 hover:bg-indigo-700/60 border border-indigo-700/50 text-indigo-300 px-2.5 py-1.5 rounded-lg transition-colors font-medium"
+                                  title="الدخول كهذا العضو"
+                                >
+                                  {impersonating === m.id ? '⏳' : '🎭 دخول'}
+                                </button>
+                              )}
+                              {/* Expand toggle */}
+                              <button
+                                onClick={() => setExpandedMember(isExpanded ? null : m.id)}
+                                className="w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-sm transition-colors"
+                              >
+                                {isExpanded ? '▲' : '▼'}
+                              </button>
+                              {/* Delete */}
                               {m.id !== 'admin' && (
                                 <button onClick={() => deleteMember(m.id)}
-                                  className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-red-800 flex items-center justify-center text-sm transition-colors flex-shrink-0">
+                                  className="w-8 h-8 rounded-lg bg-gray-800 hover:bg-red-800 flex items-center justify-center text-sm transition-colors">
                                   🗑
                                 </button>
                               )}
                             </div>
-                            {st && (
-                              <div className="grid grid-cols-4 gap-2">
-                                {[
-                                  { label: 'هذا الشهر', value: st.monthSessions, unit: 'جلسة', color: 'text-orange-400' },
-                                  { label: 'الإجمالي',  value: st.totalSessions, unit: 'جلسة', color: 'text-blue-400' },
-                                  { label: 'الأرقام',   value: st.totalPRs,      unit: 'PR',   color: 'text-yellow-400' },
-                                  { label: 'التواصل',   value: st.streak,        unit: 'يوم',  color: 'text-green-400' },
-                                ].map(item => (
-                                  <div key={item.label} className="bg-gray-800/60 rounded-lg p-2 text-center">
-                                    <div className={`text-lg font-bold ${item.color}`}>{item.value}</div>
-                                    <div className="text-xs text-gray-500">{item.label}</div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </>
-                        );
-                      })()}
+                          </div>
 
-                      {/* صلاحيات العضو */}
-                      {m.role !== 'admin' && (
-                        <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-800">
-                          <span className="text-xs text-gray-500 flex items-center self-center">🔐 الصلاحيات:</span>
-                          <button
-                            onClick={() => togglePermission(m.id, 'canViewWods', m.canViewWods !== false)}
-                            className={`text-xs px-3 py-1 rounded-full border transition-colors font-medium ${
-                              m.canViewWods !== false
-                                ? 'bg-green-900/40 border-green-700/50 text-green-400 hover:bg-red-900/40 hover:border-red-700/50 hover:text-red-400'
-                                : 'bg-red-900/40 border-red-700/50 text-red-400 hover:bg-green-900/40 hover:border-green-700/50 hover:text-green-400'
-                            }`}
-                          >
-                            {m.canViewWods !== false ? '✅ سجل التمارين' : '🚫 سجل التمارين'}
-                          </button>
-                          <button
-                            onClick={() => togglePermission(m.id, 'canGenerateWod', m.canGenerateWod !== false)}
-                            className={`text-xs px-3 py-1 rounded-full border transition-colors font-medium ${
-                              m.canGenerateWod !== false
-                                ? 'bg-green-900/40 border-green-700/50 text-green-400 hover:bg-red-900/40 hover:border-red-700/50 hover:text-red-400'
-                                : 'bg-red-900/40 border-red-700/50 text-red-400 hover:bg-green-900/40 hover:border-green-700/50 hover:text-green-400'
-                            }`}
-                          >
-                            {m.canGenerateWod !== false ? '✅ توليد التمرين' : '🚫 توليد التمرين'}
-                          </button>
+                          {/* Stats row */}
+                          {st && (
+                            <div className="grid grid-cols-4 gap-0 border-t border-gray-800">
+                              {[
+                                { label: 'هذا الشهر', value: st.monthSessions, unit: 'جلسة', color: 'text-orange-400' },
+                                { label: 'الإجمالي',  value: st.totalSessions, unit: 'جلسة', color: 'text-blue-400' },
+                                { label: 'الأرقام',   value: st.totalPRs,      unit: 'PR',   color: 'text-yellow-400' },
+                                { label: 'الاستمرار', value: st.streak,        unit: 'يوم',  color: 'text-green-400' },
+                              ].map((item, i) => (
+                                <div key={item.label} className={`p-2 text-center ${i < 3 ? 'border-l border-gray-800' : ''}`}>
+                                  <div className={`text-base font-bold ${item.color}`}>{item.value}</div>
+                                  <div className="text-[10px] text-gray-500">{item.label}</div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Expanded section */}
+                          {isExpanded && (
+                            <div className="p-4 space-y-4 border-t border-gray-800 bg-gray-950/40">
+
+                              {/* Permissions */}
+                              {m.role !== 'admin' && (
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-2">🔐 الصلاحيات</div>
+                                  <div className="flex flex-wrap gap-2">
+                                    <button
+                                      onClick={() => togglePermission(m.id, 'canViewWods', m.canViewWods !== false)}
+                                      className={`text-xs px-3 py-1.5 rounded-full border transition-colors font-medium ${
+                                        m.canViewWods !== false
+                                          ? 'bg-green-900/40 border-green-700/50 text-green-400'
+                                          : 'bg-red-900/40 border-red-700/50 text-red-400'
+                                      }`}
+                                    >
+                                      {m.canViewWods !== false ? '✅' : '🚫'} سجل التمارين
+                                    </button>
+                                    <button
+                                      onClick={() => togglePermission(m.id, 'canGenerateWod', m.canGenerateWod !== false)}
+                                      className={`text-xs px-3 py-1.5 rounded-full border transition-colors font-medium ${
+                                        m.canGenerateWod !== false
+                                          ? 'bg-green-900/40 border-green-700/50 text-green-400'
+                                          : 'bg-red-900/40 border-red-700/50 text-red-400'
+                                      }`}
+                                    >
+                                      {m.canGenerateWod !== false ? '✅' : '🚫'} توليد التمرين
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Reset password */}
+                              {m.role !== 'admin' && (
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-2">🔑 إعادة تعيين كلمة المرور</div>
+                                  {!isResetting ? (
+                                    <button
+                                      onClick={() => { setResetPwdId(m.id); setResetPwdValue(''); }}
+                                      className="text-xs bg-orange-900/30 border border-orange-700/40 text-orange-400 px-3 py-1.5 rounded-lg hover:bg-orange-800/40 transition-colors"
+                                    >
+                                      تغيير كلمة المرور
+                                    </button>
+                                  ) : (
+                                    <div className="flex gap-2">
+                                      <input
+                                        type="text"
+                                        value={resetPwdValue}
+                                        onChange={e => setResetPwdValue(e.target.value)}
+                                        placeholder="كلمة المرور الجديدة (4+ أحرف)"
+                                        className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-orange-500"
+                                        onKeyDown={e => e.key === 'Enter' && resetPassword(m.id)}
+                                      />
+                                      <button
+                                        onClick={() => resetPassword(m.id)}
+                                        disabled={resetPwdLoading || resetPwdValue.length < 4}
+                                        className="text-xs bg-orange-600 hover:bg-orange-500 disabled:bg-gray-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium"
+                                      >
+                                        {resetPwdLoading ? '...' : 'حفظ'}
+                                      </button>
+                                      <button onClick={() => setResetPwdId(null)} className="text-xs text-gray-500 px-2 hover:text-white">إلغاء</button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Admin notes */}
+                              <div>
+                                <div className="text-xs text-gray-500 mb-2">📝 ملاحظات المدرب</div>
+                                <textarea
+                                  value={memberNotes[m.id] ?? ((m as any).adminNotes || '')}
+                                  onChange={e => setMemberNotes(p => ({ ...p, [m.id]: e.target.value }))}
+                                  placeholder="أضف ملاحظاتك عن هذا العضو كمدرب..."
+                                  rows={3}
+                                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500 resize-none"
+                                />
+                                <button
+                                  onClick={() => saveMemberNotes(m.id)}
+                                  disabled={savingNotes === m.id}
+                                  className="mt-2 text-xs bg-purple-700 hover:bg-purple-600 disabled:bg-gray-700 text-white px-4 py-1.5 rounded-lg transition-colors font-medium"
+                                >
+                                  {savingNotes === m.id ? 'جاري الحفظ...' : '💾 حفظ الملاحظات'}
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  ))}
+                      );
+                    })}
+                  {members.filter(m => !memberSearch || m.nameAr.includes(memberSearch) || m.username.toLowerCase().includes(memberSearch.toLowerCase())).length === 0 && (
+                    <div className="text-center text-gray-500 py-8">لا توجد نتائج</div>
+                  )}
                 </div>
               )}
             </div>

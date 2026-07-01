@@ -157,6 +157,11 @@ export async function getMemberByUsername(username: string): Promise<Member | un
   return doc ? strip_id<Member>(doc) : undefined;
 }
 
+export async function updateMemberFields(id: string, fields: Record<string, any>): Promise<void> {
+  const db = await getDb();
+  await db.collection('members').updateOne({ id }, { $set: fields });
+}
+
 // ===================== EXERCISES =====================
 
 // Exercises are static — cached for 1 hour (they rarely change)

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { NavbarLogo } from './LogoMark';
@@ -293,6 +293,18 @@ export default function Navbar({ member }: {
   const [open, setOpen] = useState(false);
 
   const isAdmin = member.role === 'admin';
+  const [impersonationBanner, setImpersonationBanner] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/admin/impersonation-status').then(r => r.json()).then(d => {
+      if (d.impersonating) setImpersonationBanner(true);
+    }).catch(() => {});
+  }, []);
+
+  async function restoreAdmin() {
+    const res = await fetch('/api/admin/restore', { method: 'POST' });
+    if (res.ok) { router.push('/admin'); router.refresh(); }
+  }
 
   const allowedLinks = mainLinks.filter(l => {
     if (l.href === '/wod-history' && !isAdmin && member.canViewWods === false) return false;
@@ -311,8 +323,21 @@ export default function Navbar({ member }: {
 
   return (
     <>
+      {/* ===== Impersonation Banner ===== */}
+      {impersonationBanner && (
+        <div className="fixed top-0 inset-x-0 z-50 bg-indigo-700 text-white text-center text-sm py-2 px-4 flex items-center justify-center gap-3">
+          <span>🎭 أنت تتصفح الآن كـ <strong>{member.nameAr}</strong></span>
+          <button
+            onClick={restoreAdmin}
+            className="bg-white text-indigo-700 font-bold text-xs px-3 py-1 rounded-full hover:bg-indigo-100 transition-colors"
+          >
+            العودة للإدارة ←
+          </button>
+        </div>
+      )}
+
       {/* ===== Desktop Sidebar ===== */}
-      <aside className="hidden lg:flex flex-col w-56 bg-gray-900 border-l border-gray-800 min-h-screen fixed right-0 top-0 z-40">
+      <aside className={`hidden lg:flex flex-col w-56 bg-gray-900 border-l border-gray-800 min-h-screen fixed right-0 z-40 ${impersonationBanner ? 'top-9' : 'top-0'}`}>
 
         {/* Logo */}
         <div className="px-4 py-4 border-b border-gray-800 flex-shrink-0">
