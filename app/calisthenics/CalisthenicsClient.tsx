@@ -127,7 +127,8 @@ function SavedCard({ rec, onDelete, onView }: { rec: any; onDelete: () => void; 
 }
 
 export default function CalisthenicsClient({ member }: { member: any }) {
-  const [tab,           setTab]           = useState<'generate'|'history'>('generate');
+  const isAdmin = member.role === 'admin';
+  const [tab,           setTab]           = useState<'generate'|'history'>(isAdmin ? 'generate' : 'history');
   const [sessionType,   setSessionType]   = useState('strength');
   const [focus,         setFocus]         = useState('كامل الجسم');
   const [date,          setDate]          = useState(todaySA());
@@ -226,7 +227,9 @@ export default function CalisthenicsClient({ member }: { member: any }) {
               </div>
             </div>
             <div className="flex gap-1 bg-slate-100 border border-slate-200 p-1 rounded-xl">
-              <button onClick={() => setTab('generate')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${tab==='generate' ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:text-slate-800'}`}>توليد</button>
+              {isAdmin && (
+                <button onClick={() => setTab('generate')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${tab==='generate' ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:text-slate-800'}`}>توليد</button>
+              )}
               <button onClick={() => setTab('history')}  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${tab==='history'  ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:text-slate-800'}`}>السجل</button>
             </div>
           </div>
@@ -240,7 +243,11 @@ export default function CalisthenicsClient({ member }: { member: any }) {
                 <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
                   <div className="text-4xl mb-3">🤸</div>
                   <div className="text-slate-500 text-sm">لا توجد جلسات محفوظة بعد</div>
-                  <button onClick={() => setTab('generate')} className="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors">توليد جلسة الآن</button>
+                  {isAdmin ? (
+                    <button onClick={() => setTab('generate')} className="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors">توليد جلسة الآن</button>
+                  ) : (
+                    <p className="mt-2 text-xs text-slate-400">سيقوم المدرب بإضافة الجلسات قريباً</p>
+                  )}
                 </div>
               ) : history.map(rec => (
                 <SavedCard key={rec.id} rec={rec} onDelete={() => deleteSession(rec.id)} onView={() => viewSaved(rec)}/>
@@ -249,7 +256,7 @@ export default function CalisthenicsClient({ member }: { member: any }) {
           )}
 
           {/* تبويب التوليد */}
-          {tab === 'generate' && (
+          {tab === 'generate' && isAdmin && (
             <>
               {/* إعدادات */}
               <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-5 shadow-sm">

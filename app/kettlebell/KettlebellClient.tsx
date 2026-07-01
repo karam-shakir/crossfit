@@ -89,6 +89,7 @@ const WA_ICON = (
 );
 
 export default function KettlebellClient({ member }: { member: any }) {
+  const isAdmin = member.role === 'admin';
   const [generating, setGenerating]   = useState(false);
   const [session, setSession]         = useState<any>(null);
   const [sessionMeta, setSessionMeta] = useState<{ date: string; eventType: string; focus: string } | null>(null);
@@ -100,7 +101,7 @@ export default function KettlebellClient({ member }: { member: any }) {
   const [showSettings, setShowSettings] = useState(true);
   const [saving, setSaving]           = useState(false);
   const [saved, setSaved]             = useState(false);
-  const [activeTab, setActiveTab]     = useState<'generate' | 'history'>('generate');
+  const [activeTab, setActiveTab]     = useState<'generate' | 'history'>(isAdmin ? 'generate' : 'history');
   const [history, setHistory]         = useState<any[]>([]);
   const [historyLoad, setHistoryLoad] = useState(false);
   const [copied, setCopied]           = useState(false);
@@ -175,9 +176,11 @@ export default function KettlebellClient({ member }: { member: any }) {
 
           {/* Tabs */}
           <div className="flex rounded-xl overflow-hidden border border-gray-700">
-            <button onClick={() => setActiveTab('generate')} className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${activeTab === 'generate' ? 'bg-yellow-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
-              🤖 توليد جلسة
-            </button>
+            {isAdmin && (
+              <button onClick={() => setActiveTab('generate')} className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${activeTab === 'generate' ? 'bg-yellow-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
+                🤖 توليد جلسة
+              </button>
+            )}
             <button onClick={() => setActiveTab('history')} className={`flex-1 py-2.5 text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 ${activeTab === 'history' ? 'bg-yellow-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
               📂 سجل الجلسات
               {history.length > 0 && <span className="bg-yellow-500 text-white text-xs px-1.5 py-0.5 rounded-full">{history.length}</span>}
@@ -185,7 +188,7 @@ export default function KettlebellClient({ member }: { member: any }) {
           </div>
 
           {/* ══ تبويب التوليد ══ */}
-          {activeTab === 'generate' && (
+          {activeTab === 'generate' && isAdmin && (
             <>
               {(showSettings || !session) && (
                 <div className="bg-gray-900 rounded-2xl border border-gray-800 p-5 space-y-4">
@@ -423,7 +426,11 @@ export default function KettlebellClient({ member }: { member: any }) {
                 <div className="text-center py-12 space-y-3">
                   <div className="text-5xl">🏋️</div>
                   <p className="text-gray-500 text-sm">لا توجد جلسات محفوظة بعد</p>
-                  <button onClick={() => setActiveTab('generate')} className="text-sm text-yellow-400 hover:text-yellow-300 underline">ابدأ بتوليد جلسة الآن</button>
+                  {isAdmin ? (
+                    <button onClick={() => setActiveTab('generate')} className="text-sm text-yellow-400 hover:text-yellow-300 underline">ابدأ بتوليد جلسة الآن</button>
+                  ) : (
+                    <p className="text-xs text-gray-600">سيقوم المدرب بإضافة الجلسات قريباً</p>
+                  )}
                 </div>
               ) : (
                 <>
