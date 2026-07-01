@@ -46,7 +46,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
-  const { fromDate, days = 7, difficulty = 'متوسط', weekMode = 'crossfit', calisthenicsDays = 1 } = body;
+  const {
+    fromDate, days = 7, weekMode = 'crossfit', calisthenicsDays = 1,
+    difficulty = 'متوسط',
+    coachFocus = '',        // تركيز المدرب: strength / cardio / technique / balanced
+    restDaysCount = -1,     // -1 = auto (الـ AI يقرر), 0-7 = manual
+    forbidExercises = [],   // تمارين يجب تجنبها
+    forceExercises = [],    // تمارين يجب إدراجها هذا الأسبوع
+    intensityBias = 'balanced', // heavy / moderate / light / balanced
+    specialNotes = '',      // تعليمات خاصة من المدرب للـ AI
+    hyroxMode = false,      // إدراج يوم Hyrox
+    targetAudience = 'all', // all / beginners / advanced
+  } = body;
 
   const startDate = fromDate || todaySA();
 
@@ -90,8 +101,8 @@ export async function POST(req: NextRequest) {
 - لا تكرر نفس التمارين في يومين متتاليين
 - اجعل القوة والميتكون مترابطَين في أيام CrossFit
 - أيام الراحة: warmup وstrength وmetcon وcooldown = مصفوفات فارغة []`
-    : `**قواعد البرمجة — CrossFit كامل (بدون Calisthenics):**
-- هذا أسبوع CrossFit خالص — لا يوم Calisthenics ولا يوم Hyrox ولا Kettlebell
+    : `**قواعد البرمجة — CrossFit${hyroxMode ? ' + Hyrox' : ' كامل'}:**
+${hyroxMode ? '- أدرج يوماً واحداً مخصصاً لـ Hyrox (run + row + sled push + burpee broad jump) — يوم Hyrox يكون بعد يوم راحة\n- باقي الأيام CrossFit كلاسيكي\n' : '- هذا أسبوع CrossFit خالص — لا يوم Calisthenics ولا يوم Hyrox ولا Kettlebell\n'}
 - كل يوم نشاط هو CrossFit كلاسيكي: قوة بالبار + ميتكون مع أوزان
 - تمارين القوة (strength): يجب أن تكون بالبار حصراً (back-squat, deadlift, front-squat, overhead-squat, power-clean, clean-and-jerk, snatch, shoulder-press, push-press, thruster)
 - الميتكون: يجمع تمارين الحديد مع cardio وgymnastics — مسموح بـ pull-up وtoes-to-bar ودبل أندر في الميتكون فقط
@@ -105,12 +116,16 @@ export async function POST(req: NextRequest) {
 
 ═══════════════════════════════
 النادي: مجموعة المطانيخ CrossFit
-الجمهور: رجال ونساء (18-40 سنة)، 4 مستويات
+الجمهور: ${targetAudience === 'beginners' ? 'مبتدئون — مستوى 1 و2 فقط' : targetAudience === 'advanced' ? 'متقدمون — مستوى 3 و4 (نخبة)' : 'رجال ونساء (18-40 سنة)، 4 مستويات'}
 الفلسفة: تمرين واحد لجميع المستويات — مبتدئ يتعلم، نخبة يتحدى
-الخطة: ${weekMode === 'mixed' ? `${days} أيام مختلطة CrossFit + ${calisthenicsDays === 2 ? 'يومان' : 'يوم'} Calisthenics` : `${days} أيام CrossFit خالص — بدون Calisthenics أو Hyrox أو Kettlebell`}
+الخطة: ${weekMode === 'mixed' ? `${days} أيام مختلطة CrossFit + ${calisthenicsDays === 2 ? 'يومان' : 'يوم'} Calisthenics${hyroxMode ? ' + يوم Hyrox' : ''}` : hyroxMode ? `${days} أيام CrossFit مع يوم Hyrox` : `${days} أيام CrossFit خالص`}
 المدة: ${days} ${days === 1 ? 'يوم' : 'أيام'} من ${startDate} حتى ${dates[dates.length - 1]?.date || ''}
 المستوى العام: ${difficulty}
+التركيز الأسبوعي (من المدرب): ${coachFocus === 'strength' ? '💪 أسبوع قوة — زد الأحمال الثقيلة، قلل الميتكون الطويل' : coachFocus === 'cardio' ? '🫀 أسبوع تحمل — ميتكون طويل ومتعدد الجولات، قلل أوزان القوة' : coachFocus === 'technique' ? '🎯 أسبوع تقنية — يومان SKILL على الأقل، أوزان خفيفة، تركيز على التقنية الأولمبية' : coachFocus === 'deload' ? '🔄 أسبوع تفريغ — شدة 60-70%، أوزان خفيفة، مدة أقصر' : 'متوازن'}
+التحيّز في الشدة: ${intensityBias === 'heavy' ? 'ثقيل — أيام HEAVY أكثر (3-4 أيام)' : intensityBias === 'moderate' ? 'متوسط — تجنب الثقيل الزائد والخفيف الزائد' : intensityBias === 'light' ? 'خفيف — تعافٍ، أوزان منخفضة' : 'متوازن كلاسيكي'}
+${restDaysCount >= 0 ? `أيام الراحة: ${restDaysCount} أيام محددة من المدرب` : 'أيام الراحة: الذكاء الاصطناعي يقرر حسب التوزيع المثالي'}
 ═══════════════════════════════
+${forceExercises.length > 0 ? `\n⚡ تمارين مطلوب إدراجها هذا الأسبوع (أولوية قصوى):\n${forceExercises.join(', ')}\n` : ''}${forbidExercises.length > 0 ? `\n🚫 تمارين محظورة هذا الأسبوع (لا تضعها أبداً):\n${forbidExercises.join(', ')}\n` : ''}${specialNotes ? `\n📌 تعليمات خاصة من المدرب (اتبعها بدقة):\n${specialNotes}\n` : ''}
 
 **التمارين المتاحة (استخدم IDs هذه حصراً):**
 ${exerciseList}

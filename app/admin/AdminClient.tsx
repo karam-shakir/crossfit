@@ -45,6 +45,19 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   const [viewingSaved, setViewingSaved] = useState<any>(null);
   const [savedLoading, setSavedLoading] = useState(false);
 
+  // Coach override state (CrossFit weekly plan)
+  const [showCoachOverride, setShowCoachOverride] = useState(false);
+  const [coachFocus, setCoachFocus] = useState('balanced');
+  const [intensityBias, setIntensityBias] = useState('balanced');
+  const [restDaysCount, setRestDaysCount] = useState(-1);
+  const [hyroxMode, setHyroxMode] = useState(false);
+  const [targetAudience, setTargetAudience] = useState('all');
+  const [forbidInput, setForbidInput] = useState('');
+  const [forbidList, setForbidList] = useState<string[]>([]);
+  const [forceInput, setForceInput] = useState('');
+  const [forceList, setForceList] = useState<string[]>([]);
+  const [coachSpecialNotes, setCoachSpecialNotes] = useState('');
+
   // AI generation state
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiError, setAiError] = useState('');
@@ -113,6 +126,17 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
       ...prev,
       focusAreas: prev.focusAreas.includes(area) ? prev.focusAreas.filter((a: string) => a !== area) : [...prev.focusAreas, area],
     }));
+  }
+
+  function addToForbid() {
+    const v = forbidInput.trim().toLowerCase();
+    if (v && !forbidList.includes(v)) setForbidList(p => [...p, v]);
+    setForbidInput('');
+  }
+  function addToForce() {
+    const v = forceInput.trim().toLowerCase();
+    if (v && !forceList.includes(v)) setForceList(p => [...p, v]);
+    setForceInput('');
   }
 
   async function generateGymPlan() {
@@ -286,7 +310,11 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
       const res = await fetch('/api/wod/generate-week', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fromDate: weeklyFromDate, days: weeklyDays, difficulty: aiDifficulty, weekMode, calisthenicsDays }),
+        body: JSON.stringify({
+          fromDate: weeklyFromDate, days: weeklyDays, difficulty: aiDifficulty, weekMode, calisthenicsDays,
+          coachFocus, intensityBias, restDaysCount, hyroxMode, targetAudience,
+          forbidExercises: forbidList, forceExercises: forceList, specialNotes: coachSpecialNotes,
+        }),
       });
       const data = await res.json();
       if (!res.ok) { setWeeklyError(data.error || 'خطأ'); return; }
@@ -744,120 +772,271 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
           {/* Weekly AI Plan */}
           {tab === 'weekly' && (
             <div className="space-y-4">
-              <div className="bg-gradient-to-br from-indigo-900/40 to-purple-900/40 rounded-2xl border border-indigo-700/40 p-5 space-y-4">
+
+              {/* Header */}
+              <div className="bg-gradient-to-br from-indigo-900/50 to-purple-900/40 rounded-2xl border border-indigo-700/40 p-4">
                 <div className="flex items-center gap-3">
-                  <span className="text-3xl">🧠</span>
+                  <span className="text-2xl">🧠</span>
                   <div>
-                    <h2 className="font-bold text-white">التخطيط الأسبوعي بالذكاء الاصطناعي</h2>
-                    <p className="text-xs text-indigo-300">يحلل تمارينك السابقة ويضع خطة متوازنة تشمل CrossFit + Hyrox + Kettlebell + أيام راحة</p>
+                    <h2 className="font-extrabold text-white text-base">التخطيط الأسبوعي بالذكاء الاصطناعي</h2>
+                    <p className="text-xs text-indigo-300">يحلل التمارين السابقة ويبني خطة CrossFit احترافية</p>
                   </div>
                 </div>
+              </div>
+
+              {/* Step 1 — نوع الخطة والتاريخ */}
+              <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4 space-y-3">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">① نوع الخطة والمدة</p>
 
                 {/* Week Mode Toggle */}
                 <div className="flex rounded-xl overflow-hidden border border-indigo-700/50">
-                  <button
-                    onClick={() => setWeekMode('crossfit')}
-                    className={`flex-1 py-2.5 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
-                      weekMode === 'crossfit'
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-gray-800/60 text-gray-400 hover:text-gray-200'
-                    }`}>
+                  <button onClick={() => setWeekMode('crossfit')}
+                    className={`flex-1 py-2.5 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${weekMode === 'crossfit' ? 'bg-indigo-600 text-white' : 'bg-gray-800/60 text-gray-400 hover:text-gray-200'}`}>
                     🔥 CrossFit كامل
                   </button>
-                  <button
-                    onClick={() => setWeekMode('mixed')}
-                    className={`flex-1 py-2.5 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
-                      weekMode === 'mixed'
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-gray-800/60 text-gray-400 hover:text-gray-200'
-                    }`}>
+                  <button onClick={() => setWeekMode('mixed')}
+                    className={`flex-1 py-2.5 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${weekMode === 'mixed' ? 'bg-emerald-600 text-white' : 'bg-gray-800/60 text-gray-400 hover:text-gray-200'}`}>
                     🤸 مختلط + Calisthenics
                   </button>
                 </div>
 
-                {/* Calisthenics days selector — shown only when mixed */}
                 {weekMode === 'mixed' && (
                   <div className="bg-emerald-900/20 border border-emerald-700/40 rounded-xl p-3 space-y-2">
-                    <p className="text-xs text-emerald-300 font-semibold">🤸 عدد أيام Calisthenics في الأسبوع</p>
+                    <p className="text-xs text-emerald-300 font-semibold">🤸 عدد أيام Calisthenics</p>
                     <div className="flex gap-2">
                       {[1, 2].map(n => (
-                        <button
-                          key={n}
-                          onClick={() => setCalisthenicsDays(n)}
-                          className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                            calisthenicsDays === n
-                              ? 'bg-emerald-600 text-white'
-                              : 'bg-gray-800 text-gray-400 hover:text-gray-200 border border-gray-700'
-                          }`}>
-                          {n === 1 ? 'يوم واحد 1️⃣' : 'يومان 2️⃣'}
+                        <button key={n} onClick={() => setCalisthenicsDays(n)}
+                          className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-colors ${calisthenicsDays === n ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400 border border-gray-700'}`}>
+                          {n === 1 ? 'يوم واحد' : 'يومان'}
                         </button>
                       ))}
                     </div>
-                    <p className="text-xs text-gray-500">
-                      {calisthenicsDays === 1
-                        ? 'يوم واحد مخصص لوزن الجسم + باقي الأيام CrossFit'
-                        : 'يومان مخصصان لوزن الجسم + باقي الأيام CrossFit'}
-                    </p>
                   </div>
                 )}
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-gray-400 mb-1 block">من تاريخ</label>
+                    <label className="text-xs text-gray-400 mb-1.5 block">📅 من تاريخ</label>
                     <input type="date" value={weeklyFromDate} onChange={e => setWeeklyFromDate(e.target.value)}
                       className="w-full bg-gray-800 border border-indigo-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500" />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-400 mb-1 block">
-                      عدد الأيام — <span className="text-indigo-300 font-semibold">{weeklyDays} {weeklyDays === 1 ? 'يوم' : weeklyDays <= 10 ? 'أيام' : 'يوماً'}</span>
-                    </label>
-                    <div className="space-y-2">
-                      <input
-                        type="range"
-                        min={1} max={30} step={1}
-                        value={weeklyDays}
-                        onChange={e => setWeeklyDays(Number(e.target.value))}
-                        className="w-full accent-indigo-500 cursor-pointer"
-                      />
-                      <div className="flex justify-between text-[10px] text-gray-600 px-0.5">
-                        <span>1</span><span>7</span><span>14</span><span>21</span><span>30</span>
-                      </div>
-                      <div className="flex gap-1.5 flex-wrap">
-                        {[3,5,7,10,14,21,30].map(n => (
-                          <button key={n} onClick={() => setWeeklyDays(n)}
-                            className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${weeklyDays === n ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-indigo-600 hover:text-indigo-300'}`}>
-                            {n}
+                    <label className="text-xs text-gray-400 mb-1.5 block">عدد الأيام — <span className="text-indigo-300 font-semibold">{weeklyDays}</span></label>
+                    <input type="range" min={1} max={30} step={1} value={weeklyDays}
+                      onChange={e => setWeeklyDays(Number(e.target.value))}
+                      className="w-full accent-indigo-500 cursor-pointer mt-2" />
+                    <div className="flex gap-1 flex-wrap mt-1.5">
+                      {[3,5,7,10,14,21,30].map(n => (
+                        <button key={n} onClick={() => setWeeklyDays(n)}
+                          className={`text-xs px-2 py-0.5 rounded-lg border transition-colors ${weeklyDays === n ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'}`}>
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 2 — إعدادات المدرب */}
+              <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+                <button onClick={() => setShowCoachOverride(o => !o)}
+                  className="w-full px-4 py-3.5 flex items-center justify-between text-right">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">⚙️</span>
+                    <div>
+                      <p className="text-sm font-bold text-white">إعدادات المدرب المتقدمة</p>
+                      <p className="text-xs text-gray-500">تركيز الأسبوع • الشدة • Hyrox • تمارين مخصصة</p>
+                    </div>
+                  </div>
+                  <span className={`text-gray-500 text-sm transition-transform ${showCoachOverride ? 'rotate-180' : ''}`}>▼</span>
+                </button>
+
+                {showCoachOverride && (
+                  <div className="border-t border-gray-800 p-4 space-y-4">
+
+                    {/* المستوى العام */}
+                    <div>
+                      <label className="text-xs text-gray-400 font-semibold block mb-2">📊 المستوى العام للأسبوع</label>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {[
+                          { v: 'مبتدئ',  l: '🟢 مبتدئ' },
+                          { v: 'متوسط',  l: '🔵 متوسط' },
+                          { v: 'متقدم',  l: '🟠 متقدم' },
+                          { v: 'نخبة',   l: '🔴 نخبة' },
+                        ].map(d => (
+                          <button key={d.v} onClick={() => setAiDifficulty(d.v)}
+                            className={`py-2 rounded-xl text-xs font-bold border transition-all ${aiDifficulty === d.v ? 'border-indigo-500 bg-indigo-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                            {d.l}
                           </button>
                         ))}
                       </div>
                     </div>
+
+                    {/* الجمهور المستهدف */}
+                    <div>
+                      <label className="text-xs text-gray-400 font-semibold block mb-2">👥 الجمهور المستهدف</label>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {[
+                          { v: 'all',       l: '👥 الكل' },
+                          { v: 'beginners', l: '🟢 مبتدئون' },
+                          { v: 'advanced',  l: '🔴 متقدمون' },
+                        ].map(a => (
+                          <button key={a.v} onClick={() => setTargetAudience(a.v)}
+                            className={`py-2 rounded-xl text-xs font-semibold border transition-all ${targetAudience === a.v ? 'border-blue-500 bg-blue-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                            {a.l}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* تركيز الأسبوع */}
+                    <div>
+                      <label className="text-xs text-gray-400 font-semibold block mb-2">🎯 تركيز الأسبوع</label>
+                      <div className="grid grid-cols-1 gap-1.5">
+                        {[
+                          { v: 'balanced',  l: '⚖️ متوازن',        sub: 'توزيع كلاسيكي HEAVY/MEDIUM/SKILL/REST' },
+                          { v: 'strength',  l: '💪 أسبوع قوة',     sub: 'أحمال ثقيلة أكثر (80-90% 1RM) + ميتكون قصير' },
+                          { v: 'cardio',    l: '🫀 أسبوع تحمل',    sub: 'ميتكون طويل AMRAP + أوزان معتدلة' },
+                          { v: 'technique', l: '🎯 أسبوع تقنية',   sub: 'Olympic Lifting + Gymnastics skills' },
+                          { v: 'deload',    l: '🔄 أسبوع تفريغ',   sub: '60-70% شدة — راحة واسترداد نشط' },
+                        ].map(f => (
+                          <button key={f.v} onClick={() => setCoachFocus(f.v)}
+                            className={`flex items-center gap-3 px-3 py-2 rounded-xl border text-right text-sm transition-all ${coachFocus === f.v ? 'border-indigo-500 bg-indigo-900/30 text-white' : 'border-gray-700 bg-gray-800/50 text-gray-400 hover:border-gray-600'}`}>
+                            <span className="font-semibold flex-1">{f.l}</span>
+                            <span className="text-xs text-gray-500">{f.sub}</span>
+                            {coachFocus === f.v && <span className="text-indigo-400">✓</span>}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* تحيّز الشدة */}
+                    <div>
+                      <label className="text-xs text-gray-400 font-semibold block mb-2">🔥 تحيّز الشدة العامة</label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[
+                          { v: 'balanced', l: '⚖️ متوازن' },
+                          { v: 'heavy',    l: '🔴 ثقيل' },
+                          { v: 'moderate', l: '🟡 متوسط' },
+                          { v: 'light',    l: '🟢 خفيف' },
+                        ].map(i => (
+                          <button key={i.v} onClick={() => setIntensityBias(i.v)}
+                            className={`py-2 rounded-xl text-xs font-semibold border transition-all ${intensityBias === i.v ? 'border-orange-500 bg-orange-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                            {i.l}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* أيام الراحة */}
+                    <div>
+                      <label className="text-xs text-gray-400 font-semibold block mb-2">
+                        😴 أيام الراحة — <span className="text-white">{restDaysCount < 0 ? 'تلقائي (الـ AI يقرر)' : restDaysCount + ' أيام'}</span>
+                      </label>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {[-1, 0, 1, 2, 3, 4].map(n => (
+                          <button key={n} onClick={() => setRestDaysCount(n)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${restDaysCount === n ? 'border-slate-400 bg-slate-700 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                            {n < 0 ? 'تلقائي' : n === 0 ? 'لا راحة' : n}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Hyrox toggle */}
+                    <div>
+                      <label className="text-xs text-gray-400 font-semibold block mb-2">🏁 Hyrox</label>
+                      <button onClick={() => setHyroxMode(h => !h)}
+                        className={`w-full py-2.5 rounded-xl text-sm font-bold border transition-all ${hyroxMode ? 'border-red-500 bg-red-900/30 text-red-300' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                        {hyroxMode ? '✓ تفعيل يوم Hyrox (run + row + sled + burpee)' : 'إضافة يوم Hyrox للأسبوع'}
+                      </button>
+                    </div>
+
+                    {/* تمارين محظورة */}
+                    <div>
+                      <label className="text-xs text-gray-400 font-semibold block mb-2">🚫 تمارين محظورة هذا الأسبوع</label>
+                      <div className="flex gap-2">
+                        <input value={forbidInput} onChange={e => setForbidInput(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && addToForbid()}
+                          placeholder="مثال: deadlift"
+                          className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-red-500" />
+                        <button onClick={addToForbid} className="px-3 py-2 bg-red-900/40 border border-red-700/50 rounded-xl text-red-300 text-xs font-bold hover:bg-red-900/60">+</button>
+                      </div>
+                      {forbidList.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {forbidList.map(ex => (
+                            <span key={ex} onClick={() => setForbidList(p => p.filter(x => x !== ex))}
+                              className="text-xs px-2 py-0.5 bg-red-900/30 border border-red-700/40 text-red-300 rounded-lg cursor-pointer hover:bg-red-900/50">
+                              {ex} ✕
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* تمارين مطلوبة */}
+                    <div>
+                      <label className="text-xs text-gray-400 font-semibold block mb-2">⚡ تمارين مطلوبة هذا الأسبوع</label>
+                      <div className="flex gap-2">
+                        <input value={forceInput} onChange={e => setForceInput(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && addToForce()}
+                          placeholder="مثال: snatch"
+                          className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-green-500" />
+                        <button onClick={addToForce} className="px-3 py-2 bg-green-900/40 border border-green-700/50 rounded-xl text-green-300 text-xs font-bold hover:bg-green-900/60">+</button>
+                      </div>
+                      {forceList.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {forceList.map(ex => (
+                            <span key={ex} onClick={() => setForceList(p => p.filter(x => x !== ex))}
+                              className="text-xs px-2 py-0.5 bg-green-900/30 border border-green-700/40 text-green-300 rounded-lg cursor-pointer hover:bg-green-900/50">
+                              {ex} ✕
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* تعليمات خاصة */}
+                    <div>
+                      <label className="text-xs text-gray-400 font-semibold block mb-2">📝 تعليمات خاصة للـ AI</label>
+                      <textarea value={coachSpecialNotes} onChange={e => setCoachSpecialNotes(e.target.value)}
+                        placeholder="مثال: الأعضاء يستعدون لبطولة — ركّز على الوقت&#10;مثال: تجنب تمارين الظهر هذا الأسبوع&#10;مثال: أدرج EMOM يومياً"
+                        rows={3}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-indigo-500 resize-none" />
+                    </div>
+
+                    {/* Reset */}
+                    <button onClick={() => { setCoachFocus('balanced'); setIntensityBias('balanced'); setRestDaysCount(-1); setHyroxMode(false); setTargetAudience('all'); setForbidList([]); setForceList([]); setCoachSpecialNotes(''); setAiDifficulty('متوسط'); }}
+                      className="w-full py-2 rounded-xl border border-gray-700 text-gray-400 text-xs font-semibold hover:border-gray-500 hover:text-gray-300 transition-all">
+                      ↺ إعادة تعيين لافتراضيات الـ AI
+                    </button>
                   </div>
-                </div>
-
-                {weeklyError && (
-                  <div className="bg-red-900/30 border border-red-700/50 rounded-xl p-3 text-red-400 text-xs">⚠️ {weeklyError}</div>
-                )}
-
-                <button onClick={generateWeeklyPlan} disabled={weeklyLoading}
-                  className={`w-full py-3 rounded-xl disabled:bg-gray-700 text-white font-semibold transition-all flex items-center justify-center gap-2 ${
-                    weekMode === 'mixed'
-                      ? 'bg-emerald-600 hover:bg-emerald-500'
-                      : 'bg-indigo-600 hover:bg-indigo-500'
-                  }`}>
-                  {weeklyLoading ? (
-                    <><span className="animate-spin">⚙️</span> يتم تحليل التمارين السابقة وبناء الخطة...</>
-                  ) : weekMode === 'mixed' ? (
-                    <><span>🤸</span> توليد أسبوع مختلط CrossFit + Calisthenics</>
-                  ) : (
-                    <><span>🤖</span> توليد الخطة الأسبوعية</>
-                  )}
-                </button>
-                {weeklyLoading && (
-                  <p className="text-center text-xs text-indigo-400 animate-pulse">
-                    📊 يحلل الذكاء الاصطناعي سجل التمارين ويوازن بين القوة والتحمل والراحة...
-                  </p>
                 )}
               </div>
+
+              {/* Generate Button */}
+              {weeklyError && (
+                <div className="bg-red-900/30 border border-red-700/50 rounded-xl p-3 text-red-400 text-xs">⚠️ {weeklyError}</div>
+              )}
+              <button onClick={generateWeeklyPlan} disabled={weeklyLoading}
+                className={`w-full py-4 rounded-2xl text-white font-extrabold text-base transition-all shadow-lg disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed ${
+                  weekMode === 'mixed'
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-900/30'
+                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-indigo-900/30'
+                }`}>
+                {weeklyLoading ? (
+                  <span className="flex items-center justify-center gap-2"><span className="animate-spin">⚙️</span> يحلل التمارين السابقة ويبني الخطة...</span>
+                ) : weekMode === 'mixed' ? (
+                  <><span>🤸</span> توليد أسبوع مختلط CrossFit + Calisthenics</>
+                ) : (
+                  <><span>🤖</span> توليد الخطة الأسبوعية</>
+                )}
+              </button>
+              {weeklyLoading && (
+                <p className="text-center text-xs text-indigo-400 animate-pulse">
+                  📊 يحلل الذكاء الاصطناعي سجل التمارين ويوازن بين القوة والتحمل والراحة...
+                </p>
+              )}
 
               {/* Save button */}
               {weeklyPlan && (
