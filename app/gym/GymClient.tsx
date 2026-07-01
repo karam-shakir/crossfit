@@ -193,8 +193,19 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
     <div className={`rounded-2xl border overflow-hidden shadow-md ${theme.border} ${theme.bg} ${isToday ? 'ring-2 ring-indigo-500/60' : ''}`}>
       {/* Today badge */}
       {isToday && (
-        <div className="bg-indigo-600 text-white text-xs font-bold text-center py-1.5 tracking-wide">
+        <div className="bg-indigo-600 text-white text-sm font-bold text-center py-2 tracking-wide">
           ✨ تمرين اليوم
+        </div>
+      )}
+      {/* Intensity badge */}
+      {!isRest && s.intensity && (
+        <div className={`text-xs font-bold text-center py-1 ${
+          s.intensity === 'Heavy'    ? 'bg-red-900/60 text-red-300' :
+          s.intensity === 'Moderate' ? 'bg-orange-900/60 text-orange-300' :
+          s.intensity === 'Light'    ? 'bg-green-900/60 text-green-300' :
+          s.intensity === 'Cardio'   ? 'bg-blue-900/60 text-blue-300' : 'hidden'
+        }`}>
+          {s.intensity === 'Heavy' ? '🔴 شدة عالية' : s.intensity === 'Moderate' ? '🟠 شدة متوسطة' : s.intensity === 'Light' ? '🟢 خفيف / حجم' : s.intensity === 'Cardio' ? '🔵 كارديو' : ''}
         </div>
       )}
 
