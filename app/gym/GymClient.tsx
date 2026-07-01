@@ -120,31 +120,33 @@ function ExerciseCard({ ex, level, index }: { ex: any; level: LevelKey; index: n
   return (
     <div className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-md">
       {/* Header */}
-      <div className="px-4 py-3.5 flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3 min-w-0">
-          <span className="mt-0.5 w-8 h-8 flex-shrink-0 rounded-full bg-indigo-100 border border-indigo-300 flex items-center justify-center text-sm font-bold text-indigo-700">
-            {index + 1}
-          </span>
-          <div className="min-w-0">
-            <div className="font-bold text-slate-800 text-[16px] leading-tight">{ex.nameAr}</div>
-            <div className="text-sm text-slate-500 mt-0.5">{ex.nameEn}</div>
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <span className="text-xs bg-slate-100 border border-slate-300 text-slate-700 px-2.5 py-1 rounded-lg font-medium">
-                💪 {ex.muscleGroup}
-              </span>
-              <span className="text-xs bg-slate-100 border border-slate-300 text-slate-700 px-2.5 py-1 rounded-lg font-medium">
-                {ex.sets} مجموعات
-              </span>
+      <div className="px-3.5 py-3.5 flex items-start gap-3">
+        <span className="mt-0.5 w-7 h-7 flex-shrink-0 rounded-full bg-indigo-100 border border-indigo-300 flex items-center justify-center text-xs font-bold text-indigo-700">
+          {index + 1}
+        </span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="font-bold text-slate-800 text-[15px] leading-tight">{ex.nameAr}</div>
+              <div className="text-xs text-slate-500 mt-0.5">{ex.nameEn}</div>
             </div>
+            {MACHINE_YOUTUBE[ex.machineId] && (
+              <a href={MACHINE_YOUTUBE[ex.machineId]} target="_blank" rel="noopener noreferrer"
+                className="flex-shrink-0 flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all">
+                <YoutubeIcon />
+                <span>شرح</span>
+              </a>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+            <span className="text-xs bg-slate-100 border border-slate-300 text-slate-700 px-2 py-0.5 rounded-lg font-medium">
+              💪 {ex.muscleGroup}
+            </span>
+            <span className="text-xs bg-slate-100 border border-slate-300 text-slate-700 px-2 py-0.5 rounded-lg font-medium">
+              {ex.sets} مجموعات
+            </span>
           </div>
         </div>
-        {MACHINE_YOUTUBE[ex.machineId] && (
-          <a href={MACHINE_YOUTUBE[ex.machineId]} target="_blank" rel="noopener noreferrer"
-            className="flex-shrink-0 flex items-center gap-1.5 bg-red-800 hover:bg-red-700 border border-red-600 text-white px-3 py-2 rounded-xl text-sm font-bold transition-all shadow-sm">
-            <YoutubeIcon />
-            <span>شرح</span>
-          </a>
-        )}
       </div>
 
       {/* Stats */}
@@ -212,44 +214,42 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
       {/* Card header */}
       <button
         onClick={() => !isRest && setOpen(o => !o)}
-        className={`w-full px-4 py-4 text-right flex items-center justify-between gap-3 ${!isRest ? 'active:bg-white/5 cursor-pointer' : 'cursor-default'}`}
+        className={`w-full px-4 py-3.5 text-right flex items-center gap-3 ${!isRest ? 'active:bg-black/5 cursor-pointer' : 'cursor-default'}`}
       >
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="text-2xl flex-shrink-0">{theme.icon}</span>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-1">
-              <span className="font-extrabold text-white text-lg leading-tight">{s.dayName}</span>
-              <span className="text-sm text-gray-400">{new Date(s.date + 'T00:00:00').toLocaleDateString('ar-SA', { day: 'numeric', month: 'short' })}</span>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              {!isRest && (
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${theme.badge}`}>
-                  {s.splitType}
-                </span>
-              )}
-              {isRest ? (
-                <span className="text-base text-gray-300">😴 يوم راحة — استرح واشرب ماء</span>
-              ) : (
-                <span className="text-sm text-gray-300 leading-relaxed">{s.title}</span>
-              )}
-            </div>
+        <span className="text-2xl flex-shrink-0">{theme.icon}</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+            <span className="font-extrabold text-slate-800 text-[17px] leading-tight">{s.dayName}</span>
+            <span className="text-xs text-slate-500">{new Date(s.date + 'T00:00:00').toLocaleDateString('ar-SA', { day: 'numeric', month: 'short' })}</span>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap mt-1">
+            {!isRest && (
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${theme.badge}`}>
+                {s.splitType}
+              </span>
+            )}
+            {isRest ? (
+              <span className="text-sm text-slate-500">😴 يوم راحة</span>
+            ) : s.title ? (
+              <span className="text-xs text-slate-600 leading-relaxed line-clamp-1">{s.title}</span>
+            ) : null}
           </div>
         </div>
         {!isRest && (
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             {s.exercises?.length > 0 && (
-              <div className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-center min-w-[44px] shadow-sm">
-                <div className="text-base font-bold text-slate-800 leading-none">{s.exercises.length}</div>
-                <div className="text-[10px] text-slate-500 mt-0.5">تمرين</div>
+              <div className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-center min-w-[36px] shadow-sm">
+                <div className="text-sm font-bold text-slate-800 leading-none">{s.exercises.length}</div>
+                <div className="text-[9px] text-slate-500 mt-0.5">تمرين</div>
               </div>
             )}
             {s.duration && (
-              <div className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-center min-w-[44px] shadow-sm">
-                <div className="text-base font-bold text-slate-800 leading-none">{s.duration}</div>
-                <div className="text-[10px] text-slate-500 mt-0.5">دقيقة</div>
+              <div className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-center min-w-[36px] shadow-sm">
+                <div className="text-sm font-bold text-slate-800 leading-none">{s.duration}</div>
+                <div className="text-[9px] text-slate-500 mt-0.5">دقيقة</div>
               </div>
             )}
-            <div className="text-slate-400 w-8">
+            <div className="text-slate-400">
               <ChevronIcon open={open} />
             </div>
           </div>
@@ -288,14 +288,14 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
               <h4 className="text-[15px] font-bold text-amber-800 mb-3 flex items-center gap-2">
                 <span className="text-xl">🔆</span> الإحماء
               </h4>
-              <div className="space-y-2.5">
+              <ol className="space-y-2 list-none">
                 {s.warmup.map((w: string, i: number) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-amber-700 text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">{i + 1}</span>
-                    <span className="text-[15px] text-slate-700 leading-relaxed">{w}</span>
-                  </div>
+                  <li key={i} className="flex items-baseline gap-2.5 text-right">
+                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-amber-600 text-white text-[11px] flex items-center justify-center font-bold leading-none">{i + 1}</span>
+                    <span className="flex-1 text-[14px] text-slate-700 leading-relaxed break-words">{w}</span>
+                  </li>
                 ))}
-              </div>
+              </ol>
             </div>
           )}
 
@@ -323,14 +323,14 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
               <h4 className="text-[15px] font-bold text-teal-700 mb-3 flex items-center gap-2">
                 <span className="text-xl">🧘</span> التهدئة والإطالة
               </h4>
-              <div className="space-y-2.5">
+              <ol className="space-y-2 list-none">
                 {s.cooldown.map((c: string, i: number) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-teal-600 text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">{i + 1}</span>
-                    <span className="text-[15px] text-slate-700 leading-relaxed">{c}</span>
-                  </div>
+                  <li key={i} className="flex items-baseline gap-2.5 text-right">
+                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-teal-600 text-white text-[11px] flex items-center justify-center font-bold leading-none">{i + 1}</span>
+                    <span className="flex-1 text-[14px] text-slate-700 leading-relaxed break-words">{c}</span>
+                  </li>
                 ))}
-              </div>
+              </ol>
             </div>
           )}
 
