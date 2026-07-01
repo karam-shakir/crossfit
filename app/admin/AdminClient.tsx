@@ -89,6 +89,8 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   const [gymError, setGymError] = useState('');
   const [gymSaved, setGymSaved] = useState(false);
   const [gymProfile, setGymProfile] = useState<any>(null);
+  const [gymOverride, setGymOverride] = useState<any>(null); // قيم المدرب المعدّلة
+  const [gymShowOverride, setGymShowOverride] = useState(false);
 
   useEffect(() => {
     if (tab === 'gym' && gymMembers.length === 0) {
@@ -98,10 +100,20 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
 
   useEffect(() => {
     if (gymSelectedMember) {
-      setGymProfile(null);
-      fetch(`/api/gym/profile?memberId=${gymSelectedMember}`).then(r => r.json()).then(d => setGymProfile(d || null));
+      setGymProfile(null); setGymOverride(null); setGymShowOverride(false);
+      fetch(`/api/gym/profile?memberId=${gymSelectedMember}`).then(r => r.json()).then(d => {
+        setGymProfile(d || null);
+        if (d) setGymOverride({ goal: d.goal, level: d.level, daysPerWeek: d.daysPerWeek, gender: d.gender || 'male', focusAreas: d.focusAreas || [], limitations: d.limitations || '', specialInstructions: '' });
+      });
     }
   }, [gymSelectedMember]);
+
+  function gymToggleFocus(area: string) {
+    setGymOverride((prev: any) => ({
+      ...prev,
+      focusAreas: prev.focusAreas.includes(area) ? prev.focusAreas.filter((a: string) => a !== area) : [...prev.focusAreas, area],
+    }));
+  }
 
   async function generateGymPlan() {
     if (!gymSelectedMember) return;
@@ -110,7 +122,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
       const res = await fetch('/api/gym/generate-week', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ memberId: gymSelectedMember, fromDate: gymFromDate }),
+        body: JSON.stringify({ memberId: gymSelectedMember, fromDate: gymFromDate, override: gymOverride }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل التوليد');
@@ -1400,14 +1412,22 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
           {/* ===== Gym Technogym ===== */}
           {tab === 'gym' && (
             <div className="space-y-4">
-              <div className="bg-gradient-to-br from-violet-900/40 to-indigo-900/40 rounded-2xl border border-violet-700/30 p-4 space-y-3">
-                <h2 className="font-bold text-white text-sm">🏛️ توليد جدول Technogym لعضو</h2>
 
-                {/* Member selector */}
+              {/* Header */}
+              <div className="bg-gradient-to-br from-violet-900/50 to-indigo-900/40 rounded-2xl border border-violet-700/40 p-4">
+                <h2 className="font-extrabold text-white text-base">🏛️ توليد جدول Technogym</h2>
+                <p className="text-xs text-violet-300 mt-0.5">اختر العضو وخصّص الإعدادات كمدرب قبل التوليد</p>
+              </div>
+
+              {/* Step 1 — Member + Date */}
+              <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4 space-y-3">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">① اختيار العضو والتاريخ</p>
+
                 <div>
-                  <label className="text-xs text-gray-400 mb-1 block">اختر العضو</label>
-                  <select value={gymSelectedMember} onChange={e => { setGymSelectedMember(e.target.value); setGymPlan(null); setGymSaved(false); setGymError(''); }}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500">
+                  <label className="text-xs text-gray-400 mb-1.5 block">العضو</label>
+                  <select value={gymSelectedMember}
+                    onChange={e => { setGymSelectedMember(e.target.value); setGymPlan(null); setGymSaved(false); setGymError(''); }}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500">
                     <option value="">-- اختر عضو --</option>
                     {gymMembers.map(m => (
                       <option key={m.id} value={m.id}>{m.nameAr} (@{m.username})</option>
@@ -1415,81 +1435,272 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                   </select>
                 </div>
 
-                {/* Member profile preview */}
-                {gymSelectedMember && (
-                  gymProfile ? (
-                    <div className="bg-gray-800/60 rounded-xl border border-violet-700/20 px-3 py-2 text-xs space-y-1">
-                      <div className="flex flex-wrap gap-2 text-gray-300">
-                        <span className="bg-violet-900/40 px-2 py-0.5 rounded-lg">🎯 {gymProfile.goal}</span>
-                        <span className="bg-blue-900/40 px-2 py-0.5 rounded-lg">📊 {gymProfile.level}</span>
-                        <span className="bg-green-900/40 px-2 py-0.5 rounded-lg">📅 {gymProfile.daysPerWeek} أيام/أسبوع</span>
-                        {gymProfile.age && <span className="bg-gray-700/50 px-2 py-0.5 rounded-lg">🧑 {gymProfile.age} سنة</span>}
-                        {gymProfile.weight && <span className="bg-gray-700/50 px-2 py-0.5 rounded-lg">⚖️ {gymProfile.weight} كجم</span>}
-                      </div>
-                      {gymProfile.focusAreas?.length > 0 && (
-                        <div className="text-gray-400">💪 التركيز: {gymProfile.focusAreas.join(' • ')}</div>
-                      )}
-                      {gymProfile.limitations && (
-                        <div className="text-yellow-400">⚠️ {gymProfile.limitations}</div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-xl px-3 py-2 text-xs text-yellow-400">
-                      ⚠️ هذا العضو لم يعبّئ بروفايله التدريبي بعد
-                    </div>
-                  )
-                )}
-
-                {/* From date */}
                 <div>
-                  <label className="text-xs text-gray-400 mb-1 block">تاريخ بداية الجدول</label>
+                  <label className="text-xs text-gray-400 mb-1.5 block">📅 تاريخ بداية الجدول</label>
                   <input type="date" value={gymFromDate} onChange={e => setGymFromDate(e.target.value)}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500" />
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500" />
                 </div>
 
-                {/* Generate button */}
-                <button onClick={generateGymPlan} disabled={gymLoading || !gymSelectedMember || !gymProfile}
-                  className="w-full py-3 rounded-xl text-white font-bold text-sm transition-colors bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed">
-                  {gymLoading ? '⏳ جاري التوليد...' : '🤖 توليد الجدول بـ Claude AI'}
-                </button>
-
-                {gymError && <div className="text-red-400 text-xs bg-red-900/20 rounded-xl px-3 py-2">❌ {gymError}</div>}
-                {gymSaved && !gymError && <div className="text-green-400 text-xs bg-green-900/20 rounded-xl px-3 py-2">✅ تم توليد وحفظ الجدول للعضو</div>}
+                {/* بروفايل العضو المحفوظ */}
+                {gymSelectedMember && !gymProfile && (
+                  <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-xl px-3 py-2.5 text-sm text-yellow-400 flex items-center gap-2">
+                    <span>⚠️</span>
+                    <span>العضو لم يعبّئ بروفايله — يمكنك إنشاء إعداداته يدوياً أدناه</span>
+                  </div>
+                )}
+                {gymSelectedMember && gymProfile && (
+                  <div className="bg-gray-800/60 rounded-xl border border-gray-700/40 px-3 py-2.5 space-y-1.5">
+                    <p className="text-xs text-gray-500 font-semibold">بروفايل العضو المحفوظ:</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { label: gymProfile.goal, bg: 'bg-violet-900/50 text-violet-300 border-violet-700/40' },
+                        { label: gymProfile.level, bg: 'bg-blue-900/50 text-blue-300 border-blue-700/40' },
+                        { label: gymProfile.daysPerWeek + ' أيام', bg: 'bg-green-900/50 text-green-300 border-green-700/40' },
+                        { label: gymProfile.gender === 'female' ? 'أنثى' : 'ذكر', bg: 'bg-gray-700/60 text-gray-300 border-gray-600/40' },
+                        gymProfile.age ? { label: gymProfile.age + ' سنة', bg: 'bg-gray-700/60 text-gray-400 border-gray-600/40' } : null,
+                        gymProfile.weight ? { label: gymProfile.weight + 'كجم', bg: 'bg-gray-700/60 text-gray-400 border-gray-600/40' } : null,
+                      ].filter(Boolean).map((b: any, i: number) => (
+                        <span key={i} className={`text-xs px-2 py-0.5 rounded-lg border ${b.bg}`}>{b.label}</span>
+                      ))}
+                    </div>
+                    {gymProfile.focusAreas?.length > 0 && (
+                      <p className="text-xs text-gray-400">💪 {gymProfile.focusAreas.join(' • ')}</p>
+                    )}
+                    {gymProfile.limitations && (
+                      <p className="text-xs text-yellow-500">⚠️ {gymProfile.limitations}</p>
+                    )}
+                  </div>
+                )}
               </div>
 
-              {/* Plan preview */}
+              {/* Step 2 — Coach Overrides */}
+              {gymSelectedMember && gymOverride && (
+                <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+                  <button onClick={() => setGymShowOverride(o => !o)}
+                    className="w-full px-4 py-3.5 flex items-center justify-between text-right">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">⚙️</span>
+                      <div>
+                        <p className="text-sm font-bold text-white">إعدادات المدرب</p>
+                        <p className="text-xs text-gray-500">تعديل الخيارات قبل التوليد</p>
+                      </div>
+                    </div>
+                    <span className={`text-gray-500 text-sm transition-transform ${gymShowOverride ? 'rotate-180' : ''}`}>▼</span>
+                  </button>
+
+                  {gymShowOverride && (
+                    <div className="border-t border-gray-800 p-4 space-y-4">
+
+                      {/* الجنس */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">👤 الجنس (يؤثر على الأوزان)</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[{ v: 'male', l: '♂️ ذكر' }, { v: 'female', l: '♀️ أنثى' }].map(g => (
+                            <button key={g.v} onClick={() => setGymOverride((p: any) => ({ ...p, gender: g.v }))}
+                              className={`py-2 rounded-xl text-sm font-semibold border transition-all ${gymOverride.gender === g.v ? 'border-indigo-500 bg-indigo-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                              {g.l}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* الهدف */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">🎯 الهدف</label>
+                        <div className="grid grid-cols-1 gap-1.5">
+                          {[
+                            { v: 'muscle_gain',    l: '💪 بناء العضلة',         sub: 'أحمال ثقيلة 8-12 rep' },
+                            { v: 'weight_loss',    l: '🔥 خسارة الوزن',         sub: 'كارديو + قوة 12-20 rep' },
+                            { v: 'strength',       l: '🏋️ بناء القوة',          sub: 'Compound ثقيل 3-6 rep' },
+                            { v: 'body_recomp',    l: '🎯 إعادة تشكيل الجسم',   sub: 'قوة + كارديو متوازن' },
+                            { v: 'general_fitness',l: '⚡ لياقة عامة',           sub: 'تنويع شامل' },
+                          ].map(g => (
+                            <button key={g.v} onClick={() => setGymOverride((p: any) => ({ ...p, goal: g.v }))}
+                              className={`flex items-center gap-3 px-3 py-2 rounded-xl border text-right text-sm transition-all ${gymOverride.goal === g.v ? 'border-violet-500 bg-violet-900/30 text-white' : 'border-gray-700 bg-gray-800/50 text-gray-400 hover:border-gray-600'}`}>
+                              <span className="font-semibold flex-1">{g.l}</span>
+                              <span className="text-xs text-gray-500">{g.sub}</span>
+                              {gymOverride.goal === g.v && <span className="text-violet-400">✓</span>}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* المستوى */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">📊 المستوى الفعلي (تقييم المدرب)</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { v: 'beginner',     l: '🟢 مبتدئ',  sub: '< سنة' },
+                            { v: 'intermediate', l: '🔵 متوسط',  sub: '1-3 سنوات' },
+                            { v: 'advanced',     l: '🟠 متقدم',  sub: '3-5 سنوات' },
+                            { v: 'elite',        l: '🔴 محترف',  sub: '+5 سنوات' },
+                          ].map(l => (
+                            <button key={l.v} onClick={() => setGymOverride((p: any) => ({ ...p, level: l.v }))}
+                              className={`flex flex-col items-center py-2.5 px-2 rounded-xl border text-sm font-bold transition-all ${gymOverride.level === l.v ? 'border-blue-500 bg-blue-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'}`}>
+                              <span>{l.l}</span>
+                              <span className="text-xs text-gray-500 font-normal mt-0.5">{l.sub}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* الأيام */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">📅 أيام التدريب أسبوعياً</label>
+                        <div className="grid grid-cols-4 gap-2">
+                          {[3, 4, 5, 6].map(n => (
+                            <button key={n} onClick={() => setGymOverride((p: any) => ({ ...p, daysPerWeek: n }))}
+                              className={`py-3 rounded-xl border font-extrabold text-lg transition-all ${gymOverride.daysPerWeek === n ? 'border-violet-500 bg-violet-600 text-white' : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'}`}>
+                              {n}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1.5 text-center">
+                          {gymOverride.daysPerWeek === 3 ? 'Full Body × 3' : gymOverride.daysPerWeek === 4 ? 'Upper/Lower × 2' : gymOverride.daysPerWeek === 5 ? 'Push/Pull/Legs' : 'PPL مزدوج'}
+                        </p>
+                      </div>
+
+                      {/* مناطق التركيز */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">💪 مناطق التركيز</label>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {['الصدر','الظهر','الأرجل','الأكتاف','الذراعين','البطن والجذع','المؤخرة','الساق السفلى'].map(area => (
+                            <button key={area} onClick={() => gymToggleFocus(area)}
+                              className={`px-3 py-2 rounded-xl border text-xs font-semibold transition-all text-right ${gymOverride.focusAreas?.includes(area) ? 'border-orange-500 bg-orange-900/30 text-orange-300' : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'}`}>
+                              {gymOverride.focusAreas?.includes(area) ? '✓ ' : ''}{area}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* قيود الإصابات */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">⚠️ قيود / إصابات (تعديل المدرب)</label>
+                        <textarea value={gymOverride.limitations}
+                          onChange={e => setGymOverride((p: any) => ({ ...p, limitations: e.target.value }))}
+                          placeholder="مثال: ألم في الركبة اليسرى — تجنب Leg Extension&#10;ديسك في الظهر — لا Deadlift"
+                          rows={3}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-yellow-500 resize-none" />
+                      </div>
+
+                      {/* تعليمات خاصة */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">📝 تعليمات خاصة للـ AI من المدرب</label>
+                        <textarea value={gymOverride.specialInstructions}
+                          onChange={e => setGymOverride((p: any) => ({ ...p, specialInstructions: e.target.value }))}
+                          placeholder="مثال: العضو يستعد لبطولة — ركّز على الحجم الكبير&#10;مثال: جلسات قصيرة لا تتجاوز 45 دقيقة&#10;مثال: ركّز على الأوزان الحرة وقلّل الأجهزة"
+                          rows={3}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-violet-500 resize-none" />
+                        <p className="text-xs text-gray-600 mt-1">هذه التعليمات تُرسل مباشرة للـ AI لمراعاتها في التوليد</p>
+                      </div>
+
+                      {/* Reset button */}
+                      {gymProfile && (
+                        <button onClick={() => setGymOverride({ goal: gymProfile.goal, level: gymProfile.level, daysPerWeek: gymProfile.daysPerWeek, gender: gymProfile.gender || 'male', focusAreas: gymProfile.focusAreas || [], limitations: gymProfile.limitations || '', specialInstructions: '' })}
+                          className="w-full py-2 rounded-xl border border-gray-700 text-gray-400 text-xs font-semibold hover:border-gray-500 hover:text-gray-300 transition-all">
+                          ↺ إعادة تعيين لقيم البروفايل الأصلية
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* إنشاء بروفايل جديد إذا لم يكن موجوداً */}
+              {gymSelectedMember && !gymProfile && !gymOverride && (
+                <button onClick={() => setGymOverride({ goal: 'general_fitness', level: 'beginner', daysPerWeek: 3, gender: 'male', focusAreas: [], limitations: '', specialInstructions: '' })}
+                  className="w-full py-3 rounded-xl border border-dashed border-violet-700/60 text-violet-400 text-sm font-semibold hover:bg-violet-900/10 transition-all">
+                  + إنشاء بروفايل مؤقت لهذا العضو
+                </button>
+              )}
+
+              {/* Generate Button */}
+              {gymSelectedMember && gymOverride && (
+                <div className="space-y-2">
+                  <button onClick={generateGymPlan} disabled={gymLoading}
+                    className="w-full py-4 rounded-2xl text-white font-extrabold text-base transition-all shadow-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed shadow-violet-900/30">
+                    {gymLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="animate-spin">⏳</span> جاري التوليد بـ Claude AI...
+                      </span>
+                    ) : '🤖 توليد الجدول الأسبوعي'}
+                  </button>
+                  {gymLoading && (
+                    <p className="text-xs text-gray-500 text-center">قد يستغرق 30-60 ثانية حسب عدد الأيام</p>
+                  )}
+                  {gymError && (
+                    <div className="bg-red-900/20 border border-red-700/40 rounded-xl px-3 py-2.5 text-sm text-red-400 flex items-start gap-2">
+                      <span>❌</span><span>{gymError}</span>
+                    </div>
+                  )}
+                  {gymSaved && !gymError && (
+                    <div className="bg-green-900/20 border border-green-700/40 rounded-xl px-3 py-2.5 text-sm text-green-400 flex items-center gap-2">
+                      <span>✅</span><span>تم التوليد والحفظ للعضو بنجاح</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Plan Preview */}
               {gymPlan?.sessions && (
                 <div className="space-y-3">
-                  <h3 className="font-semibold text-white text-sm">📋 الجدول المُولَّد ({gymPlan.sessions.length} جلسة)</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-white text-sm">📋 الجدول المُولَّد</h3>
+                    <span className="text-xs text-gray-500">{gymPlan.sessions.filter((s: any) => !s.isRest).length} أيام تمرين • {gymPlan.sessions.filter((s: any) => s.isRest).length} أيام راحة</span>
+                  </div>
+
+                  {gymPlan.weekSummary && (
+                    <div className="bg-indigo-900/20 border border-indigo-700/30 rounded-xl px-3 py-2.5 text-xs text-indigo-300">
+                      📌 {gymPlan.weekSummary}
+                    </div>
+                  )}
+
                   {gymPlan.sessions.map((s: any, i: number) => (
                     <div key={i} className={`rounded-2xl border overflow-hidden ${s.isRest ? 'border-gray-700/30 bg-gray-900/30' : 'border-violet-700/30 bg-violet-900/10'}`}>
                       <div className="p-3 flex items-center gap-3">
-                        <span className="text-lg">{s.isRest ? '😴' : '🏋️'}</span>
+                        <div className="flex-shrink-0 text-center">
+                          <div className="text-xl">{s.isRest ? '😴' : s.splitType === 'Push' ? '🔴' : s.splitType === 'Pull' ? '🔵' : s.splitType === 'Legs' ? '🟢' : s.splitType === 'Upper' ? '🟣' : s.splitType === 'Lower' ? '🟡' : '🔷'}</div>
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-bold text-white text-sm">{s.dayName}</span>
                             <span className="text-xs text-gray-500">{s.date}</span>
-                            {!s.isRest && <span className="text-xs bg-violet-900/60 text-violet-300 px-2 py-0.5 rounded-full border border-violet-700/30">{s.splitType}</span>}
+                            {!s.isRest && <span className="text-xs bg-violet-900/50 text-violet-300 px-2 py-0.5 rounded-full border border-violet-700/30">{s.splitType}</span>}
+                            {s.intensity && !s.isRest && (
+                              <span className={`text-xs px-2 py-0.5 rounded-full border ${s.intensity === 'Heavy' ? 'bg-red-900/40 text-red-400 border-red-700/30' : s.intensity === 'Moderate' ? 'bg-orange-900/40 text-orange-400 border-orange-700/30' : 'bg-green-900/40 text-green-400 border-green-700/30'}`}>
+                                {s.intensity}
+                              </span>
+                            )}
                           </div>
                           <div className="text-xs text-gray-400 mt-0.5 truncate">
-                            {s.isRest ? 'يوم راحة' : `${s.title} • ${s.exercises?.length || 0} تمارين`}
+                            {s.isRest ? 'يوم راحة واسترداد' : s.title}
                           </div>
                         </div>
-                        {s.duration && <span className="text-xs text-gray-500 flex-shrink-0">⏱{s.duration}د</span>}
+                        <div className="flex-shrink-0 text-right">
+                          {s.duration > 0 && <div className="text-xs text-gray-500">⏱ {s.duration}د</div>}
+                          {!s.isRest && <div className="text-xs text-violet-400">{s.exercises?.length || 0} تمارين</div>}
+                        </div>
                       </div>
                       {!s.isRest && s.exercises?.length > 0 && (
                         <div className="border-t border-white/5 px-3 py-2 space-y-1">
                           {s.exercises.map((ex: any, j: number) => (
-                            <div key={j} className="flex items-center gap-2 text-xs text-gray-400">
-                              <span className="text-violet-400">•</span>
-                              <span className="flex-1">{ex.nameAr}</span>
-                              <span className="text-gray-600">{ex.sets} مج</span>
+                            <div key={j} className="flex items-center gap-2 text-xs">
+                              <span className="text-violet-500 flex-shrink-0">{j + 1}.</span>
+                              <span className="flex-1 text-gray-300">{ex.nameAr}</span>
+                              <span className="text-gray-500">{ex.muscleGroup}</span>
+                              <span className="text-gray-600 flex-shrink-0">{ex.sets} مج</span>
                             </div>
                           ))}
                         </div>
                       )}
                     </div>
                   ))}
+
+                  {gymPlan.progressionNote && (
+                    <div className="bg-teal-900/20 border border-teal-700/30 rounded-xl px-3 py-2.5 text-xs text-teal-300">
+                      📈 {gymPlan.progressionNote}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

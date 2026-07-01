@@ -128,17 +128,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
-  const { memberId, fromDate } = body;
+  const { memberId, fromDate, override } = body;
   if (!memberId) return NextResponse.json({ error: 'memberId مطلوب' }, { status: 400 });
 
   const startDate = fromDate || todaySA();
   const member = await getMemberById(memberId);
   const profile = await getGymProfile(memberId);
-  if (!profile) return NextResponse.json({ error: 'العضو لا يملك بروفايل تدريبي' }, { status: 400 });
+
+  // دمج بروفايل العضو مع تعديلات المدرب (override يأخذ الأولوية)
+  const effective = {
+    goal: 'general_fitness',
+    level: 'beginner',
+    daysPerWeek: 3,
+    gender: 'male',
+    focusAreas: [] as string[],
+    limitations: '',
+    weight: undefined as number | undefined,
+    height: undefined as number | undefined,
+    age: undefined as number | undefined,
+    experienceYears: undefined as string | undefined,
+    ...((profile || {}) as object),
+    ...(override || {}),
+  };
 
   // إجمالي أيام الأسبوع: أيام التمرين + أيام الراحة المناسبة
-  const restDays = profile.daysPerWeek <= 3 ? 4 : profile.daysPerWeek <= 4 ? 3 : profile.daysPerWeek === 5 ? 2 : 1;
-  const totalDays = profile.daysPerWeek + restDays;
+  const restDays = effective.daysPerWeek <= 3 ? 4 : effective.daysPerWeek <= 4 ? 3 : effective.daysPerWeek === 5 ? 2 : 1;
+  const totalDays = effective.daysPerWeek + restDays;
   const dates = buildDates(startDate, totalDays);
 
   const recentSessions = await getGymSessions(memberId);
@@ -148,9 +163,9 @@ export async function POST(req: NextRequest) {
     exercises: s.exercises.slice(0, 5).map(e => e.nameEn).join(', '),
   }));
 
-  const gender = (profile as any).gender || 'male';
-  const levelAr = { beginner: 'مبتدئ', intermediate: 'متوسط', advanced: 'متقدم', elite: 'محترف' }[profile.level] || 'متوسط';
-  const bmi = profile.weight && profile.height ? (profile.weight / ((profile.height / 100) ** 2)).toFixed(1) : null;
+  const gender = effective.gender || 'male';
+  const levelAr = { beginner: 'مبتدئ', intermediate: 'متوسط', advanced: 'متقدم', elite: 'محترف' }[effective.level as string] || 'متوسط';
+  const bmi = effective.weight && effective.height ? (effective.weight / ((effective.height / 100) ** 2)).toFixed(1) : null;
 
   const prompt = `أنت خبير برمجة تدريبية معتمد (CSCS, NSCA) ومتخصص في أجهزة Technogym وتدريب الصالات الرياضية بمستوى احترافي عالٍ. مهمتك تصميم برنامج تدريبي أسبوعي متكامل ومخصص بالكامل لهذا المتدرب.
 
@@ -164,26 +179,27 @@ export async function POST(req: NextRequest) {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 الاسم: ${member?.nameAr || 'المتدرب'}
 الجنس: ${gender === 'female' ? 'أنثى' : 'ذكر'}
-العمر: ${profile.age ? profile.age + ' سنة' : 'غير محدد'}
-الوزن: ${profile.weight ? profile.weight + ' كجم' : 'غير محدد'}
-الطول: ${profile.height ? profile.height + ' سم' : 'غير محدد'}
+العمر: ${effective.age ? effective.age + ' سنة' : 'غير محدد'}
+الوزن: ${effective.weight ? effective.weight + ' كجم' : 'غير محدد'}
+الطول: ${effective.height ? effective.height + ' سم' : 'غير محدد'}
 ${bmi ? `BMI: ${bmi}` : ''}
 المستوى: ${levelAr}
-سنوات الخبرة: ${(profile as any).experienceYears ? (profile as any).experienceYears + ' سنوات' : 'غير محدد'}
-الهدف الرئيسي: ${profile.goal}
-أيام التدريب: ${profile.daysPerWeek} أيام/أسبوع
-مناطق التركيز: ${profile.focusAreas?.length ? profile.focusAreas.join(' + ') : 'كامل الجسم'}
-القيود والإصابات: ${profile.limitations || 'لا توجد قيود'}
+سنوات الخبرة: ${effective.experienceYears ? effective.experienceYears + ' سنوات' : 'غير محدد'}
+الهدف الرئيسي: ${effective.goal}
+أيام التدريب: ${effective.daysPerWeek} أيام/أسبوع
+مناطق التركيز: ${effective.focusAreas?.length ? effective.focusAreas.join(' + ') : 'كامل الجسم'}
+القيود والإصابات: ${effective.limitations || 'لا توجد قيود'}
+${override?.specialInstructions ? `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📌 تعليمات خاصة من المدرب (أولوية قصوى)\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n${override.specialInstructions}` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🎯 بروتوكول الهدف
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${getGoalProtocol(profile.goal)}
+${getGoalProtocol(effective.goal)}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📅 هيكل الأسبوع التدريبي
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${getSplitPlan(profile.daysPerWeek)}
+${getSplitPlan(effective.daysPerWeek)}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📊 جلسات الأسبوع السابق (تجنّب التكرار)
@@ -195,7 +211,7 @@ ${recentTraining.length ? recentTraining.map(s => `• ${s.date} | ${s.split} | 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${dates.map(d => `• ${d.date} — ${d.dayName}`).join('\n')}
 
-وزّع ${profile.daysPerWeek} أيام تمرين و${restDays} أيام راحة على هذه الأيام بذكاء (مثلاً: لا تضع يومي تمرين ثقيل متتاليين بدون راحة)
+وزّع ${effective.daysPerWeek} أيام تمرين و${restDays} أيام راحة على هذه الأيام بذكاء (مثلاً: لا تضع يومي تمرين ثقيل متتاليين بدون راحة)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🏋️ قائمة أجهزة وتمارين Technogym الكاملة
@@ -259,7 +275,7 @@ rower | Rowing Machine | كارديو + ظهر + ذراعين
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⚖️ جدول الأوزان المرجعية
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${getWeightStandards(gender, profile.weight)}
+${getWeightStandards(gender, effective.weight)}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🧠 مبادئ البرمجة الاحترافية
@@ -278,8 +294,8 @@ ${getWeightStandards(gender, profile.weight)}
    - متوسط: 3-4 مجموعات/تمرين، 8-12 reps، تنويع في التمارين، بدء الأوزان الحرة
    - متقدم: 4-5 مجموعات/تمرين، 6-10 reps، تقنيات متقدمة (drop sets, supersets)
    - محترف: 4-5 مجموعات/تمرين، 4-8 reps ثقيل، تدوير الشدة، volume عالي
-${profile.limitations ? `\n8. ⚠️ قيود صارمة: ${profile.limitations} — لا تضع أي تمرين يضغط على هذه المناطق` : ''}
-${profile.focusAreas?.length ? `\n9. 🎯 تضخيم التركيز على: ${profile.focusAreas.join(' + ')} — زد حجم هذه العضلات بـ 20-30% عن الباقي` : ''}
+${effective.limitations ? `\n8. ⚠️ قيود صارمة: ${effective.limitations} — لا تضع أي تمرين يضغط على هذه المناطق` : ''}
+${effective.focusAreas?.length ? `\n9. 🎯 تضخيم التركيز على: ${effective.focusAreas.join(' + ')} — زد حجم هذه العضلات بـ 20-30% عن الباقي` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📐 هيكل الإحماء المطلوب (5-7 عناصر)
@@ -375,7 +391,7 @@ ${profile.focusAreas?.length ? `\n9. 🎯 تضخيم التركيز على: ${pr
 ✅ كل تمرين: 4 مستويات كاملة (beginner/intermediate/advanced/elite) مع weight+reps+rest+cue
 ✅ الـ cue يجب أن يكون تعليمة تقنية محددة ومفيدة، وليس كلاماً عاماً
 ✅ الإحماء والتهدئة: نصوص عربية واضحة (strings) — ليس objects
-✅ عدد التمارين: ${profile.daysPerWeek <= 3 ? '5-7' : profile.daysPerWeek <= 4 ? '5-6' : '4-6'} تمارين/جلسة
+✅ عدد التمارين: ${effective.daysPerWeek <= 3 ? '5-7' : effective.daysPerWeek <= 4 ? '5-6' : '4-6'} تمارين/جلسة
 ✅ أيام الراحة: isRest:true وexercises:[] وwarmup:[] وcooldown:[]
 ✅ لا تكرر تمرين ظهر في تمارين الأسبوع السابق إلا إذا لم يكن هناك بديل
 ✅ الـ notes في يوم الراحة تكون نصائح عملية (تغذية، نوم، استرداد)
@@ -385,7 +401,7 @@ ${profile.focusAreas?.length ? `\n9. 🎯 تضخيم التركيز على: ${pr
 
 أرجع JSON فقط بدون أي كلمة أو نص قبله أو بعده. لا تشرح. لا تعلق.`;
 
-  const maxTokens = Math.min(32000, Math.max(18000, profile.daysPerWeek * 3500));
+  const maxTokens = Math.min(32000, Math.max(18000, effective.daysPerWeek * 3500));
 
   try {
     const message = await client.messages.create({
