@@ -6,20 +6,20 @@ import Link from 'next/link';
 type LevelKey = 'beginner' | 'intermediate' | 'advanced' | 'elite';
 
 const LEVEL_TABS: { key: LevelKey; label: string; emoji: string; active: string; idle: string }[] = [
-  { key: 'beginner',     label: 'مبتدئ',  emoji: '🟢', active: 'bg-green-600 text-white shadow-lg shadow-green-900/40',    idle: 'bg-gray-800/80 text-green-400 border border-green-800' },
-  { key: 'intermediate', label: 'متوسط',  emoji: '🔵', active: 'bg-blue-600 text-white shadow-lg shadow-blue-900/40',     idle: 'bg-gray-800/80 text-blue-400 border border-blue-800' },
-  { key: 'advanced',     label: 'متقدم',  emoji: '🟠', active: 'bg-orange-500 text-white shadow-lg shadow-orange-900/40', idle: 'bg-gray-800/80 text-orange-400 border border-orange-800' },
-  { key: 'elite',        label: 'محترف',  emoji: '🔴', active: 'bg-red-600 text-white shadow-lg shadow-red-900/40',       idle: 'bg-gray-800/80 text-red-400 border border-red-800' },
+  { key: 'beginner',     label: 'مبتدئ',  emoji: '🟢', active: 'bg-green-600 text-white shadow-lg shadow-green-900/40',    idle: 'bg-green-50 text-green-700 border border-green-300' },
+  { key: 'intermediate', label: 'متوسط',  emoji: '🔵', active: 'bg-blue-600 text-white shadow-lg shadow-blue-900/40',     idle: 'bg-blue-50 text-blue-700 border border-blue-300' },
+  { key: 'advanced',     label: 'متقدم',  emoji: '🟠', active: 'bg-orange-500 text-white shadow-lg shadow-orange-900/40', idle: 'bg-orange-50 text-orange-700 border border-orange-300' },
+  { key: 'elite',        label: 'محترف',  emoji: '🔴', active: 'bg-red-600 text-white shadow-lg shadow-red-900/40',       idle: 'bg-red-50 text-red-700 border border-red-300' },
 ];
 
 const SPLIT_THEME: Record<string, { border: string; bg: string; badge: string; glow: string; icon: string }> = {
-  Push:       { border: 'border-orange-600/60', bg: 'bg-orange-950/40',  badge: 'bg-orange-600/30 text-orange-300 border-orange-600/40',  glow: 'shadow-orange-900/20', icon: '🔴' },
-  Pull:       { border: 'border-blue-600/60',   bg: 'bg-blue-950/40',    badge: 'bg-blue-600/30 text-blue-300 border-blue-600/40',        glow: 'shadow-blue-900/20',   icon: '🔵' },
-  Legs:       { border: 'border-green-600/60',  bg: 'bg-green-950/40',   badge: 'bg-green-600/30 text-green-300 border-green-600/40',     glow: 'shadow-green-900/20',  icon: '🟢' },
-  Upper:      { border: 'border-purple-600/60', bg: 'bg-purple-950/40',  badge: 'bg-purple-600/30 text-purple-300 border-purple-600/40',  glow: 'shadow-purple-900/20', icon: '🟣' },
-  Lower:      { border: 'border-yellow-600/60', bg: 'bg-yellow-950/40',  badge: 'bg-yellow-600/30 text-yellow-300 border-yellow-600/40',  glow: 'shadow-yellow-900/20', icon: '🟡' },
-  'Full Body':{ border: 'border-indigo-600/60', bg: 'bg-indigo-950/40',  badge: 'bg-indigo-600/30 text-indigo-300 border-indigo-600/40',  glow: 'shadow-indigo-900/20', icon: '🔷' },
-  Rest:       { border: 'border-gray-700/40',   bg: 'bg-gray-900/50',    badge: 'bg-gray-700/40 text-gray-400 border-gray-700/40',        glow: '',                     icon: '😴' },
+  Push:       { border: 'border-orange-400/60', bg: 'bg-orange-50/80',   badge: 'bg-orange-100 text-orange-700 border border-orange-300',  glow: 'shadow-orange-100', icon: '🔴' },
+  Pull:       { border: 'border-blue-400/60',   bg: 'bg-blue-50/80',     badge: 'bg-blue-100 text-blue-700 border border-blue-300',        glow: 'shadow-blue-100',   icon: '🔵' },
+  Legs:       { border: 'border-green-400/60',  bg: 'bg-green-50/80',    badge: 'bg-green-100 text-green-700 border border-green-300',     glow: 'shadow-green-100',  icon: '🟢' },
+  Upper:      { border: 'border-purple-400/60', bg: 'bg-purple-50/80',   badge: 'bg-purple-100 text-purple-700 border border-purple-300',  glow: 'shadow-purple-100', icon: '🟣' },
+  Lower:      { border: 'border-yellow-400/60', bg: 'bg-yellow-50/80',   badge: 'bg-yellow-100 text-yellow-700 border border-yellow-300',  glow: 'shadow-yellow-100', icon: '🟡' },
+  'Full Body':{ border: 'border-indigo-400/60', bg: 'bg-indigo-50/80',   badge: 'bg-indigo-100 text-indigo-700 border border-indigo-300',  glow: 'shadow-indigo-100', icon: '🔷' },
+  Rest:       { border: 'border-slate-300',     bg: 'bg-slate-50',       badge: 'bg-slate-100 text-slate-600 border border-slate-300',     glow: '',                  icon: '😴' },
 };
 
 const MACHINE_YOUTUBE: Record<string, string> = {
@@ -118,21 +118,21 @@ function YoutubeIcon() {
 function ExerciseCard({ ex, level, index }: { ex: any; level: LevelKey; index: number }) {
   const lvl = ex.levels?.[level];
   return (
-    <div className="bg-gray-900 rounded-2xl overflow-hidden border border-gray-700/60 shadow-md">
+    <div className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-md">
       {/* Header */}
       <div className="px-4 py-3.5 flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">
-          <span className="mt-0.5 w-8 h-8 flex-shrink-0 rounded-full bg-indigo-600/40 border border-indigo-500/60 flex items-center justify-center text-sm font-bold text-indigo-200">
+          <span className="mt-0.5 w-8 h-8 flex-shrink-0 rounded-full bg-indigo-100 border border-indigo-300 flex items-center justify-center text-sm font-bold text-indigo-700">
             {index + 1}
           </span>
           <div className="min-w-0">
-            <div className="font-bold text-white text-[16px] leading-tight">{ex.nameAr}</div>
-            <div className="text-sm text-gray-400 mt-0.5">{ex.nameEn}</div>
+            <div className="font-bold text-slate-800 text-[16px] leading-tight">{ex.nameAr}</div>
+            <div className="text-sm text-slate-500 mt-0.5">{ex.nameEn}</div>
             <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <span className="text-xs bg-gray-800 border border-gray-600 text-gray-200 px-2.5 py-1 rounded-lg font-medium">
+              <span className="text-xs bg-slate-100 border border-slate-300 text-slate-700 px-2.5 py-1 rounded-lg font-medium">
                 💪 {ex.muscleGroup}
               </span>
-              <span className="text-xs bg-gray-800 border border-gray-600 text-gray-300 px-2.5 py-1 rounded-lg font-medium">
+              <span className="text-xs bg-slate-100 border border-slate-300 text-slate-700 px-2.5 py-1 rounded-lg font-medium">
                 {ex.sets} مجموعات
               </span>
             </div>
@@ -149,32 +149,32 @@ function ExerciseCard({ ex, level, index }: { ex: any; level: LevelKey; index: n
 
       {/* Stats */}
       {lvl && (
-        <div className="mx-3 mb-3 rounded-xl bg-gray-800 border border-gray-700 overflow-hidden">
-          <div className="grid grid-cols-3 divide-x divide-x-reverse divide-gray-700">
+        <div className="mx-3 mb-3 rounded-xl bg-white border border-slate-200 overflow-hidden shadow-sm">
+          <div className="grid grid-cols-3 divide-x divide-x-reverse divide-slate-200">
             <div className="text-center py-3.5 px-2">
-              <div className="text-xs text-gray-400 mb-1.5 font-medium">الوزن</div>
-              <div className="text-xl font-extrabold text-blue-300 leading-none">{lvl.weight}</div>
+              <div className="text-xs text-slate-500 mb-1.5 font-medium">الوزن</div>
+              <div className="text-xl font-extrabold text-blue-600 leading-none">{lvl.weight}</div>
             </div>
             <div className="text-center py-3.5 px-2">
-              <div className="text-xs text-gray-400 mb-1.5 font-medium">التكرارات</div>
-              <div className="text-xl font-extrabold text-orange-300 leading-none">{lvl.reps}</div>
+              <div className="text-xs text-slate-500 mb-1.5 font-medium">التكرارات</div>
+              <div className="text-xl font-extrabold text-orange-600 leading-none">{lvl.reps}</div>
             </div>
             <div className="text-center py-3.5 px-2">
-              <div className="text-xs text-gray-400 mb-1.5 font-medium">الراحة</div>
-              <div className="text-xl font-extrabold text-teal-300 leading-none">{lvl.rest}</div>
+              <div className="text-xs text-slate-500 mb-1.5 font-medium">الراحة</div>
+              <div className="text-xl font-extrabold text-teal-600 leading-none">{lvl.rest}</div>
             </div>
           </div>
           {lvl.cue && (
-            <div className="border-t border-gray-700 px-3 py-3 bg-amber-900/70 flex items-start gap-2">
+            <div className="border-t border-amber-200 px-3 py-3 bg-amber-50 flex items-start gap-2">
               <span className="text-base flex-shrink-0 mt-0.5">💬</span>
-              <span className="text-sm text-amber-50 leading-relaxed font-medium">{lvl.cue}</span>
+              <span className="text-sm text-amber-800 leading-relaxed font-medium">{lvl.cue}</span>
             </div>
           )}
         </div>
       )}
 
       {ex.notes && (
-        <div className="px-4 pb-3.5 text-sm text-gray-400 flex items-start gap-1.5 leading-relaxed">
+        <div className="px-4 pb-3.5 text-sm text-slate-600 flex items-start gap-1.5 leading-relaxed">
           <span className="flex-shrink-0">📌</span><span>{ex.notes}</span>
         </div>
       )}
@@ -238,18 +238,18 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
         {!isRest && (
           <div className="flex items-center gap-2 flex-shrink-0">
             {s.exercises?.length > 0 && (
-              <div className="bg-gray-800/80 border border-gray-700 rounded-xl px-2.5 py-1.5 text-center min-w-[44px]">
-                <div className="text-base font-bold text-white leading-none">{s.exercises.length}</div>
-                <div className="text-[10px] text-gray-400 mt-0.5">تمرين</div>
+              <div className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-center min-w-[44px] shadow-sm">
+                <div className="text-base font-bold text-slate-800 leading-none">{s.exercises.length}</div>
+                <div className="text-[10px] text-slate-500 mt-0.5">تمرين</div>
               </div>
             )}
             {s.duration && (
-              <div className="bg-gray-800/80 border border-gray-700 rounded-xl px-2.5 py-1.5 text-center min-w-[44px]">
-                <div className="text-base font-bold text-white leading-none">{s.duration}</div>
-                <div className="text-[10px] text-gray-400 mt-0.5">دقيقة</div>
+              <div className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-center min-w-[44px] shadow-sm">
+                <div className="text-base font-bold text-slate-800 leading-none">{s.duration}</div>
+                <div className="text-[10px] text-slate-500 mt-0.5">دقيقة</div>
               </div>
             )}
-            <div className="text-gray-400 w-8">
+            <div className="text-slate-400 w-8">
               <ChevronIcon open={open} />
             </div>
           </div>
@@ -258,13 +258,13 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
 
       {/* Expanded content */}
       {open && !isRest && (
-        <div className="border-t border-gray-700/60 space-y-5 p-4">
+        <div className="border-t border-slate-200 space-y-5 p-4">
 
           {/* Session notes */}
           {s.notes && (
-            <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 flex items-start gap-2">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 flex items-start gap-2">
               <span className="text-base flex-shrink-0">📋</span>
-              <p className="text-[15px] text-gray-200 leading-relaxed">{s.notes}</p>
+              <p className="text-[15px] text-slate-700 leading-relaxed">{s.notes}</p>
             </div>
           )}
 
@@ -284,15 +284,15 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
 
           {/* Warmup */}
           {s.warmup?.length > 0 && (
-            <div className="bg-amber-900/40 border border-amber-700/50 rounded-2xl p-4">
-              <h4 className="text-[15px] font-bold text-amber-300 mb-3 flex items-center gap-2">
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+              <h4 className="text-[15px] font-bold text-amber-800 mb-3 flex items-center gap-2">
                 <span className="text-xl">🔆</span> الإحماء
               </h4>
               <div className="space-y-2.5">
                 {s.warmup.map((w: string, i: number) => (
                   <div key={i} className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-amber-800/60 text-amber-200 text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">{i + 1}</span>
-                    <span className="text-[15px] text-gray-100 leading-relaxed">{w}</span>
+                    <span className="w-6 h-6 rounded-full bg-amber-700 text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">{i + 1}</span>
+                    <span className="text-[15px] text-slate-700 leading-relaxed">{w}</span>
                   </div>
                 ))}
               </div>
@@ -302,10 +302,10 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
           {/* Exercises */}
           {s.exercises?.length > 0 && (
             <div>
-              <h4 className="text-[15px] font-bold text-blue-300 mb-3 flex items-center gap-2">
+              <h4 className="text-[15px] font-bold text-blue-700 mb-3 flex items-center gap-2">
                 <span className="text-xl">💪</span>
                 <span>التمارين</span>
-                <span className="bg-blue-800/60 text-blue-200 border border-blue-700/60 text-xs px-2.5 py-1 rounded-full font-bold">
+                <span className="bg-blue-100 text-blue-700 border border-blue-200 text-xs px-2.5 py-1 rounded-full font-bold">
                   {s.exercises.length} تمرين
                 </span>
               </h4>
@@ -319,15 +319,15 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
 
           {/* Cooldown */}
           {s.cooldown?.length > 0 && (
-            <div className="bg-teal-900/40 border border-teal-700/50 rounded-2xl p-4">
-              <h4 className="text-[15px] font-bold text-teal-300 mb-3 flex items-center gap-2">
+            <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4">
+              <h4 className="text-[15px] font-bold text-teal-700 mb-3 flex items-center gap-2">
                 <span className="text-xl">🧘</span> التهدئة والإطالة
               </h4>
               <div className="space-y-2.5">
                 {s.cooldown.map((c: string, i: number) => (
                   <div key={i} className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-teal-800/60 text-teal-200 text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">{i + 1}</span>
-                    <span className="text-[15px] text-gray-100 leading-relaxed">{c}</span>
+                    <span className="w-6 h-6 rounded-full bg-teal-600 text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">{i + 1}</span>
+                    <span className="text-[15px] text-slate-700 leading-relaxed">{c}</span>
                   </div>
                 ))}
               </div>
@@ -336,11 +336,11 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
 
           {/* Coach note */}
           {s.coachNote && (
-            <div className="bg-indigo-900/60 border border-indigo-700/60 rounded-2xl px-4 py-3.5 flex items-start gap-3">
+            <div className="bg-indigo-50 border border-indigo-200 rounded-2xl px-4 py-3.5 flex items-start gap-3">
               <span className="text-2xl flex-shrink-0">🧠</span>
               <div>
-                <div className="text-sm text-indigo-300 font-bold mb-1.5">ملاحظة المدرب</div>
-                <p className="text-[15px] text-indigo-100 leading-relaxed">{s.coachNote}</p>
+                <div className="text-sm text-indigo-700 font-bold mb-1.5">ملاحظة المدرب</div>
+                <p className="text-[15px] text-slate-700 leading-relaxed">{s.coachNote}</p>
               </div>
             </div>
           )}
@@ -392,34 +392,34 @@ export default function GymClient({ member, profile, sessions }: { member: any; 
         <div className="max-w-xl mx-auto px-4 pt-5 space-y-4">
 
           {/* Header */}
-          <div className="bg-gradient-to-br from-indigo-900/50 to-purple-900/40 rounded-2xl border border-indigo-700/40 p-5 shadow-lg">
+          <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl border border-indigo-500 p-5 shadow-lg">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <h1 className="font-extrabold text-white text-xl leading-tight mb-1">
                   🏋️ جدول الجيم
                 </h1>
-                <p className="text-indigo-300 text-sm font-medium">{GOAL_LABEL[profile.goal]}</p>
-                <p className="text-gray-400 text-sm mt-0.5">{LEVEL_DISPLAY[profile.level]} • {profile.daysPerWeek} أيام/أسبوع</p>
+                <p className="text-indigo-100 text-sm font-medium">{GOAL_LABEL[profile.goal]}</p>
+                <p className="text-indigo-200 text-sm mt-0.5">{LEVEL_DISPLAY[profile.level]} • {profile.daysPerWeek} أيام/أسبوع</p>
               </div>
               <Link href="/gym/profile"
-                className="flex-shrink-0 text-sm bg-gray-800 border border-gray-700 text-gray-300 px-3 py-2 rounded-xl hover:border-indigo-500 hover:text-white transition-all font-medium">
+                className="flex-shrink-0 text-sm bg-white/20 border border-white/30 text-white px-3 py-2 rounded-xl hover:bg-white/30 transition-all font-medium">
                 ✏️ البروفايل
               </Link>
             </div>
 
             {sessions.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-white/8 grid grid-cols-3 gap-3">
+              <div className="mt-4 pt-4 border-t border-white/20 grid grid-cols-3 gap-3">
                 <div className="text-center">
                   <div className="text-2xl font-extrabold text-white">{trainingDays}</div>
-                  <div className="text-xs text-gray-400 mt-0.5">أيام تمرين</div>
+                  <div className="text-xs text-indigo-100 mt-0.5">أيام تمرين</div>
                 </div>
-                <div className="text-center border-x border-white/8">
+                <div className="text-center border-x border-white/20">
                   <div className="text-2xl font-extrabold text-white">{totalExercises}</div>
-                  <div className="text-xs text-gray-400 mt-0.5">تمرين هذا الأسبوع</div>
+                  <div className="text-xs text-indigo-100 mt-0.5">تمرين هذا الأسبوع</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-extrabold text-indigo-400">{currentSessions.find(s => s.date === today) ? '🔥' : '📅'}</div>
-                  <div className="text-xs text-gray-400 mt-0.5">
+                  <div className="text-2xl font-extrabold text-white">{currentSessions.find(s => s.date === today) ? '🔥' : '📅'}</div>
+                  <div className="text-xs text-indigo-100 mt-0.5">
                     {currentSessions.find(s => s.date === today) ? 'اليوم تمرين!' : 'استمر'}
                   </div>
                 </div>
@@ -430,8 +430,8 @@ export default function GymClient({ member, profile, sessions }: { member: any; 
           {sessions.length === 0 ? (
             <div className="text-center py-20 space-y-4">
               <div className="text-6xl">📋</div>
-              <p className="text-white font-bold text-lg">لا يوجد جدول بعد</p>
-              <p className="text-gray-400 text-sm leading-relaxed max-w-xs mx-auto">
+              <p className="text-slate-800 font-bold text-lg">لا يوجد جدول بعد</p>
+              <p className="text-slate-500 text-sm leading-relaxed max-w-xs mx-auto">
                 بروفايلك جاهز ✅ — انتظر المدرب ليولّد لك جدولك الأسبوعي المخصص
               </p>
             </div>
@@ -440,7 +440,7 @@ export default function GymClient({ member, profile, sessions }: { member: any; 
               {/* Week tabs */}
               {weeks.length > 1 && (
                 <div className="space-y-2">
-                  <p className="text-xs text-gray-500 font-medium px-1">اختر الأسبوع:</p>
+                  <p className="text-xs text-slate-500 font-medium px-1">اختر الأسبوع:</p>
                   <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                     {weeks.map((w, i) => {
                       const hasToday = w.sessions.some(s => s.date === today);
@@ -449,7 +449,7 @@ export default function GymClient({ member, profile, sessions }: { member: any; 
                           className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${
                             activeWeek === i
                               ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40'
-                              : 'bg-gray-800 text-gray-400 border border-gray-700 hover:border-gray-500'
+                              : 'bg-white text-slate-600 border border-slate-300 hover:border-indigo-400 hover:text-indigo-600'
                           }`}>
                           {hasToday && <span className="ml-1">🔥</span>}
                           {w.label}

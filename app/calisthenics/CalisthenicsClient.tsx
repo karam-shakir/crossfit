@@ -18,10 +18,10 @@ const SESSION_TYPES = [
 
 const FOCUS_OPTIONS     = ['كامل الجسم','الجزء العلوي','الجزء السفلي','القلب والكور','مهارات الجمناستيكس','الكتفين والضغط','الظهر والسحب','تدريب الحلقات'];
 const LEVEL_TABS = [
-  { key: 'beginner'     as const, label: 'مبتدئ', active: 'bg-green-600 text-white',  idle: 'bg-gray-800 text-green-400 border border-green-700'  },
-  { key: 'intermediate' as const, label: 'متوسط', active: 'bg-blue-600 text-white',   idle: 'bg-gray-800 text-blue-400 border border-blue-700'    },
-  { key: 'advanced'     as const, label: 'متقدم', active: 'bg-orange-500 text-white',  idle: 'bg-gray-800 text-orange-400 border border-orange-700' },
-  { key: 'elite'        as const, label: 'نخبة',  active: 'bg-red-600 text-white',     idle: 'bg-gray-800 text-red-400 border border-red-700'      },
+  { key: 'beginner'     as const, label: 'مبتدئ', active: 'bg-green-600 text-white',  idle: 'bg-green-50 text-green-700 border border-green-300'    },
+  { key: 'intermediate' as const, label: 'متوسط', active: 'bg-blue-600 text-white',   idle: 'bg-blue-50 text-blue-700 border border-blue-300'      },
+  { key: 'advanced'     as const, label: 'متقدم', active: 'bg-orange-500 text-white',  idle: 'bg-orange-50 text-orange-700 border border-orange-300' },
+  { key: 'elite'        as const, label: 'نخبة',  active: 'bg-red-600 text-white',     idle: 'bg-red-50 text-red-700 border border-red-300'          },
 ];
 
 type LevelKey = 'beginner' | 'intermediate' | 'advanced' | 'elite';
@@ -33,39 +33,39 @@ function ExerciseRow({ ex, index, selectedLevel }: { ex: any; index: number; sel
   const lvl = selectedLevel && ex.levels ? ex.levels[selectedLevel] : null;
 
   return (
-    <div className="bg-gray-900 rounded-xl overflow-hidden border border-gray-700 shadow-sm">
-      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center gap-3 px-4 py-3.5 text-right active:bg-white/5">
-        <span className="w-7 h-7 rounded-full bg-orange-800/50 text-orange-300 text-xs font-bold flex items-center justify-center flex-shrink-0">{index + 1}</span>
+    <div className="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center gap-3 px-4 py-3.5 text-right active:bg-slate-50">
+        <span className="w-7 h-7 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">{index + 1}</span>
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-white text-[15px]">{ex.name}</div>
-          {ex.nameEn && <div className="text-xs text-gray-400 mt-0.5">{ex.nameEn}</div>}
+          <div className="font-semibold text-slate-800 text-[15px]">{ex.name}</div>
+          {ex.nameEn && <div className="text-xs text-slate-500 mt-0.5">{ex.nameEn}</div>}
           {lvl && (
-            <div className="text-xs text-gray-300 mt-0.5 font-medium">
+            <div className="text-xs text-slate-600 mt-0.5 font-medium">
               {lvl.reps || lvl.scaling || ''}{lvl.weight ? ` · ${lvl.weight}` : ''}
             </div>
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          {!selectedLevel && ex.sets && <span className="text-xs bg-gray-800 border border-gray-600 text-gray-300 px-2 py-0.5 rounded-full">{ex.sets} مج</span>}
-          {!selectedLevel && ex.reps && <span className="text-xs bg-orange-900/50 border border-orange-700 text-orange-300 px-2 py-0.5 rounded-full font-mono">{ex.reps}</span>}
-          {ex.levels && <span className="text-xs bg-purple-900/50 text-purple-300 border border-purple-700 px-1.5 py-0.5 rounded-full">4 مستويات</span>}
-          <span className="text-gray-500 text-xs">{open ? '▲' : '▼'}</span>
+          {!selectedLevel && ex.sets && <span className="text-xs bg-slate-100 border border-slate-300 text-slate-600 px-2 py-0.5 rounded-full">{ex.sets} مج</span>}
+          {!selectedLevel && ex.reps && <span className="text-xs bg-orange-100 border border-orange-300 text-orange-700 px-2 py-0.5 rounded-full font-mono">{ex.reps}</span>}
+          {ex.levels && <span className="text-xs bg-purple-100 text-purple-700 border border-purple-300 px-1.5 py-0.5 rounded-full">4 مستويات</span>}
+          <span className="text-slate-400 text-xs">{open ? '▲' : '▼'}</span>
         </div>
       </button>
       {open && (
-        <div className="px-4 pb-4 space-y-2 border-t border-gray-700 pt-3 bg-gray-800/50">
-          {ex.rest     && <div className="text-sm text-gray-400">⏱ راحة: <span className="text-gray-100 font-semibold">{ex.rest}</span></div>}
-          {ex.tempo    && <div className="text-sm text-gray-400">🎵 إيقاع: <span className="text-gray-100 font-semibold">{ex.tempo}</span></div>}
-          {ex.notes    && <div className="text-sm text-gray-300">💡 {ex.notes}</div>}
-          {ex.cues     && <div className="text-sm text-gray-300">🔑 {ex.cues}</div>}
-          {ex.duration && <div className="text-sm text-gray-400">⏳ المدة: <span className="text-gray-100 font-semibold">{ex.duration}</span></div>}
+        <div className="px-4 pb-4 space-y-2 border-t border-slate-200 pt-3 bg-slate-50">
+          {ex.rest     && <div className="text-sm text-slate-600">⏱ راحة: <span className="text-slate-800 font-semibold">{ex.rest}</span></div>}
+          {ex.tempo    && <div className="text-sm text-slate-600">🎵 إيقاع: <span className="text-slate-800 font-semibold">{ex.tempo}</span></div>}
+          {ex.notes    && <div className="text-sm text-slate-700">💡 {ex.notes}</div>}
+          {ex.cues     && <div className="text-sm text-slate-700">🔑 {ex.cues}</div>}
+          {ex.duration && <div className="text-sm text-slate-600">⏳ المدة: <span className="text-slate-800 font-semibold">{ex.duration}</span></div>}
 
           {selectedLevel && lvl && (
-            <div className="mt-2 rounded-xl border border-gray-600 bg-gray-800 overflow-hidden">
+            <div className="mt-2 rounded-xl border border-slate-200 bg-white overflow-hidden">
               <div className="px-3 py-2.5 space-y-1.5">
-                {lvl.weight  && <div className="text-sm text-gray-400">⚖️ الوزن: <span className="font-bold text-white">{lvl.weight}</span></div>}
-                {(lvl.reps || lvl.scaling) && <div className="text-sm text-gray-400">🔢 التكرار: <span className="font-bold text-white">{lvl.reps || lvl.scaling}</span></div>}
-                {lvl.cue && <div className="text-sm text-amber-50 bg-amber-900/60 border border-amber-700/50 rounded-lg px-3 py-2">💬 {lvl.cue}</div>}
+                {lvl.weight  && <div className="text-sm text-slate-600">⚖️ الوزن: <span className="font-bold text-slate-800">{lvl.weight}</span></div>}
+                {(lvl.reps || lvl.scaling) && <div className="text-sm text-slate-600">🔢 التكرار: <span className="font-bold text-slate-800">{lvl.reps || lvl.scaling}</span></div>}
+                {lvl.cue && <div className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">💬 {lvl.cue}</div>}
               </div>
             </div>
           )}
@@ -76,12 +76,12 @@ function ExerciseRow({ ex, index, selectedLevel }: { ex: any; index: number; sel
                 const d = ex.levels[t.key];
                 if (!d) return null;
                 return (
-                  <div key={t.key} className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2">
+                  <div key={t.key} className="rounded-lg border border-slate-200 bg-white px-3 py-2">
                     <div className={`inline-block text-xs font-bold px-2 py-0.5 rounded-full mb-1.5 ${t.active}`}>{t.label}</div>
-                    <div className="text-sm text-gray-200">
+                    <div className="text-sm text-slate-700">
                       {d.weight && <span className="ml-2">⚖️ {d.weight}</span>}
                       {(d.reps || d.scaling) && <span>· {d.reps || d.scaling}</span>}
-                      {d.cue && <div className="text-gray-400 mt-1">💬 {d.cue}</div>}
+                      {d.cue && <div className="text-slate-500 mt-1">💬 {d.cue}</div>}
                     </div>
                   </div>
                 );
@@ -89,8 +89,8 @@ function ExerciseRow({ ex, index, selectedLevel }: { ex: any; index: number; sel
             </div>
           )}
 
-          {ex.progression && <div className="text-sm bg-purple-900/40 border border-purple-700/50 rounded-lg px-3 py-2 text-purple-200">🚀 التطور: {ex.progression}</div>}
-          {ex.regression  && <div className="text-sm bg-blue-900/40 border border-blue-700/50 rounded-lg px-3 py-2 text-blue-200">📉 البديل: {ex.regression}</div>}
+          {ex.progression && <div className="text-sm bg-purple-50 border border-purple-200 rounded-lg px-3 py-2 text-purple-800">🚀 التطور: {ex.progression}</div>}
+          {ex.regression  && <div className="text-sm bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-blue-800">📉 البديل: {ex.regression}</div>}
         </div>
       )}
     </div>
@@ -101,8 +101,8 @@ function Section({ title, icon, bg, border, titleColor, children }: {
   title: string; icon: string; bg: string; border: string; titleColor: string; children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-gray-700 overflow-hidden bg-gray-900">
-      <div className="px-4 py-3 border-b border-gray-700 flex items-center gap-2 bg-gray-800/60">
+    <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm">
+      <div className="px-4 py-3 border-b border-slate-200 flex items-center gap-2 bg-slate-50">
         <span className="text-lg">{icon}</span>
         <span className={`font-bold text-[15px] ${titleColor}`}>{title}</span>
       </div>
@@ -113,13 +113,13 @@ function Section({ title, icon, bg, border, titleColor, children }: {
 
 function SavedCard({ rec, onDelete, onView }: { rec: any; onDelete: () => void; onView: () => void }) {
   return (
-    <div className="bg-gray-900 rounded-xl border border-gray-700 p-3.5 flex items-center gap-3 shadow-sm">
+    <div className="bg-white rounded-xl border border-slate-200 p-3.5 flex items-center gap-3 shadow-sm">
       <div className="flex-1 min-w-0">
-        <div className="text-[15px] font-semibold text-white truncate">{rec.title}</div>
-        <div className="text-xs text-gray-400 mt-1">{rec.date} · {rec.sessionType} · {rec.difficulty}</div>
+        <div className="text-[15px] font-semibold text-slate-800 truncate">{rec.title}</div>
+        <div className="text-xs text-slate-500 mt-1">{rec.date} · {rec.sessionType} · {rec.difficulty}</div>
       </div>
-      <button onClick={onView}  className="text-xs bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">عرض</button>
-      <button onClick={onDelete} className="text-xs bg-gray-700 hover:bg-red-800 text-gray-300 hover:text-white px-2 py-1.5 rounded-lg transition-colors">🗑</button>
+      <button onClick={onView}  className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">عرض</button>
+      <button onClick={onDelete} className="text-xs bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-700 px-2 py-1.5 rounded-lg transition-colors border border-slate-200 hover:border-red-300">🗑</button>
     </div>
   );
 }
