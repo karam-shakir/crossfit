@@ -118,21 +118,21 @@ function YoutubeIcon() {
 function ExerciseCard({ ex, level, index }: { ex: any; level: LevelKey; index: number }) {
   const lvl = ex.levels?.[level];
   return (
-    <div className="bg-gray-900 rounded-2xl overflow-hidden border border-white/8 shadow-sm">
+    <div className="bg-gray-900 rounded-2xl overflow-hidden border border-gray-700/60 shadow-md">
       {/* Header */}
-      <div className="px-4 py-3 flex items-start justify-between gap-3">
+      <div className="px-4 py-3.5 flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">
-          <span className="mt-0.5 w-7 h-7 flex-shrink-0 rounded-full bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-xs font-bold text-indigo-300">
+          <span className="mt-0.5 w-8 h-8 flex-shrink-0 rounded-full bg-indigo-600/40 border border-indigo-500/60 flex items-center justify-center text-sm font-bold text-indigo-200">
             {index + 1}
           </span>
           <div className="min-w-0">
-            <div className="font-bold text-white text-base leading-tight">{ex.nameAr}</div>
+            <div className="font-bold text-white text-[16px] leading-tight">{ex.nameAr}</div>
             <div className="text-sm text-gray-400 mt-0.5">{ex.nameEn}</div>
-            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-              <span className="text-xs bg-gray-800 border border-gray-700 text-gray-300 px-2 py-0.5 rounded-lg">
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              <span className="text-xs bg-gray-800 border border-gray-600 text-gray-200 px-2.5 py-1 rounded-lg font-medium">
                 💪 {ex.muscleGroup}
               </span>
-              <span className="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-2 py-0.5 rounded-lg">
+              <span className="text-xs bg-gray-800 border border-gray-600 text-gray-300 px-2.5 py-1 rounded-lg font-medium">
                 {ex.sets} مجموعات
               </span>
             </div>
@@ -140,7 +140,7 @@ function ExerciseCard({ ex, level, index }: { ex: any; level: LevelKey; index: n
         </div>
         {MACHINE_YOUTUBE[ex.machineId] && (
           <a href={MACHINE_YOUTUBE[ex.machineId]} target="_blank" rel="noopener noreferrer"
-            className="flex-shrink-0 flex items-center gap-1.5 bg-red-950/60 hover:bg-red-700 border border-red-700/50 text-red-400 hover:text-white px-3 py-1.5 rounded-xl text-sm font-semibold transition-all">
+            className="flex-shrink-0 flex items-center gap-1.5 bg-red-800 hover:bg-red-700 border border-red-600 text-white px-3 py-2 rounded-xl text-sm font-bold transition-all shadow-sm">
             <YoutubeIcon />
             <span>شرح</span>
           </a>
@@ -149,33 +149,33 @@ function ExerciseCard({ ex, level, index }: { ex: any; level: LevelKey; index: n
 
       {/* Stats */}
       {lvl && (
-        <div className="mx-3 mb-3 rounded-xl bg-gray-800/70 border border-white/5 overflow-hidden">
-          <div className="grid grid-cols-3 divide-x divide-x-reverse divide-white/5">
-            <div className="text-center py-3 px-2">
-              <div className="text-xs text-gray-500 mb-1">الوزن</div>
-              <div className="text-xl font-extrabold text-blue-400 leading-none">{lvl.weight}</div>
+        <div className="mx-3 mb-3 rounded-xl bg-gray-800 border border-gray-700 overflow-hidden">
+          <div className="grid grid-cols-3 divide-x divide-x-reverse divide-gray-700">
+            <div className="text-center py-3.5 px-2">
+              <div className="text-xs text-gray-400 mb-1.5 font-medium">الوزن</div>
+              <div className="text-xl font-extrabold text-blue-300 leading-none">{lvl.weight}</div>
             </div>
-            <div className="text-center py-3 px-2">
-              <div className="text-xs text-gray-500 mb-1">التكرارات</div>
-              <div className="text-xl font-extrabold text-orange-400 leading-none">{lvl.reps}</div>
+            <div className="text-center py-3.5 px-2">
+              <div className="text-xs text-gray-400 mb-1.5 font-medium">التكرارات</div>
+              <div className="text-xl font-extrabold text-orange-300 leading-none">{lvl.reps}</div>
             </div>
-            <div className="text-center py-3 px-2">
-              <div className="text-xs text-gray-500 mb-1">الراحة</div>
-              <div className="text-xl font-extrabold text-teal-400 leading-none">{lvl.rest}</div>
+            <div className="text-center py-3.5 px-2">
+              <div className="text-xs text-gray-400 mb-1.5 font-medium">الراحة</div>
+              <div className="text-xl font-extrabold text-teal-300 leading-none">{lvl.rest}</div>
             </div>
           </div>
           {lvl.cue && (
-            <div className="border-t border-white/5 px-3 py-2.5 bg-yellow-950/30 flex items-start gap-2">
+            <div className="border-t border-gray-700 px-3 py-3 bg-amber-900/70 flex items-start gap-2">
               <span className="text-base flex-shrink-0 mt-0.5">💬</span>
-              <span className="text-sm text-yellow-200 leading-relaxed">{lvl.cue}</span>
+              <span className="text-sm text-amber-50 leading-relaxed font-medium">{lvl.cue}</span>
             </div>
           )}
         </div>
       )}
 
       {ex.notes && (
-        <div className="px-4 pb-3 text-sm text-gray-500 flex items-start gap-1.5">
-          <span>📌</span><span>{ex.notes}</span>
+        <div className="px-4 pb-3.5 text-sm text-gray-400 flex items-start gap-1.5 leading-relaxed">
+          <span className="flex-shrink-0">📌</span><span>{ex.notes}</span>
         </div>
       )}
     </div>
@@ -190,20 +190,20 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
   const theme = SPLIT_THEME[splitKey] || SPLIT_THEME['Full Body'];
 
   return (
-    <div className={`rounded-2xl border overflow-hidden shadow-md ${theme.border} ${theme.bg} ${isToday ? 'ring-2 ring-indigo-500/60' : ''}`}>
+    <div className={`rounded-2xl border overflow-hidden shadow-lg ${theme.border} ${theme.bg} ${isToday ? 'ring-2 ring-indigo-500/80' : ''}`}>
       {/* Today badge */}
       {isToday && (
-        <div className="bg-indigo-600 text-white text-sm font-bold text-center py-2 tracking-wide">
+        <div className="bg-indigo-600 text-white text-base font-bold text-center py-2.5 tracking-wide">
           ✨ تمرين اليوم
         </div>
       )}
       {/* Intensity badge */}
       {!isRest && s.intensity && (
-        <div className={`text-xs font-bold text-center py-1 ${
-          s.intensity === 'Heavy'    ? 'bg-red-900/60 text-red-300' :
-          s.intensity === 'Moderate' ? 'bg-orange-900/60 text-orange-300' :
-          s.intensity === 'Light'    ? 'bg-green-900/60 text-green-300' :
-          s.intensity === 'Cardio'   ? 'bg-blue-900/60 text-blue-300' : 'hidden'
+        <div className={`text-sm font-bold text-center py-1.5 ${
+          s.intensity === 'Heavy'    ? 'bg-red-800/80 text-red-100' :
+          s.intensity === 'Moderate' ? 'bg-orange-800/80 text-orange-100' :
+          s.intensity === 'Light'    ? 'bg-green-800/80 text-green-100' :
+          s.intensity === 'Cardio'   ? 'bg-blue-800/80 text-blue-100' : 'hidden'
         }`}>
           {s.intensity === 'Heavy' ? '🔴 شدة عالية' : s.intensity === 'Moderate' ? '🟠 شدة متوسطة' : s.intensity === 'Light' ? '🟢 خفيف / حجم' : s.intensity === 'Cardio' ? '🔵 كارديو' : ''}
         </div>
@@ -212,7 +212,7 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
       {/* Card header */}
       <button
         onClick={() => !isRest && setOpen(o => !o)}
-        className={`w-full px-4 py-4 text-right flex items-center justify-between gap-3 ${!isRest ? 'cursor-pointer' : 'cursor-default'}`}
+        className={`w-full px-4 py-4 text-right flex items-center justify-between gap-3 ${!isRest ? 'active:bg-white/5 cursor-pointer' : 'cursor-default'}`}
       >
         <div className="flex items-center gap-3 min-w-0">
           <span className="text-2xl flex-shrink-0">{theme.icon}</span>
@@ -223,68 +223,60 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {!isRest && (
-                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${theme.badge}`}>
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${theme.badge}`}>
                   {s.splitType}
                 </span>
               )}
               {isRest ? (
-                <span className="text-base text-gray-400">😴 يوم راحة — استرح واشرب ماء</span>
+                <span className="text-base text-gray-300">😴 يوم راحة — استرح واشرب ماء</span>
               ) : (
-                <span className="text-sm text-gray-300 truncate">{s.title}</span>
+                <span className="text-sm text-gray-300 leading-relaxed">{s.title}</span>
               )}
             </div>
           </div>
         </div>
         {!isRest && (
-          <div className="flex items-center gap-3 flex-shrink-0">
-            {s.duration && (
-              <div className="text-center hidden sm:block">
-                <div className="text-xs text-gray-500">المدة</div>
-                <div className="text-sm font-bold text-gray-300">⏱ {s.duration}د</div>
-              </div>
-            )}
+          <div className="flex items-center gap-2 flex-shrink-0">
             {s.exercises?.length > 0 && (
-              <div className="text-center hidden sm:block">
-                <div className="text-xs text-gray-500">التمارين</div>
-                <div className="text-sm font-bold text-gray-300">{s.exercises.length} 💪</div>
+              <div className="bg-gray-800/80 border border-gray-700 rounded-xl px-2.5 py-1.5 text-center min-w-[44px]">
+                <div className="text-base font-bold text-white leading-none">{s.exercises.length}</div>
+                <div className="text-[10px] text-gray-400 mt-0.5">تمرين</div>
               </div>
             )}
-            <div className="text-gray-500">
+            {s.duration && (
+              <div className="bg-gray-800/80 border border-gray-700 rounded-xl px-2.5 py-1.5 text-center min-w-[44px]">
+                <div className="text-base font-bold text-white leading-none">{s.duration}</div>
+                <div className="text-[10px] text-gray-400 mt-0.5">دقيقة</div>
+              </div>
+            )}
+            <div className="text-gray-400 w-8">
               <ChevronIcon open={open} />
             </div>
           </div>
         )}
       </button>
 
-      {/* Mobile stats row (for non-rest days) */}
-      {!isRest && !open && s.exercises?.length > 0 && (
-        <div className="flex gap-4 px-4 pb-3 sm:hidden">
-          {s.duration && <span className="text-xs text-gray-500">⏱ {s.duration} دقيقة</span>}
-          <span className="text-xs text-gray-500">💪 {s.exercises.length} تمارين</span>
-        </div>
-      )}
-
       {/* Expanded content */}
       {open && !isRest && (
-        <div className="border-t border-white/8 space-y-5 p-4">
+        <div className="border-t border-gray-700/60 space-y-5 p-4">
 
           {/* Session notes */}
           {s.notes && (
-            <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl px-4 py-3 flex items-start gap-2">
+            <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 flex items-start gap-2">
               <span className="text-base flex-shrink-0">📋</span>
-              <p className="text-sm text-gray-300 leading-relaxed">{s.notes}</p>
+              <p className="text-[15px] text-gray-200 leading-relaxed">{s.notes}</p>
             </div>
           )}
 
           {/* Level selector */}
           <div>
-            <p className="text-sm text-gray-400 mb-2 font-medium">اختر مستواك لعرض الأوزان المناسبة:</p>
-            <div className="grid grid-cols-4 gap-2">
+            <p className="text-sm text-gray-400 mb-3 font-medium">اختر مستواك لعرض الأوزان المناسبة:</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               {LEVEL_TABS.map(t => (
                 <button key={t.key} onClick={() => setLevel(t.key)}
-                  className={`py-2.5 rounded-xl text-sm font-bold transition-all ${level === t.key ? t.active : t.idle}`}>
-                  <div>{t.emoji}</div>
-                  <div className="mt-0.5">{t.label}</div>
+                  className={`py-3 rounded-xl text-sm font-bold transition-all ${level === t.key ? t.active : t.idle}`}>
+                  <div className="text-lg">{t.emoji}</div>
+                  <div className="mt-1">{t.label}</div>
                 </button>
               ))}
             </div>
@@ -292,15 +284,15 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
 
           {/* Warmup */}
           {s.warmup?.length > 0 && (
-            <div className="bg-yellow-950/30 border border-yellow-800/30 rounded-2xl p-4">
-              <h4 className="text-sm font-bold text-yellow-400 mb-3 flex items-center gap-2">
-                <span className="text-lg">🔆</span> الإحماء
+            <div className="bg-amber-900/40 border border-amber-700/50 rounded-2xl p-4">
+              <h4 className="text-[15px] font-bold text-amber-300 mb-3 flex items-center gap-2">
+                <span className="text-xl">🔆</span> الإحماء
               </h4>
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {s.warmup.map((w: string, i: number) => (
-                  <div key={i} className="flex items-start gap-2.5">
-                    <span className="w-5 h-5 rounded-full bg-yellow-800/40 text-yellow-400 text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">{i + 1}</span>
-                    <span className="text-sm text-gray-200 leading-relaxed">{w}</span>
+                  <div key={i} className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-amber-800/60 text-amber-200 text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">{i + 1}</span>
+                    <span className="text-[15px] text-gray-100 leading-relaxed">{w}</span>
                   </div>
                 ))}
               </div>
@@ -310,10 +302,10 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
           {/* Exercises */}
           {s.exercises?.length > 0 && (
             <div>
-              <h4 className="text-sm font-bold text-blue-300 mb-3 flex items-center gap-2">
-                <span className="text-lg">💪</span>
+              <h4 className="text-[15px] font-bold text-blue-300 mb-3 flex items-center gap-2">
+                <span className="text-xl">💪</span>
                 <span>التمارين</span>
-                <span className="bg-blue-900/50 text-blue-400 border border-blue-800/50 text-xs px-2 py-0.5 rounded-full font-semibold">
+                <span className="bg-blue-800/60 text-blue-200 border border-blue-700/60 text-xs px-2.5 py-1 rounded-full font-bold">
                   {s.exercises.length} تمرين
                 </span>
               </h4>
@@ -327,15 +319,15 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
 
           {/* Cooldown */}
           {s.cooldown?.length > 0 && (
-            <div className="bg-teal-950/30 border border-teal-800/30 rounded-2xl p-4">
-              <h4 className="text-sm font-bold text-teal-400 mb-3 flex items-center gap-2">
-                <span className="text-lg">🧘</span> التهدئة والإطالة
+            <div className="bg-teal-900/40 border border-teal-700/50 rounded-2xl p-4">
+              <h4 className="text-[15px] font-bold text-teal-300 mb-3 flex items-center gap-2">
+                <span className="text-xl">🧘</span> التهدئة والإطالة
               </h4>
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {s.cooldown.map((c: string, i: number) => (
-                  <div key={i} className="flex items-start gap-2.5">
-                    <span className="w-5 h-5 rounded-full bg-teal-800/40 text-teal-400 text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">{i + 1}</span>
-                    <span className="text-sm text-gray-200 leading-relaxed">{c}</span>
+                  <div key={i} className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-teal-800/60 text-teal-200 text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">{i + 1}</span>
+                    <span className="text-[15px] text-gray-100 leading-relaxed">{c}</span>
                   </div>
                 ))}
               </div>
@@ -344,11 +336,11 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
 
           {/* Coach note */}
           {s.coachNote && (
-            <div className="bg-indigo-950/50 border border-indigo-700/40 rounded-2xl px-4 py-3 flex items-start gap-3">
-              <span className="text-xl flex-shrink-0">🧠</span>
+            <div className="bg-indigo-900/60 border border-indigo-700/60 rounded-2xl px-4 py-3.5 flex items-start gap-3">
+              <span className="text-2xl flex-shrink-0">🧠</span>
               <div>
-                <div className="text-xs text-indigo-400 font-semibold mb-1">ملاحظة المدرب</div>
-                <p className="text-sm text-indigo-200 leading-relaxed">{s.coachNote}</p>
+                <div className="text-sm text-indigo-300 font-bold mb-1.5">ملاحظة المدرب</div>
+                <p className="text-[15px] text-indigo-100 leading-relaxed">{s.coachNote}</p>
               </div>
             </div>
           )}
