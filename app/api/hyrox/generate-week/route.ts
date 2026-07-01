@@ -17,7 +17,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
-  const { fromDate, days = 5 } = body;
+  const {
+    fromDate, days = 5,
+    difficulty = 'متوسط',
+    coachFocus = 'balanced',      // strength / endurance / simulation / deload / balanced
+    weekGoal = '',                 // هدف الأسبوع النصي من المدرب
+    restDays = -1,                 // -1=auto, 0-4=manual
+    targetEvent = '',              // HYROX Open / Pro / Doubles
+    specialNotes = '',             // تعليمات خاصة للـ AI
+    intensityBias = 'balanced',    // heavy / moderate / light / balanced
+    includeSimulation = true,      // إدراج يوم محاكاة سباق
+  } = body;
 
   const startDate = fromDate || todaySA();
 
@@ -48,6 +58,13 @@ export async function POST(req: NextRequest) {
 ═══════════════════════════════
 النادي: مجموعة المطانيخ HYROX
 الجمهور: مبتدئون إلى نخبة، رجال ونساء (18-40 سنة)
+المستوى العام: ${difficulty}
+${targetEvent ? `الفئة المستهدفة: ${targetEvent}` : ''}
+التركيز الأسبوعي: ${coachFocus === 'strength' ? '💪 أسبوع قوة — أحمال ثقيلة، تركيز على Deadlift/Squat' : coachFocus === 'endurance' ? '🫀 أسبوع تحمل — Running Intervals + Zone 2، محطات بوتيرة عالية' : coachFocus === 'simulation' ? '🏁 أسبوع محاكاة — جلستان Simulation كاملتان على الأقل' : coachFocus === 'deload' ? '🔄 أسبوع تفريغ — 60-70% شدة، حجم أقل، جودة أعلى' : 'متوازن — توزيع كلاسيكي'}
+تحيّز الشدة: ${intensityBias === 'heavy' ? 'ثقيل' : intensityBias === 'light' ? 'خفيف' : intensityBias === 'moderate' ? 'متوسط' : 'متوازن'}
+${restDays >= 0 ? `أيام الراحة المحددة من المدرب: ${restDays} أيام` : 'أيام الراحة: الذكاء الاصطناعي يقرر'}
+${includeSimulation ? '' : '⚠️ لا تدرج جلسة Simulation هذا الأسبوع'}
+${weekGoal ? `هدف الأسبوع: ${weekGoal}` : ''}
 الفلسفة: القوة الوظيفية + التحمل + الكفاءة = HYROX Champion
 المدة: ${days} أيام من ${startDate}
 المستويات: مبتدئ / متوسط / متقدم / نخبة — ولّد الأربعة في كل تمرين
@@ -79,6 +96,7 @@ ${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
 | Back Squat | 40كجم | 70كجم | 95كجم | 120كجم |
 | Farmer Carry Walk | 2×16كجم | 2×24كجم | 2×32كجم | 2×40كجم |
 
+${specialNotes ? `\n📌 تعليمات خاصة من المدرب (أولوية قصوى — طبّقها بدقة):\n${specialNotes}\n` : ''}
 أرجع JSON بالتنسيق التالي بالضبط بدون أي نص خارجه:
 {
   "sessions": [

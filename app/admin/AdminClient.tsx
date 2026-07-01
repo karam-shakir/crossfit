@@ -170,6 +170,20 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   const [sportsError, setSportsError] = useState('');
   const [sportsSaving, setSportsSaving] = useState(false);
   const [sportsSaved, setSportsSaved] = useState(false);
+  // Sports coach override
+  const [showSportsOverride, setShowSportsOverride] = useState(false);
+  const [sportsCoachFocus, setSportsCoachFocus] = useState('balanced');
+  const [sportsIntensityBias, setSportsIntensityBias] = useState('balanced');
+  const [sportsRestDays, setSportsRestDays] = useState(-1);
+  const [sportsSpecialNotes, setSportsSpecialNotes] = useState('');
+  // Hyrox specific
+  const [hyroxTargetEvent, setHyroxTargetEvent] = useState('');
+  const [hyroxWeekGoal, setHyroxWeekGoal] = useState('');
+  const [hyroxIncludeSimulation, setHyroxIncludeSimulation] = useState(true);
+  // Kettlebell specific
+  const [kbPriorityEvent, setKbPriorityEvent] = useState('');
+  // Calisthenics specific
+  const [calisSkillFocus, setCalisSkillFocus] = useState('');
 
   async function generateSportsPlan() {
     setSportsLoading(true); setSportsError(''); setSportsPlan(null); setSportsSaved(false);
@@ -177,7 +191,14 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
       const res = await fetch(`/api/${sportsTab}/generate-week`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fromDate: sportsFromDate, days: sportsDays, ...(sportsTab !== 'calisthenics' && { difficulty: sportsDifficulty }) }),
+        body: JSON.stringify({
+          fromDate: sportsFromDate, days: sportsDays, difficulty: sportsDifficulty,
+          coachFocus: sportsCoachFocus, intensityBias: sportsIntensityBias,
+          restDays: sportsRestDays, specialNotes: sportsSpecialNotes,
+          ...(sportsTab === 'hyrox' && { targetEvent: hyroxTargetEvent, weekGoal: hyroxWeekGoal, includeSimulation: hyroxIncludeSimulation }),
+          ...(sportsTab === 'kettlebell' && { priorityEvent: kbPriorityEvent }),
+          ...(sportsTab === 'calisthenics' && { skillFocus: calisSkillFocus }),
+        }),
       });
       const data = await res.json();
       if (!res.ok) { setSportsError(data.error || 'خطأ في التوليد'); return; }
@@ -1283,54 +1304,241 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                   { id: 'calisthenics',label: '🤸 Calisthenics', active: 'bg-emerald-600' },
                 ] as const).map(s => (
                   <button key={s.id}
-                    onClick={() => { setSportsTab(s.id); setSportsPlan(null); setSportsSaved(false); setSportsError(''); }}
+                    onClick={() => { setSportsTab(s.id); setSportsPlan(null); setSportsSaved(false); setSportsError(''); setSportsCoachFocus('balanced'); setSportsIntensityBias('balanced'); setSportsRestDays(-1); setSportsSpecialNotes(''); }}
                     className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${sportsTab === s.id ? s.active + ' text-white' : 'text-gray-400 hover:text-white'}`}>
                     {s.label}
                   </button>
                 ))}
               </div>
 
-              {/* Settings */}
+              {/* Settings — Step 1 */}
               <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4 space-y-3">
-                <h2 className="font-semibold text-emerald-400 text-sm">⚙️ إعدادات الخطة الأسبوعية</h2>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">① الإعدادات الأساسية</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-gray-400 mb-1 block">من تاريخ</label>
+                    <label className="text-xs text-gray-400 mb-1.5 block">📅 من تاريخ</label>
                     <input type="date" value={sportsFromDate} onChange={e => setSportsFromDate(e.target.value)}
                       className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500" />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-400 mb-1 block">عدد الأيام</label>
-                    <select value={sportsDays} onChange={e => setSportsDays(Number(e.target.value))}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500">
-                      {[3,4,5,6,7].map(n => <option key={n} value={n}>{n} أيام</option>)}
-                    </select>
-                  </div>
-                </div>
-                {sportsTab !== 'calisthenics' && (
-                  <div>
-                    <label className="text-xs text-gray-400 mb-1 block">مستوى الصعوبة</label>
-                    <div className="flex gap-2">
-                      {DIFFICULTY_OPTIONS.map(d => (
-                        <button key={d} onClick={() => setSportsDifficulty(d)}
-                          className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors ${sportsDifficulty === d ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
-                          {d}
+                    <label className="text-xs text-gray-400 mb-1.5 block">عدد الأيام — <span className="text-emerald-300 font-bold">{sportsDays}</span></label>
+                    <div className="flex gap-1.5 flex-wrap mt-1">
+                      {[3,4,5,6,7].map(n => (
+                        <button key={n} onClick={() => setSportsDays(n)}
+                          className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all ${sportsDays === n ? 'border-emerald-500 bg-emerald-900/40 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                          {n}
                         </button>
                       ))}
                     </div>
                   </div>
-                )}
-
-                <button onClick={generateSportsPlan} disabled={sportsLoading}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-                  {sportsLoading ? (
-                    <><span className="animate-spin">⏳</span> جاري التوليد...</>
-                  ) : (
-                    <><span>🤖</span> توليد الخطة الأسبوعية</>
-                  )}
-                </button>
-                {sportsError && <p className="text-red-400 text-xs text-center">{sportsError}</p>}
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 mb-1.5 block">📊 المستوى العام</label>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {DIFFICULTY_OPTIONS.map(d => (
+                      <button key={d} onClick={() => setSportsDifficulty(d)}
+                        className={`py-2 rounded-xl text-xs font-bold border transition-all ${sportsDifficulty === d ? 'border-emerald-500 bg-emerald-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
+
+              {/* Coach Override — Step 2 */}
+              <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+                <button onClick={() => setShowSportsOverride(o => !o)}
+                  className="w-full px-4 py-3.5 flex items-center justify-between text-right">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">⚙️</span>
+                    <div>
+                      <p className="text-sm font-bold text-white">إعدادات المدرب المتقدمة</p>
+                      <p className="text-xs text-gray-500">
+                        {sportsTab === 'hyrox' ? 'تركيز الأسبوع • محاكاة السباق • هدف الأسبوع' : sportsTab === 'kettlebell' ? 'تركيز الأسبوع • حدث الأولوية • الشدة' : 'تركيز الأسبوع • مهارة الأولوية • الشدة'}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`text-gray-500 text-sm transition-transform ${showSportsOverride ? 'rotate-180' : ''}`}>▼</span>
+                </button>
+
+                {showSportsOverride && (
+                  <div className="border-t border-gray-800 p-4 space-y-4">
+
+                    {/* تركيز الأسبوع — حسب الرياضة */}
+                    <div>
+                      <label className="text-xs text-gray-400 font-semibold block mb-2">🎯 تركيز الأسبوع</label>
+                      <div className="grid grid-cols-1 gap-1.5">
+                        {sportsTab === 'hyrox' && [
+                          { v: 'balanced',   l: '⚖️ متوازن',          sub: 'strength + simulation + running + rest' },
+                          { v: 'strength',   l: '💪 أسبوع قوة',       sub: 'Deadlift/Squat ثقيل + محطات بـ 90-100%' },
+                          { v: 'endurance',  l: '🫀 أسبوع تحمل',     sub: 'Running intervals + Zone 2 + محطات خفيفة' },
+                          { v: 'simulation', l: '🏁 أسبوع محاكاة',    sub: 'جلستان Simulation كاملتان' },
+                          { v: 'deload',     l: '🔄 أسبوع تفريغ',     sub: '60-70% شدة — راحة واسترداد' },
+                        ].map(f => (
+                          <button key={f.v} onClick={() => setSportsCoachFocus(f.v)}
+                            className={`flex items-center gap-3 px-3 py-2 rounded-xl border text-right text-sm transition-all ${sportsCoachFocus === f.v ? 'border-red-500 bg-red-900/20 text-white' : 'border-gray-700 bg-gray-800/50 text-gray-400 hover:border-gray-600'}`}>
+                            <span className="font-semibold flex-1">{f.l}</span>
+                            <span className="text-xs text-gray-500">{f.sub}</span>
+                            {sportsCoachFocus === f.v && <span className="text-red-400">✓</span>}
+                          </button>
+                        ))}
+                        {sportsTab === 'kettlebell' && [
+                          { v: 'balanced',      l: '⚖️ متوازن',             sub: 'biathlon + strength + conditioning' },
+                          { v: 'biathlon',      l: '🔔 أسبوع ثنائي الحدث', sub: 'Jerk + Snatch بحجم عالٍ' },
+                          { v: 'snatch',        l: '⚡ أسبوع الخطف',        sub: 'Snatch فقط بتقنية عالية' },
+                          { v: 'longcycle',     l: '🔄 أسبوع Long Cycle',   sub: 'Clean & Jerk بأثقال متصاعدة' },
+                          { v: 'strength',      l: '💪 أسبوع قوة',          sub: 'KB Deadlift/Press/Squat ثقيل' },
+                          { v: 'conditioning',  l: '🔥 أسبوع تكييف',        sub: 'دوائر GPP عالية الشدة' },
+                        ].map(f => (
+                          <button key={f.v} onClick={() => setSportsCoachFocus(f.v)}
+                            className={`flex items-center gap-3 px-3 py-2 rounded-xl border text-right text-sm transition-all ${sportsCoachFocus === f.v ? 'border-yellow-500 bg-yellow-900/20 text-white' : 'border-gray-700 bg-gray-800/50 text-gray-400 hover:border-gray-600'}`}>
+                            <span className="font-semibold flex-1">{f.l}</span>
+                            <span className="text-xs text-gray-500">{f.sub}</span>
+                            {sportsCoachFocus === f.v && <span className="text-yellow-400">✓</span>}
+                          </button>
+                        ))}
+                        {sportsTab === 'calisthenics' && [
+                          { v: 'balanced',  l: '⚖️ متوازن',         sub: 'strength + skills + endurance' },
+                          { v: 'strength',  l: '💪 أسبوع قوة',      sub: 'Pull/Push/Dips بوزن إضافي' },
+                          { v: 'skills',    l: '🎯 أسبوع مهارات',   sub: 'Handstand/Muscle-up/Lever تقنية' },
+                          { v: 'endurance', l: '🔥 أسبوع تحمل',     sub: 'circuits عالية التكرار، EMOM' },
+                          { v: 'mixed',     l: '⚡ أسبوع مختلط',    sub: 'قوة + مهارة + تحمل' },
+                        ].map(f => (
+                          <button key={f.v} onClick={() => setSportsCoachFocus(f.v)}
+                            className={`flex items-center gap-3 px-3 py-2 rounded-xl border text-right text-sm transition-all ${sportsCoachFocus === f.v ? 'border-emerald-500 bg-emerald-900/20 text-white' : 'border-gray-700 bg-gray-800/50 text-gray-400 hover:border-gray-600'}`}>
+                            <span className="font-semibold flex-1">{f.l}</span>
+                            <span className="text-xs text-gray-500">{f.sub}</span>
+                            {sportsCoachFocus === f.v && <span className="text-emerald-400">✓</span>}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Hyrox: إعدادات خاصة */}
+                    {sportsTab === 'hyrox' && (
+                      <>
+                        <div>
+                          <label className="text-xs text-gray-400 font-semibold block mb-2">🏁 فئة السباق المستهدفة</label>
+                          <div className="grid grid-cols-3 gap-1.5">
+                            {['', 'HYROX Open', 'HYROX Pro', 'HYROX Doubles'].map(ev => (
+                              <button key={ev} onClick={() => setHyroxTargetEvent(ev)}
+                                className={`py-2 rounded-xl text-xs font-semibold border transition-all ${hyroxTargetEvent === ev ? 'border-red-500 bg-red-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                                {ev || 'عام'}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-400 font-semibold block mb-2">🏁 يوم محاكاة السباق</label>
+                          <button onClick={() => setHyroxIncludeSimulation(h => !h)}
+                            className={`w-full py-2.5 rounded-xl text-sm font-bold border transition-all ${hyroxIncludeSimulation ? 'border-red-500 bg-red-900/30 text-red-300' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                            {hyroxIncludeSimulation ? '✓ تفعيل — أدرج جلسة Simulation هذا الأسبوع' : 'بدون Simulation هذا الأسبوع'}
+                          </button>
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-400 font-semibold block mb-2">🎯 هدف الأسبوع</label>
+                          <input value={hyroxWeekGoal} onChange={e => setHyroxWeekGoal(e.target.value)}
+                            placeholder="مثال: تحسين وقت الـ 1km / رفع Farmer Carry 2×28كجم"
+                            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-red-500" />
+                        </div>
+                      </>
+                    )}
+
+                    {/* Kettlebell: حدث الأولوية */}
+                    {sportsTab === 'kettlebell' && (
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">🔔 حدث الأولوية للبطولة القادمة</label>
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {['', 'biathlon', 'snatch', 'longcycle'].map(ev => (
+                            <button key={ev} onClick={() => setKbPriorityEvent(ev)}
+                              className={`py-2 rounded-xl text-xs font-semibold border transition-all ${kbPriorityEvent === ev ? 'border-yellow-500 bg-yellow-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                              {ev === '' ? 'لا أولوية' : ev === 'biathlon' ? 'Biathlon' : ev === 'snatch' ? 'Snatch' : 'Long Cycle'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Calisthenics: مهارة الأولوية */}
+                    {sportsTab === 'calisthenics' && (
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">🎯 مهارة الأولوية هذا الأسبوع</label>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {['', 'handstand', 'muscle-up', 'front-lever', 'back-lever', 'planche'].map(sk => (
+                            <button key={sk} onClick={() => setCalisSkillFocus(sk)}
+                              className={`py-2 rounded-xl text-xs font-semibold border transition-all ${calisSkillFocus === sk ? 'border-emerald-500 bg-emerald-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                              {sk === '' ? 'لا أولوية' : sk === 'handstand' ? '🤸 Handstand' : sk === 'muscle-up' ? '💪 Muscle-up' : sk === 'front-lever' ? '📐 Front Lever' : sk === 'back-lever' ? '📐 Back Lever' : '🏋️ Planche'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* تحيّز الشدة */}
+                    <div>
+                      <label className="text-xs text-gray-400 font-semibold block mb-2">🔥 تحيّز الشدة العامة</label>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {[
+                          { v: 'balanced', l: '⚖️ متوازن' },
+                          { v: 'heavy',    l: '🔴 ثقيل' },
+                          { v: 'moderate', l: '🟡 متوسط' },
+                          { v: 'light',    l: '🟢 خفيف' },
+                        ].map(i => (
+                          <button key={i.v} onClick={() => setSportsIntensityBias(i.v)}
+                            className={`py-2 rounded-xl text-xs font-semibold border transition-all ${sportsIntensityBias === i.v ? 'border-orange-500 bg-orange-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                            {i.l}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* أيام الراحة */}
+                    <div>
+                      <label className="text-xs text-gray-400 font-semibold block mb-2">
+                        😴 أيام الراحة — <span className="text-white">{sportsRestDays < 0 ? 'تلقائي' : sportsRestDays}</span>
+                      </label>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {[-1, 0, 1, 2, 3].map(n => (
+                          <button key={n} onClick={() => setSportsRestDays(n)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${sportsRestDays === n ? 'border-slate-400 bg-slate-700 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                            {n < 0 ? 'تلقائي' : n === 0 ? 'لا راحة' : n}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* تعليمات خاصة */}
+                    <div>
+                      <label className="text-xs text-gray-400 font-semibold block mb-2">📝 تعليمات خاصة للـ AI</label>
+                      <textarea value={sportsSpecialNotes} onChange={e => setSportsSpecialNotes(e.target.value)}
+                        placeholder={sportsTab === 'hyrox' ? 'مثال: الأعضاء يستعدون لسباق بعد أسبوعين — خفف الحجم&#10;مثال: ركّز على Ski Erg هذا الأسبوع' : sportsTab === 'kettlebell' ? 'مثال: 10 دقائق Jerk كحد أدنى في كل جلسة حدث&#10;مثال: الأعضاء ضعفاء في التنفس — ركّز عليه' : 'مثال: ركّز على جودة Hollow Body في كل تمرين&#10;مثال: لا وزن إضافي هذا الأسبوع للمصابين'}
+                        rows={3}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-emerald-500 resize-none" />
+                    </div>
+
+                    {/* Reset */}
+                    <button onClick={() => { setSportsCoachFocus('balanced'); setSportsIntensityBias('balanced'); setSportsRestDays(-1); setSportsSpecialNotes(''); setHyroxTargetEvent(''); setHyroxWeekGoal(''); setHyroxIncludeSimulation(true); setKbPriorityEvent(''); setCalisSkillFocus(''); }}
+                      className="w-full py-2 rounded-xl border border-gray-700 text-gray-400 text-xs font-semibold hover:border-gray-500 hover:text-gray-300 transition-all">
+                      ↺ إعادة تعيين لافتراضيات الـ AI
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Generate Button */}
+              {sportsError && <div className="bg-red-900/20 border border-red-700/40 rounded-xl px-3 py-2.5 text-sm text-red-400">❌ {sportsError}</div>}
+              <button onClick={generateSportsPlan} disabled={sportsLoading}
+                className={`w-full py-4 rounded-2xl text-white font-extrabold text-base transition-all shadow-lg disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed ${
+                  sportsTab === 'hyrox' ? 'bg-gradient-to-r from-red-700 to-orange-700 hover:from-red-600 hover:to-orange-600 shadow-red-900/30'
+                  : sportsTab === 'kettlebell' ? 'bg-gradient-to-r from-yellow-700 to-amber-700 hover:from-yellow-600 hover:to-amber-600 shadow-yellow-900/30'
+                  : 'bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-600 hover:to-teal-600 shadow-emerald-900/30'
+                }`}>
+                {sportsLoading ? (
+                  <span className="flex items-center justify-center gap-2"><span className="animate-spin">⚙️</span> جاري التوليد...</span>
+                ) : (
+                  <><span>🤖</span> توليد الخطة الأسبوعية — {sportsTab === 'hyrox' ? 'HYROX' : sportsTab === 'kettlebell' ? 'Kettlebell' : 'Calisthenics'}</>
+                )}
+              </button>
 
               {/* Results */}
               {sportsPlan && (

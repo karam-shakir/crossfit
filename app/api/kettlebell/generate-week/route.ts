@@ -17,7 +17,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
-  const { fromDate, days = 5 } = body;
+  const {
+    fromDate, days = 5,
+    difficulty = 'متوسط',
+    coachFocus = 'balanced',    // biathlon / snatch / longcycle / strength / conditioning / balanced
+    specialNotes = '',
+    intensityBias = 'balanced', // heavy / moderate / light / balanced
+    restDays = -1,
+    priorityEvent = '',         // حدث البطولة القادمة: biathlon / snatch / longcycle
+  } = body;
 
   const startDate = fromDate || todaySA();
 
@@ -48,6 +56,12 @@ export async function POST(req: NextRequest) {
 ═══════════════════════════════
 النادي: مجموعة المطانيخ Kettlebell
 الجمهور: مبتدئون إلى نخبة (18-40 سنة)
+المستوى العام: ${difficulty}
+التركيز الأسبوعي: ${coachFocus === 'biathlon' ? '🔔 أسبوع ثنائي الحدث — Jerk + Snatch بحجم عالٍ' : coachFocus === 'snatch' ? '⚡ أسبوع الخطف — Snatch فقط بتقنية عالية' : coachFocus === 'longcycle' ? '🔄 أسبوع Clean & Jerk — حجم ثقيل' : coachFocus === 'strength' ? '💪 أسبوع قوة — Deadlift/Press/Squat ثقيل' : coachFocus === 'conditioning' ? '🔥 أسبوع تكييف — دوائر GPP عالية الشدة' : 'متوازن — توزيع كلاسيكي'}
+${priorityEvent ? `حدث الأولوية القادم: ${priorityEvent} — ركّز عليه أكثر` : ''}
+تحيّز الشدة: ${intensityBias === 'heavy' ? 'ثقيل' : intensityBias === 'light' ? 'خفيف' : intensityBias === 'moderate' ? 'متوسط' : 'متوازن'}
+${restDays >= 0 ? `أيام الراحة: ${restDays} أيام (تحديد المدرب)` : 'أيام الراحة: الذكاء الاصطناعي يقرر'}
+${specialNotes ? `\n📌 تعليمات المدرب الخاصة:\n${specialNotes}` : ''}
 الفلسفة: الوزن يحترم التقنية — التقنية تصنع القوة — القوة تصنع البطل
 المدة: ${days} أيام من ${startDate}
 المستويات: مبتدئ / متوسط / متقدم / نخبة — ولّد الأربعة في كل تمرين

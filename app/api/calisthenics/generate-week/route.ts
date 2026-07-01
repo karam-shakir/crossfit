@@ -17,7 +17,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
-  const { fromDate, days = 5 } = body;
+  const {
+    fromDate, days = 5,
+    coachFocus = 'balanced',    // strength / skills / endurance / mixed / balanced
+    skillFocus = '',            // handstand / muscle-up / front-lever / back-lever / planche
+    specialNotes = '',
+    intensityBias = 'balanced',
+    restDays = -1,
+    difficulty = 'متوسط',
+  } = body;
 
   const startDate = fromDate || todaySA();
 
@@ -48,6 +56,12 @@ export async function POST(req: NextRequest) {
 ═══════════════════════════════
 النادي: مجموعة المطانيخ Calisthenics
 الجمهور: مبتدئون إلى نخبة (18-40 سنة)
+المستوى العام: ${difficulty}
+التركيز الأسبوعي: ${coachFocus === 'strength' ? '💪 أسبوع قوة — Pull/Push/Dips ثقيل بوزن إضافي' : coachFocus === 'skills' ? '🎯 أسبوع مهارات — تقنية Handstand/Muscle-up/Lever' : coachFocus === 'endurance' ? '🔥 أسبوع تحمل — circuits عالية التكرار، EMOM' : coachFocus === 'mixed' ? '⚡ أسبوع مختلط — قوة + مهارة + تحمل' : 'متوازن — توزيع كلاسيكي'}
+${skillFocus ? `مهارة الأولوية هذا الأسبوع: ${skillFocus} — أدرجها في كل جلسة مناسبة كـ skill work` : ''}
+${restDays >= 0 ? `أيام الراحة: ${restDays} أيام (تحديد المدرب)` : 'أيام الراحة: الذكاء الاصطناعي يقرر'}
+تحيّز الشدة: ${intensityBias === 'heavy' ? 'ثقيل — وزن إضافي أعلى' : intensityBias === 'light' ? 'خفيف — تعاف ومرونة' : intensityBias === 'moderate' ? 'متوسط' : 'متوازن'}
+${specialNotes ? `\n📌 تعليمات المدرب:\n${specialNotes}` : ''}
 الفلسفة: من Negative Pull-up إلى Muscle-up — كل شيء مبني على الأساس
 المدة: ${days} أيام من ${startDate}
 المستويات: مبتدئ / متوسط / متقدم / نخبة — كل تمرين يخدمهم جميعاً
