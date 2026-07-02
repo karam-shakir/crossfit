@@ -12,14 +12,14 @@ const LEVEL_TABS: { key: LevelKey; label: string; emoji: string; active: string;
   { key: 'elite',        label: 'محترف',  emoji: '🔴', active: 'bg-red-600 text-white shadow-lg shadow-red-900/40',       idle: 'bg-red-50 text-red-700 border border-red-300' },
 ];
 
-const SPLIT_THEME: Record<string, { border: string; bg: string; badge: string; glow: string; icon: string }> = {
-  Push:       { border: 'border-orange-400/60', bg: 'bg-orange-50/80',   badge: 'bg-orange-100 text-orange-700 border border-orange-300',  glow: 'shadow-orange-100', icon: '🔴' },
-  Pull:       { border: 'border-blue-400/60',   bg: 'bg-blue-50/80',     badge: 'bg-blue-100 text-blue-700 border border-blue-300',        glow: 'shadow-blue-100',   icon: '🔵' },
-  Legs:       { border: 'border-green-400/60',  bg: 'bg-green-50/80',    badge: 'bg-green-100 text-green-700 border border-green-300',     glow: 'shadow-green-100',  icon: '🟢' },
-  Upper:      { border: 'border-purple-400/60', bg: 'bg-purple-50/80',   badge: 'bg-purple-100 text-purple-700 border border-purple-300',  glow: 'shadow-purple-100', icon: '🟣' },
-  Lower:      { border: 'border-yellow-400/60', bg: 'bg-yellow-50/80',   badge: 'bg-yellow-100 text-yellow-700 border border-yellow-300',  glow: 'shadow-yellow-100', icon: '🟡' },
-  'Full Body':{ border: 'border-indigo-400/60', bg: 'bg-indigo-50/80',   badge: 'bg-indigo-100 text-indigo-700 border border-indigo-300',  glow: 'shadow-indigo-100', icon: '🔷' },
-  Rest:       { border: 'border-slate-300',     bg: 'bg-slate-50',       badge: 'bg-slate-100 text-slate-600 border border-slate-300',     glow: '',                  icon: '😴' },
+const SPLIT_THEME: Record<string, { accent: string; badge: string; icon: string }> = {
+  Push:       { accent: 'bg-orange-500',   badge: 'bg-orange-100 text-orange-700 border border-orange-200',   icon: '🟠' },
+  Pull:       { accent: 'bg-blue-500',     badge: 'bg-blue-100 text-blue-700 border border-blue-200',         icon: '🔵' },
+  Legs:       { accent: 'bg-emerald-500',  badge: 'bg-emerald-100 text-emerald-700 border border-emerald-200', icon: '🟢' },
+  Upper:      { accent: 'bg-violet-500',   badge: 'bg-violet-100 text-violet-700 border border-violet-200',   icon: '🟣' },
+  Lower:      { accent: 'bg-amber-500',    badge: 'bg-amber-100 text-amber-700 border border-amber-200',      icon: '🟡' },
+  'Full Body':{ accent: 'bg-indigo-500',   badge: 'bg-indigo-100 text-indigo-700 border border-indigo-200',   icon: '🔷' },
+  Rest:       { accent: 'bg-slate-300',    badge: 'bg-slate-100 text-slate-500 border border-slate-200',      icon: '😴' },
 };
 
 const MACHINE_YOUTUBE: Record<string, string> = {
@@ -192,22 +192,25 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
   const theme = SPLIT_THEME[splitKey] || SPLIT_THEME['Full Body'];
 
   return (
-    <div className={`rounded-2xl border overflow-hidden shadow-lg ${theme.border} ${theme.bg} ${isToday ? 'ring-2 ring-indigo-500/80' : ''}`}>
+    <div className={`rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-white ${isToday ? 'ring-2 ring-indigo-400 ring-offset-1' : ''}`}>
+      {/* Colored accent top bar */}
+      <div className={`h-1.5 ${theme.accent}`} />
+
       {/* Today badge */}
       {isToday && (
-        <div className="bg-indigo-600 text-white text-base font-bold text-center py-2.5 tracking-wide">
+        <div className="bg-indigo-600 text-white text-sm font-bold text-center py-2 tracking-widest">
           ✨ تمرين اليوم
         </div>
       )}
       {/* Intensity badge */}
       {!isRest && s.intensity && (
         <div className={`text-sm font-bold text-center py-1.5 ${
-          s.intensity === 'Heavy'    ? 'bg-red-800/80 text-red-100' :
-          s.intensity === 'Moderate' ? 'bg-orange-800/80 text-orange-100' :
-          s.intensity === 'Light'    ? 'bg-green-800/80 text-green-100' :
-          s.intensity === 'Cardio'   ? 'bg-blue-800/80 text-blue-100' : 'hidden'
+          s.intensity === 'Heavy'    ? 'bg-red-500 text-white' :
+          s.intensity === 'Moderate' ? 'bg-amber-500 text-white' :
+          s.intensity === 'Light'    ? 'bg-emerald-500 text-white' :
+          s.intensity === 'Cardio'   ? 'bg-sky-500 text-white' : 'hidden'
         }`}>
-          {s.intensity === 'Heavy' ? '🔴 شدة عالية' : s.intensity === 'Moderate' ? '🟠 شدة متوسطة' : s.intensity === 'Light' ? '🟢 خفيف / حجم' : s.intensity === 'Cardio' ? '🔵 كارديو' : ''}
+          {s.intensity === 'Heavy' ? '🔴 شدة عالية' : s.intensity === 'Moderate' ? '🟡 شدة متوسطة' : s.intensity === 'Light' ? '🟢 خفيف / حجم' : s.intensity === 'Cardio' ? '🔵 كارديو' : ''}
         </div>
       )}
 
@@ -392,34 +395,34 @@ export default function GymClient({ member, profile, sessions }: { member: any; 
         <div className="max-w-xl mx-auto px-4 pt-5 space-y-4">
 
           {/* Header */}
-          <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl border border-indigo-500 p-5 shadow-lg">
+          <div className="bg-indigo-600 rounded-2xl p-5 shadow-lg shadow-indigo-200">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h1 className="font-extrabold text-white text-xl leading-tight mb-1">
+                <h1 className="font-extrabold text-white text-xl leading-tight mb-0.5">
                   🏋️ جدول الجيم
                 </h1>
-                <p className="text-indigo-100 text-sm font-medium">{GOAL_LABEL[profile.goal]}</p>
-                <p className="text-indigo-200 text-sm mt-0.5">{LEVEL_DISPLAY[profile.level]} • {profile.daysPerWeek} أيام/أسبوع</p>
+                <p style={{color:'rgba(255,255,255,0.85)'}} className="text-sm font-semibold">{GOAL_LABEL[profile.goal]}</p>
+                <p style={{color:'rgba(255,255,255,0.70)'}} className="text-xs mt-0.5">{LEVEL_DISPLAY[profile.level]} • {profile.daysPerWeek} أيام/أسبوع</p>
               </div>
               <Link href="/gym/profile"
-                className="flex-shrink-0 text-sm bg-white/20 border border-white/30 text-white px-3 py-2 rounded-xl hover:bg-white/30 transition-all font-medium">
+                className="flex-shrink-0 text-xs bg-white/20 border border-white/30 text-white px-3 py-2 rounded-xl hover:bg-white/30 transition-all font-semibold">
                 ✏️ البروفايل
               </Link>
             </div>
 
             {sessions.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-white/20 grid grid-cols-3 gap-3">
+              <div className="mt-4 pt-3 border-t border-white/20 grid grid-cols-3 gap-2">
                 <div className="text-center">
                   <div className="text-2xl font-extrabold text-white">{trainingDays}</div>
-                  <div className="text-xs text-indigo-100 mt-0.5">أيام تمرين</div>
+                  <div className="text-[11px] mt-0.5" style={{color:'rgba(255,255,255,0.70)'}}>أيام تمرين</div>
                 </div>
                 <div className="text-center border-x border-white/20">
                   <div className="text-2xl font-extrabold text-white">{totalExercises}</div>
-                  <div className="text-xs text-indigo-100 mt-0.5">تمرين هذا الأسبوع</div>
+                  <div className="text-[11px] mt-0.5" style={{color:'rgba(255,255,255,0.70)'}}>تمرين / أسبوع</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-extrabold text-white">{currentSessions.find(s => s.date === today) ? '🔥' : '📅'}</div>
-                  <div className="text-xs text-indigo-100 mt-0.5">
+                  <div className="text-[11px] mt-0.5" style={{color:'rgba(255,255,255,0.70)'}}>
                     {currentSessions.find(s => s.date === today) ? 'اليوم تمرين!' : 'استمر'}
                   </div>
                 </div>

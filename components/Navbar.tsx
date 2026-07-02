@@ -325,14 +325,12 @@ export default function Navbar({ member }: {
     <>
       {/* ===== Impersonation Banner ===== */}
       {impersonationBanner && (
-        <div className="fixed top-0 inset-x-0 z-50 bg-indigo-700 text-white text-center text-sm py-2 px-4 flex items-center justify-center gap-3">
-          <span>🎭 أنت تتصفح الآن كـ <strong>{member.nameAr}</strong></span>
+        <div className="fixed top-0 inset-x-0 z-50 bg-indigo-700 text-white text-xs py-1.5 px-3 flex items-center justify-between gap-2">
           <button
             onClick={restoreAdmin}
-            className="bg-white text-indigo-700 font-bold text-xs px-3 py-1 rounded-full hover:bg-indigo-100 transition-colors"
-          >
-            العودة للإدارة ←
-          </button>
+            className="flex-shrink-0 bg-white text-indigo-700 font-bold text-[11px] px-2.5 py-1 rounded-full hover:bg-indigo-50 transition-colors whitespace-nowrap"
+          >← الإدارة</button>
+          <span className="truncate text-center flex-1">🎭 <strong className="font-bold">{member.nameAr}</strong></span>
         </div>
       )}
 
