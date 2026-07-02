@@ -112,8 +112,18 @@ nav .text-white, header .text-white  { color: #f8fafc !important; }
 nav .text-gray-400, header .text-gray-400 { color: #94a3b8 !important; }
 
 /* منع أي عنصر من تجاوز عرض الشاشة */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
 #__next, [data-nextjs-scroll-focus-boundary] {
   width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+/* flex children (main) يجب أن تنكمش داخل الشاشة وليس بعرض محتواها */
+main {
+  min-width: 0;
   max-width: 100%;
   overflow-x: hidden;
 }
