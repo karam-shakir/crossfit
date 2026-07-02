@@ -613,3 +613,109 @@ export async function deleteGymSessionsByMember(memberId: string, fromDate: stri
   const db = await getDb();
   await db.collection('gym_sessions').deleteMany({ memberId, date: { $gte: fromDate, $lte: toDate } });
 }
+
+// ===================== RUNNING PROFILES =====================
+
+export interface RunningProfile {
+  id: string;
+  memberId: string;
+  goal: 'general_endurance' | 'fat_burn' | 'race_5k' | 'race_10k' | 'half_marathon' | 'marathon' | 'speed';
+  level: 'beginner' | 'intermediate' | 'advanced' | 'elite';
+  gender?: 'male' | 'female';
+  age?: number;
+  weight?: number;
+  height?: number;
+  daysPerWeek: 3 | 4 | 5 | 6;
+  currentWeeklyKm?: number;      // كم يجري حالياً في الأسبوع
+  best5kTime?: string;           // أفضل زمن 5 كم (مثال: "28:30")
+  best10kTime?: string;          // أفضل زمن 10 كم
+  surface: 'treadmill' | 'outdoor' | 'track' | 'mixed';
+  preferredTime?: 'morning' | 'evening' | 'any';
+  targetRaceDate?: string;       // تاريخ سباق مستهدف إن وجد
+  limitations?: string;
+  updatedAt: string;
+}
+
+export async function getRunningProfile(memberId: string): Promise<RunningProfile | undefined> {
+  const db = await getDb();
+  const doc = await db.collection('running_profiles').findOne({ memberId });
+  return doc ? strip_id<RunningProfile>(doc) : undefined;
+}
+
+export async function upsertRunningProfile(profile: RunningProfile): Promise<RunningProfile> {
+  const db = await getDb();
+  await db.collection('running_profiles').replaceOne({ memberId: profile.memberId }, profile, { upsert: true });
+  return profile;
+}
+
+export async function getAllRunningProfiles(): Promise<RunningProfile[]> {
+  const db = await getDb();
+  const docs = await db.collection('running_profiles').find({}).toArray();
+  return stripAll<RunningProfile>(docs);
+}
+
+// ===================== RUNNING SESSIONS =====================
+
+export interface RunningSegmentLevel {
+  pace: string;        // مثال: "6:30/كم" أو "70% جهد"
+  target: string;      // المسافة أو الزمن: "5 كم" أو "30 دقيقة" أو "6 × 400م"
+  rest: string;        // الراحة بين التكرارات إن وجدت
+  cue: string;         // تعليمة تقنية
+}
+
+export interface RunningSegment {
+  name: string;                  // اسم الجزء: "الجري الرئيسي" / "تكرارات 400م"
+  type: string;                  // easy | tempo | interval | hills | strides | drills
+  description: string;
+  levels: {
+    beginner:     RunningSegmentLevel;
+    intermediate: RunningSegmentLevel;
+    advanced:     RunningSegmentLevel;
+    elite:        RunningSegmentLevel;
+  };
+}
+
+export interface RunningSession {
+  id: string;
+  memberId: string;
+  date: string;
+  dayName: string;
+  runType: string;               // Easy | Tempo | Intervals | Long | Recovery | Hills | Fartlek | Cross | Rest
+  title: string;
+  focus: string;
+  intensity: string;             // Easy | Moderate | Hard | Rest
+  isRest: boolean;
+  duration?: number;             // بالدقائق
+  totalDistanceKm?: number;      // إجمالي مسافة الجلسة التقريبية
+  warmup?: string[];
+  segments: RunningSegment[];
+  cooldown?: string[];
+  notes?: string;
+  coachNote?: string;
+  createdAt: string;
+}
+
+export async function getRunningSessions(memberId: string): Promise<RunningSession[]> {
+  const db = await getDb();
+  const docs = await db.collection('running_sessions')
+    .find({ memberId })
+    .sort({ date: -1 })
+    .limit(60)
+    .toArray();
+  return stripAll<RunningSession>(docs);
+}
+
+export async function upsertRunningSession(session: RunningSession): Promise<RunningSession> {
+  const db = await getDb();
+  await db.collection('running_sessions').replaceOne(
+    { memberId: session.memberId, date: session.date },
+    session,
+    { upsert: true }
+  );
+  return session;
+}
+
+export async function deleteRunningSessionsByMember(memberId: string, fromDate: string, toDate: string): Promise<void> {
+  const db = await getDb();
+  await db.collection('running_sessions').deleteMany({ memberId, date: { $gte: fromDate, $lte: toDate } });
+}

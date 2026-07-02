@@ -3,7 +3,7 @@ import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 
-type AdminTab = 'wod' | 'members' | 'weekly' | 'sports' | 'gym' | 'logs';
+type AdminTab = 'wod' | 'members' | 'weekly' | 'sports' | 'gym' | 'running' | 'logs';
 
 const WOD_TYPES = ['AMRAP', 'للوقت', 'قوة', 'تدريب'];
 const DIFFICULTY_OPTIONS = ['مبتدئ', 'متوسط', 'متقدم', 'نخبة'];
@@ -120,10 +120,55 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   const [gymShowOverride, setGymShowOverride] = useState(false);
 
   useEffect(() => {
-    if (tab === 'gym' && gymMembers.length === 0) {
+    if ((tab === 'gym' || tab === 'running') && gymMembers.length === 0) {
       fetch('/api/members').then(r => r.json()).then(m => setGymMembers(Array.isArray(m) ? m.filter((x: any) => x.role !== 'admin') : []));
     }
   }, [tab]);
+
+  // ===== Running (العدّائين) =====
+  const [runSelectedMember, setRunSelectedMember] = useState('');
+  const [runFromDate, setRunFromDate] = useState(todaySA());
+  const [runLoading, setRunLoading] = useState(false);
+  const [runPlan, setRunPlan] = useState<any>(null);
+  const [runError, setRunError] = useState('');
+  const [runSaved, setRunSaved] = useState(false);
+  const [runProfile, setRunProfile] = useState<any>(null);
+  const [runOverride, setRunOverride] = useState<any>(null);
+  const [runShowOverride, setRunShowOverride] = useState(false);
+
+  useEffect(() => {
+    if (runSelectedMember) {
+      setRunProfile(null); setRunOverride(null); setRunShowOverride(false);
+      fetch(`/api/running/profile?memberId=${runSelectedMember}`).then(r => r.json()).then(d => {
+        setRunProfile(d || null);
+        if (d) setRunOverride({
+          goal: d.goal, level: d.level, daysPerWeek: d.daysPerWeek, gender: d.gender || 'male',
+          surface: d.surface || 'mixed', currentWeeklyKm: d.currentWeeklyKm || '', best5kTime: d.best5kTime || '',
+          targetRaceDate: d.targetRaceDate || '', limitations: d.limitations || '', specialInstructions: '',
+        });
+      });
+    }
+  }, [runSelectedMember]);
+
+  async function generateRunPlan() {
+    if (!runSelectedMember) return;
+    setRunLoading(true); setRunPlan(null); setRunError(''); setRunSaved(false);
+    try {
+      const res = await fetch('/api/running/generate-week', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId: runSelectedMember, fromDate: runFromDate, override: runOverride }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل التوليد');
+      setRunPlan(data);
+      setRunSaved(true);
+    } catch (e: any) {
+      setRunError(e.message);
+    } finally {
+      setRunLoading(false);
+    }
+  }
 
   useEffect(() => {
     if (gymSelectedMember) {
@@ -588,12 +633,16 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
               className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'gym' ? 'bg-violet-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
               🏛️ جيم Technogym
             </button>
+            <button onClick={() => setTab('running')}
+              className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'running' ? 'bg-cyan-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+              🏃 العدّائين
+            </button>
             <button onClick={() => setTab('members')}
               className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'members' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
               👥 الأعضاء
             </button>
             <button onClick={() => setTab('logs')}
-              className={`col-span-2 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'logs' ? 'bg-teal-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+              className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'logs' ? 'bg-teal-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
               📋 سجل الدخول
             </button>
           </div>
@@ -2377,6 +2426,323 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                   {gymPlan.progressionNote && (
                     <div className="bg-teal-900/20 border border-teal-700/30 rounded-xl px-3 py-2.5 text-xs text-teal-300">
                       📈 {gymPlan.progressionNote}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ===== Running (العدّائين) ===== */}
+          {tab === 'running' && (
+            <div className="space-y-4">
+
+              {/* Header */}
+              <div className="bg-gradient-to-br from-cyan-900/50 to-sky-900/40 rounded-2xl border border-cyan-700/40 p-4">
+                <h2 className="font-extrabold text-white text-base">🏃 توليد برنامج العدّائين</h2>
+                <p className="text-xs text-cyan-300 mt-0.5">اختر العداء وخصّص الإعدادات كمدرب قبل التوليد</p>
+              </div>
+
+              {/* Step 1 — Member + Date */}
+              <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4 space-y-3">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">① اختيار العداء والتاريخ</p>
+
+                <div>
+                  <label className="text-xs text-gray-400 mb-1.5 block">العضو</label>
+                  <select value={runSelectedMember}
+                    onChange={e => { setRunSelectedMember(e.target.value); setRunPlan(null); setRunSaved(false); setRunError(''); }}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500">
+                    <option value="">-- اختر عضو --</option>
+                    {gymMembers.map(m => (
+                      <option key={m.id} value={m.id}>{m.nameAr} (@{m.username})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs text-gray-400 mb-1.5 block">📅 تاريخ بداية البرنامج</label>
+                  <input type="date" value={runFromDate} onChange={e => setRunFromDate(e.target.value)}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500" />
+                </div>
+
+                {runSelectedMember && !runProfile && (
+                  <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-xl px-3 py-2.5 text-sm text-yellow-400 flex items-center gap-2">
+                    <span>⚠️</span>
+                    <span>العضو لم يعبّئ بروفايل العدّاء — يمكنك إنشاء إعداداته يدوياً أدناه</span>
+                  </div>
+                )}
+                {runSelectedMember && runProfile && (
+                  <div className="bg-gray-800/60 rounded-xl border border-gray-700/40 px-3 py-2.5 space-y-1.5">
+                    <p className="text-xs text-gray-500 font-semibold">بروفايل العداء المحفوظ:</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { label: runProfile.goal, bg: 'bg-cyan-900/50 text-cyan-300 border-cyan-700/40' },
+                        { label: runProfile.level, bg: 'bg-blue-900/50 text-blue-300 border-blue-700/40' },
+                        { label: runProfile.daysPerWeek + ' أيام', bg: 'bg-green-900/50 text-green-300 border-green-700/40' },
+                        runProfile.currentWeeklyKm ? { label: runProfile.currentWeeklyKm + ' كم/أسبوع', bg: 'bg-gray-700/60 text-gray-300 border-gray-600/40' } : null,
+                        runProfile.best5kTime ? { label: '5كم: ' + runProfile.best5kTime, bg: 'bg-orange-900/50 text-orange-300 border-orange-700/40' } : null,
+                        { label: runProfile.surface, bg: 'bg-gray-700/60 text-gray-400 border-gray-600/40' },
+                      ].filter(Boolean).map((b: any, i: number) => (
+                        <span key={i} className={`text-xs px-2 py-0.5 rounded-lg border ${b.bg}`}>{b.label}</span>
+                      ))}
+                    </div>
+                    {runProfile.targetRaceDate && (
+                      <p className="text-xs text-cyan-400">🏁 سباق مستهدف: {runProfile.targetRaceDate}</p>
+                    )}
+                    {runProfile.limitations && (
+                      <p className="text-xs text-yellow-500">⚠️ {runProfile.limitations}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Step 2 — Coach Overrides */}
+              {runSelectedMember && runOverride && (
+                <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+                  <button onClick={() => setRunShowOverride(o => !o)}
+                    className="w-full px-4 py-3.5 flex items-center justify-between text-right">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">⚙️</span>
+                      <div>
+                        <p className="text-sm font-bold text-white">إعدادات المدرب</p>
+                        <p className="text-xs text-gray-500">تعديل الخيارات قبل التوليد</p>
+                      </div>
+                    </div>
+                    <span className={`text-gray-500 text-sm transition-transform ${runShowOverride ? 'rotate-180' : ''}`}>▼</span>
+                  </button>
+
+                  {runShowOverride && (
+                    <div className="border-t border-gray-800 p-4 space-y-4">
+
+                      {/* الهدف */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">🎯 الهدف</label>
+                        <div className="grid grid-cols-1 gap-1.5">
+                          {[
+                            { v: 'general_endurance', l: '🏃 تحمل عام',       sub: '80/20 وبناء القاعدة' },
+                            { v: 'fat_burn',          l: '🔥 حرق الدهون',     sub: 'Zone 2 + HIIT' },
+                            { v: 'race_5k',           l: '⚡ سباق 5 كم',      sub: 'سرعة وجودة' },
+                            { v: 'race_10k',          l: '🎯 سباق 10 كم',     sub: 'سرعة + تحمل' },
+                            { v: 'half_marathon',     l: '🏅 نصف ماراثون',    sub: 'جري طويل حتى 19كم' },
+                            { v: 'marathon',          l: '🏆 ماراثون',         sub: 'أحجام عالية' },
+                            { v: 'speed',             l: '💨 سرعة قصوى',       sub: 'انفجارية + تلال' },
+                          ].map(g => (
+                            <button key={g.v} onClick={() => setRunOverride((p: any) => ({ ...p, goal: g.v }))}
+                              className={`flex items-center gap-3 px-3 py-2 rounded-xl border text-right text-sm transition-all ${runOverride.goal === g.v ? 'border-cyan-500 bg-cyan-900/30 text-white' : 'border-gray-700 bg-gray-800/50 text-gray-400 hover:border-gray-600'}`}>
+                              <span className="font-semibold flex-1">{g.l}</span>
+                              <span className="text-xs text-gray-500">{g.sub}</span>
+                              {runOverride.goal === g.v && <span className="text-cyan-400">✓</span>}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* المستوى */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">📊 المستوى الفعلي (تقييم المدرب)</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { v: 'beginner',     l: '🟢 مبتدئ',  sub: '15-25 كم/أسبوع' },
+                            { v: 'intermediate', l: '🔵 متوسط',  sub: '25-45 كم/أسبوع' },
+                            { v: 'advanced',     l: '🟠 متقدم',  sub: '45-70 كم/أسبوع' },
+                            { v: 'elite',        l: '🔴 نخبة',   sub: '70+ كم/أسبوع' },
+                          ].map(l => (
+                            <button key={l.v} onClick={() => setRunOverride((p: any) => ({ ...p, level: l.v }))}
+                              className={`flex flex-col items-center py-2.5 px-2 rounded-xl border text-sm font-bold transition-all ${runOverride.level === l.v ? 'border-blue-500 bg-blue-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'}`}>
+                              <span>{l.l}</span>
+                              <span className="text-xs text-gray-500 font-normal mt-0.5">{l.sub}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* الأيام */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">📅 أيام الجري أسبوعياً</label>
+                        <div className="grid grid-cols-4 gap-2">
+                          {[3, 4, 5, 6].map(n => (
+                            <button key={n} onClick={() => setRunOverride((p: any) => ({ ...p, daysPerWeek: n }))}
+                              className={`py-3 rounded-xl border font-extrabold text-lg transition-all ${runOverride.daysPerWeek === n ? 'border-cyan-500 bg-cyan-600 text-white' : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'}`}>
+                              {n}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1.5 text-center">
+                          {runOverride.daysPerWeek === 3 ? 'سهل + جودة + طويل' : runOverride.daysPerWeek === 4 ? '+ إيقاعي' : runOverride.daysPerWeek === 5 ? '+ استرداد' : '+ تلال وانطلاقات'}
+                        </p>
+                      </div>
+
+                      {/* السطح */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">🛤️ السطح</label>
+                        <div className="grid grid-cols-4 gap-2">
+                          {[
+                            { v: 'outdoor',   l: '🌳 خارجي' },
+                            { v: 'treadmill', l: '🏃 تريدميل' },
+                            { v: 'track',     l: '🏟️ مضمار' },
+                            { v: 'mixed',     l: '🔄 مختلط' },
+                          ].map(s => (
+                            <button key={s.v} onClick={() => setRunOverride((p: any) => ({ ...p, surface: s.v }))}
+                              className={`py-2 rounded-xl border text-xs font-semibold transition-all ${runOverride.surface === s.v ? 'border-cyan-500 bg-cyan-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                              {s.l}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* بيانات الجري */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs text-gray-400 font-semibold block mb-1.5">🛣️ الحجم الحالي كم/أسبوع</label>
+                          <input type="number" value={runOverride.currentWeeklyKm}
+                            onChange={e => setRunOverride((p: any) => ({ ...p, currentWeeklyKm: e.target.value }))}
+                            placeholder="20"
+                            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500" />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-400 font-semibold block mb-1.5">⚡ أفضل زمن 5كم</label>
+                          <input type="text" value={runOverride.best5kTime} dir="ltr"
+                            onChange={e => setRunOverride((p: any) => ({ ...p, best5kTime: e.target.value }))}
+                            placeholder="28:30"
+                            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm text-center font-mono focus:outline-none focus:border-cyan-500" />
+                        </div>
+                      </div>
+
+                      {/* سباق مستهدف */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-1.5">🏁 سباق مستهدف (اختياري)</label>
+                        <input type="date" value={runOverride.targetRaceDate}
+                          onChange={e => setRunOverride((p: any) => ({ ...p, targetRaceDate: e.target.value }))}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500" />
+                      </div>
+
+                      {/* قيود الإصابات */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">⚠️ قيود / إصابات (تعديل المدرب)</label>
+                        <textarea value={runOverride.limitations}
+                          onChange={e => setRunOverride((p: any) => ({ ...p, limitations: e.target.value }))}
+                          placeholder="مثال: Shin Splints — تدرج بطيء وسطح ناعم&#10;ألم ركبة — لا منحدرات"
+                          rows={3}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-yellow-500 resize-none" />
+                      </div>
+
+                      {/* تعليمات خاصة */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">📝 تعليمات خاصة للـ AI من المدرب</label>
+                        <textarea value={runOverride.specialInstructions}
+                          onChange={e => setRunOverride((p: any) => ({ ...p, specialInstructions: e.target.value }))}
+                          placeholder="مثال: العداء يستعد لسباق الرياض — ركّز على الإيقاع المستهدف&#10;مثال: جلسات قصيرة لا تتجاوز 45 دقيقة&#10;مثال: الجري فجراً فقط بسبب الحرارة"
+                          rows={3}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-cyan-500 resize-none" />
+                        <p className="text-xs text-gray-600 mt-1">هذه التعليمات تُرسل مباشرة للـ AI لمراعاتها في التوليد</p>
+                      </div>
+
+                      {/* Reset */}
+                      {runProfile && (
+                        <button onClick={() => setRunOverride({ goal: runProfile.goal, level: runProfile.level, daysPerWeek: runProfile.daysPerWeek, gender: runProfile.gender || 'male', surface: runProfile.surface || 'mixed', currentWeeklyKm: runProfile.currentWeeklyKm || '', best5kTime: runProfile.best5kTime || '', targetRaceDate: runProfile.targetRaceDate || '', limitations: runProfile.limitations || '', specialInstructions: '' })}
+                          className="w-full py-2 rounded-xl border border-gray-700 text-gray-400 text-xs font-semibold hover:border-gray-500 hover:text-gray-300 transition-all">
+                          ↺ إعادة تعيين لقيم البروفايل الأصلية
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* إنشاء بروفايل مؤقت */}
+              {runSelectedMember && !runProfile && !runOverride && (
+                <button onClick={() => setRunOverride({ goal: 'general_endurance', level: 'beginner', daysPerWeek: 3, gender: 'male', surface: 'mixed', currentWeeklyKm: '', best5kTime: '', targetRaceDate: '', limitations: '', specialInstructions: '' })}
+                  className="w-full py-3 rounded-xl border border-dashed border-cyan-700/60 text-cyan-400 text-sm font-semibold hover:bg-cyan-900/10 transition-all">
+                  + إنشاء بروفايل مؤقت لهذا العداء
+                </button>
+              )}
+
+              {/* Generate Button */}
+              {runSelectedMember && runOverride && (
+                <div className="space-y-2">
+                  <button onClick={generateRunPlan} disabled={runLoading}
+                    className="w-full py-4 rounded-2xl text-white font-extrabold text-base transition-all shadow-lg bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-500 hover:to-sky-500 disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed shadow-cyan-900/30">
+                    {runLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="animate-spin">⏳</span> جاري التوليد بـ Claude AI...
+                      </span>
+                    ) : '🤖 توليد برنامج الجري الأسبوعي'}
+                  </button>
+                  {runLoading && (
+                    <p className="text-xs text-gray-500 text-center">قد يستغرق 30-60 ثانية حسب عدد الأيام</p>
+                  )}
+                  {runError && (
+                    <div className="bg-red-900/20 border border-red-700/40 rounded-xl px-3 py-2.5 text-sm text-red-400 flex items-start gap-2">
+                      <span>❌</span><span>{runError}</span>
+                    </div>
+                  )}
+                  {runSaved && !runError && (
+                    <div className="bg-green-900/20 border border-green-700/40 rounded-xl px-3 py-2.5 text-sm text-green-400 flex items-center gap-2">
+                      <span>✅</span><span>تم التوليد والحفظ للعداء بنجاح</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Plan Preview */}
+              {runPlan?.sessions && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-white text-sm">📋 البرنامج المُولَّد</h3>
+                    <span className="text-xs text-gray-500">
+                      {runPlan.sessions.filter((s: any) => !s.isRest).length} أيام جري • {runPlan.sessions.reduce((n: number, s: any) => n + (s.totalDistanceKm || 0), 0).toFixed(0)} كم
+                    </span>
+                  </div>
+
+                  {runPlan.weekSummary && (
+                    <div className="bg-cyan-900/20 border border-cyan-700/30 rounded-xl px-3 py-2.5 text-xs text-cyan-300">
+                      📌 {runPlan.weekSummary}
+                    </div>
+                  )}
+
+                  {runPlan.sessions.map((s: any, i: number) => (
+                    <div key={i} className={`rounded-2xl border overflow-hidden ${s.isRest ? 'border-gray-700/30 bg-gray-900/30' : 'border-cyan-700/30 bg-cyan-900/10'}`}>
+                      <div className="p-3 flex items-center gap-3">
+                        <div className="flex-shrink-0 text-center">
+                          <div className="text-xl">{s.isRest ? '😴' : s.runType === 'Intervals' ? '⚡' : s.runType === 'Tempo' ? '🔥' : s.runType === 'Long' ? '🛣️' : s.runType === 'Hills' ? '⛰️' : s.runType === 'Recovery' ? '💧' : s.runType === 'Fartlek' ? '🎲' : '🌿'}</div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-white text-sm">{s.dayName}</span>
+                            <span className="text-xs text-gray-500">{s.date}</span>
+                            {!s.isRest && <span className="text-xs bg-cyan-900/50 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-700/30">{s.runType}</span>}
+                            {s.intensity && !s.isRest && (
+                              <span className={`text-xs px-2 py-0.5 rounded-full border ${s.intensity === 'Hard' ? 'bg-red-900/40 text-red-400 border-red-700/30' : s.intensity === 'Moderate' ? 'bg-orange-900/40 text-orange-400 border-orange-700/30' : 'bg-green-900/40 text-green-400 border-green-700/30'}`}>
+                                {s.intensity}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-400 mt-0.5 truncate">
+                            {s.isRest ? 'يوم راحة واستشفاء' : s.title}
+                          </div>
+                        </div>
+                        <div className="flex-shrink-0 text-right">
+                          {s.totalDistanceKm > 0 && <div className="text-xs text-cyan-400">{s.totalDistanceKm} كم</div>}
+                          {s.duration > 0 && <div className="text-xs text-gray-500">⏱ {s.duration}د</div>}
+                        </div>
+                      </div>
+                      {!s.isRest && s.segments?.length > 0 && (
+                        <div className="border-t border-white/5 px-3 py-2 space-y-1">
+                          {s.segments.map((seg: any, j: number) => (
+                            <div key={j} className="flex items-center gap-2 text-xs">
+                              <span className="text-cyan-500 flex-shrink-0">{j + 1}.</span>
+                              <span className="flex-1 text-gray-300">{seg.name}</span>
+                              <span className="text-gray-500">{seg.type}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {runPlan.progressionNote && (
+                    <div className="bg-teal-900/20 border border-teal-700/30 rounded-xl px-3 py-2.5 text-xs text-teal-300">
+                      📈 {runPlan.progressionNote}
                     </div>
                   )}
                 </div>

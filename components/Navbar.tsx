@@ -199,6 +199,7 @@ const mainLinks: NavItem[] = [
   { href: '/skills',         label: 'المهارات',      iconKey: 'target'        },
   { href: '/wod-history',    label: 'تاريخ WODs',    iconKey: 'calendar'      },
   { href: '/gym',            label: 'الجيم',          iconKey: 'gym'           },
+  { href: '/running',        label: 'الجري',          iconKey: 'run'           },
   { href: '/hyrox',          label: 'Hyrox',         iconKey: 'run'           },
   { href: '/kettlebell',     label: 'Kettlebell',    iconKey: 'kettlebell'    },
   { href: '/calisthenics',   label: 'Calisthenics',  iconKey: 'calisthenics'  },
