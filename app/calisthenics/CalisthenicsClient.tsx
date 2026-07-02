@@ -1,480 +1,433 @@
-﻿'use client';
-import { todaySA } from '@/lib/timezone';
-import { useState, useEffect } from 'react';
+'use client';
+import { useState, useMemo } from 'react';
 import Navbar from '@/components/Navbar';
-
-const SESSION_TYPES = [
-  { id: 'strength',  label: 'قوة',      icon: '💪', desc: 'بناء القوة المطلقة بالوزن الذاتي',
-    color: 'border-blue-700/50 bg-blue-900/30 text-blue-300',       active: 'border-blue-500 bg-blue-600 text-white'    },
-  { id: 'skills',    label: 'مهارات',   icon: '🤸', desc: 'وقوف على يدين، ليفر، بلانش',
-    color: 'border-purple-700/50 bg-purple-900/30 text-purple-300', active: 'border-purple-500 bg-purple-600 text-white' },
-  { id: 'endurance', label: 'تحمل',     icon: '🔄', desc: 'تكرارات عالية وكثافة قلبية',
-    color: 'border-green-700/50 bg-green-900/30 text-green-300',    active: 'border-green-500 bg-green-600 text-white'   },
-  { id: 'mixed',     label: 'مختلط',    icon: '⚡', desc: 'قوة + مهارات + تحمل',
-    color: 'border-orange-700/50 bg-orange-900/30 text-orange-300', active: 'border-orange-500 bg-orange-600 text-white' },
-  { id: 'hiit',      label: 'HIIT',     icon: '🔥', desc: 'تدريب متقطع عالي الكثافة',
-    color: 'border-red-700/50 bg-red-900/30 text-red-300',          active: 'border-red-500 bg-red-600 text-white'       },
-];
-
-const FOCUS_OPTIONS     = ['كامل الجسم','الجزء العلوي','الجزء السفلي','القلب والكور','مهارات الجمناستيكس','الكتفين والضغط','الظهر والسحب','تدريب الحلقات'];
-const LEVEL_TABS = [
-  { key: 'beginner'     as const, label: 'مبتدئ', active: 'bg-green-600 text-white',  idle: 'bg-green-50 text-green-700 border border-green-300'    },
-  { key: 'intermediate' as const, label: 'متوسط', active: 'bg-blue-600 text-white',   idle: 'bg-blue-50 text-blue-700 border border-blue-300'      },
-  { key: 'advanced'     as const, label: 'متقدم', active: 'bg-orange-500 text-white',  idle: 'bg-orange-50 text-orange-700 border border-orange-300' },
-  { key: 'elite'        as const, label: 'نخبة',  active: 'bg-red-600 text-white',     idle: 'bg-red-50 text-red-700 border border-red-300'          },
-];
+import Link from 'next/link';
 
 type LevelKey = 'beginner' | 'intermediate' | 'advanced' | 'elite';
 
-// ── بطاقة تمرين ────────────────────────────────────────────────────────────
-function ExerciseRow({ ex, index, selectedLevel }: { ex: any; index: number; selectedLevel?: LevelKey }) {
-  const [open, setOpen] = useState(false);
+const LEVEL_TABS: { key: LevelKey; label: string; emoji: string; active: string; idle: string }[] = [
+  { key: 'beginner',     label: 'مبتدئ', emoji: '🟢', active: 'bg-green-600 text-white shadow-lg',  idle: 'bg-green-50 text-green-700 border border-green-300' },
+  { key: 'intermediate', label: 'متوسط', emoji: '🔵', active: 'bg-blue-600 text-white shadow-lg',   idle: 'bg-blue-50 text-blue-700 border border-blue-300' },
+  { key: 'advanced',     label: 'متقدم', emoji: '🟠', active: 'bg-orange-500 text-white shadow-lg', idle: 'bg-orange-50 text-orange-700 border border-orange-300' },
+  { key: 'elite',        label: 'نخبة',  emoji: '🔴', active: 'bg-red-600 text-white shadow-lg',    idle: 'bg-red-50 text-red-700 border border-red-300' },
+];
 
-  const lvl = selectedLevel && ex.levels ? ex.levels[selectedLevel] : null;
+const TYPE_THEME: Record<string, { accent: string; badge: string; icon: string; label: string }> = {
+  Push:      { accent: 'bg-orange-500',  badge: 'bg-orange-100 text-orange-700 border border-orange-200',   icon: '🙌', label: 'دفع' },
+  Pull:      { accent: 'bg-blue-500',    badge: 'bg-blue-100 text-blue-700 border border-blue-200',         icon: '🏗️', label: 'سحب' },
+  Legs:      { accent: 'bg-emerald-500', badge: 'bg-emerald-100 text-emerald-700 border border-emerald-200', icon: '🦵', label: 'أرجل' },
+  Skills:    { accent: 'bg-violet-500',  badge: 'bg-violet-100 text-violet-700 border border-violet-200',   icon: '🤸', label: 'مهارات' },
+  Core:      { accent: 'bg-amber-500',   badge: 'bg-amber-100 text-amber-700 border border-amber-200',      icon: '🧱', label: 'جذع' },
+  FullBody:  { accent: 'bg-indigo-500',  badge: 'bg-indigo-100 text-indigo-700 border border-indigo-200',   icon: '💪', label: 'كامل الجسم' },
+  Endurance: { accent: 'bg-rose-500',    badge: 'bg-rose-100 text-rose-700 border border-rose-200',         icon: '🔄', label: 'تحمل' },
+  Rest:      { accent: 'bg-slate-300',   badge: 'bg-slate-100 text-slate-500 border border-slate-200',      icon: '😴', label: 'راحة' },
+};
 
+const GOAL_LABEL: Record<string, string> = {
+  strength: 'قوة بوزن الجسم 💪', skills: 'مهارات 🤸', muscle_gain: 'بناء عضلي 🏗️',
+  endurance: 'تحمل عضلي 🔄', fat_burn: 'حرق الدهون 🔥',
+};
+
+const LEVEL_DISPLAY: Record<string, string> = {
+  beginner: '🟢 مبتدئ', intermediate: '🔵 متوسط', advanced: '🟠 متقدم', elite: '🔴 نخبة',
+};
+
+function todayStr() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Riyadh' });
+}
+
+function groupByWeek(sessions: any[]) {
+  const sorted = [...sessions].sort((a, b) => a.date.localeCompare(b.date));
+  const weeks: { key: string; label: string; sessions: any[] }[] = [];
+  const seen = new Set<string>();
+  for (const s of sorted) {
+    const d = new Date(s.date + 'T00:00:00');
+    const monday = new Date(d);
+    monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    const key = monday.toISOString().split('T')[0];
+    if (!seen.has(key)) {
+      seen.add(key);
+      const weekNum = weeks.length + 1;
+      const end = new Date(monday); end.setDate(monday.getDate() + 6);
+      const fmt = (dt: Date) => dt.toLocaleDateString('ar-SA', { month: 'short', day: 'numeric' });
+      weeks.push({ key, label: `الأسبوع ${weekNum} • ${fmt(monday)} – ${fmt(end)}`, sessions: [] });
+    }
+    weeks[weeks.length - 1].sessions.push(s);
+  }
+  return weeks;
+}
+
+function ChevronIcon({ open }: { open: boolean }) {
   return (
-    <div className="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center gap-3 px-4 py-3.5 text-right active:bg-slate-50">
-        <span className="w-7 h-7 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">{index + 1}</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+      className={`w-5 h-5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}
+
+function ExerciseCard({ ex, level, index, isSkill }: { ex: any; level: LevelKey; index: number; isSkill?: boolean }) {
+  const lvl = ex.levels?.[level];
+  return (
+    <div className={`bg-white rounded-2xl overflow-hidden border shadow-sm ${isSkill ? 'border-violet-200' : 'border-slate-200'}`}>
+      <div className="px-3.5 py-3 flex items-start gap-3">
+        <span className={`mt-0.5 w-7 h-7 flex-shrink-0 rounded-full border flex items-center justify-center text-xs font-bold ${isSkill ? 'bg-violet-100 border-violet-300 text-violet-700' : 'bg-emerald-100 border-emerald-300 text-emerald-700'}`}>
+          {isSkill ? '🤸' : index + 1}
+        </span>
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-slate-800 text-[15px]">{ex.name}</div>
-          {ex.nameEn && <div className="text-xs text-slate-500 mt-0.5">{ex.nameEn}</div>}
-          {lvl && (
-            <div className="text-xs text-slate-600 mt-0.5 font-medium">
-              {lvl.reps || lvl.scaling || ''}{lvl.weight ? ` · ${lvl.weight}` : ''}
+          <div className="font-bold text-slate-800 text-[15px] leading-tight">{ex.name}</div>
+          <div className="text-xs text-slate-500 mt-0.5" dir="ltr">{ex.nameEn}</div>
+          <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+            {ex.targetMuscles && (
+              <span className="text-xs bg-slate-100 border border-slate-300 text-slate-700 px-2 py-0.5 rounded-lg font-medium">
+                💪 {ex.targetMuscles}
+              </span>
+            )}
+            {ex.sets > 0 && (
+              <span className="text-xs bg-slate-100 border border-slate-300 text-slate-700 px-2 py-0.5 rounded-lg font-medium">
+                {ex.sets} مجموعات
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {lvl && (
+        <div className="mx-3 mb-3 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden">
+          {/* التدرج المناسب للمستوى */}
+          <div className={`px-3 py-2.5 border-b ${isSkill ? 'bg-violet-50 border-violet-100' : 'bg-emerald-50 border-emerald-100'}`}>
+            <div className="text-[11px] text-slate-500 font-medium mb-0.5">التدرج المناسب لمستواك:</div>
+            <div className={`text-sm font-extrabold ${isSkill ? 'text-violet-700' : 'text-emerald-700'}`}>{lvl.variation}</div>
+          </div>
+          <div className="grid grid-cols-2 divide-x divide-x-reverse divide-slate-200">
+            <div className="text-center py-3 px-1.5">
+              <div className="text-[11px] text-slate-500 mb-1 font-medium">التكرارات</div>
+              <div className="text-sm font-extrabold text-orange-600 leading-tight">{lvl.reps}</div>
+            </div>
+            <div className="text-center py-3 px-1.5">
+              <div className="text-[11px] text-slate-500 mb-1 font-medium">الراحة</div>
+              <div className="text-sm font-extrabold text-teal-600 leading-tight">{lvl.rest}</div>
+            </div>
+          </div>
+          {lvl.cue && (
+            <div className="border-t border-amber-200 px-3 py-2.5 bg-amber-50 flex items-start gap-2">
+              <span className="text-sm flex-shrink-0 mt-0.5">💬</span>
+              <span className="text-[13px] text-amber-800 leading-relaxed font-medium">{lvl.cue}</span>
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {!selectedLevel && ex.sets && <span className="text-xs bg-slate-100 border border-slate-300 text-slate-600 px-2 py-0.5 rounded-full">{ex.sets} مج</span>}
-          {!selectedLevel && ex.reps && <span className="text-xs bg-orange-100 border border-orange-300 text-orange-700 px-2 py-0.5 rounded-full font-mono">{ex.reps}</span>}
-          {ex.levels && <span className="text-xs bg-purple-100 text-purple-700 border border-purple-300 px-1.5 py-0.5 rounded-full">4 مستويات</span>}
-          <span className="text-slate-400 text-xs">{open ? '▲' : '▼'}</span>
-        </div>
-      </button>
-      {open && (
-        <div className="px-4 pb-4 space-y-2 border-t border-slate-200 pt-3 bg-slate-50">
-          {ex.rest     && <div className="text-sm text-slate-600">⏱ راحة: <span className="text-slate-800 font-semibold">{ex.rest}</span></div>}
-          {ex.tempo    && <div className="text-sm text-slate-600">🎵 إيقاع: <span className="text-slate-800 font-semibold">{ex.tempo}</span></div>}
-          {ex.notes    && <div className="text-sm text-slate-700">💡 {ex.notes}</div>}
-          {ex.cues     && <div className="text-sm text-slate-700">🔑 {ex.cues}</div>}
-          {ex.duration && <div className="text-sm text-slate-600">⏳ المدة: <span className="text-slate-800 font-semibold">{ex.duration}</span></div>}
+      )}
 
-          {selectedLevel && lvl && (
-            <div className="mt-2 rounded-xl border border-slate-200 bg-white overflow-hidden">
-              <div className="px-3 py-2.5 space-y-1.5">
-                {lvl.weight  && <div className="text-sm text-slate-600">⚖️ الوزن: <span className="font-bold text-slate-800">{lvl.weight}</span></div>}
-                {(lvl.reps || lvl.scaling) && <div className="text-sm text-slate-600">🔢 التكرار: <span className="font-bold text-slate-800">{lvl.reps || lvl.scaling}</span></div>}
-                {lvl.cue && <div className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">💬 {lvl.cue}</div>}
-              </div>
-            </div>
-          )}
-
-          {!selectedLevel && ex.levels && (
-            <div className="mt-2 grid grid-cols-1 gap-1.5">
-              {LEVEL_TABS.map(t => {
-                const d = ex.levels[t.key];
-                if (!d) return null;
-                return (
-                  <div key={t.key} className="rounded-lg border border-slate-200 bg-white px-3 py-2">
-                    <div className={`inline-block text-xs font-bold px-2 py-0.5 rounded-full mb-1.5 ${t.active}`}>{t.label}</div>
-                    <div className="text-sm text-slate-700">
-                      {d.weight && <span className="ml-2">⚖️ {d.weight}</span>}
-                      {(d.reps || d.scaling) && <span>· {d.reps || d.scaling}</span>}
-                      {d.cue && <div className="text-slate-500 mt-1">💬 {d.cue}</div>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {ex.progression && <div className="text-sm bg-purple-50 border border-purple-200 rounded-lg px-3 py-2 text-purple-800">🚀 التطور: {ex.progression}</div>}
-          {ex.regression  && <div className="text-sm bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-blue-800">📉 البديل: {ex.regression}</div>}
+      {ex.notes && (
+        <div className="px-4 pb-3 text-xs text-slate-600 flex items-start gap-1.5 leading-relaxed">
+          <span className="flex-shrink-0">📌</span><span>{ex.notes}</span>
         </div>
       )}
     </div>
   );
 }
 
-function Section({ title, icon, bg, border, titleColor, children }: {
-  title: string; icon: string; bg: string; border: string; titleColor: string; children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm">
-      <div className="px-4 py-3 border-b border-slate-200 flex items-center gap-2 bg-slate-50">
-        <span className="text-lg">{icon}</span>
-        <span className={`font-bold text-[15px] ${titleColor}`}>{title}</span>
-      </div>
-      <div className="p-4 space-y-2.5">{children}</div>
-    </div>
-  );
-}
-
-function SavedCard({ rec, onDelete, onView }: { rec: any; onDelete: () => void; onView: () => void }) {
-  return (
-    <div className="bg-white rounded-xl border border-slate-200 p-3.5 flex items-center gap-3 shadow-sm">
-      <div className="flex-1 min-w-0">
-        <div className="text-[15px] font-semibold text-slate-800 truncate">{rec.title}</div>
-        <div className="text-xs text-slate-500 mt-1">{rec.date} · {rec.sessionType} · {rec.difficulty}</div>
-      </div>
-      <button onClick={onView}  className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">عرض</button>
-      <button onClick={onDelete} className="text-xs bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-700 px-2 py-1.5 rounded-lg transition-colors border border-slate-200 hover:border-red-300">🗑</button>
-    </div>
-  );
-}
-
-export default function CalisthenicsClient({ member }: { member: any }) {
-  const isAdmin = member.role === 'admin';
-  const [tab,           setTab]           = useState<'generate'|'history'>(isAdmin ? 'generate' : 'history');
-  const [sessionType,   setSessionType]   = useState('strength');
-  const [focus,         setFocus]         = useState('كامل الجسم');
-  const [date,          setDate]          = useState(todaySA());
-  const [loading,       setLoading]       = useState(false);
-  const [saving,        setSaving]        = useState(false);
-  const [saved,         setSaved]         = useState(false);
-  const [error,         setError]         = useState('');
-  const [session,       setSession]       = useState<any>(null);
-  const [history,       setHistory]       = useState<any[]>([]);
-  const [historyLoad,   setHistoryLoad]   = useState(false);
-  const [selectedLevel, setSelectedLevel] = useState<LevelKey | undefined>(undefined);
-
-  const selectedType = SESSION_TYPES.find(t => t.id === sessionType)!;
-
-  useEffect(() => { if (tab === 'history') loadHistory(); }, [tab]);
-
-  async function loadHistory() {
-    setHistoryLoad(true);
-    try {
-      const res  = await fetch('/api/calisthenics/sessions');
-      const data = await res.json();
-      setHistory(data.sessions || []);
-    } catch {}
-    setHistoryLoad(false);
-  }
-
-  async function generate() {
-    setLoading(true); setError(''); setSession(null); setSaved(false);
-    try {
-      const res  = await fetch('/api/calisthenics/generate', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, sessionType, focus }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'خطأ في التوليد');
-      setSession(data.session);
-    } catch (e: any) { setError(e.message); }
-    setLoading(false);
-  }
-
-  async function saveSession() {
-    if (!session || saving) return;
-    setSaving(true);
-    try {
-      const res = await fetch('/api/calisthenics/sessions', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionData: session, date, sessionType, difficulty: 'جميع المستويات' }),
-      });
-      if (res.ok) setSaved(true);
-    } catch {}
-    setSaving(false);
-  }
-
-  async function deleteSession(id: string) {
-    await fetch('/api/calisthenics/sessions', {
-      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    });
-    setHistory(h => h.filter(r => r.id !== id));
-  }
-
-  function viewSaved(rec: any) {
-    setSession(rec.sessionData);
-    setDate(rec.date);
-    setSessionType(rec.sessionType);
-    setSaved(true);
-    setTab('generate');
-  }
-
-  function buildWhatsApp() {
-    if (!session) return '';
-    const lines = [`🤸 *${session.title}*`, `📅 ${date}  |  🎯 ${session.focus}`, `⏱ المدة: ${session.totalDuration} دقيقة`, ''];
-    if (session.metcon) {
-      lines.push(`🔥 *الميتكون — ${session.metcon.format}*`);
-      if (session.metcon.timecap) lines.push(`تايم كاب: ${session.metcon.timecap} دقيقة`);
-      (session.metcon.exercises || []).forEach((e: any) => lines.push(`• ${e.reps} ${e.name}`));
-      lines.push('');
-    }
-    if (session.coachNote) lines.push(`💬 ${session.coachNote}`);
-    return lines.join('\n');
-  }
+function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
+  const [open, setOpen] = useState(isToday && !s.isRest);
+  const [level, setLevel] = useState<LevelKey>('intermediate');
+  const isRest = s.isRest;
+  const theme = TYPE_THEME[s.sessionType] || TYPE_THEME['FullBody'];
 
   return (
-    <div className="min-h-dvh flex w-full overflow-x-hidden">
-      <Navbar member={member}/>
-      <main className="flex-1 min-w-0 lg:mr-56 pb-safe-nav lg:pb-0 overflow-x-hidden">
-        <div className="max-w-2xl mx-auto px-4 pt-safe pb-6 space-y-6">
+    <div className={`rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-white ${isToday ? 'ring-2 ring-emerald-400 ring-offset-1' : ''}`}>
+      <div className={`h-1.5 ${theme.accent}`} />
 
-          {/* Header */}
-          <div className="bg-gradient-to-l from-emerald-900/50 to-teal-900/40 rounded-2xl border border-emerald-700/40 p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-emerald-700/40 border border-emerald-600/40 flex items-center justify-center text-2xl">🤸</div>
-                <div>
-                  <h1 className="text-xl font-bold text-white">Calisthenics</h1>
-                  <p className="text-sm text-emerald-300">تمارين وزن الجسم والجمناستيكس</p>
-                </div>
+      {isToday && (
+        <div className="bg-emerald-600 text-white text-sm font-bold text-center py-2 tracking-widest">
+          ✨ جلسة اليوم
+        </div>
+      )}
+
+      {!isRest && s.intensity && (
+        <div className={`text-sm font-bold text-center py-1.5 ${
+          s.intensity === 'Heavy'    ? 'bg-red-500 text-white' :
+          s.intensity === 'Moderate' ? 'bg-amber-500 text-white' :
+          s.intensity === 'Light'    ? 'bg-emerald-500 text-white' : 'hidden'
+        }`}>
+          {s.intensity === 'Heavy' ? '🔴 شدة عالية' : s.intensity === 'Moderate' ? '🟡 شدة متوسطة' : s.intensity === 'Light' ? '🟢 خفيف' : ''}
+        </div>
+      )}
+
+      {/* Card header */}
+      <button
+        onClick={() => !isRest && setOpen(o => !o)}
+        className={`w-full px-4 py-3.5 text-right flex items-center gap-3 ${!isRest ? 'active:bg-black/5 cursor-pointer' : 'cursor-default'}`}
+      >
+        <span className="text-2xl flex-shrink-0">{theme.icon}</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+            <span className="font-extrabold text-slate-800 text-[17px] leading-tight">{s.dayName}</span>
+            <span className="text-xs text-slate-500">{new Date(s.date + 'T00:00:00').toLocaleDateString('ar-SA', { day: 'numeric', month: 'short' })}</span>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap mt-1">
+            {!isRest && (
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${theme.badge}`}>
+                {theme.label}
+              </span>
+            )}
+            {isRest ? (
+              <span className="text-sm text-slate-500">😴 يوم راحة</span>
+            ) : s.title ? (
+              <span className="text-xs text-slate-600 leading-relaxed line-clamp-1">{s.title}</span>
+            ) : null}
+          </div>
+        </div>
+        {!isRest && (
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {(s.exercises?.length || 0) + (s.skillWork?.length || 0) > 0 && (
+              <div className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-center min-w-[36px] shadow-sm">
+                <div className="text-sm font-bold text-slate-800 leading-none">{(s.exercises?.length || 0) + (s.skillWork?.length || 0)}</div>
+                <div className="text-[9px] text-slate-500 mt-0.5">تمرين</div>
               </div>
-              <div className="flex gap-1 bg-gray-800 border border-gray-700 p-1 rounded-xl">
-                {isAdmin && (
-                  <button onClick={() => setTab('generate')} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab==='generate' ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}>توليد</button>
-                )}
-                <button onClick={() => setTab('history')}  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab==='history'  ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}>السجل</button>
+            )}
+            {s.duration > 0 && (
+              <div className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-center min-w-[36px] shadow-sm">
+                <div className="text-sm font-bold text-slate-800 leading-none">{s.duration}</div>
+                <div className="text-[9px] text-slate-500 mt-0.5">دقيقة</div>
               </div>
+            )}
+            <div className="text-slate-400">
+              <ChevronIcon open={open} />
+            </div>
+          </div>
+        )}
+      </button>
+
+      {/* Expanded content */}
+      {open && !isRest && (
+        <div className="border-t border-slate-200 space-y-5 p-4">
+
+          {s.notes && (
+            <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 flex items-start gap-2">
+              <span className="text-base flex-shrink-0">📋</span>
+              <p className="text-[14px] text-slate-700 leading-relaxed">{s.notes}</p>
+            </div>
+          )}
+
+          {/* Level selector */}
+          <div>
+            <p className="text-sm text-slate-500 mb-3 font-medium">اختر مستواك لعرض التدرجات المناسبة:</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {LEVEL_TABS.map(t => (
+                <button key={t.key} onClick={() => setLevel(t.key)}
+                  className={`py-3 rounded-xl text-sm font-bold transition-all ${level === t.key ? t.active : t.idle}`}>
+                  <div className="text-lg">{t.emoji}</div>
+                  <div className="mt-1">{t.label}</div>
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* تبويب السجل */}
-          {tab === 'history' && (
-            <div className="space-y-3">
-              {historyLoad ? (
-                <div className="text-center py-12 text-gray-500">جاري التحميل...</div>
-              ) : history.length === 0 ? (
-                <div className="text-center py-12 bg-gray-900 rounded-2xl border border-gray-700">
-                  <div className="text-5xl mb-3">🤸</div>
-                  <div className="text-gray-400 text-sm">لا توجد جلسات محفوظة بعد</div>
-                  {isAdmin ? (
-                    <button onClick={() => setTab('generate')} className="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors">توليد جلسة الآن</button>
-                  ) : (
-                    <p className="mt-2 text-xs text-gray-600">سيقوم المدرب بإضافة الجلسات قريباً</p>
-                  )}
-                </div>
-              ) : history.map(rec => (
-                <SavedCard key={rec.id} rec={rec} onDelete={() => deleteSession(rec.id)} onView={() => viewSaved(rec)}/>
-              ))}
+          {/* Warmup */}
+          {s.warmup?.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+              <h4 className="text-[15px] font-bold text-amber-800 mb-3 flex items-center gap-2">
+                <span className="text-xl">🔆</span> الإحماء
+              </h4>
+              <ol className="space-y-2 list-none">
+                {s.warmup.map((w: string, i: number) => (
+                  <li key={i} className="flex items-baseline gap-2.5 text-right">
+                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-amber-600 text-white text-[11px] flex items-center justify-center font-bold leading-none">{i + 1}</span>
+                    <span className="flex-1 text-[14px] text-slate-700 leading-relaxed break-words">{w}</span>
+                  </li>
+                ))}
+              </ol>
             </div>
           )}
 
-          {/* تبويب التوليد */}
-          {tab === 'generate' && isAdmin && (
-            <>
-              {/* إعدادات */}
-              <div className="bg-gray-900 rounded-2xl border border-gray-700 p-5 space-y-5">
-                <h2 className="text-[15px] font-bold text-white flex items-center gap-2">⚙️ إعدادات الجلسة</h2>
-
-                {/* نوع الجلسة */}
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-400 font-medium">نوع الجلسة</label>
-                  <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-                    {SESSION_TYPES.map(t => (
-                      <button key={t.id} onClick={() => setSessionType(t.id)}
-                        className={`flex flex-col gap-1 p-3.5 rounded-xl border text-right transition-all ${sessionType===t.id ? t.active : t.color}`}>
-                        <div className="flex items-center gap-2"><span className="text-lg">{t.icon}</span><span className="font-bold text-[15px]">{t.label}</span></div>
-                        <span className="text-xs opacity-80 leading-relaxed">{t.desc}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-400 font-medium">التاريخ</label>
-                  <input type="date" value={date} onChange={e => setDate(e.target.value)}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500"/>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-400 font-medium">التركيز</label>
-                  <div className="flex gap-2 flex-wrap">
-                    {FOCUS_OPTIONS.map(f => (
-                      <button key={f} onClick={() => setFocus(f)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${focus===f ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-gray-800 text-gray-300 border-gray-700 hover:border-emerald-600'}`}>{f}</button>
-                    ))}
-                  </div>
-                </div>
-
-                <button onClick={generate} disabled={loading}
-                  className={`w-full py-3.5 rounded-xl font-bold text-[15px] transition-all ${loading ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg'}`}>
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-                      </svg>
-                      جاري توليد الجلسة...
-                    </span>
-                  ) : `🤸 توليد جلسة ${selectedType.label}`}
-                </button>
-
-                {error && <div className="bg-red-900/40 border border-red-700/50 rounded-xl p-3 text-sm text-red-300 text-center">⚠️ {error}</div>}
+          {/* Skill Work */}
+          {s.skillWork?.length > 0 && (
+            <div>
+              <h4 className="text-[15px] font-bold text-violet-700 mb-3 flex items-center gap-2">
+                <span className="text-xl">🤸</span>
+                <span>تدريب المهارات</span>
+                <span className="bg-violet-100 text-violet-700 border border-violet-200 text-xs px-2.5 py-1 rounded-full font-bold">أول الجلسة</span>
+              </h4>
+              <div className="space-y-3">
+                {s.skillWork.map((ex: any, i: number) => (
+                  <ExerciseCard key={i} ex={ex} level={level} index={i} isSkill />
+                ))}
               </div>
-
-              {/* نتيجة الجلسة */}
-              {session && (
-                <div className="space-y-4">
-
-                  {/* Level Tabs */}
-                  {(session.strength?.some((e: any) => e.levels) || session.skillWork?.some((e: any) => e.levels) || session.metcon?.some((e: any) => e.levels)) && (
-                    <div className="bg-gray-900 rounded-2xl border border-gray-700 p-4">
-                      <div className="text-sm text-gray-400 font-medium mb-3">اختر مستواك لعرض التفاصيل المخصصة</div>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                        {LEVEL_TABS.map(t => (
-                          <button key={t.key}
-                            onClick={() => setSelectedLevel(selectedLevel === t.key ? undefined : t.key)}
-                            className={`py-2.5 rounded-xl text-sm font-bold transition-all ${selectedLevel === t.key ? t.active : t.idle}`}>
-                            {t.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Header */}
-                  <div className="bg-gradient-to-l from-emerald-900/50 to-gray-900 rounded-2xl border border-emerald-700/50 p-5">
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="flex-1 min-w-0">
-                        <h2 className="text-lg font-black text-white leading-tight">{session.title}</h2>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          <span className="text-xs bg-emerald-800/60 text-emerald-200 px-2.5 py-1 rounded-full border border-emerald-700/50 font-medium">🤸 {session.sessionType}</span>
-                          <span className="text-xs text-gray-400">🎯 {session.focus}</span>
-                          {session.totalDuration && <span className="text-xs text-gray-400">⏱ {session.totalDuration} دقيقة</span>}
-                        </div>
-                      </div>
-                      <div className="flex gap-2 flex-shrink-0">
-                        <button onClick={saveSession} disabled={saving || saved}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                            saved  ? 'bg-emerald-800/50 text-emerald-300 cursor-default' :
-                            saving ? 'bg-gray-700 text-gray-400 cursor-not-allowed' :
-                                     'bg-emerald-600 hover:bg-emerald-500 text-white'
-                          }`}>
-                          {saved ? '✓ محفوظ' : saving ? '...' : '💾 حفظ'}
-                        </button>
-                        <button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(buildWhatsApp())}`, '_blank')}
-                          className="flex items-center gap-1.5 bg-[#25D366]/20 hover:bg-[#25D366]/30 border border-[#25D366]/40 text-[#25D366] px-3 py-1.5 rounded-xl text-xs font-bold transition-colors">
-                          واتساب
-                        </button>
-                      </div>
-                    </div>
-                    {session.equipment?.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {session.equipment.map((eq: string, i: number) => <span key={i} className="text-xs bg-gray-800 border border-gray-700 text-gray-300 px-2 py-1 rounded-lg">🔧 {eq}</span>)}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* الإحماء */}
-                  {session.warmup?.exercises?.length > 0 && (
-                    <Section title={`الإحماء — ${session.warmup.duration} دقيقة`} icon="🔆"
-                      bg="" border="" titleColor="text-amber-300">
-                      {session.warmup.exercises.map((ex: any, i: number) => <ExerciseRow key={i} ex={ex} index={i} selectedLevel={selectedLevel}/>)}
-                    </Section>
-                  )}
-
-                  {/* المهارة */}
-                  {session.skillWork?.exercises?.length > 0 && (
-                    <Section title={`${session.skillWork.title || 'العمل على المهارة'} — ${session.skillWork.duration} دقيقة`} icon="🤸"
-                      bg="" border="" titleColor="text-purple-300">
-                      {session.skillWork.exercises.map((ex: any, i: number) => <ExerciseRow key={i} ex={ex} index={i} selectedLevel={selectedLevel}/>)}
-                    </Section>
-                  )}
-
-                  {/* العمل الرئيسي */}
-                  {session.mainWork && (
-                    Array.isArray(session.mainWork)
-                      ? session.mainWork.map((block: any, bi: number) => (
-                          <Section key={bi} title={`${block.block || block.title || 'العمل الرئيسي'}${block.duration ? ` — ${block.duration} دقيقة` : ''}`} icon="💪"
-                            bg="" border="" titleColor="text-blue-300">
-                            {block.type && <div className="text-xs text-blue-400 font-semibold mb-2 uppercase tracking-wider">{block.type}</div>}
-                            {(block.exercises || []).map((ex: any, ei: number) => <ExerciseRow key={ei} ex={ex} index={ei} selectedLevel={selectedLevel}/>)}
-                          </Section>
-                        ))
-                      : (
-                          <Section title={`${(session.mainWork as any).title || 'العمل الرئيسي'}${(session.mainWork as any).duration ? ` — ${(session.mainWork as any).duration} دقيقة` : ''}`} icon="💪"
-                            bg="" border="" titleColor="text-blue-300">
-                            {(session.mainWork as any).format && <div className="text-xs text-blue-400 font-semibold mb-2 uppercase tracking-wider">{(session.mainWork as any).format}</div>}
-                            {((session.mainWork as any).exercises || []).map((ex: any, ei: number) => <ExerciseRow key={ei} ex={ex} index={ei} selectedLevel={selectedLevel}/>)}
-                          </Section>
-                        )
-                  )}
-
-                  {/* الميتكون */}
-                  {session.metcon && (
-                    <div className="rounded-2xl border border-orange-700/50 bg-orange-900/30 overflow-hidden">
-                      <div className="px-4 py-3 border-b border-orange-700/40 flex items-center justify-between bg-orange-900/40">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">🔥</span>
-                          <span className="font-bold text-[15px] text-orange-200">{session.metcon.title || 'الميتكون'}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs bg-orange-800/60 text-orange-200 px-2 py-0.5 rounded-full border border-orange-700/50 font-medium">{session.metcon.format}</span>
-                          {session.metcon.timecap && <span className="text-xs text-gray-400">⏱ {session.metcon.timecap} د</span>}
-                          {session.metcon.rounds && <span className="text-xs text-gray-400">🔄 {session.metcon.rounds} جولات</span>}
-                        </div>
-                      </div>
-                      <div className="p-4 space-y-1">
-                        {session.metcon.exercises?.map((ex: any, i: number) => (
-                          <div key={i} className="flex items-center gap-3 py-2.5 border-b border-orange-800/30 last:border-0">
-                            <span className="w-7 h-7 rounded-full bg-orange-800/60 text-orange-200 text-xs font-bold flex items-center justify-center flex-shrink-0">{i+1}</span>
-                            <div className="flex-1">
-                              <span className="text-white text-[15px] font-medium">{ex.name}</span>
-                              {ex.nameEn && <span className="text-gray-400 text-xs mr-2">{ex.nameEn}</span>}
-                            </div>
-                            {ex.reps && <span className="text-orange-300 font-bold text-sm">{ex.reps}</span>}
-                          </div>
-                        ))}
-                        {session.metcon.scoreType && <div className="text-sm text-gray-400 mt-2">📊 النتيجة: {session.metcon.scoreType}</div>}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* التهدئة */}
-                  {session.cooldown?.stretches?.length > 0 && (
-                    <Section title={`التهدئة والتمطيط — ${session.cooldown.duration} دقيقة`} icon="🧘"
-                      bg="" border="" titleColor="text-teal-300">
-                      {session.cooldown.stretches.map((s: any, i: number) => (
-                        <div key={i} className="flex items-center gap-3 py-2.5 border-b border-gray-700 last:border-0">
-                          <span className="text-teal-400">•</span>
-                          <div className="flex-1">
-                            <span className="text-gray-100 text-[15px]">{s.name}</span>
-                            {s.focus && <span className="text-gray-400 text-xs mr-2">— {s.focus}</span>}
-                          </div>
-                          {s.duration && <span className="text-teal-300 text-sm font-medium">{s.duration}</span>}
-                        </div>
-                      ))}
-                    </Section>
-                  )}
-
-                  {/* معلومات إضافية */}
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {session.weeklyPlacement && (
-                      <div className="bg-gray-900 rounded-xl border border-gray-700 p-4">
-                        <div className="text-xs text-gray-500 font-medium mb-1.5">📅 الترتيب في الأسبوع</div>
-                        <div className="text-[15px] text-gray-200">{session.weeklyPlacement}</div>
-                      </div>
-                    )}
-                    {session.progressionPath && (
-                      <div className="bg-gray-900 rounded-xl border border-gray-700 p-4">
-                        <div className="text-xs text-gray-500 font-medium mb-1.5">🚀 مسار التطور</div>
-                        <div className="text-[15px] text-gray-200">{session.progressionPath}</div>
-                      </div>
-                    )}
-                    {session.nutritionTips && (
-                      <div className="bg-amber-900/40 border border-amber-700/50 rounded-xl p-4 sm:col-span-2">
-                        <div className="text-sm text-amber-300 font-semibold mb-1.5">🥗 التغذية</div>
-                        <div className="text-[15px] text-amber-50">{session.nutritionTips}</div>
-                      </div>
-                    )}
-                    {session.coachNote && (
-                      <div className="bg-emerald-900/40 border border-emerald-700/50 rounded-xl p-4 sm:col-span-2">
-                        <div className="text-sm text-emerald-300 font-semibold mb-1.5">💬 ملاحظة المدرب</div>
-                        <div className="text-[15px] text-emerald-50">{session.coachNote}</div>
-                      </div>
-                    )}
-                  </div>
-
-                </div>
-              )}
-            </>
+            </div>
           )}
 
+          {/* Exercises */}
+          {s.exercises?.length > 0 && (
+            <div>
+              <h4 className="text-[15px] font-bold text-emerald-700 mb-3 flex items-center gap-2">
+                <span className="text-xl">💪</span>
+                <span>التمارين</span>
+                <span className="bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs px-2.5 py-1 rounded-full font-bold">
+                  {s.exercises.length} تمرين
+                </span>
+              </h4>
+              <div className="space-y-3">
+                {s.exercises.map((ex: any, i: number) => (
+                  <ExerciseCard key={i} ex={ex} level={level} index={i} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Cooldown */}
+          {s.cooldown?.length > 0 && (
+            <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4">
+              <h4 className="text-[15px] font-bold text-teal-700 mb-3 flex items-center gap-2">
+                <span className="text-xl">🧘</span> التهدئة والإطالة
+              </h4>
+              <ol className="space-y-2 list-none">
+                {s.cooldown.map((c: string, i: number) => (
+                  <li key={i} className="flex items-baseline gap-2.5 text-right">
+                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-teal-600 text-white text-[11px] flex items-center justify-center font-bold leading-none">{i + 1}</span>
+                    <span className="flex-1 text-[14px] text-slate-700 leading-relaxed break-words">{c}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
+          {/* Coach note */}
+          {s.coachNote && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3.5 flex items-start gap-3">
+              <span className="text-2xl flex-shrink-0">🧠</span>
+              <div>
+                <div className="text-sm text-emerald-700 font-bold mb-1.5">ملاحظة المدرب</div>
+                <p className="text-[14px] text-slate-700 leading-relaxed">{s.coachNote}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function CalisthenicsClient({ member, profile, sessions }: { member: any; profile: any; sessions: any[] }) {
+  const today = todayStr();
+  const weeks = useMemo(() => groupByWeek(sessions), [sessions]);
+
+  const todayWeekIdx = useMemo(() => {
+    return weeks.findIndex(w => w.sessions.some(s => s.date === today));
+  }, [weeks, today]);
+
+  const [activeWeek, setActiveWeek] = useState(() => todayWeekIdx >= 0 ? todayWeekIdx : 0);
+  const currentSessions = weeks[activeWeek]?.sessions || [];
+
+  const totalExercises = currentSessions.reduce((n, s) => n + (s.exercises?.length || 0) + (s.skillWork?.length || 0), 0);
+  const trainDays = currentSessions.filter(s => !s.isRest).length;
+
+  if (!profile) {
+    return (
+      <div className="min-h-dvh flex w-full bg-gray-950">
+        <Navbar member={member} />
+        <main className="flex-1 lg:mr-56 flex items-center justify-center px-4">
+          <div className="text-center space-y-5 max-w-sm">
+            <div className="text-7xl">🤸</div>
+            <h2 className="text-2xl font-extrabold text-slate-800">ابدأ رحلة الكاليسثنكس</h2>
+            <p className="text-slate-500 text-base leading-relaxed">
+              عبّئ بروفايلك (قدراتك الحالية، مهاراتك المستهدفة، معداتك) وسيصمم المدرب برنامجاً أسبوعياً مخصصاً لك بوزن الجسم
+            </p>
+            <Link href="/calisthenics/profile"
+              className="inline-block bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-4 rounded-2xl transition-colors text-base shadow-lg shadow-emerald-200">
+              إعداد البروفايل →
+            </Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-dvh flex w-full bg-gray-950">
+      <Navbar member={member} />
+      <main className="flex-1 lg:mr-56 pb-28 lg:pb-8">
+        <div className="max-w-xl mx-auto px-4 pt-5 space-y-4">
+
+          {/* Header */}
+          <div className="bg-emerald-600 rounded-2xl p-5 shadow-lg shadow-emerald-200">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h1 className="font-extrabold text-white text-xl leading-tight mb-0.5">
+                  🤸 برنامج الكاليسثنكس
+                </h1>
+                <p style={{ color: 'rgba(255,255,255,0.85)' }} className="text-sm font-semibold">{GOAL_LABEL[profile.goal]}</p>
+                <p style={{ color: 'rgba(255,255,255,0.70)' }} className="text-xs mt-0.5">{LEVEL_DISPLAY[profile.level]} • {profile.daysPerWeek} أيام/أسبوع</p>
+                {profile.skillGoals?.length > 0 && (
+                  <p style={{ color: 'rgba(255,255,255,0.70)' }} className="text-xs mt-0.5">🎯 {profile.skillGoals.join(' • ')}</p>
+                )}
+              </div>
+              <Link href="/calisthenics/profile"
+                className="flex-shrink-0 text-xs bg-white/20 border border-white/30 text-white px-3 py-2 rounded-xl hover:bg-white/30 transition-all font-semibold">
+                ✏️ البروفايل
+              </Link>
+            </div>
+
+            {sessions.length > 0 && (
+              <div className="mt-4 pt-3 border-t border-white/20 grid grid-cols-3 gap-2">
+                <div className="text-center">
+                  <div className="text-2xl font-extrabold text-white">{trainDays}</div>
+                  <div className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.70)' }}>أيام تدريب</div>
+                </div>
+                <div className="text-center border-x border-white/20">
+                  <div className="text-2xl font-extrabold text-white">{totalExercises}</div>
+                  <div className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.70)' }}>تمرين / أسبوع</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-extrabold text-white">{currentSessions.find(s => s.date === today) ? '🔥' : '📅'}</div>
+                  <div className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.70)' }}>
+                    {currentSessions.find(s => s.date === today) ? 'اليوم تدريب!' : 'استمر'}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {sessions.length === 0 ? (
+            <div className="text-center py-20 space-y-4">
+              <div className="text-6xl">📋</div>
+              <p className="text-slate-800 font-bold text-lg">لا يوجد برنامج بعد</p>
+              <p className="text-slate-500 text-sm leading-relaxed max-w-xs mx-auto">
+                بروفايلك جاهز ✅ — انتظر المدرب ليولّد لك برنامجك الأسبوعي المخصص
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Week tabs */}
+              {weeks.length > 1 && (
+                <div className="space-y-2">
+                  <p className="text-xs text-slate-500 font-medium px-1">اختر الأسبوع:</p>
+                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                    {weeks.map((w, i) => {
+                      const hasToday = w.sessions.some(s => s.date === today);
+                      return (
+                        <button key={i} onClick={() => setActiveWeek(i)}
+                          className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${
+                            activeWeek === i
+                              ? 'bg-emerald-600 text-white shadow-lg'
+                              : 'bg-white text-slate-600 border border-slate-300 hover:border-emerald-400'
+                          }`}>
+                          {hasToday && <span className="ml-1">🔥</span>}
+                          {w.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Sessions */}
+              <div className="space-y-3">
+                {currentSessions.map((s: any) => (
+                  <SessionCard key={s.id || s.date} s={s} isToday={s.date === today} />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </main>
     </div>

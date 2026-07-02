@@ -3,7 +3,7 @@ import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 
-type AdminTab = 'wod' | 'members' | 'weekly' | 'sports' | 'gym' | 'running' | 'logs';
+type AdminTab = 'wod' | 'members' | 'weekly' | 'sports' | 'gym' | 'running' | 'cali' | 'logs';
 
 const WOD_TYPES = ['AMRAP', 'للوقت', 'قوة', 'تدريب'];
 const DIFFICULTY_OPTIONS = ['مبتدئ', 'متوسط', 'متقدم', 'نخبة'];
@@ -120,10 +120,69 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   const [gymShowOverride, setGymShowOverride] = useState(false);
 
   useEffect(() => {
-    if ((tab === 'gym' || tab === 'running') && gymMembers.length === 0) {
+    if ((tab === 'gym' || tab === 'running' || tab === 'cali') && gymMembers.length === 0) {
       fetch('/api/members').then(r => r.json()).then(m => setGymMembers(Array.isArray(m) ? m.filter((x: any) => x.role !== 'admin') : []));
     }
   }, [tab]);
+
+  // ===== Calisthenics Program =====
+  const [caliSelectedMember, setCaliSelectedMember] = useState('');
+  const [caliFromDate, setCaliFromDate] = useState(todaySA());
+  const [caliLoading, setCaliLoading] = useState(false);
+  const [caliPlan, setCaliPlan] = useState<any>(null);
+  const [caliError, setCaliError] = useState('');
+  const [caliSaved, setCaliSaved] = useState(false);
+  const [caliProfile, setCaliProfile] = useState<any>(null);
+  const [caliOverride, setCaliOverride] = useState<any>(null);
+  const [caliShowOverride, setCaliShowOverride] = useState(false);
+
+  useEffect(() => {
+    if (caliSelectedMember) {
+      setCaliProfile(null); setCaliOverride(null); setCaliShowOverride(false);
+      fetch(`/api/calisthenics/profile?memberId=${caliSelectedMember}`).then(r => r.json()).then(d => {
+        setCaliProfile(d || null);
+        if (d) setCaliOverride({
+          goal: d.goal, level: d.level, daysPerWeek: d.daysPerWeek, gender: d.gender || 'male',
+          skillGoals: d.skillGoals || [], equipment: d.equipment || [],
+          maxPushups: d.maxPushups ?? '', maxPullups: d.maxPullups ?? '', maxDips: d.maxDips ?? '', plankSeconds: d.plankSeconds ?? '',
+          limitations: d.limitations || '', specialInstructions: '',
+        });
+      });
+    }
+  }, [caliSelectedMember]);
+
+  function caliToggleSkill(s: string) {
+    setCaliOverride((prev: any) => ({
+      ...prev,
+      skillGoals: prev.skillGoals.includes(s) ? prev.skillGoals.filter((x: string) => x !== s) : [...prev.skillGoals, s],
+    }));
+  }
+  function caliToggleEquipment(e: string) {
+    setCaliOverride((prev: any) => ({
+      ...prev,
+      equipment: prev.equipment.includes(e) ? prev.equipment.filter((x: string) => x !== e) : [...prev.equipment, e],
+    }));
+  }
+
+  async function generateCaliPlan() {
+    if (!caliSelectedMember) return;
+    setCaliLoading(true); setCaliPlan(null); setCaliError(''); setCaliSaved(false);
+    try {
+      const res = await fetch('/api/calisthenics/generate-program', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId: caliSelectedMember, fromDate: caliFromDate, override: caliOverride }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل التوليد');
+      setCaliPlan(data);
+      setCaliSaved(true);
+    } catch (e: any) {
+      setCaliError(e.message);
+    } finally {
+      setCaliLoading(false);
+    }
+  }
 
   // ===== Running (العدّائين) =====
   const [runSelectedMember, setRunSelectedMember] = useState('');
@@ -636,6 +695,10 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
             <button onClick={() => setTab('running')}
               className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'running' ? 'bg-cyan-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
               🏃 العدّائين
+            </button>
+            <button onClick={() => setTab('cali')}
+              className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'cali' ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+              🤸 كاليسثنكس
             </button>
             <button onClick={() => setTab('members')}
               className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'members' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
@@ -2743,6 +2806,334 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                   {runPlan.progressionNote && (
                     <div className="bg-teal-900/20 border border-teal-700/30 rounded-xl px-3 py-2.5 text-xs text-teal-300">
                       📈 {runPlan.progressionNote}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ===== Calisthenics Program ===== */}
+          {tab === 'cali' && (
+            <div className="space-y-4">
+
+              {/* Header */}
+              <div className="bg-gradient-to-br from-emerald-900/50 to-green-900/40 rounded-2xl border border-emerald-700/40 p-4">
+                <h2 className="font-extrabold text-white text-base">🤸 توليد برنامج الكاليسثنكس</h2>
+                <p className="text-xs text-emerald-300 mt-0.5">اختر المتدرب وخصّص الإعدادات كمدرب قبل التوليد</p>
+              </div>
+
+              {/* Step 1 — Member + Date */}
+              <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4 space-y-3">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">① اختيار المتدرب والتاريخ</p>
+
+                <div>
+                  <label className="text-xs text-gray-400 mb-1.5 block">العضو</label>
+                  <select value={caliSelectedMember}
+                    onChange={e => { setCaliSelectedMember(e.target.value); setCaliPlan(null); setCaliSaved(false); setCaliError(''); }}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500">
+                    <option value="">-- اختر عضو --</option>
+                    {gymMembers.map(m => (
+                      <option key={m.id} value={m.id}>{m.nameAr} (@{m.username})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs text-gray-400 mb-1.5 block">📅 تاريخ بداية البرنامج</label>
+                  <input type="date" value={caliFromDate} onChange={e => setCaliFromDate(e.target.value)}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500" />
+                </div>
+
+                {caliSelectedMember && !caliProfile && (
+                  <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-xl px-3 py-2.5 text-sm text-yellow-400 flex items-center gap-2">
+                    <span>⚠️</span>
+                    <span>العضو لم يعبّئ بروفايل الكاليسثنكس — يمكنك إنشاء إعداداته يدوياً أدناه</span>
+                  </div>
+                )}
+                {caliSelectedMember && caliProfile && (
+                  <div className="bg-gray-800/60 rounded-xl border border-gray-700/40 px-3 py-2.5 space-y-1.5">
+                    <p className="text-xs text-gray-500 font-semibold">بروفايل المتدرب المحفوظ:</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { label: caliProfile.goal, bg: 'bg-emerald-900/50 text-emerald-300 border-emerald-700/40' },
+                        { label: caliProfile.level, bg: 'bg-blue-900/50 text-blue-300 border-blue-700/40' },
+                        { label: caliProfile.daysPerWeek + ' أيام', bg: 'bg-green-900/50 text-green-300 border-green-700/40' },
+                        caliProfile.maxPushups !== undefined ? { label: `ضغط: ${caliProfile.maxPushups}`, bg: 'bg-gray-700/60 text-gray-300 border-gray-600/40' } : null,
+                        caliProfile.maxPullups !== undefined ? { label: `عقلة: ${caliProfile.maxPullups}`, bg: 'bg-gray-700/60 text-gray-300 border-gray-600/40' } : null,
+                        caliProfile.maxDips !== undefined ? { label: `ديبس: ${caliProfile.maxDips}`, bg: 'bg-gray-700/60 text-gray-300 border-gray-600/40' } : null,
+                      ].filter(Boolean).map((b: any, i: number) => (
+                        <span key={i} className={`text-xs px-2 py-0.5 rounded-lg border ${b.bg}`}>{b.label}</span>
+                      ))}
+                    </div>
+                    {caliProfile.skillGoals?.length > 0 && (
+                      <p className="text-xs text-violet-400">🤸 المهارات: {caliProfile.skillGoals.join(' • ')}</p>
+                    )}
+                    {caliProfile.equipment?.length > 0 && (
+                      <p className="text-xs text-gray-400">🛠️ المعدات: {caliProfile.equipment.join(' • ')}</p>
+                    )}
+                    {caliProfile.limitations && (
+                      <p className="text-xs text-yellow-500">⚠️ {caliProfile.limitations}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Step 2 — Coach Overrides */}
+              {caliSelectedMember && caliOverride && (
+                <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+                  <button onClick={() => setCaliShowOverride(o => !o)}
+                    className="w-full px-4 py-3.5 flex items-center justify-between text-right">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">⚙️</span>
+                      <div>
+                        <p className="text-sm font-bold text-white">إعدادات المدرب</p>
+                        <p className="text-xs text-gray-500">تعديل الخيارات قبل التوليد</p>
+                      </div>
+                    </div>
+                    <span className={`text-gray-500 text-sm transition-transform ${caliShowOverride ? 'rotate-180' : ''}`}>▼</span>
+                  </button>
+
+                  {caliShowOverride && (
+                    <div className="border-t border-gray-800 p-4 space-y-4">
+
+                      {/* الهدف */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">🎯 الهدف</label>
+                        <div className="grid grid-cols-1 gap-1.5">
+                          {[
+                            { v: 'strength',    l: '💪 قوة بوزن الجسم', sub: 'تدرجات صعبة 3-6 rep' },
+                            { v: 'skills',      l: '🤸 مهارات',          sub: 'Skill Work أول الجلسة' },
+                            { v: 'muscle_gain', l: '🏗️ بناء عضلي',       sub: '8-15 rep + Tempo' },
+                            { v: 'endurance',   l: '🔄 تحمل عضلي',       sub: 'Circuits + AMRAP' },
+                            { v: 'fat_burn',    l: '🔥 حرق الدهون',      sub: 'HIIT بوزن الجسم' },
+                          ].map(g => (
+                            <button key={g.v} onClick={() => setCaliOverride((p: any) => ({ ...p, goal: g.v }))}
+                              className={`flex items-center gap-3 px-3 py-2 rounded-xl border text-right text-sm transition-all ${caliOverride.goal === g.v ? 'border-emerald-500 bg-emerald-900/30 text-white' : 'border-gray-700 bg-gray-800/50 text-gray-400 hover:border-gray-600'}`}>
+                              <span className="font-semibold flex-1">{g.l}</span>
+                              <span className="text-xs text-gray-500">{g.sub}</span>
+                              {caliOverride.goal === g.v && <span className="text-emerald-400">✓</span>}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* المستوى */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">📊 المستوى الفعلي (تقييم المدرب)</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { v: 'beginner',     l: '🟢 مبتدئ',  sub: '< 10 ضغط' },
+                            { v: 'intermediate', l: '🔵 متوسط',  sub: '5+ عقلة' },
+                            { v: 'advanced',     l: '🟠 متقدم',  sub: '12+ عقلة' },
+                            { v: 'elite',        l: '🔴 نخبة',   sub: 'رافعات ومهارات' },
+                          ].map(l => (
+                            <button key={l.v} onClick={() => setCaliOverride((p: any) => ({ ...p, level: l.v }))}
+                              className={`flex flex-col items-center py-2.5 px-2 rounded-xl border text-sm font-bold transition-all ${caliOverride.level === l.v ? 'border-blue-500 bg-blue-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'}`}>
+                              <span>{l.l}</span>
+                              <span className="text-xs text-gray-500 font-normal mt-0.5">{l.sub}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* الأيام */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">📅 أيام التدريب أسبوعياً</label>
+                        <div className="grid grid-cols-4 gap-2">
+                          {[3, 4, 5, 6].map(n => (
+                            <button key={n} onClick={() => setCaliOverride((p: any) => ({ ...p, daysPerWeek: n }))}
+                              className={`py-3 rounded-xl border font-extrabold text-lg transition-all ${caliOverride.daysPerWeek === n ? 'border-emerald-500 bg-emerald-600 text-white' : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'}`}>
+                              {n}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1.5 text-center">
+                          {caliOverride.daysPerWeek === 3 ? 'Full Body × 3' : caliOverride.daysPerWeek === 4 ? 'Upper / Lower' : caliOverride.daysPerWeek === 5 ? 'PPL + مهارات + جذع' : 'PPL × 2'}
+                        </p>
+                      </div>
+
+                      {/* المهارات */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">🤸 المهارات المستهدفة</label>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {['Handstand','Muscle-up','Front Lever','Back Lever','Planche','Pistol Squat','Human Flag','L-sit','Dragon Flag'].map(s => (
+                            <button key={s} onClick={() => caliToggleSkill(s)}
+                              className={`px-2 py-2 rounded-xl border text-[11px] font-semibold transition-all ${caliOverride.skillGoals?.includes(s) ? 'border-violet-500 bg-violet-900/30 text-violet-300' : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'}`} dir="ltr">
+                              {caliOverride.skillGoals?.includes(s) ? '✓ ' : ''}{s}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* المعدات */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">🛠️ المعدات المتاحة</label>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {['بار عقلة','متوازي/باراليتس','حلقات','أربطة مقاومة','جدار','لا شيء (أرض فقط)'].map(e => (
+                            <button key={e} onClick={() => caliToggleEquipment(e)}
+                              className={`px-3 py-2 rounded-xl border text-xs font-semibold transition-all text-right ${caliOverride.equipment?.includes(e) ? 'border-emerald-500 bg-emerald-900/30 text-emerald-300' : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'}`}>
+                              {caliOverride.equipment?.includes(e) ? '✓ ' : ''}{e}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* الأرقام الحالية */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">🧪 الأرقام الحالية (اختبار المدرب)</label>
+                        <div className="grid grid-cols-4 gap-2">
+                          {[
+                            { k: 'maxPushups',   l: 'ضغط' },
+                            { k: 'maxPullups',   l: 'عقلة' },
+                            { k: 'maxDips',      l: 'ديبس' },
+                            { k: 'plankSeconds', l: 'بلانك ث' },
+                          ].map(f => (
+                            <div key={f.k}>
+                              <label className="text-[10px] text-gray-500 block mb-1 text-center">{f.l}</label>
+                              <input type="number" value={caliOverride[f.k]}
+                                onChange={e => setCaliOverride((p: any) => ({ ...p, [f.k]: e.target.value }))}
+                                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-2 py-2 text-white text-sm text-center focus:outline-none focus:border-emerald-500" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* قيود الإصابات */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">⚠️ قيود / إصابات (تعديل المدرب)</label>
+                        <textarea value={caliOverride.limitations}
+                          onChange={e => setCaliOverride((p: any) => ({ ...p, limitations: e.target.value }))}
+                          placeholder="مثال: ألم رسغ — بدائل على القبضة&#10;كتف حساس — لا ديبس عميق"
+                          rows={3}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-yellow-500 resize-none" />
+                      </div>
+
+                      {/* تعليمات خاصة */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">📝 تعليمات خاصة للـ AI من المدرب</label>
+                        <textarea value={caliOverride.specialInstructions}
+                          onChange={e => setCaliOverride((p: any) => ({ ...p, specialInstructions: e.target.value }))}
+                          placeholder="مثال: ركّز على Muscle-up — العضو قريب منها&#10;مثال: جلسات منزلية قصيرة 40 دقيقة&#10;مثال: أضف عمل Mobility إضافي للكتفين"
+                          rows={3}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-emerald-500 resize-none" />
+                        <p className="text-xs text-gray-600 mt-1">هذه التعليمات تُرسل مباشرة للـ AI لمراعاتها في التوليد</p>
+                      </div>
+
+                      {/* Reset */}
+                      {caliProfile && (
+                        <button onClick={() => setCaliOverride({ goal: caliProfile.goal, level: caliProfile.level, daysPerWeek: caliProfile.daysPerWeek, gender: caliProfile.gender || 'male', skillGoals: caliProfile.skillGoals || [], equipment: caliProfile.equipment || [], maxPushups: caliProfile.maxPushups ?? '', maxPullups: caliProfile.maxPullups ?? '', maxDips: caliProfile.maxDips ?? '', plankSeconds: caliProfile.plankSeconds ?? '', limitations: caliProfile.limitations || '', specialInstructions: '' })}
+                          className="w-full py-2 rounded-xl border border-gray-700 text-gray-400 text-xs font-semibold hover:border-gray-500 hover:text-gray-300 transition-all">
+                          ↺ إعادة تعيين لقيم البروفايل الأصلية
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* إنشاء بروفايل مؤقت */}
+              {caliSelectedMember && !caliProfile && !caliOverride && (
+                <button onClick={() => setCaliOverride({ goal: 'strength', level: 'beginner', daysPerWeek: 3, gender: 'male', skillGoals: [], equipment: ['جدار'], maxPushups: '', maxPullups: '', maxDips: '', plankSeconds: '', limitations: '', specialInstructions: '' })}
+                  className="w-full py-3 rounded-xl border border-dashed border-emerald-700/60 text-emerald-400 text-sm font-semibold hover:bg-emerald-900/10 transition-all">
+                  + إنشاء بروفايل مؤقت لهذا المتدرب
+                </button>
+              )}
+
+              {/* Generate Button */}
+              {caliSelectedMember && caliOverride && (
+                <div className="space-y-2">
+                  <button onClick={generateCaliPlan} disabled={caliLoading}
+                    className="w-full py-4 rounded-2xl text-white font-extrabold text-base transition-all shadow-lg bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed shadow-emerald-900/30">
+                    {caliLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="animate-spin">⏳</span> جاري التوليد بـ Claude AI...
+                      </span>
+                    ) : '🤖 توليد برنامج الكاليسثنكس الأسبوعي'}
+                  </button>
+                  {caliLoading && (
+                    <p className="text-xs text-gray-500 text-center">قد يستغرق 30-60 ثانية حسب عدد الأيام</p>
+                  )}
+                  {caliError && (
+                    <div className="bg-red-900/20 border border-red-700/40 rounded-xl px-3 py-2.5 text-sm text-red-400 flex items-start gap-2">
+                      <span>❌</span><span>{caliError}</span>
+                    </div>
+                  )}
+                  {caliSaved && !caliError && (
+                    <div className="bg-green-900/20 border border-green-700/40 rounded-xl px-3 py-2.5 text-sm text-green-400 flex items-center gap-2">
+                      <span>✅</span><span>تم التوليد والحفظ للمتدرب بنجاح</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Plan Preview */}
+              {caliPlan?.sessions && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-white text-sm">📋 البرنامج المُولَّد</h3>
+                    <span className="text-xs text-gray-500">
+                      {caliPlan.sessions.filter((s: any) => !s.isRest).length} أيام تدريب • {caliPlan.sessions.filter((s: any) => s.isRest).length} أيام راحة
+                    </span>
+                  </div>
+
+                  {caliPlan.weekSummary && (
+                    <div className="bg-emerald-900/20 border border-emerald-700/30 rounded-xl px-3 py-2.5 text-xs text-emerald-300">
+                      📌 {caliPlan.weekSummary}
+                    </div>
+                  )}
+
+                  {caliPlan.sessions.map((s: any, i: number) => (
+                    <div key={i} className={`rounded-2xl border overflow-hidden ${s.isRest ? 'border-gray-700/30 bg-gray-900/30' : 'border-emerald-700/30 bg-emerald-900/10'}`}>
+                      <div className="p-3 flex items-center gap-3">
+                        <div className="flex-shrink-0 text-center">
+                          <div className="text-xl">{s.isRest ? '😴' : s.sessionType === 'Push' ? '🙌' : s.sessionType === 'Pull' ? '🏗️' : s.sessionType === 'Legs' ? '🦵' : s.sessionType === 'Skills' ? '🤸' : s.sessionType === 'Core' ? '🧱' : s.sessionType === 'Endurance' ? '🔄' : '💪'}</div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-white text-sm">{s.dayName}</span>
+                            <span className="text-xs text-gray-500">{s.date}</span>
+                            {!s.isRest && <span className="text-xs bg-emerald-900/50 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-700/30">{s.sessionType}</span>}
+                            {s.intensity && !s.isRest && (
+                              <span className={`text-xs px-2 py-0.5 rounded-full border ${s.intensity === 'Heavy' ? 'bg-red-900/40 text-red-400 border-red-700/30' : s.intensity === 'Moderate' ? 'bg-orange-900/40 text-orange-400 border-orange-700/30' : 'bg-green-900/40 text-green-400 border-green-700/30'}`}>
+                                {s.intensity}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-400 mt-0.5 truncate">
+                            {s.isRest ? 'يوم راحة واستشفاء' : s.title}
+                          </div>
+                        </div>
+                        <div className="flex-shrink-0 text-right">
+                          {s.duration > 0 && <div className="text-xs text-gray-500">⏱ {s.duration}د</div>}
+                          {!s.isRest && <div className="text-xs text-emerald-400">{(s.exercises?.length || 0) + (s.skillWork?.length || 0)} تمارين</div>}
+                        </div>
+                      </div>
+                      {!s.isRest && (s.skillWork?.length > 0 || s.exercises?.length > 0) && (
+                        <div className="border-t border-white/5 px-3 py-2 space-y-1">
+                          {(s.skillWork || []).map((ex: any, j: number) => (
+                            <div key={'sk' + j} className="flex items-center gap-2 text-xs">
+                              <span className="text-violet-400 flex-shrink-0">🤸</span>
+                              <span className="flex-1 text-violet-300">{ex.name}</span>
+                              <span className="text-gray-600 flex-shrink-0">{ex.sets} مج</span>
+                            </div>
+                          ))}
+                          {(s.exercises || []).map((ex: any, j: number) => (
+                            <div key={j} className="flex items-center gap-2 text-xs">
+                              <span className="text-emerald-500 flex-shrink-0">{j + 1}.</span>
+                              <span className="flex-1 text-gray-300">{ex.name}</span>
+                              <span className="text-gray-500">{ex.targetMuscles}</span>
+                              <span className="text-gray-600 flex-shrink-0">{ex.sets} مج</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {caliPlan.progressionNote && (
+                    <div className="bg-teal-900/20 border border-teal-700/30 rounded-xl px-3 py-2.5 text-xs text-teal-300">
+                      📈 {caliPlan.progressionNote}
                     </div>
                   )}
                 </div>

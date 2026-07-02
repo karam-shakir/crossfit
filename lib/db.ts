@@ -719,3 +719,115 @@ export async function deleteRunningSessionsByMember(memberId: string, fromDate: 
   const db = await getDb();
   await db.collection('running_sessions').deleteMany({ memberId, date: { $gte: fromDate, $lte: toDate } });
 }
+
+// ===================== CALISTHENICS PROFILES =====================
+
+export interface CalisthenicsProfile {
+  id: string;
+  memberId: string;
+  goal: 'strength' | 'skills' | 'muscle_gain' | 'endurance' | 'fat_burn';
+  level: 'beginner' | 'intermediate' | 'advanced' | 'elite';
+  gender?: 'male' | 'female';
+  age?: number;
+  weight?: number;
+  height?: number;
+  daysPerWeek: 3 | 4 | 5 | 6;
+  // القدرات الحالية — أساس معايرة البرنامج
+  maxPushups?: number;
+  maxPullups?: number;
+  maxDips?: number;
+  plankSeconds?: number;
+  // المهارات المستهدفة
+  skillGoals: string[];      // Handstand, Muscle-up, Front Lever...
+  // المعدات المتاحة
+  equipment: string[];       // بار عقلة، متوازي، حلقات، أربطة مقاومة، جدار
+  limitations?: string;
+  updatedAt: string;
+}
+
+export async function getCalisthenicsProfile(memberId: string): Promise<CalisthenicsProfile | undefined> {
+  const db = await getDb();
+  const doc = await db.collection('calisthenics_profiles').findOne({ memberId });
+  return doc ? strip_id<CalisthenicsProfile>(doc) : undefined;
+}
+
+export async function upsertCalisthenicsProfile(profile: CalisthenicsProfile): Promise<CalisthenicsProfile> {
+  const db = await getDb();
+  await db.collection('calisthenics_profiles').replaceOne({ memberId: profile.memberId }, profile, { upsert: true });
+  return profile;
+}
+
+export async function getAllCalisthenicsProfiles(): Promise<CalisthenicsProfile[]> {
+  const db = await getDb();
+  const docs = await db.collection('calisthenics_profiles').find({}).toArray();
+  return stripAll<CalisthenicsProfile>(docs);
+}
+
+// ===================== CALISTHENICS PROGRAM (per-member weekly) =====================
+
+export interface CaliExerciseLevel {
+  variation: string;   // التدرج المناسب للمستوى: "ضغط على الحائط" → "ضغط أرشر"
+  reps: string;        // "3 × 8-12" أو "4 × 20 ث ثبات"
+  rest: string;
+  cue: string;
+}
+
+export interface CaliExercise {
+  name: string;                // الاسم بالعربية
+  nameEn: string;
+  targetMuscles: string;
+  type: string;                // push | pull | legs | core | skill | conditioning
+  sets: number;
+  notes?: string;
+  levels: {
+    beginner:     CaliExerciseLevel;
+    intermediate: CaliExerciseLevel;
+    advanced:     CaliExerciseLevel;
+    elite:        CaliExerciseLevel;
+  };
+}
+
+export interface CaliProgramSession {
+  id: string;
+  memberId: string;
+  date: string;
+  dayName: string;
+  sessionType: string;         // Push | Pull | Legs | Skills | Core | FullBody | Endurance | Rest
+  title: string;
+  focus: string;
+  intensity: string;           // Heavy | Moderate | Light | Rest
+  isRest: boolean;
+  duration?: number;
+  warmup?: string[];
+  skillWork?: CaliExercise[];  // تدريب المهارات — أول الجلسة والجهاز العصبي نشيط
+  exercises: CaliExercise[];
+  cooldown?: string[];
+  notes?: string;
+  coachNote?: string;
+  createdAt: string;
+}
+
+export async function getCaliProgramSessions(memberId: string): Promise<CaliProgramSession[]> {
+  const db = await getDb();
+  const docs = await db.collection('calisthenics_programs')
+    .find({ memberId })
+    .sort({ date: -1 })
+    .limit(60)
+    .toArray();
+  return stripAll<CaliProgramSession>(docs);
+}
+
+export async function upsertCaliProgramSession(session: CaliProgramSession): Promise<CaliProgramSession> {
+  const db = await getDb();
+  await db.collection('calisthenics_programs').replaceOne(
+    { memberId: session.memberId, date: session.date },
+    session,
+    { upsert: true }
+  );
+  return session;
+}
+
+export async function deleteCaliProgramSessionsByMember(memberId: string, fromDate: string, toDate: string): Promise<void> {
+  const db = await getDb();
+  await db.collection('calisthenics_programs').deleteMany({ memberId, date: { $gte: fromDate, $lte: toDate } });
+}
