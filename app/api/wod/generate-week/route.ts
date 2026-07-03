@@ -1,39 +1,15 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
 import { todaySA } from '@/lib/timezone';
 import { getWods } from '@/lib/db';
+import {
+  EXERCISES, MovementPattern, PATTERN_LABELS_AR,
+  buildPatternSequence, accessoryGuidanceFor, cooldownGuidanceFor,
+  getBenchmarkGuidance, getClassTimeBudget, getEquipmentGuidance, getRxFocusGuidance,
+} from '@/lib/crossfitProgramming';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-const EXERCISES = [
-  { id: 'back-squat',       nameEn: 'Back Squat',         nameAr: 'القرفصاء الخلفية',      category: 'strength'   },
-  { id: 'front-squat',      nameEn: 'Front Squat',        nameAr: 'القرفصاء الأمامية',      category: 'strength'   },
-  { id: 'deadlift',         nameEn: 'Deadlift',           nameAr: 'الرفعة الميتة',          category: 'strength'   },
-  { id: 'power-clean',      nameEn: 'Power Clean',        nameAr: 'النظيفة القوية',         category: 'olympic'    },
-  { id: 'clean-and-jerk',   nameEn: 'Clean & Jerk',       nameAr: 'النظيفة والدفع',         category: 'olympic'    },
-  { id: 'snatch',           nameEn: 'Snatch',             nameAr: 'الخطف',                  category: 'olympic'    },
-  { id: 'overhead-squat',   nameEn: 'Overhead Squat',     nameAr: 'القرفصاء فوق الرأس',    category: 'strength'   },
-  { id: 'shoulder-press',   nameEn: 'Shoulder Press',     nameAr: 'الضغط فوق الرأس',       category: 'strength'   },
-  { id: 'push-press',       nameEn: 'Push Press',         nameAr: 'الدفع بالساقين',         category: 'strength'   },
-  { id: 'thruster',         nameEn: 'Thruster',           nameAr: 'الثراستر',               category: 'wod'        },
-  { id: 'pull-up',          nameEn: 'Pull Up',            nameAr: 'العقلة',                 category: 'gymnastics' },
-  { id: 'kipping-pull-up',  nameEn: 'Kipping Pull Up',    nameAr: 'العقلة الكيبينج',        category: 'gymnastics' },
-  { id: 'muscle-up',        nameEn: 'Muscle Up',          nameAr: 'الماسل أب',              category: 'gymnastics' },
-  { id: 'handstand-pushup', nameEn: 'Handstand Push Up',  nameAr: 'الضغط على اليدين',      category: 'gymnastics' },
-  { id: 'handstand-walk',   nameEn: 'Handstand Walk',     nameAr: 'المشي على اليدين',      category: 'gymnastics' },
-  { id: 'toes-to-bar',      nameEn: 'Toes to Bar',        nameAr: 'الأصابع للعارضة',       category: 'gymnastics' },
-  { id: 'double-under',     nameEn: 'Double Under',       nameAr: 'القفز المزدوج',          category: 'cardio'     },
-  { id: 'box-jump',         nameEn: 'Box Jump',           nameAr: 'القفز على الصندوق',      category: 'wod'        },
-  { id: 'burpee',           nameEn: 'Burpee',             nameAr: 'البيربي',                category: 'cardio'     },
-  { id: 'wall-ball',        nameEn: 'Wall Ball',          nameAr: 'كرة الحائط',             category: 'wod'        },
-  { id: 'kettle-bell-swing',nameEn: 'Kettlebell Swing',   nameAr: 'هزة الكيتل بيل',        category: 'wod'        },
-  { id: 'row',              nameEn: 'Row',                nameAr: 'التجديف',                category: 'cardio'     },
-  { id: 'run',              nameEn: 'Run',                nameAr: 'الجري',                  category: 'cardio'     },
-  { id: 'push-up',          nameEn: 'Push Up',            nameAr: 'الضغط',                  category: 'gymnastics' },
-  { id: 'sit-up',           nameEn: 'Sit Up',             nameAr: 'الجلوس',                 category: 'gymnastics' },
-  { id: 'rope-climb',       nameEn: 'Rope Climb',         nameAr: 'تسلق الحبل',             category: 'gymnastics' },
-];
 
 const DAY_NAMES: Record<number, string> = {
   0: 'الأحد', 1: 'الاثنين', 2: 'الثلاثاء', 3: 'الأربعاء',
@@ -57,11 +33,15 @@ export async function POST(req: NextRequest) {
     specialNotes = '',      // تعليمات خاصة من المدرب للـ AI
     hyroxMode = false,      // إدراج يوم Hyrox
     targetAudience = 'all', // all / beginners / advanced
+    classDuration = 60,     // 45 / 60 / 75 / 90 — مدة الحصة اليومية بالدقائق
+    equipmentNote = '',     // قيد معدات حر لكامل الأسبوع
+    rxFocus = 'balanced',   // rx / scaled / balanced
+    benchmarkName = '',     // بنشمارك محدد (fran, cindy, ...)
+    benchmarkDate = '',     // التاريخ الذي يُفرض فيه البنشمارك
   } = body;
 
   const startDate = fromDate || todaySA();
 
-  // Build list of dates
   const dates: { date: string; dayName: string }[] = [];
   for (let i = 0; i < days; i++) {
     const d = new Date(startDate + 'T00:00:00');
@@ -72,19 +52,66 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Get recent WODs for context
+  // Get recent WODs for context + تحليل المجموعات العضلية (نفس منطق التوليد اليومي لضمان استمرارية البرمجة)
   const allWods = await getWods();
-  const recentWods = allWods
+  const recentWodsRaw = allWods
     .filter(w => w.date < startDate)
     .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 7)
-    .map(w => ({
-      date: w.date, title: w.title, type: w.type,
-      strength: (w.strength || []).map((e: any) => e.exerciseId).join(', '),
-      metcon: (w.metcon || []).map((e: any) => e.exerciseId).join(', '),
-    }));
+    .slice(0, 7);
+
+  const recentWods = recentWodsRaw.map(w => ({
+    date: w.date, title: w.title, type: w.type,
+    strength: (w.strength || []).map((e: any) => e.exerciseId).join(', '),
+    metcon: (w.metcon || []).map((e: any) => e.exerciseId).join(', '),
+  }));
+
+  const muscleGroupLog: { date: string; muscles: string[]; intensity: string }[] = [];
+  for (const w of recentWodsRaw) {
+    const allEx = [...(w.strength || []), ...(w.metcon || [])].map((e: any) => e.exerciseId);
+    const muscles: string[] = [];
+    if (allEx.some((id: string) => ['back-squat','front-squat','overhead-squat','deadlift'].includes(id))) muscles.push('الساق/السلسلة الخلفية');
+    if (allEx.some((id: string) => ['power-clean','clean-and-jerk','snatch'].includes(id))) muscles.push('الأولمبي/الجسم الكامل');
+    if (allEx.some((id: string) => ['pull-up','kipping-pull-up','muscle-up','rope-climb'].includes(id))) muscles.push('الظهر/السحب');
+    if (allEx.some((id: string) => ['shoulder-press','push-press','handstand-pushup'].includes(id))) muscles.push('الكتف/الدفع');
+    if (allEx.some((id: string) => ['thruster','wall-ball'].includes(id))) muscles.push('الجسم الكامل');
+    if (allEx.some((id: string) => ['row','run','double-under','burpee'].includes(id))) muscles.push('القلب/التحمل');
+    const hasHeavyStrength = (w.strength || []).length >= 2;
+    const intensity = hasHeavyStrength ? 'ثقيلة' : (w.metcon || []).length >= 4 ? 'تحمل' : 'متوسطة';
+    muscleGroupLog.push({ date: w.date, muscles, intensity });
+  }
+  const allRecentMuscles = muscleGroupLog.flatMap(d => d.muscles);
+  const muscleFreq: Record<string, number> = {};
+  allRecentMuscles.forEach(m => { muscleFreq[m] = (muscleFreq[m] || 0) + 1; });
+  const overtrained = Object.entries(muscleFreq).filter(([, v]) => v >= 2).map(([k]) => k);
+  const undertrained = ['الساق/السلسلة الخلفية','الأولمبي/الجسم الكامل','الظهر/السحب','الكتف/الدفع','الجسم الكامل','القلب/التحمل']
+    .filter(m => !allRecentMuscles.includes(m));
 
   const exerciseList = EXERCISES.map(e => `${e.id} | ${e.nameEn} | ${e.category}`).join('\n');
+
+  // ═══ تسلسل حتمي لأنماط القوة عبر أيام الكروسفيت النشطة (لضمان تنوع + توافق أكسسوار/تهدئة حقيقي) ═══
+  const estimatedRestDays = restDaysCount >= 0 ? restDaysCount : Math.max(1, Math.round(days * 0.2));
+  const estimatedNonCrossfitDays = (weekMode === 'mixed' ? calisthenicsDays : 0) + (hyroxMode ? 1 : 0);
+  const activeCrossfitDays = Math.max(1, days - estimatedRestDays - estimatedNonCrossfitDays);
+  const patternSequence = buildPatternSequence(activeCrossfitDays, undertrained);
+  const patternLegend = (Object.keys(PATTERN_LABELS_AR) as MovementPattern[])
+    .map(p => `- ${PATTERN_LABELS_AR[p]}: ${accessoryGuidanceFor(p)} | ${cooldownGuidanceFor(p)}`)
+    .join('\n');
+
+  const isBenchmarkWeek = !!(benchmarkName && benchmarkDate);
+  const benchmarkGuidance = isBenchmarkWeek ? getBenchmarkGuidance(benchmarkName) : '';
+
+  const recentContext = `
+**═══ تحليل الأسبوع الماضي (آخر 7 أيام قبل بداية هذه الخطة) ═══**
+عدد الجلسات: ${recentWodsRaw.length} جلسات
+المجموعات العضلية التي تدربت كثيراً (تجنب الإفراط فيها مجدداً):
+${overtrained.length ? overtrained.map(m => `- ${m}`).join('\n') : '- لا يوجد إجهاد تراكمي واضح'}
+المجموعات العضلية المُهمَلة (أعطها أولوية أعلى في بداية هذه الخطة):
+${undertrained.length ? undertrained.map(m => `- ${m}`).join('\n') : '- جميع المجموعات تدربت بشكل متوازن'}
+سجل الجلسات التفصيلي:
+${muscleGroupLog.map(d => `${d.date}: [${d.muscles.join(' + ')}] — شدة: ${d.intensity}`).join('\n') || 'لا توجد جلسات سابقة — هذا أسبوع تأسيسي'}
+`;
+
+  // Build list of dates already computed above (reused variable name kept for clarity in prompt below)
 
   // Build programming rules based on weekMode
   const programmingRules = weekMode === 'mixed'
@@ -105,14 +132,14 @@ export async function POST(req: NextRequest) {
 ${hyroxMode ? '- أدرج يوماً واحداً مخصصاً لـ Hyrox (run + row + sled push + burpee broad jump) — يوم Hyrox يكون بعد يوم راحة\n- باقي الأيام CrossFit كلاسيكي\n' : '- هذا أسبوع CrossFit خالص — لا يوم Calisthenics ولا يوم Hyrox ولا Kettlebell\n'}
 - كل يوم نشاط هو CrossFit كلاسيكي: قوة بالبار + ميتكون مع أوزان
 - تمارين القوة (strength): يجب أن تكون بالبار حصراً (back-squat, deadlift, front-squat, overhead-squat, power-clean, clean-and-jerk, snatch, shoulder-press, push-press, thruster)
-- الميتكون: يجمع تمارين الحديد مع cardio وgymnastics — مسموح بـ pull-up وtoes-to-bar ودبل أندر في الميتكون فقط
+- الميتكون: يجمع تمارين الحديد مع cardio وgymnastics — مسموح بـ pull-up وtoes-to-bar ودبل أندر وair-squat في الميتكون فقط
 - وزّع الأيام: HEAVY (1-2 مرة) + MEDIUM (2-3 مرة) + SKILL (مرة) + REST (1-2 مرة)
 - يوم SKILL: تقنية أولمبية (snatch, clean) أو جمناستيكس (muscle-up, handstand) — مع ميتكون قصير
 - لا تكرر نفس التمارين في يومين متتاليين
 - اجعل القوة والميتكون مترابطَين (نفس مجموعة العضلات أو نفس الحركة)
 - أيام الراحة: isRest: true وكل المصفوفات فارغة []`;
 
-  const prompt = `أنت مبرمج CrossFit محترف على مستوى CompTrain وPRVN Athletics. تصمم خططاً أسبوعية بفلسفة: القوة الوظيفية أولاً — كل جلسة تخدم جميع المستويات في آن واحد مع أوزان وscaling واضحة لكل مستوى.
+  const prompt = `أنت رئيس مدربي CrossFit (Head Coach) بشهادة CF-L3، تبرمج أسابيع الحصص الجماعية على مستوى CompTrain وPRVN Athletics. فلسفتك: القوة الوظيفية أولاً، وكل جلسة تخدم جميع المستويات في آن واحد مع أوزان وscaling واضحة. أنت تقرأ سجل تدريب الأسبوع الماضي بعناية وتبني عليه — لا تبرمج بمعزل عن التاريخ.
 
 ═══════════════════════════════
 النادي: مجموعة المطانيخ CrossFit
@@ -120,17 +147,21 @@ ${hyroxMode ? '- أدرج يوماً واحداً مخصصاً لـ Hyrox (run +
 الفلسفة: تمرين واحد لجميع المستويات — مبتدئ يتعلم، نخبة يتحدى
 الخطة: ${weekMode === 'mixed' ? `${days} أيام مختلطة CrossFit + ${calisthenicsDays === 2 ? 'يومان' : 'يوم'} Calisthenics${hyroxMode ? ' + يوم Hyrox' : ''}` : hyroxMode ? `${days} أيام CrossFit مع يوم Hyrox` : `${days} أيام CrossFit خالص`}
 المدة: ${days} ${days === 1 ? 'يوم' : 'أيام'} من ${startDate} حتى ${dates[dates.length - 1]?.date || ''}
+مدة الحصة اليومية: ${classDuration} دقيقة
 المستوى العام: ${difficulty}
+${getRxFocusGuidance(rxFocus)}
 التركيز الأسبوعي (من المدرب): ${coachFocus === 'strength' ? '💪 أسبوع قوة — زد الأحمال الثقيلة، قلل الميتكون الطويل' : coachFocus === 'cardio' ? '🫀 أسبوع تحمل — ميتكون طويل ومتعدد الجولات، قلل أوزان القوة' : coachFocus === 'technique' ? '🎯 أسبوع تقنية — يومان SKILL على الأقل، أوزان خفيفة، تركيز على التقنية الأولمبية' : coachFocus === 'deload' ? '🔄 أسبوع تفريغ — شدة 60-70%، أوزان خفيفة، مدة أقصر' : 'متوازن'}
 التحيّز في الشدة: ${intensityBias === 'heavy' ? 'ثقيل — أيام HEAVY أكثر (3-4 أيام)' : intensityBias === 'moderate' ? 'متوسط — تجنب الثقيل الزائد والخفيف الزائد' : intensityBias === 'light' ? 'خفيف — تعافٍ، أوزان منخفضة' : 'متوازن كلاسيكي'}
 ${restDaysCount >= 0 ? `أيام الراحة: ${restDaysCount} أيام محددة من المدرب` : 'أيام الراحة: الذكاء الاصطناعي يقرر حسب التوزيع المثالي'}
 ═══════════════════════════════
-${forceExercises.length > 0 ? `\n⚡ تمارين مطلوب إدراجها هذا الأسبوع (أولوية قصوى):\n${forceExercises.join(', ')}\n` : ''}${forbidExercises.length > 0 ? `\n🚫 تمارين محظورة هذا الأسبوع (لا تضعها أبداً):\n${forbidExercises.join(', ')}\n` : ''}${specialNotes ? `\n📌 تعليمات خاصة من المدرب (اتبعها بدقة):\n${specialNotes}\n` : ''}
+${forceExercises.length > 0 ? `\n⚡ تمارين مطلوب إدراجها هذا الأسبوع (أولوية قصوى):\n${forceExercises.join(', ')}\n` : ''}${forbidExercises.length > 0 ? `\n🚫 تمارين محظورة هذا الأسبوع (لا تضعها أبداً):\n${forbidExercises.join(', ')}\n` : ''}${specialNotes ? `\n📌 تعليمات خاصة من المدرب (اتبعها بدقة):\n${specialNotes}\n` : ''}${getEquipmentGuidance(equipmentNote)}
+${benchmarkGuidance ? `\n${benchmarkGuidance}\n⚠️ هذا البنشمارك يُفرض حصراً على تاريخ ${benchmarkDate} — باقي الأيام تسير بالتسلسل العادي أدناه` : ''}
 
 **التمارين المتاحة (استخدم IDs هذه حصراً):**
 ${exerciseList}
 
-**الأسبوع الماضي (تجنّب تكرار نفس التمارين والمجموعات العضلية في يومين متتاليين):**
+**الأسبوع الماضي بالتفصيل (اقرأه جيداً وابنِ عليه — لا تكرر نفس التمارين والمجموعات العضلية في يومين متتاليين):**
+${recentContext}
 ${JSON.stringify(recentWods, null, 2)}
 
 **قواعد حقلَي duration و rounds:**
@@ -140,22 +171,32 @@ ${JSON.stringify(recentWods, null, 2)}
 - "قوة" فقط → rounds = المجموعات، duration = الوقت التقديري
 - duration رقم دائماً، rounds قد يكون null
 
+**⏱️ ميزانية وقت الحصة اليومية (${classDuration} دقيقة):**
+${getClassTimeBudget(classDuration)}
+
 **══ فلسفة توزيع الأسبوع الاحترافية ══**
 
-يوم HEAVY   (~${Math.max(1, Math.round(days * 0.2))} مرة): قوة compound ثقيلة (80-90% 1RM) + ميتكون قصير (8-12 دقيقة)
-يوم MEDIUM  (~${Math.max(2, Math.round(days * 0.35))} مرة): قوة أوليمبية أو تحمل (65-75%) + ميتكون متوسط (12-18 دقيقة)
+يوم HEAVY   (~${Math.max(1, Math.round(days * 0.2))} مرة): قوة compound ثقيلة (80-90% 1RM) + ميتكون قصير (8-12 دقيقة — نظام Phosphagen/Glycolytic)
+يوم MEDIUM  (~${Math.max(2, Math.round(days * 0.35))} مرة): قوة أوليمبية أو تحمل (65-75%) + ميتكون متوسط (12-18 دقيقة — Glycolytic)
 يوم SKILL   (~${Math.max(1, Math.round(days * 0.15))} مرة): جمناستيكس + تقنية + ميتكون مختلط
 يوم DELOAD/REST (~${Math.max(1, Math.round(days * 0.25))} مرة): راحة كاملة أو تعافٍ نشط خفيف
 
-مبدأ التنوع الأسبوعي:
-- الأيام المتتالية: لا تكرر نفس المجموعة العضلية (ساق/ظهر/كتف)
-- تنوع الميتكون: AMRAP → للوقت → EMOM → للوقت → AMRAP
-- تنوع القوة: Squat pattern → Hinge pattern → Press pattern → Pull pattern
+**══ 🔗 تسلسل أنماط القوة الحتمي عبر أيام الكروسفيت النشطة (إجباري — يضمن توافق الأكسسوار والتهدئة) ══**
+
+طبّق هذا الترتيب على أيام الكروسفيت العادية بالتتابع (اليوم الأول من أيام الكروسفيت = النمط الأول، الثاني = الثاني، وهكذا) — تجاهل أيام الراحة/Hyrox/Calisthenics تماماً عند العد ولا تكسر الترتيب بسببها:
+${patternSequence.map((p, i) => `${i + 1}. ${PATTERN_LABELS_AR[p]}`).join('\n')}
+${isBenchmarkWeek ? `(باستثناء يوم البنشمارك بتاريخ ${benchmarkDate} — لا يأخذ رقماً من هذا التسلسل)` : ''}
+
+**دليل التوافق لكل نمط (طبّقه حرفياً على اليوم الذي يحمل هذا النمط):**
+${patternLegend}
+
+مبدأ التنوع الإضافي:
+- تنوع الميتكون: AMRAP → للوقت → EMOM → للوقت → AMRAP (لا تكرر نفس الصيغة يومين متتاليين)
 
 ${programmingRules}
 
 **الأيام المطلوبة:**
-${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
+${dates.map(d => `- ${d.date} (${d.dayName})${isBenchmarkWeek && d.date === benchmarkDate ? '  ← 🏆 يوم البنشمارك المفروض' : ''}`).join('\n')}
 
 **══ معايير الأوزان الدقيقة لكل مستوى ══**
 Back Squat: مبتدئ 50كجم | متوسط 75كجم | متقدم 95كجم | نخبة 115كجم
@@ -177,12 +218,13 @@ KB Swing: مبتدئ 16كجم | متوسط 24كجم | متقدم 28كجم | نخ
       "type": "للوقت | AMRAP | قوة | تدريب | راحة | راحة نشطة",
       "duration": 20,
       "rounds": null,
-      "notes": "استراتيجية الجلسة: كيف يُقسّم المتدرب طاقته، ما هو الهدف الزمني لكل مستوى",
-      "aiTheme": "الرابط الفيزيولوجي والحركي بين القوة والميتكون هذا اليوم",
+      "notes": "استراتيجية الجلسة: كيف يُقسّم المتدرب طاقته، ما هو الهدف الزمني لكل مستوى، معايير الحركة الأساسية",
+      "aiTheme": "الرابط الفيزيولوجي والحركي بين القوة والميتكون هذا اليوم + نمط القوة المستخدم",
       "isRest": false,
       "isCalisthenics": false,
       "warmup": [
-        { "exerciseId": "run", "reps": "400م", "weight": "", "notes": "60% إيقاع — تنشيط الدورة الدموية" }
+        { "exerciseId": "run", "reps": "400م", "weight": "", "notes": "عام — 60% إيقاع" },
+        { "exerciseId": "air-squat", "reps": "15", "weight": "", "notes": "خاص — تفعيل نمط اليوم بدون حمل" }
       ],
       "strength": [
         {
@@ -229,7 +271,7 @@ KB Swing: مبتدئ 16كجم | متوسط 24كجم | متقدم 28كجم | نخ
           "exerciseId": "push-up",
           "reps": "3×15",
           "weight": "",
-          "notes": "تمرين مكمّل للصدر والترايسبس — لأن يوم القرفصاء والعقلة لم يستهدف الصدر والكتف الأمامي",
+          "notes": "طبّق دليل التوافق أعلاه حسب نمط اليوم — اذكر السبب هنا",
           "levels": {
             "beginner":     {"weight": "", "reps": "3×10", "cue": "ركبتين على الأرض مسموح"},
             "intermediate": {"weight": "", "reps": "3×15", "cue": "صدر للأرض في كل تكرار"},
@@ -240,11 +282,11 @@ KB Swing: مبتدئ 16كجم | متوسط 24كجم | متقدم 28كجم | نخ
       ],
       "cooldown": [
         { "exerciseId": "run",    "reps": "", "weight": "", "distance": "400م", "notes": "مشي هادئ 2 دقيقة — خفّف معدل القلب تدريجياً" },
-        { "exerciseId": "sit-up", "reps": "", "weight": "", "time": "60 ث",     "notes": "تمطيط Hip Flexor — لأن يوم القرفصاء يستنزف الـ quad والـ hip flexor — أمسك 60 ث لكل جانب" }
+        { "exerciseId": "sit-up", "reps": "", "weight": "", "time": "60 ث",     "notes": "طبّق دليل التوافق أعلاه حسب نمط اليوم — اذكر السبب هنا" }
       ]
     }
   ],
-  "weekSummary": "ملخص فلسفة الأسبوع: التوزيع الحمل، مراحل التدرج، الهدف الرئيسي لهذا الأسبوع تحديداً",
+  "weekSummary": "ملخص فلسفة الأسبوع: التوزيع الحمل، مراحل التدرج، الهدف الرئيسي لهذا الأسبوع تحديداً، وكيف بُني على أساس الأسبوع الماضي",
   "recoveryTips": ["نصيحة تعافٍ محددة وعملية 1", "نصيحة 2", "نصيحة 3"],
   "nutritionNote": "توصية غذائية مرتبطة بحجم التدريب هذا الأسبوع — كارب وبروتين وتوقيت"
 }
@@ -256,16 +298,15 @@ KB Swing: مبتدئ 16كجم | متوسط 24كجم | متقدم 28كجم | نخ
 - cue في levels: نصيحة تقنية قصيرة للمستوى
 - الإحماء والتهدئة: بدون levels
 - كل تمرين في accessory يجب أن يحتوي على levels بالمستويات الأربعة
-- الأكسسوار (accessory): 2-3 تمارين للعضلات التي لم تأخذ حقها من strength وmetcon هذا اليوم — يوم ساق/ظهر → أكسسوار صدر + كتف + ترايسبس، يوم ضغط/press → أكسسوار ظهر + بايسبس + جذع، يوم كامل → أكسسوار الجذع والكاحل — كل تمرين أكسسوار يحتوي على levels بـ 4 مستويات — اذكر في notes لماذا هذه العضلة مُهملة اليوم
-- التهدئة: 2-3 إطالات ثابتة مرتبطة بعضلات strength وmetcon هذا اليوم تحديداً — squat يوم → quad + hip flexor + glute، deadlift يوم → hamstring + low back، pull-up يوم → lat + bicep + shoulder، press يوم → chest + front delt + tricep — اذكر في notes سبب اختيار الإطالة
+- الأكسسوار والتهدئة في كل يوم كروسفيت عادي: يجب أن يطابقا دليل التوافق الخاص بنمط ذلك اليوم في التسلسل أعلاه بدقة صارمة — لا اجتهاد حر
+- يوم البنشمارك (إن وُجد): strength = [] وaccessory = [] إجبارياً، والميتكون هو حركات البنشمارك الرسمية فقط
 - أيام الراحة: isRest: true وكل المصفوفات فارغة []
 - لا تكرر نمط الميتكون في يومين متتاليين (AMRAP/للوقت/EMOM يتناوبان)
-- الإحماء: 3-4 تمارين — الأول cardio ثم activation للعضلات المستهدفة
-- كل يوم نشاط: strength لا يقل عن تمرينَين compound
+- الإحماء: 3-4 تمارين — الأول عام (رفع نبض) ثم خاص (تفعيل نمط اليوم بدون حمل)
+- كل يوم نشاط: strength لا يقل عن تمرينَين compound (إلا يوم البنشمارك)
 
 أرجع JSON فقط، بدون أي نص قبله أو بعده.`;
 
-  // أيام أكثر = tokens أكثر (~900 لكل يوم نشط) — الحد الأقصى للنموذج 32000
   const maxTokens = Math.min(32000, Math.max(16000, days * 1000));
 
   try {

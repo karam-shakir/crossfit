@@ -2,6 +2,7 @@
 import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
+import { BENCHMARK_OPTIONS } from '@/lib/crossfitProgramming';
 
 type AdminTab = 'wod' | 'members' | 'weekly' | 'sports' | 'gym' | 'running' | 'cali' | 'logs';
 
@@ -57,6 +58,11 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   const [forceInput, setForceInput] = useState('');
   const [forceList, setForceList] = useState<string[]>([]);
   const [coachSpecialNotes, setCoachSpecialNotes] = useState('');
+  const [weeklyClassDuration, setWeeklyClassDuration] = useState('60');   // مدة الحصة اليومية بالدقائق
+  const [weeklyEquipmentNote, setWeeklyEquipmentNote] = useState('');     // قيد معدات لكامل الأسبوع
+  const [weeklyRxFocus, setWeeklyRxFocus] = useState('balanced');         // rx / scaled / balanced
+  const [weeklyBenchmarkName, setWeeklyBenchmarkName] = useState('');     // بنشمارك محدد لهذا الأسبوع
+  const [weeklyBenchmarkDate, setWeeklyBenchmarkDate] = useState('');     // التاريخ المفروض عليه البنشمارك
 
   // AI generation state
   const [aiGenerating, setAiGenerating] = useState(false);
@@ -76,11 +82,22 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   const [wodSpecialNotes, setWodSpecialNotes] = useState('');
   const [wodForbidInput, setWodForbidInput] = useState('');
   const [wodDuration, setWodDuration] = useState('');                  // مدة الميتكون المرغوبة بالدقائق
+  const [wodClassDuration, setWodClassDuration] = useState('60');       // مدة الحصة الكاملة بالدقائق
+  const [wodEquipmentNote, setWodEquipmentNote] = useState('');         // قيد معدات اليوم
+  const [wodRxFocus, setWodRxFocus] = useState('balanced');             // rx / scaled / balanced
+  const [wodBenchmarkName, setWodBenchmarkName] = useState('');         // بنشمارك محدد (fran, cindy, ...)
   function addWodForbid() {
     const v = wodForbidInput.trim().toLowerCase();
     if (v && !wodForbidExercises.includes(v)) setWodForbidExercises(p => [...p, v]);
     setWodForbidInput('');
   }
+  function setWodModeSafe(mode: 'crossfit' | 'calisthenics') {
+    setWodMode(mode);
+    setWodForceExercise('');
+    setWodBenchmarkName('');
+  }
+  const CROSSFIT_EXERCISE_IDS = ['back-squat','front-squat','deadlift','power-clean','clean-and-jerk','snatch','shoulder-press','push-press','thruster','pull-up','kipping-pull-up','muscle-up','handstand-pushup','toes-to-bar','double-under','burpee','wall-ball','kettle-bell-swing','row','run','air-squat'];
+  const CALISTHENICS_EXERCISE_IDS = ['pull-up','push-up','muscle-up','handstand-pushup','toes-to-bar','rope-climb','double-under','burpee','box-jump','sit-up','air-squat'];
 
   // ===== Fix Cooldown =====
   const [fixCooldownFrom, setFixCooldownFrom] = useState(todaySA());
@@ -421,6 +438,10 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
           forceExercise: wodForceExercise || undefined,
           specialNotes: wodSpecialNotes || undefined,
           targetDuration: wodDuration ? Number(wodDuration) : undefined,
+          classDuration: Number(wodClassDuration),
+          equipmentNote: wodEquipmentNote || undefined,
+          rxFocus: wodRxFocus,
+          benchmarkName: wodBenchmarkName || undefined,
         }),
       });
       const data = await res.json();
@@ -460,6 +481,11 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
           fromDate: weeklyFromDate, days: weeklyDays, difficulty: aiDifficulty, weekMode, calisthenicsDays,
           coachFocus, intensityBias, restDaysCount, hyroxMode, targetAudience,
           forbidExercises: forbidList, forceExercises: forceList, specialNotes: coachSpecialNotes,
+          classDuration: Number(weeklyClassDuration),
+          equipmentNote: weeklyEquipmentNote || undefined,
+          rxFocus: weeklyRxFocus,
+          benchmarkName: weeklyBenchmarkName || undefined,
+          benchmarkDate: weeklyBenchmarkName ? (weeklyBenchmarkDate || undefined) : undefined,
         }),
       });
       const data = await res.json();
@@ -766,11 +792,11 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                       <div>
                         <label className="text-xs text-gray-400 font-semibold block mb-2">🏷️ نوع الجلسة</label>
                         <div className="flex rounded-xl overflow-hidden border border-purple-700/40">
-                          <button onClick={() => setWodMode('crossfit')}
+                          <button onClick={() => setWodModeSafe('crossfit')}
                             className={`flex-1 py-2.5 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${wodMode === 'crossfit' ? 'bg-orange-600 text-white' : 'bg-gray-800/60 text-gray-400 hover:text-gray-200'}`}>
                             🔥 CrossFit
                           </button>
-                          <button onClick={() => setWodMode('calisthenics')}
+                          <button onClick={() => setWodModeSafe('calisthenics')}
                             className={`flex-1 py-2.5 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${wodMode === 'calisthenics' ? 'bg-emerald-600 text-white' : 'bg-gray-800/60 text-gray-400 hover:text-gray-200'}`}>
                             🤸 Calisthenics
                           </button>
@@ -879,14 +905,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                         <select value={wodForceExercise} onChange={e => setWodForceExercise(e.target.value)}
                           className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-green-500">
                           <option value="">لا يوجد — الـ AI يختار</option>
-                          {(wodMode === 'crossfit' ? [
-                            'back-squat','front-squat','deadlift','power-clean','clean-and-jerk','snatch',
-                            'shoulder-press','push-press','thruster','pull-up','muscle-up','handstand-pushup',
-                            'toes-to-bar','double-under','burpee','wall-ball','kettle-bell-swing','row','run',
-                          ] : [
-                            'pull-up','push-up','muscle-up','handstand-pushup','toes-to-bar','rope-climb',
-                            'double-under','burpee','box-jump','sit-up',
-                          ]).map(id => (
+                          {(wodMode === 'crossfit' ? CROSSFIT_EXERCISE_IDS : CALISTHENICS_EXERCISE_IDS).map(id => (
                             <option key={id} value={id}>{id}</option>
                           ))}
                         </select>
@@ -899,9 +918,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                           <select value={wodForbidInput} onChange={e => setWodForbidInput(e.target.value)}
                             className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-2 py-2 text-white text-xs focus:outline-none focus:border-red-500">
                             <option value="">اختر تمريناً لحذفه...</option>
-                            {['back-squat','front-squat','deadlift','power-clean','clean-and-jerk','snatch',
-                              'shoulder-press','push-press','thruster','pull-up','kipping-pull-up','muscle-up',
-                              'handstand-pushup','toes-to-bar','double-under','burpee','wall-ball','row','run'].map(id => (
+                            {(wodMode === 'crossfit' ? CROSSFIT_EXERCISE_IDS : CALISTHENICS_EXERCISE_IDS).map(id => (
                               <option key={id} value={id}>{id}</option>
                             ))}
                           </select>
@@ -919,6 +936,64 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                         )}
                       </div>
 
+                      {wodMode === 'crossfit' && (
+                        <>
+                          {/* مدة الحصة الكاملة */}
+                          <div>
+                            <label className="text-xs text-gray-400 font-semibold block mb-2">🏛️ مدة الحصة الكاملة</label>
+                            <div className="grid grid-cols-4 gap-1.5">
+                              {['45', '60', '75', '90'].map(d => (
+                                <button key={d} onClick={() => setWodClassDuration(d)}
+                                  className={`py-2 rounded-xl text-xs font-bold border transition-all ${wodClassDuration === d ? 'border-purple-500 bg-purple-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                                  {d} د
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* التركيز RX/Scaled */}
+                          <div>
+                            <label className="text-xs text-gray-400 font-semibold block mb-2">🎯 تركيز الحصة</label>
+                            <div className="grid grid-cols-3 gap-1.5">
+                              {[
+                                { v: 'balanced', l: '⚖️ متوازن' },
+                                { v: 'rx',       l: '🔥 RX متمرس' },
+                                { v: 'scaled',   l: '🌱 Scaled مبتدئين' },
+                              ].map(r => (
+                                <button key={r.v} onClick={() => setWodRxFocus(r.v)}
+                                  className={`py-2 rounded-xl text-xs font-semibold border transition-all ${wodRxFocus === r.v ? 'border-teal-500 bg-teal-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                                  {r.l}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* بنشمارك محدد */}
+                          <div>
+                            <label className="text-xs text-gray-400 font-semibold block mb-2">🏆 تمرين بنشمارك محدد (اختياري)</label>
+                            <select value={wodBenchmarkName} onChange={e => setWodBenchmarkName(e.target.value)}
+                              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-yellow-500">
+                              <option value="">بدون — تصميم حر</option>
+                              {BENCHMARK_OPTIONS.map(b => (
+                                <option key={b.key} value={b.key}>{b.label} — {b.kind === 'hero' ? 'Hero WOD' : 'Girl WOD'}</option>
+                              ))}
+                            </select>
+                            {wodBenchmarkName && (
+                              <p className="text-xs text-yellow-500 mt-1.5">سيُعاد إنتاج هذا التمرين بحركاته وتكراراته الرسمية — بدون قوة أو أكسسوار إضافي</p>
+                            )}
+                          </div>
+
+                          {/* قيود المعدات */}
+                          <div>
+                            <label className="text-xs text-gray-400 font-semibold block mb-2">🛠️ قيود المعدات اليوم (اختياري)</label>
+                            <textarea value={wodEquipmentNote} onChange={e => setWodEquipmentNote(e.target.value)}
+                              placeholder="مثال: بار أولمبي واحد فقط متاح اليوم&#10;مثال: لا يوجد Rig كافٍ لعدد كبير من العقلة دفعة واحدة"
+                              rows={2}
+                              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-orange-500 resize-none" />
+                          </div>
+                        </>
+                      )}
+
                       {/* تعليمات خاصة */}
                       <div>
                         <label className="text-xs text-gray-400 font-semibold block mb-2">📝 تعليمات خاصة للـ AI</label>
@@ -929,7 +1004,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                       </div>
 
                       {/* Reset */}
-                      <button onClick={() => { setWodSessionType('balanced'); setWodMetconFormat(''); setWodStrengthPattern(''); setWodForbidExercises([]); setWodForceExercise(''); setWodSpecialNotes(''); setWodDuration(''); setAiDifficulty('متوسط'); setAiFocus(''); }}
+                      <button onClick={() => { setWodSessionType('balanced'); setWodMetconFormat(''); setWodStrengthPattern(''); setWodForbidExercises([]); setWodForceExercise(''); setWodSpecialNotes(''); setWodDuration(''); setAiDifficulty('متوسط'); setAiFocus(''); setWodClassDuration('60'); setWodEquipmentNote(''); setWodRxFocus('balanced'); setWodBenchmarkName(''); }}
                         className="w-full py-2 rounded-xl border border-gray-700 text-gray-400 text-xs font-semibold hover:border-gray-500 hover:text-gray-300 transition-all">
                         ↺ إعادة تعيين
                       </button>
@@ -1272,6 +1347,62 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                       </button>
                     </div>
 
+                    {/* مدة الحصة اليومية */}
+                    <div>
+                      <label className="text-xs text-gray-400 font-semibold block mb-2">🏛️ مدة الحصة اليومية</label>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {['45', '60', '75', '90'].map(d => (
+                          <button key={d} onClick={() => setWeeklyClassDuration(d)}
+                            className={`py-2 rounded-xl text-xs font-bold border transition-all ${weeklyClassDuration === d ? 'border-purple-500 bg-purple-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                            {d} د
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* التركيز RX/Scaled */}
+                    <div>
+                      <label className="text-xs text-gray-400 font-semibold block mb-2">🎯 تركيز الأسبوع RX/Scaled</label>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {[
+                          { v: 'balanced', l: '⚖️ متوازن' },
+                          { v: 'rx',       l: '🔥 RX متمرس' },
+                          { v: 'scaled',   l: '🌱 Scaled مبتدئين' },
+                        ].map(r => (
+                          <button key={r.v} onClick={() => setWeeklyRxFocus(r.v)}
+                            className={`py-2 rounded-xl text-xs font-semibold border transition-all ${weeklyRxFocus === r.v ? 'border-teal-500 bg-teal-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                            {r.l}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* يوم بنشمارك محدد */}
+                    <div>
+                      <label className="text-xs text-gray-400 font-semibold block mb-2">🏆 يوم بنشمارك محدد هذا الأسبوع (اختياري)</label>
+                      <select value={weeklyBenchmarkName} onChange={e => setWeeklyBenchmarkName(e.target.value)}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-yellow-500">
+                        <option value="">بدون — لا يوجد بنشمارك مفروض</option>
+                        {BENCHMARK_OPTIONS.map(b => (
+                          <option key={b.key} value={b.key}>{b.label} — {b.kind === 'hero' ? 'Hero WOD' : 'Girl WOD'}</option>
+                        ))}
+                      </select>
+                      {weeklyBenchmarkName && (
+                        <input type="date" value={weeklyBenchmarkDate} onChange={e => setWeeklyBenchmarkDate(e.target.value)}
+                          min={weeklyFromDate}
+                          className="w-full mt-2 bg-gray-800 border border-yellow-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
+                      )}
+                    </div>
+
+                    {/* قيود المعدات */}
+                    <div>
+                      <label className="text-xs text-gray-400 font-semibold block mb-2">🛠️ قيود المعدات هذا الأسبوع (اختياري)</label>
+                      <textarea value={weeklyEquipmentNote} onChange={e => setWeeklyEquipmentNote(e.target.value)}
+                        placeholder="مثال: بار أولمبي واحد فقط متاح هذا الأسبوع&#10;مثال: صيانة الحلقات — تجنب Muscle-up"
+                        rows={2}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-orange-500 resize-none" />
+                    </div>
+
                     {/* تمارين محظورة */}
                     <div>
                       <label className="text-xs text-gray-400 font-semibold block mb-2">🚫 تمارين محظورة هذا الأسبوع</label>
@@ -1326,7 +1457,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                     </div>
 
                     {/* Reset */}
-                    <button onClick={() => { setCoachFocus('balanced'); setIntensityBias('balanced'); setRestDaysCount(-1); setHyroxMode(false); setTargetAudience('all'); setForbidList([]); setForceList([]); setCoachSpecialNotes(''); setAiDifficulty('متوسط'); }}
+                    <button onClick={() => { setCoachFocus('balanced'); setIntensityBias('balanced'); setRestDaysCount(-1); setHyroxMode(false); setTargetAudience('all'); setForbidList([]); setForceList([]); setCoachSpecialNotes(''); setAiDifficulty('متوسط'); setWeeklyClassDuration('60'); setWeeklyEquipmentNote(''); setWeeklyRxFocus('balanced'); setWeeklyBenchmarkName(''); setWeeklyBenchmarkDate(''); }}
                       className="w-full py-2 rounded-xl border border-gray-700 text-gray-400 text-xs font-semibold hover:border-gray-500 hover:text-gray-300 transition-all">
                       ↺ إعادة تعيين لافتراضيات الـ AI
                     </button>
