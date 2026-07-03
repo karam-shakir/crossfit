@@ -614,6 +614,37 @@ export async function deleteGymSessionsByMember(memberId: string, fromDate: stri
   await db.collection('gym_sessions').deleteMany({ memberId, date: { $gte: fromDate, $lte: toDate } });
 }
 
+// ===================== GYM WEEK META (استمرارية البرمجة أسبوعاً بعد أسبوع) =====================
+
+export interface GymWeekMeta {
+  id: string;
+  memberId: string;
+  weekStartDate: string;
+  weekSummary: string;
+  progressionNote: string;
+  createdAt: string;
+}
+
+export async function upsertGymWeekMeta(meta: GymWeekMeta): Promise<GymWeekMeta> {
+  const db = await getDb();
+  await db.collection('gym_week_meta').replaceOne(
+    { memberId: meta.memberId, weekStartDate: meta.weekStartDate },
+    meta,
+    { upsert: true }
+  );
+  return meta;
+}
+
+export async function getLatestGymWeekMeta(memberId: string, beforeDate: string): Promise<GymWeekMeta | undefined> {
+  const db = await getDb();
+  const docs = await db.collection('gym_week_meta')
+    .find({ memberId, weekStartDate: { $lt: beforeDate } })
+    .sort({ weekStartDate: -1 })
+    .limit(1)
+    .toArray();
+  return docs[0] ? strip_id<GymWeekMeta>(docs[0]) : undefined;
+}
+
 // ===================== RUNNING PROFILES =====================
 
 export interface RunningProfile {

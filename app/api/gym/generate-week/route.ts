@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
-import { getGymProfile, getGymSessions, getMemberById, upsertGymSession, deleteGymSessionsByMember } from '@/lib/db';
+import { getGymProfile, getGymSessions, getMemberById, upsertGymSession, deleteGymSessionsByMember, getLatestGymWeekMeta, upsertGymWeekMeta } from '@/lib/db';
 import { todaySA } from '@/lib/timezone';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -157,11 +157,56 @@ export async function POST(req: NextRequest) {
   const dates = buildDates(startDate, totalDays);
 
   const recentSessions = await getGymSessions(memberId);
+  const currentLevel = (effective.level || 'beginner') as 'beginner' | 'intermediate' | 'advanced' | 'elite';
+
+  // سجل تفصيلي بالأوزان الفعلية المستخدمة عند مستوى المتدرب الحالي — أساس التحميل التصاعدي الحقيقي
   const recentTraining = recentSessions.slice(0, 6).map(s => ({
     date: s.date,
     split: s.splitType,
-    exercises: s.exercises.slice(0, 5).map(e => e.nameEn).join(', '),
+    exercises: (s.exercises || []).slice(0, 6).map(e => {
+      const lvl = e.levels?.[currentLevel];
+      return `${e.nameEn}${lvl?.weight ? ` (${lvl.weight} × ${lvl.reps})` : ''}`;
+    }).join(', '),
   }));
+
+  // تحليل توزيع أنماط التقسيم (Split) على آخر أسبوعين — يكشف الإهمال والتراكم الفعليين، وليس تخميناً
+  const last14 = recentSessions.slice(0, 14);
+  const splitFreq: Record<string, number> = {};
+  last14.forEach(s => {
+    if (s.isRest) return;
+    const key = (s.splitType || '').split(' ')[0] || 'Full';
+    splitFreq[key] = (splitFreq[key] || 0) + 1;
+  });
+  const ALL_SPLITS = ['Push', 'Pull', 'Legs', 'Upper', 'Lower', 'Full'];
+  const neglectedSplits = ALL_SPLITS.filter(s => !splitFreq[s]);
+  const dominantSplits = Object.entries(splitFreq).filter(([, v]) => v >= 4).map(([k]) => k);
+  const trainedSessionsCount = last14.filter(s => !s.isRest).length;
+
+  // استمرارية البرمجة: هل هذا استكمال لبرنامج قائم أم بداية جديدة؟ واقرأ توصية الأسبوع الماضي من نفس المدرب الذكي
+  const isContinuation = trainedSessionsCount >= 3;
+  const previousMeta = await getLatestGymWeekMeta(memberId, startDate);
+
+  const continuityContext = `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 تحليل الأسبوعين الماضيين (${trainedSessionsCount} جلسة تدريب فعلية)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${isContinuation ? 'هذا استكمال لبرنامج قائم — ابنِ على الأوزان والتقدم الفعلي المسجل أدناه، لا تبدأ من الصفر' : 'هذا برنامج جديد أو متقطع — ابدأ بأسبوع تأسيسي محافظ يبني الثقة بالتقنية'}
+
+توزيع أنماط التقسيم (Split) الفعلي:
+${Object.keys(splitFreq).length ? Object.entries(splitFreq).map(([k, v]) => `- ${k}: ${v} جلسة`).join('\n') : '- لا توجد جلسات سابقة'}
+${neglectedSplits.length ? `\n⚠️ أنماط مُهملة تماماً (أعطها أولوية هذا الأسبوع): ${neglectedSplits.join(', ')}` : ''}
+${dominantSplits.length ? `\n⚠️ أنماط مُفرطة التكرار (قلّل حصتها أو نوّع تمارينها): ${dominantSplits.join(', ')}` : ''}
+
+سجل الجلسات الأخيرة بالأوزان الفعلية عند مستوى "${currentLevel}" (استخدمها كنقطة انطلاق للتحميل التصاعدي):
+${recentTraining.length ? recentTraining.map(s => `${s.date} | ${s.split} | ${s.exercises}`).join('\n') : 'لا توجد جلسات سابقة'}
+${previousMeta ? `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🗒️ توصيتك أنت (المدرب الذكي) من الأسبوع الماضي — يجب المتابعة عليها اليوم
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ملخص الأسبوع الماضي: ${previousMeta.weekSummary}
+خطة التقدم التي وضعتها: ${previousMeta.progressionNote}
+✅ نفّذ هذه الخطة فعلياً الآن (مثال: إن قلت "زد 2.5كجم على القرفصاء" فطبّقها في هذا الأسبوع على الوزن المسجل أعلاه)` : ''}
+`;
 
   const gender = effective.gender || 'male';
   const levelAr = { beginner: 'مبتدئ', intermediate: 'متوسط', advanced: 'متقدم', elite: 'محترف' }[effective.level as string] || 'متوسط';
@@ -201,11 +246,7 @@ ${getGoalProtocol(effective.goal)}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${getSplitPlan(effective.daysPerWeek)}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 جلسات الأسبوع السابق (تجنّب التكرار)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${recentTraining.length ? recentTraining.map(s => `• ${s.date} | ${s.split} | ${s.exercises}`).join('\n') : 'لا توجد جلسات سابقة — هذا أول أسبوع تدريبي للعضو'}
-
+${continuityContext}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📅 الأيام المطلوبة لهذا الأسبوع
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -280,7 +321,7 @@ ${getWeightStandards(gender, effective.weight)}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🧠 مبادئ البرمجة الاحترافية
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. Progressive Overload: ابدأ بوزن يسمح بـ 2-3 تكرارات احتياطية (RIR)، اقترح زيادة محددة للأسبوع القادم
+1. Progressive Overload الحقيقي: ${isContinuation ? 'استخدم الأوزان الفعلية المسجلة في سجل الجلسات الأخيرة أعلاه كنقطة انطلاق — زد 2.5-5% على التمارين المركبة التي تكررت بنجاح، ولا تعد لجدول أوزان المستوى العام كأنه أول أسبوع' : 'ابدأ بوزن يسمح بـ 2-3 تكرارات احتياطية (RIR)، اقترح زيادة محددة للأسبوع القادم'}
 2. SRA Principle: Stimulus → Recovery → Adaptation — لا تكرر نفس المجموعة العضلية قبل 48 ساعة
 3. تناوب الشدة: Heavy (85%+ 1RM) → Moderate (70-80%) → Light/Volume (60-70%)
 4. Mind-Muscle Connection: في كل cue أكد على الإحساس بالعضلة المستهدفة
@@ -380,8 +421,8 @@ ${effective.focusAreas?.length ? `\n9. 🎯 تضخيم التركيز على: ${
       "coachNote": "الراحة جزء من البرنامج — العضلات تنمو خلالها لا خلال التمرين. استرح واهتم بالتغذية والنوم."
     }
   ],
-  "weekSummary": "ملخص الأسبوع: توزيع المجموعات العضلية وفلسفة التدريب هذا الأسبوع",
-  "progressionNote": "خطة الأسبوع القادم: ما الذي يزيده المتدرب وكيف يتقدم"
+  "weekSummary": "ملخص الأسبوع: توزيع المجموعات العضلية، وكيف يبني هذا الأسبوع على الأسبوع الماضي تحديداً (اذكر ما تغيّر ولماذا)",
+  "progressionNote": "خطة محددة وقابلة للتنفيذ للأسبوع القادم — اسم التمرين + الزيادة الدقيقة (مثال: 'زد Back Squat من 75كجم إلى 80كجم' وليس كلاماً عاماً مثل 'زد الأوزان تدريجياً') — هذا النص سيُقرأ حرفياً الأسبوع القادم لمتابعته"
 }
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -398,6 +439,8 @@ ${effective.focusAreas?.length ? `\n9. 🎯 تضخيم التركيز على: ${
 ✅ coachNote يجب أن تكون تحفيزية ومحددة لهذا اليوم وهذا المتدرب
 ✅ intensity لكل جلسة: Heavy | Moderate | Light | Cardio | Rest
 ✅ وزّع أيام التمرين بشكل منطقي — لا يومان ثقيلان على نفس العضلة متتاليان
+${neglectedSplits.length ? `✅ أعطِ أولوية حقيقية للأنماط المُهملة المذكورة أعلاه (${neglectedSplits.join(', ')}) — خصص لها يوماً كاملاً هذا الأسبوع إن أمكن` : ''}
+✅ progressionNote يجب أن يكون توجيهاً رقمياً محدداً (اسم تمرين + وزن دقيق) قابلاً للتنفيذ الحرفي الأسبوع القادم — لا نصائح عامة
 
 أرجع JSON فقط بدون أي كلمة أو نص قبله أو بعده. لا تشرح. لا تعلق.`;
 
@@ -436,6 +479,19 @@ ${effective.focusAreas?.length ? `\n9. 🎯 تضخيم التركيز على: ${
     for (const s of result.sessions || []) {
       const id = Date.now().toString(36) + Math.random().toString(36).slice(2);
       await upsertGymSession({ ...s, id, memberId, createdAt: new Date().toISOString() });
+    }
+
+    // احفظ ملخص وخطة التقدم لهذا الأسبوع — تُقرأ تلقائياً عند توليد الأسبوع القادم لضمان استمرارية البرمجة
+    if (result.weekSummary || result.progressionNote) {
+      const metaId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+      await upsertGymWeekMeta({
+        id: metaId,
+        memberId,
+        weekStartDate: startDate,
+        weekSummary: result.weekSummary || '',
+        progressionNote: result.progressionNote || '',
+        createdAt: new Date().toISOString(),
+      });
     }
 
     return NextResponse.json({ ...result, memberId, fromDate: startDate });
