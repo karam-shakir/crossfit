@@ -1,7 +1,13 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+
+const GymExerciseProgressChart = dynamic(() => import('@/components/charts/GymExerciseProgressChart'), {
+  ssr: false,
+  loading: () => <div className="h-[150px] bg-slate-50 rounded-xl animate-pulse" />,
+});
 
 type LevelKey = 'beginner' | 'intermediate' | 'advanced' | 'elite';
 
@@ -77,6 +83,13 @@ function todayStr() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Riyadh' });
 }
 
+// يستخرج أول رقم من نص وزن حر مثل "75كجم" أو "22.5 كجم" — لعرضه في الرسم البياني
+function parseWeightNumber(s: string | undefined): number | null {
+  if (!s) return null;
+  const m = s.match(/[\d.]+/);
+  return m ? parseFloat(m[0]) : null;
+}
+
 function groupByWeek(sessions: any[]) {
   const sorted = [...sessions].sort((a, b) => a.date.localeCompare(b.date));
   const weeks: { key: string; label: string; sessions: any[] }[] = [];
@@ -115,8 +128,61 @@ function YoutubeIcon() {
   );
 }
 
-function ExerciseCard({ ex, level, index }: { ex: any; level: LevelKey; index: number }) {
+function ExerciseCard({
+  ex, level, index, sessionDate, existingLog, machineLogs, onLogged, onUnlogged,
+}: {
+  ex: any; level: LevelKey; index: number; sessionDate: string;
+  existingLog?: any; machineLogs: any[];
+  onLogged: (log: any) => void; onUnlogged: (date: string, machineId: string) => void;
+}) {
   const lvl = ex.levels?.[level];
+  const [expanded, setExpanded] = useState(false);
+  const [manualMode, setManualMode] = useState<'less' | 'more' | null>(null);
+  const [manualWeight, setManualWeight] = useState('');
+  const [manualReps, setManualReps] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [showTrend, setShowTrend] = useState(false);
+
+  async function submitLog(comparison: 'same' | 'less' | 'more', actualWeight?: string, actualReps?: string) {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/gym/exercise-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: sessionDate, machineId: ex.machineId, level,
+          suggestedWeight: lvl?.weight || '', suggestedReps: lvl?.reps || '',
+          actualWeight, actualReps, comparison,
+        }),
+      });
+      if (res.ok) {
+        const log = await res.json();
+        onLogged(log);
+        setExpanded(false); setManualMode(null); setManualWeight(''); setManualReps('');
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function unlog() {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/gym/exercise-log?date=${sessionDate}&machineId=${ex.machineId}`, { method: 'DELETE' });
+      if (res.ok) onUnlogged(sessionDate, ex.machineId);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const trendData = useMemo(() => {
+    return [...machineLogs]
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(l => ({ date: l.date.slice(5), value: parseWeightNumber(l.actualWeight), comparison: l.comparison }))
+      .filter((d): d is { date: string; value: number; comparison: string } => d.value !== null);
+  }, [machineLogs]);
+  const suggestedNum = parseWeightNumber(lvl?.weight);
+
   return (
     <div className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-md">
       {/* Header */}
@@ -130,13 +196,21 @@ function ExerciseCard({ ex, level, index }: { ex: any; level: LevelKey; index: n
               <div className="font-bold text-slate-800 text-[15px] leading-tight">{ex.nameAr}</div>
               <div className="text-xs text-slate-500 mt-0.5">{ex.nameEn}</div>
             </div>
-            {MACHINE_YOUTUBE[ex.machineId] && (
-              <a href={MACHINE_YOUTUBE[ex.machineId]} target="_blank" rel="noopener noreferrer"
-                className="flex-shrink-0 flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all">
-                <YoutubeIcon />
-                <span>شرح</span>
-              </a>
-            )}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {trendData.length >= 2 && (
+                <button onClick={() => setShowTrend(t => !t)}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${showTrend ? 'bg-indigo-600 text-white' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'}`}>
+                  📈 تطوري
+                </button>
+              )}
+              {MACHINE_YOUTUBE[ex.machineId] && (
+                <a href={MACHINE_YOUTUBE[ex.machineId]} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all">
+                  <YoutubeIcon />
+                  <span>شرح</span>
+                </a>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-1.5 mt-2 flex-wrap">
             <span className="text-xs bg-slate-100 border border-slate-300 text-slate-700 px-2 py-0.5 rounded-lg font-medium">
@@ -148,6 +222,14 @@ function ExerciseCard({ ex, level, index }: { ex: any; level: LevelKey; index: n
           </div>
         </div>
       </div>
+
+      {/* Progress trend */}
+      {showTrend && trendData.length >= 2 && (
+        <div className="mx-3 mb-3 rounded-xl bg-indigo-50/50 border border-indigo-200 p-3">
+          <div className="text-xs text-indigo-700 font-bold mb-2">📈 الوزن الفعلي عبر الوقت (الخط المتقطع = المقترح الحالي)</div>
+          <GymExerciseProgressChart data={trendData} suggestedValue={suggestedNum ?? undefined} />
+        </div>
+      )}
 
       {/* Stats */}
       {lvl && (
@@ -172,6 +254,65 @@ function ExerciseCard({ ex, level, index }: { ex: any; level: LevelKey; index: n
               <span className="text-sm text-amber-800 leading-relaxed font-medium">{lvl.cue}</span>
             </div>
           )}
+
+          {/* توثيق الإنجاز الفعلي — اختياري */}
+          <div className="border-t border-slate-200 p-3">
+            {existingLog ? (
+              <div className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 border ${
+                existingLog.comparison === 'more' ? 'bg-emerald-50 border-emerald-200' :
+                existingLog.comparison === 'less' ? 'bg-amber-50 border-amber-200' :
+                'bg-slate-50 border-slate-200'
+              }`}>
+                <button onClick={unlog} disabled={saving}
+                  className="text-slate-400 hover:text-red-500 text-xs font-bold px-1.5 flex-shrink-0">✕</button>
+                <div className="text-right flex-1 min-w-0">
+                  <span className={`text-sm font-bold ${
+                    existingLog.comparison === 'more' ? 'text-emerald-700' :
+                    existingLog.comparison === 'less' ? 'text-amber-700' : 'text-slate-700'
+                  }`}>
+                    ✅ أنجزت — {existingLog.actualWeight} × {existingLog.actualReps}
+                  </span>
+                  {existingLog.comparison === 'more' && <span className="text-emerald-600 text-xs mr-2">⬆ أعلى من المقترح</span>}
+                  {existingLog.comparison === 'less' && <span className="text-amber-600 text-xs mr-2">⬇ أقل من المقترح</span>}
+                </div>
+              </div>
+            ) : !expanded ? (
+              <button onClick={() => setExpanded(true)}
+                className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 text-slate-500 text-sm font-semibold hover:border-indigo-400 hover:text-indigo-600 transition-all">
+                ✅ سجّل إنجازك (اختياري)
+              </button>
+            ) : (
+              <div className="space-y-2">
+                <div className="grid grid-cols-3 gap-2">
+                  <button onClick={() => setManualMode('less')} disabled={saving}
+                    className={`py-2 rounded-xl border text-sm font-bold transition-all ${manualMode === 'less' ? 'bg-amber-500 text-white border-transparent' : 'bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100'}`}>
+                    ⬇ أقل
+                  </button>
+                  <button onClick={() => submitLog('same')} disabled={saving}
+                    className="py-2 rounded-xl border bg-slate-100 border-slate-300 text-slate-700 text-sm font-bold hover:bg-slate-200 transition-all">
+                    = نفسه
+                  </button>
+                  <button onClick={() => setManualMode('more')} disabled={saving}
+                    className={`py-2 rounded-xl border text-sm font-bold transition-all ${manualMode === 'more' ? 'bg-emerald-600 text-white border-transparent' : 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100'}`}>
+                    ⬆ أكثر
+                  </button>
+                </div>
+                {manualMode && (
+                  <div className="flex gap-2 items-center">
+                    <input value={manualWeight} onChange={e => setManualWeight(e.target.value)} placeholder="الوزن الفعلي"
+                      className="flex-1 min-w-0 bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-400" />
+                    <input value={manualReps} onChange={e => setManualReps(e.target.value)} placeholder="التكرار الفعلي"
+                      className="flex-1 min-w-0 bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-400" />
+                    <button onClick={() => submitLog(manualMode, manualWeight, manualReps)} disabled={saving || !manualWeight}
+                      className="flex-shrink-0 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 text-white text-sm font-bold">
+                      حفظ
+                    </button>
+                  </div>
+                )}
+                <button onClick={() => { setExpanded(false); setManualMode(null); }} className="text-xs text-slate-400 hover:text-slate-600">إلغاء</button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -184,12 +325,50 @@ function ExerciseCard({ ex, level, index }: { ex: any; level: LevelKey; index: n
   );
 }
 
-function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
+function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
+  s: any; isToday: boolean; logs: any[];
+  onLogged: (log: any) => void; onUnlogged: (date: string, machineId: string) => void;
+}) {
   const [open, setOpen] = useState(isToday && !s.isRest);
   const [level, setLevel] = useState<LevelKey>('intermediate');
+  const [bulkSaving, setBulkSaving] = useState(false);
   const isRest = s.isRest;
   const splitKey = s.splitType?.split(' ')[0] || 'Full Body';
   const theme = SPLIT_THEME[splitKey] || SPLIT_THEME['Full Body'];
+
+  const logsByKey = useMemo(() => {
+    const map: Record<string, any> = {};
+    logs.forEach(l => { map[`${l.date}__${l.machineId}`] = l; });
+    return map;
+  }, [logs]);
+  const logsByMachine = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    logs.forEach(l => { (map[l.machineId] ||= []).push(l); });
+    return map;
+  }, [logs]);
+
+  const unloggedExercises = (s.exercises || []).filter((ex: any) => !logsByKey[`${s.date}__${ex.machineId}`] && ex.levels?.[level]);
+
+  async function markAllSuggested() {
+    setBulkSaving(true);
+    try {
+      for (const ex of unloggedExercises) {
+        const lvl = ex.levels[level];
+        const res = await fetch('/api/gym/exercise-log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            date: s.date, machineId: ex.machineId, level,
+            suggestedWeight: lvl.weight, suggestedReps: lvl.reps,
+            comparison: 'same',
+          }),
+        });
+        if (res.ok) onLogged(await res.json());
+      }
+    } finally {
+      setBulkSaving(false);
+    }
+  }
 
   return (
     <div className={`rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-white ${isToday ? 'ring-2 ring-indigo-400 ring-offset-1' : ''}`}>
@@ -305,16 +484,29 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
           {/* Exercises */}
           {s.exercises?.length > 0 && (
             <div>
-              <h4 className="text-[15px] font-bold text-blue-700 mb-3 flex items-center gap-2">
-                <span className="text-xl">💪</span>
-                <span>التمارين</span>
-                <span className="bg-blue-100 text-blue-700 border border-blue-200 text-xs px-2.5 py-1 rounded-full font-bold">
-                  {s.exercises.length} تمرين
-                </span>
-              </h4>
+              <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+                <h4 className="text-[15px] font-bold text-blue-700 flex items-center gap-2">
+                  <span className="text-xl">💪</span>
+                  <span>التمارين</span>
+                  <span className="bg-blue-100 text-blue-700 border border-blue-200 text-xs px-2.5 py-1 rounded-full font-bold">
+                    {s.exercises.length} تمرين
+                  </span>
+                </h4>
+                {unloggedExercises.length > 0 && (
+                  <button onClick={markAllSuggested} disabled={bulkSaving}
+                    className="text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-full transition-all disabled:opacity-50">
+                    {bulkSaving ? '⏳ جارٍ الحفظ...' : '✅ أنجزت الكل بالمقترح'}
+                  </button>
+                )}
+              </div>
               <div className="space-y-3">
                 {s.exercises.map((ex: any, i: number) => (
-                  <ExerciseCard key={i} ex={ex} level={level} index={i} />
+                  <ExerciseCard key={i} ex={ex} level={level} index={i}
+                    sessionDate={s.date}
+                    existingLog={logsByKey[`${s.date}__${ex.machineId}`]}
+                    machineLogs={logsByMachine[ex.machineId] || []}
+                    onLogged={onLogged} onUnlogged={onUnlogged}
+                  />
                 ))}
               </div>
             </div>
@@ -366,6 +558,18 @@ export default function GymClient({ member, profile, sessions }: { member: any; 
 
   const totalExercises = currentSessions.reduce((n, s) => n + (s.exercises?.length || 0), 0);
   const trainingDays = currentSessions.filter(s => !s.isRest).length;
+
+  // توثيق الإنجاز الفعلي — اختياري بالكامل
+  const [logs, setLogs] = useState<any[]>([]);
+  useEffect(() => {
+    fetch('/api/gym/exercise-log').then(r => r.json()).then(d => setLogs(Array.isArray(d) ? d : [])).catch(() => {});
+  }, []);
+  function handleLogged(log: any) {
+    setLogs(prev => [log, ...prev.filter(l => !(l.date === log.date && l.machineId === log.machineId))]);
+  }
+  function handleUnlogged(date: string, machineId: string) {
+    setLogs(prev => prev.filter(l => !(l.date === date && l.machineId === machineId)));
+  }
 
   if (!profile) {
     return (
@@ -466,7 +670,8 @@ export default function GymClient({ member, profile, sessions }: { member: any; 
               {/* Sessions */}
               <div className="space-y-3">
                 {currentSessions.map((s, i) => (
-                  <SessionCard key={i} s={s} isToday={s.date === today} />
+                  <SessionCard key={i} s={s} isToday={s.date === today}
+                    logs={logs} onLogged={handleLogged} onUnlogged={handleUnlogged} />
                 ))}
               </div>
 

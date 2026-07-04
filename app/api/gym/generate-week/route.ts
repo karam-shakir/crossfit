@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
-import { getGymProfile, getGymSessions, getMemberById, upsertGymSession, deleteGymSessionsByMember, getLatestGymWeekMeta, upsertGymWeekMeta } from '@/lib/db';
+import { getGymProfile, getGymSessions, getMemberById, upsertGymSession, deleteGymSessionsByMember, getLatestGymWeekMeta, upsertGymWeekMeta, getGymExerciseLogs } from '@/lib/db';
 import { todaySA } from '@/lib/timezone';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -159,15 +159,41 @@ export async function POST(req: NextRequest) {
   const recentSessions = await getGymSessions(memberId);
   const currentLevel = (effective.level || 'beginner') as 'beginner' | 'intermediate' | 'advanced' | 'elite';
 
-  // سجل تفصيلي بالأوزان الفعلية المستخدمة عند مستوى المتدرب الحالي — أساس التحميل التصاعدي الحقيقي
+  // سجل الإنجاز الفعلي (اختياري من العضو) — إن وُجد يحل محل الوزن المقترح كأساس حقيقي للتصاعد
+  const exerciseLogs = await getGymExerciseLogs(memberId);
+  const logsByKey: Record<string, any> = {};
+  exerciseLogs.forEach(l => { logsByKey[`${l.date}__${l.machineId}`] = l; });
+
+  // سجل تفصيلي بالأوزان — فعلية إن سُجِّلت، وإلا مقترحة عند مستوى المتدرب الحالي (احتياط متوافق مع من لا يسجّل)
   const recentTraining = recentSessions.slice(0, 6).map(s => ({
     date: s.date,
     split: s.splitType,
     exercises: (s.exercises || []).slice(0, 6).map(e => {
+      const log = logsByKey[`${s.date}__${e.machineId}`];
+      if (log) return `${e.nameEn} (فعلي: ${log.actualWeight} × ${log.actualReps}${log.comparison !== 'same' ? ` — ${log.comparison === 'more' ? 'أعلى من المقترح' : 'أقل من المقترح'}` : ''})`;
       const lvl = e.levels?.[currentLevel];
-      return `${e.nameEn}${lvl?.weight ? ` (${lvl.weight} × ${lvl.reps})` : ''}`;
+      return `${e.nameEn}${lvl?.weight ? ` (مقترح غير مُسجَّل: ${lvl.weight} × ${lvl.reps})` : ''}`;
     }).join(', '),
   }));
+
+  // تحليل ركود/تجاوز لكل جهاز بناءً على آخر 3-4 تسجيلات فعلية — حتمي بالكود لا تخميناً من الـ AI
+  const logsByMachine: Record<string, any[]> = {};
+  exerciseLogs.forEach(l => { (logsByMachine[l.machineId] ||= []).push(l); });
+  const parseNum = (s: string) => { const m = (s || '').match(/[\d.]+/); return m ? parseFloat(m[0]) : null; };
+
+  const plateauedMachines: string[] = [];
+  const exceedingMachines: string[] = [];
+  Object.entries(logsByMachine).forEach(([machineId, machineLogs]) => {
+    // الأحدث 3 تسجيلات مرتبة تصاعدياً بالتاريخ (الأقدم أولاً ← الأحدث أخيراً)
+    const recent3 = [...machineLogs].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3).reverse();
+    if (recent3.length < 3) return;
+    const values = recent3.map(l => parseNum(l.actualWeight)).filter((v): v is number => v !== null);
+    if (values.length < 3) return;
+    // ركود: الوزن الفعلي في آخر تسجيل ليس أعلى من أقدم تسجيل ضمن آخر 3 — لا تصاعد حقيقي
+    if (values[values.length - 1] <= values[0]) plateauedMachines.push(machineId);
+    // تجاوز: العضو رفع أعلى من المقترح في تسجيلين من آخر 3 على الأقل
+    if (recent3.filter(l => l.comparison === 'more').length >= 2) exceedingMachines.push(machineId);
+  });
 
   // تحليل توزيع أنماط التقسيم (Split) على آخر أسبوعين — يكشف الإهمال والتراكم الفعليين، وليس تخميناً
   const last14 = recentSessions.slice(0, 14);
@@ -197,8 +223,14 @@ ${Object.keys(splitFreq).length ? Object.entries(splitFreq).map(([k, v]) => `- $
 ${neglectedSplits.length ? `\n⚠️ أنماط مُهملة تماماً (أعطها أولوية هذا الأسبوع): ${neglectedSplits.join(', ')}` : ''}
 ${dominantSplits.length ? `\n⚠️ أنماط مُفرطة التكرار (قلّل حصتها أو نوّع تمارينها): ${dominantSplits.join(', ')}` : ''}
 
-سجل الجلسات الأخيرة بالأوزان الفعلية عند مستوى "${currentLevel}" (استخدمها كنقطة انطلاق للتحميل التصاعدي):
+سجل الجلسات الأخيرة (فعلي إن سُجِّل، وإلا مقترح عند مستوى "${currentLevel}" كاحتياط):
 ${recentTraining.length ? recentTraining.map(s => `${s.date} | ${s.split} | ${s.exercises}`).join('\n') : 'لا توجد جلسات سابقة'}
+${plateauedMachines.length || exceedingMachines.length ? `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 تحليل الالتزام الفعلي (محسوب من تسجيلات العضو الحقيقية)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${plateauedMachines.length ? `⚠️ ركود مؤكد (لا تصاعد حقيقي في آخر 3 تسجيلات): ${plateauedMachines.join(', ')}\n→ لهذه التمارين تحديداً: خفّف الوزن 10% هذا الأسبوع أو غيّر نطاق التكرارات بدل تكرار نفس الرقم` : ''}
+${exceedingMachines.length ? `✅ تجاوز مستمر للمقترح (رفع أعلى من المطلوب مرتين على الأقل من آخر 3): ${exceedingMachines.join(', ')}\n→ لهذه التمارين: ارفع الوزن الأساسي واذكر صراحة في coachNote اقتراح ترقية المستوى` : ''}` : ''}
 ${previousMeta ? `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🗒️ توصيتك أنت (المدرب الذكي) من الأسبوع الماضي — يجب المتابعة عليها اليوم
@@ -440,7 +472,9 @@ ${effective.focusAreas?.length ? `\n9. 🎯 تضخيم التركيز على: ${
 ✅ intensity لكل جلسة: Heavy | Moderate | Light | Cardio | Rest
 ✅ وزّع أيام التمرين بشكل منطقي — لا يومان ثقيلان على نفس العضلة متتاليان
 ${neglectedSplits.length ? `✅ أعطِ أولوية حقيقية للأنماط المُهملة المذكورة أعلاه (${neglectedSplits.join(', ')}) — خصص لها يوماً كاملاً هذا الأسبوع إن أمكن` : ''}
-✅ progressionNote يجب أن يكون توجيهاً رقمياً محدداً (اسم تمرين + وزن دقيق) قابلاً للتنفيذ الحرفي الأسبوع القادم — لا نصائح عامة
+${plateauedMachines.length ? `✅ طبّق تعليمات الركود أعلاه حرفياً على: ${plateauedMachines.join(', ')} — لا تكرر نفس الوزن دون تغيير` : ''}
+${exceedingMachines.length ? `✅ طبّق تعليمات التجاوز أعلاه حرفياً على: ${exceedingMachines.join(', ')} — واذكر اقتراح الترقية في coachNote` : ''}
+✅ progressionNote يجب أن يكون توجيهاً رقمياً محدداً (اسم تمرين + وزن دقيق) قابلاً للتنفيذ الحرفي الأسبوع القادم — لا نصائح عامة، وإن وُجد تحليل التزام فعلي أعلاه فاستشهد به تحديداً
 
 أرجع JSON فقط بدون أي كلمة أو نص قبله أو بعده. لا تشرح. لا تعلق.`;
 

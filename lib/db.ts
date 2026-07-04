@@ -655,6 +655,49 @@ export async function getLatestGymWeekMeta(memberId: string, beforeDate: string)
   return docs[0] ? strip_id<GymWeekMeta>(docs[0]) : undefined;
 }
 
+// ===================== GYM EXERCISE LOGS (توثيق الإنجاز الفعلي) =====================
+// تسجيل اختياري من العضو لما رفعه فعلياً — يغذّي التصاعد الأسبوعي بأرقام حقيقية
+// بدل الاعتماد فقط على جدول الأوزان العام للمستوى.
+
+export interface GymExerciseLog {
+  id: string;
+  memberId: string;
+  date: string;                 // نفس تاريخ الجلسة
+  machineId: string;
+  level: 'beginner' | 'intermediate' | 'advanced' | 'elite';
+  suggestedWeight: string;
+  suggestedReps: string;
+  actualWeight: string;
+  actualReps: string;
+  comparison: 'same' | 'less' | 'more';
+  createdAt: string;
+}
+
+export async function upsertGymExerciseLog(log: GymExerciseLog): Promise<GymExerciseLog> {
+  const db = await getDb();
+  await db.collection('gym_exercise_logs').replaceOne(
+    { memberId: log.memberId, date: log.date, machineId: log.machineId },
+    log,
+    { upsert: true }
+  );
+  return log;
+}
+
+export async function getGymExerciseLogs(memberId: string, limit = 300): Promise<GymExerciseLog[]> {
+  const db = await getDb();
+  const docs = await db.collection('gym_exercise_logs')
+    .find({ memberId })
+    .sort({ date: -1 })
+    .limit(limit)
+    .toArray();
+  return stripAll<GymExerciseLog>(docs);
+}
+
+export async function deleteGymExerciseLog(memberId: string, date: string, machineId: string): Promise<void> {
+  const db = await getDb();
+  await db.collection('gym_exercise_logs').deleteOne({ memberId, date, machineId });
+}
+
 // ===================== RUNNING PROFILES =====================
 
 export interface RunningProfile {
