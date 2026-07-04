@@ -208,6 +208,16 @@ export async function getWodByDate(date: string): Promise<Wod | undefined> {
   return doc ? strip_id<Wod>(doc) : undefined;
 }
 
+/** كل تمارين شهر معيّن (بصيغة "YYYY-MM") — لعرض تقويم WOD الخفيف بدون تحميل التفاصيل الكاملة */
+export async function getWodsByMonth(monthPrefix: string): Promise<Wod[]> {
+  const db = await getDb();
+  const [y, m] = monthPrefix.split('-').map(Number);
+  const start = `${monthPrefix}-01`;
+  const end = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, '0')}-01`;
+  const docs = await db.collection('wods').find({ date: { $gte: start, $lt: end } }).sort({ date: 1 }).toArray();
+  return stripAll<Wod>(docs);
+}
+
 export async function upsertWod(wod: Wod): Promise<Wod> {
   const db = await getDb();
   await db.collection('wods').replaceOne({ date: wod.date }, wod, { upsert: true });

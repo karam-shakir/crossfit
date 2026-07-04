@@ -3,6 +3,7 @@ import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import ExerciseCard from '@/components/ExerciseCard';
+import WodCalendar, { formatMeta } from '@/components/WodCalendar';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const YOUTUBE_LINKS: Record<string, string> = {
@@ -671,6 +672,7 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
   const [commentRxd, setCommentRxd] = useState(false);
   const [posting, setPosting] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const today = todaySA();
   const now = new Date();
@@ -821,7 +823,13 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
           {/* ══ تمارين اليوم — تبويبات الرياضات ══ */}
           {(wod || todayHyrox.length > 0 || todayKettlebell.length > 0 || todayCalisthenics.length > 0) && (
             <div className="space-y-3">
-              <h2 className="text-sm font-semibold text-gray-400">📅 تمارين اليوم</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-gray-400">📅 تمارين اليوم</h2>
+                <button onClick={() => setShowCalendar(true)}
+                  className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-400 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-colors shadow-sm">
+                  📅 تقويم التمارين
+                </button>
+              </div>
 
               {/* Sport tabs */}
               <div className="grid grid-cols-4 gap-1 bg-gray-900 p-1 rounded-2xl border border-gray-800 w-full">
@@ -885,21 +893,32 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
           {/* WOD — CrossFit (يظهر فقط عند تبويب CrossFit) */}
           {wod && sportTab === 'crossfit' ? (
             <div className="space-y-4">
-              <div className="bg-gradient-to-l from-orange-900/30 to-gray-900 rounded-2xl p-4 border border-orange-800/50">
-                <div className="flex items-center justify-between mb-1">
-                  <h2 className="text-lg font-bold text-orange-400">🔥 تمرين اليوم</h2>
-                  <div className="flex items-center gap-2 flex-wrap justify-end">
-                    <span className="text-xs bg-orange-500/20 text-orange-300 px-3 py-1 rounded-full border border-orange-700">{wod.type}</span>
-                    {wod.duration && <span className="text-xs text-gray-400">⏱ {wod.duration} دقيقة</span>}
-                    {wod.rounds && <span className="text-xs text-gray-400">🔄 {wod.rounds} جولات</span>}
-                  </div>
+              <div className="bg-orange-600 rounded-2xl p-4 shadow-lg shadow-orange-200">
+                <h2 className="text-xl font-extrabold text-white mb-2">🔥 تمرين اليوم</h2>
+                <div className="text-white font-bold text-lg leading-snug mb-3">{wod.titleEn || wod.title}</div>
+
+                {/* شارات واضحة: نوع التمرين + الوقت/التايم كاب + الجولات */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="bg-white/20 text-white text-sm font-bold px-3 py-1.5 rounded-full">
+                    {formatMeta(wod.type).icon} {wod.type}
+                  </span>
+                  {wod.duration && formatMeta(wod.type).timeLabel && (
+                    <span className="bg-white/20 text-white text-sm font-semibold px-3 py-1.5 rounded-full">
+                      ⏱ {formatMeta(wod.type).timeLabel}: {wod.duration} دقيقة
+                    </span>
+                  )}
+                  {wod.rounds && (
+                    <span className="bg-white/20 text-white text-sm font-semibold px-3 py-1.5 rounded-full">
+                      🔄 الجولات: {wod.rounds}
+                    </span>
+                  )}
                 </div>
-                <div className="text-white font-semibold">{wod.titleEn || wod.title}</div>
+
                 {wod.notes && (
-                  <div className="mt-2 text-xs text-yellow-400 bg-yellow-900/20 rounded-lg px-3 py-2">💡 {wod.notes}</div>
+                  <div className="mt-3 text-sm text-white bg-white/15 rounded-xl px-3 py-2.5 leading-relaxed">💡 {wod.notes}</div>
                 )}
                 {wod.aiTheme && (
-                  <div className="mt-2 text-xs text-purple-300 bg-purple-900/20 rounded-lg px-3 py-2">🤖 {wod.aiTheme}</div>
+                  <div className="mt-2 text-sm rounded-xl px-3 py-2.5 leading-relaxed" style={{ color: 'rgba(255,255,255,0.9)', backgroundColor: 'rgba(255,255,255,0.1)' }}>🤖 {wod.aiTheme}</div>
                 )}
               </div>
 
@@ -1159,6 +1178,8 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
           ) : null}
         </div>
       </main>
+
+      {showCalendar && <WodCalendar onClose={() => setShowCalendar(false)} />}
     </div>
   );
 }

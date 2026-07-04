@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getWods, getWodByDate, upsertWod, deleteWodById, getExercises } from '@/lib/db';
+import { getWods, getWodByDate, getWodsByMonth, upsertWod, deleteWodById, getExercises } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
 function generateId() {
@@ -7,8 +7,12 @@ function generateId() {
 }
 
 export async function GET(req: NextRequest) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
+
   const { searchParams } = new URL(req.url);
   const date = searchParams.get('date');
+  const month = searchParams.get('month');
 
   if (date) {
     const wod = await getWodByDate(date);
@@ -26,6 +30,15 @@ export async function GET(req: NextRequest) {
       accessory: enrich(wod.accessory || []),
       cooldown:  enrich(wod.cooldown  || []),
     });
+  }
+
+  if (month) {
+    const wods = await getWodsByMonth(month);
+    return NextResponse.json(wods.map(w => ({
+      date: w.date, title: w.title, titleEn: w.titleEn || '', type: w.type,
+      duration: w.duration ?? null, isRest: (w as any).isRest || false,
+      isCalisthenics: w.isCalisthenics || false,
+    })));
   }
 
   const wods = await getWods();
