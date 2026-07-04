@@ -326,10 +326,13 @@ export default function Navbar({ member }: {
     <>
       {/* ===== Impersonation Banner ===== */}
       {impersonationBanner && (
-        <div className="fixed top-0 inset-x-0 z-50 bg-indigo-700 text-white text-xs py-1.5 px-3 flex items-center justify-between gap-2">
+        <div
+          className="fixed top-0 inset-x-0 z-50 bg-indigo-700 text-white text-xs px-3 flex items-center justify-between gap-2"
+          style={{ paddingTop: 'max(0.4rem, env(safe-area-inset-top))', paddingBottom: '0.4rem' }}
+        >
           <button
             onClick={restoreAdmin}
-            className="flex-shrink-0 bg-white text-indigo-700 font-bold text-[11px] px-2.5 py-1 rounded-full hover:bg-indigo-50 transition-colors whitespace-nowrap"
+            className="flex-shrink-0 bg-white text-indigo-700 font-bold text-[11px] px-3 py-1.5 rounded-full hover:bg-indigo-50 active:scale-95 transition-all whitespace-nowrap"
           >← الإدارة</button>
           <span className="truncate text-center flex-1">🎭 <strong className="font-bold">{member.nameAr}</strong></span>
         </div>
