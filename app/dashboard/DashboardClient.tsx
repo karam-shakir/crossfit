@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import ExerciseCard from '@/components/ExerciseCard';
 import WodCalendar, { formatMeta } from '@/components/WodCalendar';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const YOUTUBE_LINKS: Record<string, string> = {
   'back-squat':       'https://www.youtube.com/results?search_query=back+squat+crossfit+tutorial',

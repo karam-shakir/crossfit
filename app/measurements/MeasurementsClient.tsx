@@ -1,8 +1,14 @@
 ﻿'use client';
 import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+
+// تحميل كسول لمكتبة recharts (~100kB) — لا تُحمَّل إلا عند عرض هذا القسم فعلياً
+const MeasurementTrendChart = dynamic(() => import('@/components/charts/MeasurementTrendChart'), {
+  ssr: false,
+  loading: () => <div className="h-[170px] bg-gray-800/40 rounded-xl animate-pulse" />,
+});
 
 const FIELDS = [
   { key: 'weight',   label: 'الوزن (كجم)',     icon: '⚖️', lowerIsBetter: true  },
@@ -16,76 +22,6 @@ const FIELDS = [
   { key: 'thigh',    label: 'الفخذ (سم)',         icon: '🦵', lowerIsBetter: false },
 ];
 
-function FullChart({ data, color = '#f97316', label = '' }: { data: { date: string; value: number }[]; color?: string; label?: string }) {
-  if (data.length < 2) return null;
-  const values = data.map(d => d.value);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
-  const W = 400, H = 160, PL = 44, PR = 12, PT = 16, PB = 36;
-  const iW = W - PL - PR, iH = H - PT - PB;
-
-  const px = (i: number) => PL + (i / (data.length - 1)) * iW;
-  const py = (v: number) => PT + ((max - v) / range) * iH;
-
-  const points = data.map((d, i) => `${px(i)},${py(d.value)}`).join(' ');
-  const area = `M ${px(0)},${py(data[0].value)} ` +
-    data.slice(1).map((d, i) => `L ${px(i + 1)},${py(d.value)}`).join(' ') +
-    ` L ${px(data.length - 1)},${PT + iH} L ${PL},${PT + iH} Z`;
-
-  // Y-axis ticks
-  const ticks = 4;
-  const yTicks = Array.from({ length: ticks + 1 }, (_, i) => min + (range / ticks) * i);
-
-  // X-axis labels: show max 5
-  const xStep = Math.ceil(data.length / 5);
-  const xLabels = data.filter((_, i) => i % xStep === 0 || i === data.length - 1);
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: '160px' }}>
-      <defs>
-        <linearGradient id={`grad-${label}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.3" />
-          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
-        </linearGradient>
-      </defs>
-      {/* Grid lines */}
-      {yTicks.map((t, i) => (
-        <g key={i}>
-          <line x1={PL} y1={py(t)} x2={W - PR} y2={py(t)} stroke="#374151" strokeWidth="1" strokeDasharray="3,3" />
-          <text x={PL - 4} y={py(t) + 4} textAnchor="end" fontSize="9" fill="#6b7280">{t.toFixed(1)}</text>
-        </g>
-      ))}
-      {/* Area fill */}
-      <path d={area} fill={`url(#grad-${label})`} />
-      {/* Line */}
-      <polyline points={points} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      {/* Data points + value labels */}
-      {data.map((d, i) => (
-        <g key={i}>
-          <circle cx={px(i)} cy={py(d.value)} r="4" fill={color} stroke="#111827" strokeWidth="2" />
-          {(i === 0 || i === data.length - 1 || data.length <= 6) && (
-            <text x={px(i)} y={py(d.value) - 8} textAnchor="middle" fontSize="9" fill={color} fontWeight="bold">
-              {d.value}
-            </text>
-          )}
-        </g>
-      ))}
-      {/* X-axis labels */}
-      {xLabels.map((d, i) => {
-        const idx = data.indexOf(d);
-        const parts = d.date.split('-');
-        return (
-          <text key={i} x={px(idx)} y={H - 6} textAnchor="middle" fontSize="8" fill="#6b7280">
-            {parts[2]}/{parts[1]}
-          </text>
-        );
-      })}
-      {/* X axis line */}
-      <line x1={PL} y1={PT + iH} x2={W - PR} y2={PT + iH} stroke="#374151" strokeWidth="1" />
-    </svg>
-  );
-}
 
 export default function MeasurementsClient({ member }: { member: any }) {
   const [records, setRecords] = useState<any[]>([]);
@@ -249,25 +185,10 @@ export default function MeasurementsClient({ member }: { member: any }) {
                     const displayData = chartData.map(d => ({ ...d, date: d.date.slice(5) }));
                     return (
                       <div className="bg-gray-800/40 rounded-xl p-3 space-y-3">
-                        <ResponsiveContainer width="100%" height={170}>
-                          <LineChart data={displayData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                            <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 10 }} tickLine={false} axisLine={false} />
-                            <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
-                            <Tooltip content={({ active, payload, label }) => active && payload?.length ? (
-                              <div className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-xs shadow-xl">
-                                <div className="text-gray-400 mb-1">{label}</div>
-                                <div style={{ color: chartColor }} className="font-bold text-sm">
-                                  {payload[0]?.value} {chartField_info?.label.match(/\(([^)]+)\)/)?.[1] || ''}
-                                </div>
-                              </div>
-                            ) : null} />
-                            <ReferenceLine y={bestVal} stroke="#22c55e" strokeDasharray="4 2" strokeWidth={1.5} />
-                            <Line type="monotone" dataKey="value" stroke={chartColor} strokeWidth={2.5}
-                              dot={{ fill: chartColor, r: 4, strokeWidth: 2, stroke: '#111827' }}
-                              activeDot={{ r: 6 }} />
-                          </LineChart>
-                        </ResponsiveContainer>
+                        <MeasurementTrendChart
+                          data={displayData} color={chartColor} bestVal={bestVal}
+                          unitLabel={chartField_info?.label.match(/\(([^)]+)\)/)?.[1] || ''}
+                        />
                         <div className="grid grid-cols-3 gap-2 text-center text-xs pt-2 border-t border-gray-700">
                           <div>
                             <div className="text-gray-500">أدنى</div>

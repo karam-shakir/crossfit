@@ -1,9 +1,15 @@
 ﻿'use client';
 import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import ExerciseCard from '@/components/ExerciseCard';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+
+// تحميل كسول لمكتبة recharts (~100kB) — لا تُحمَّل إلا عند عرض هذا القسم فعلياً
+const BenchmarkProgressChart = dynamic(() => import('@/components/charts/BenchmarkProgressChart'), {
+  ssr: false,
+  loading: () => <div className="h-[140px] bg-gray-800/40 rounded-xl animate-pulse" />,
+});
 
 // تحويل نتيجة نصية إلى رقم للرسم البياني
 function parseResult(result: string): number | null {
@@ -193,27 +199,10 @@ export default function BenchmarksClient({ member }: { member: any }) {
                               <div className="text-xs text-gray-400 mb-2">
                                 📈 تطور الأداء {isTime ? '(أقل وقت = أفضل)' : '(أعلى = أفضل)'}
                               </div>
-                              <ResponsiveContainer width="100%" height={140}>
-                                <LineChart data={parsed.map((r: any) => ({ date: r.date.slice(5), value: r.numVal, result: r.result }))}
-                                  margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-                                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                                  <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 9 }} tickLine={false} axisLine={false} />
-                                  <YAxis tick={{ fill: '#6b7280', fontSize: 9 }} tickLine={false} axisLine={false}
-                                    domain={['auto', 'auto']} tickFormatter={v => formatVal(v, isTime)} />
-                                  <Tooltip content={({ active, payload }) => active && payload?.length ? (
-                                    <div className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-xs shadow-xl">
-                                      <div className="text-orange-400 font-bold">{payload[0]?.payload?.result}</div>
-                                      {payload[0]?.payload?.result === formatVal(bestVal, isTime) && (
-                                        <div className="text-green-400 text-xs">🏆 أفضل نتيجة</div>
-                                      )}
-                                    </div>
-                                  ) : null} />
-                                  <ReferenceLine y={bestVal} stroke="#22c55e" strokeDasharray="4 2" strokeWidth={1.5} label={{ value: '🏆', position: 'right', fontSize: 10 }} />
-                                  <Line type="monotone" dataKey="value" stroke="#f97316" strokeWidth={2.5}
-                                    dot={{ fill: '#f97316', r: 4, strokeWidth: 2, stroke: '#1f2937' }}
-                                    activeDot={{ r: 6 }} />
-                                </LineChart>
-                              </ResponsiveContainer>
+                              <BenchmarkProgressChart
+                                data={parsed.map((r: any) => ({ date: r.date.slice(5), value: r.numVal, result: r.result }))}
+                                bestVal={bestVal} isTime={isTime}
+                              />
                             </div>
                           )}
 

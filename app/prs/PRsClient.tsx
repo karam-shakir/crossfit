@@ -1,11 +1,14 @@
 ﻿'use client';
 import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, ReferenceLine,
-} from 'recharts';
+
+// تحميل كسول لمكتبة recharts (~100kB) — لا تُحمَّل إلا عند عرض هذا القسم فعلياً
+const PRHistoryChart = dynamic(() => import('@/components/charts/PRHistoryChart'), {
+  ssr: false,
+  loading: () => <div className="h-[160px] bg-gray-800/40 rounded-xl animate-pulse" />,
+});
 
 const UNITS = [
   { value: 'kg', label: 'كيلو (وزن)' },
@@ -49,17 +52,6 @@ export default function PRsClient({ member, exercises }: { member: any; exercise
   }
 
   const [expandedChart, setExpandedChart] = useState<string | null>(null);
-
-  // رسم بياني مخصص للـ tooltip
-  function CustomTooltip({ active, payload, label }: any) {
-    if (!active || !payload?.length) return null;
-    return (
-      <div className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-xs shadow-xl">
-        <div className="text-gray-400 mb-1">{label}</div>
-        <div className="text-orange-400 font-bold text-sm">{payload[0]?.value} {payload[0]?.payload?.unit}</div>
-      </div>
-    );
-  }
 
   // Group PRs by exercise, keep best per exercise
   const bestPRs = exercises.map(ex => {
@@ -208,19 +200,7 @@ export default function PRsClient({ member, exercises }: { member: any; exercise
 
                         return (
                           <div className="px-2 pb-3 card-open">
-                            <ResponsiveContainer width="100%" height={160}>
-                              <LineChart data={chartData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                                <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 10 }} tickLine={false} axisLine={false} />
-                                <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} tickLine={false} axisLine={false}
-                                  domain={['auto', 'auto']} />
-                                <Tooltip content={<CustomTooltip />} />
-                                <ReferenceLine y={bestVal} stroke="#22c55e" strokeDasharray="4 2" strokeWidth={1.5} />
-                                <Line type="monotone" dataKey="value" stroke="#f97316" strokeWidth={2.5}
-                                  dot={{ fill: '#f97316', r: 4, strokeWidth: 2, stroke: '#111827' }}
-                                  activeDot={{ r: 6, fill: '#fb923c' }} />
-                              </LineChart>
-                            </ResponsiveContainer>
+                            <PRHistoryChart data={chartData} bestVal={bestVal} />
                             <div className="flex justify-between px-2 text-xs text-gray-600 mt-1">
                               <span>أقدم</span>
                               <span className="text-green-500">— أفضل رقم</span>

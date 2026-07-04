@@ -27,7 +27,7 @@ export default function AppleIcon() {
             borderRadius: '50%',
           }}
         >
-          <span style={{ color: 'white', fontSize: 90, fontWeight: 'bold' }}>م</span>
+          <div style={{ width: '46%', height: '18%', background: '#fdba74', borderRadius: 999 }} />
         </div>
       </div>
     ),
