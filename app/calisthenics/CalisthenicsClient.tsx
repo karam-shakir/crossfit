@@ -1,7 +1,29 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+
+const CalisthenicsProgressChart = dynamic(() => import('@/components/charts/CalisthenicsProgressChart'), {
+  ssr: false,
+  loading: () => <div className="h-[150px] bg-slate-50 rounded-xl animate-pulse" />,
+});
+
+// مفتاح ثابت لمطابقة السجل عبر الأسابيع — يفضّل exerciseKey القادم من الـ AI، وإلا يُطبَّع من nameEn (توافق مع الجلسات القديمة)
+function getExerciseKey(ex: any): string {
+  if (ex.exerciseKey) return ex.exerciseKey;
+  return (ex.nameEn || ex.name || 'exercise').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+// يستخرج رقماً تمثيلياً من نص حر: مدة ثبات بالثواني إن وُجدت، وإلا أعلى رقم تكرار (نطاق مثل 8-12 يُقرأ 12)
+function parseRepsOrHold(s: string | undefined): { value: number; unit: string } | null {
+  if (!s) return null;
+  const secMatch = s.match(/(\d+)\s*ث/);
+  if (secMatch) return { value: parseInt(secMatch[1]), unit: 'ثانية' };
+  const nums = s.match(/\d+/g);
+  if (nums?.length) return { value: parseInt(nums[nums.length - 1]), unit: 'تكرار' };
+  return null;
+}
 
 type LevelKey = 'beginner' | 'intermediate' | 'advanced' | 'elite';
 
@@ -66,8 +88,66 @@ function ChevronIcon({ open }: { open: boolean }) {
   );
 }
 
-function ExerciseCard({ ex, level, index, isSkill }: { ex: any; level: LevelKey; index: number; isSkill?: boolean }) {
+function ExerciseCard({
+  ex, level, index, isSkill, sessionDate, existingLog, exerciseLogs, onLogged, onUnlogged,
+}: {
+  ex: any; level: LevelKey; index: number; isSkill?: boolean; sessionDate: string;
+  existingLog?: any; exerciseLogs: any[];
+  onLogged: (log: any) => void; onUnlogged: (date: string, exerciseKey: string) => void;
+}) {
   const lvl = ex.levels?.[level];
+  const exerciseKey = getExerciseKey(ex);
+  const [expanded, setExpanded] = useState(false);
+  const [manualMode, setManualMode] = useState<'easier' | 'harder' | null>(null);
+  const [manualVariation, setManualVariation] = useState('');
+  const [manualReps, setManualReps] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [showTrend, setShowTrend] = useState(false);
+
+  async function submitLog(comparison: 'as_suggested' | 'easier' | 'harder', actualVariation?: string, actualReps?: string) {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/calisthenics/exercise-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: sessionDate, exerciseKey, level,
+          movementType: ex.type, isSkillWork: !!isSkill,
+          suggestedVariation: lvl?.variation || '', suggestedReps: lvl?.reps || '',
+          actualVariation, actualReps, comparison,
+        }),
+      });
+      if (res.ok) {
+        const log = await res.json();
+        onLogged(log);
+        setExpanded(false); setManualMode(null); setManualVariation(''); setManualReps('');
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function unlog() {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/calisthenics/exercise-log?date=${sessionDate}&exerciseKey=${exerciseKey}`, { method: 'DELETE' });
+      if (res.ok) onUnlogged(sessionDate, exerciseKey);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const trendData = useMemo(() => {
+    return [...exerciseLogs]
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(l => {
+        const parsed = parseRepsOrHold(l.actualReps);
+        return parsed ? { date: l.date.slice(5), value: parsed.value, unit: parsed.unit, variation: l.actualVariation } : null;
+      })
+      .filter((d): d is { date: string; value: number; unit: string; variation: string } => d !== null);
+  }, [exerciseLogs]);
+  const trendUnit = trendData[trendData.length - 1]?.unit || 'تكرار';
+
   return (
     <div className={`bg-white rounded-2xl overflow-hidden border shadow-sm ${isSkill ? 'border-violet-200' : 'border-slate-200'}`}>
       <div className="px-3.5 py-3 flex items-start gap-3">
@@ -75,8 +155,18 @@ function ExerciseCard({ ex, level, index, isSkill }: { ex: any; level: LevelKey;
           {isSkill ? '🤸' : index + 1}
         </span>
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-slate-800 text-[15px] leading-tight">{ex.name}</div>
-          <div className="text-xs text-slate-500 mt-0.5" dir="ltr">{ex.nameEn}</div>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="font-bold text-slate-800 text-[15px] leading-tight">{ex.name}</div>
+              <div className="text-xs text-slate-500 mt-0.5" dir="ltr">{ex.nameEn}</div>
+            </div>
+            {trendData.length >= 2 && (
+              <button onClick={() => setShowTrend(t => !t)}
+                className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${showTrend ? 'bg-violet-600 text-white' : 'bg-violet-100 text-violet-700 hover:bg-violet-200'}`}>
+                📈 تطوري
+              </button>
+            )}
+          </div>
           <div className="flex items-center gap-1.5 mt-2 flex-wrap">
             {ex.targetMuscles && (
               <span className="text-xs bg-slate-100 border border-slate-300 text-slate-700 px-2 py-0.5 rounded-lg font-medium">
@@ -91,6 +181,14 @@ function ExerciseCard({ ex, level, index, isSkill }: { ex: any; level: LevelKey;
           </div>
         </div>
       </div>
+
+      {/* Progress trend */}
+      {showTrend && trendData.length >= 2 && (
+        <div className="mx-3 mb-3 rounded-xl bg-violet-50/50 border border-violet-200 p-3">
+          <div className="text-xs text-violet-700 font-bold mb-2">📈 {trendUnit === 'ثانية' ? 'مدة الثبات' : 'التكرارات'} الفعلية عبر الوقت</div>
+          <CalisthenicsProgressChart data={trendData} unitLabel={trendUnit} />
+        </div>
+      )}
 
       {lvl && (
         <div className="mx-3 mb-3 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden">
@@ -115,6 +213,65 @@ function ExerciseCard({ ex, level, index, isSkill }: { ex: any; level: LevelKey;
               <span className="text-[13px] text-amber-800 leading-relaxed font-medium">{lvl.cue}</span>
             </div>
           )}
+
+          {/* توثيق الإنجاز الفعلي — اختياري */}
+          <div className="border-t border-slate-200 p-3">
+            {existingLog ? (
+              <div className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 border ${
+                existingLog.comparison === 'harder' ? 'bg-emerald-50 border-emerald-200' :
+                existingLog.comparison === 'easier' ? 'bg-amber-50 border-amber-200' :
+                'bg-slate-50 border-slate-200'
+              }`}>
+                <button onClick={unlog} disabled={saving}
+                  className="text-slate-400 hover:text-red-500 text-xs font-bold px-1.5 flex-shrink-0">✕</button>
+                <div className="text-right flex-1 min-w-0">
+                  <span className={`text-sm font-bold ${
+                    existingLog.comparison === 'harder' ? 'text-emerald-700' :
+                    existingLog.comparison === 'easier' ? 'text-amber-700' : 'text-slate-700'
+                  }`}>
+                    ✅ أنجزت — {existingLog.actualVariation} ({existingLog.actualReps})
+                  </span>
+                  {existingLog.comparison === 'harder' && <span className="text-emerald-600 text-xs mr-2">⬆ أصعب من المقترح</span>}
+                  {existingLog.comparison === 'easier' && <span className="text-amber-600 text-xs mr-2">⬇ أسهل من المقترح</span>}
+                </div>
+              </div>
+            ) : !expanded ? (
+              <button onClick={() => setExpanded(true)}
+                className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 text-slate-500 text-sm font-semibold hover:border-violet-400 hover:text-violet-600 transition-all">
+                ✅ سجّل إنجازك (اختياري)
+              </button>
+            ) : (
+              <div className="space-y-2">
+                <div className="grid grid-cols-3 gap-2">
+                  <button onClick={() => setManualMode('easier')} disabled={saving}
+                    className={`py-2 rounded-xl border text-sm font-bold transition-all ${manualMode === 'easier' ? 'bg-amber-500 text-white border-transparent' : 'bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100'}`}>
+                    ⬇ أسهل
+                  </button>
+                  <button onClick={() => submitLog('as_suggested', lvl.variation, lvl.reps)} disabled={saving}
+                    className="py-2 rounded-xl border bg-slate-100 border-slate-300 text-slate-700 text-sm font-bold hover:bg-slate-200 transition-all">
+                    = كما هو مقترح
+                  </button>
+                  <button onClick={() => setManualMode('harder')} disabled={saving}
+                    className={`py-2 rounded-xl border text-sm font-bold transition-all ${manualMode === 'harder' ? 'bg-emerald-600 text-white border-transparent' : 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100'}`}>
+                    ⬆ أصعب
+                  </button>
+                </div>
+                {manualMode && (
+                  <div className="flex gap-2 items-center">
+                    <input value={manualVariation} onChange={e => setManualVariation(e.target.value)} placeholder="التدرّج الفعلي (مثال: ضغط عادي)"
+                      className="flex-1 min-w-0 bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-violet-400" />
+                    <input value={manualReps} onChange={e => setManualReps(e.target.value)} placeholder={isSkill ? 'مدة الثبات' : 'التكرار الفعلي'}
+                      className="flex-1 min-w-0 bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-violet-400" />
+                    <button onClick={() => submitLog(manualMode, manualVariation, manualReps)} disabled={saving || !manualVariation}
+                      className="flex-shrink-0 px-3 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:bg-slate-300 text-white text-sm font-bold">
+                      حفظ
+                    </button>
+                  </div>
+                )}
+                <button onClick={() => { setExpanded(false); setManualMode(null); }} className="text-xs text-slate-400 hover:text-slate-600">إلغاء</button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -127,11 +284,52 @@ function ExerciseCard({ ex, level, index, isSkill }: { ex: any; level: LevelKey;
   );
 }
 
-function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
+function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
+  s: any; isToday: boolean; logs: any[];
+  onLogged: (log: any) => void; onUnlogged: (date: string, exerciseKey: string) => void;
+}) {
   const [open, setOpen] = useState(isToday && !s.isRest);
   const [level, setLevel] = useState<LevelKey>('intermediate');
+  const [bulkSaving, setBulkSaving] = useState(false);
   const isRest = s.isRest;
   const theme = TYPE_THEME[s.sessionType] || TYPE_THEME['FullBody'];
+
+  const logsByKey = useMemo(() => {
+    const map: Record<string, any> = {};
+    logs.forEach(l => { map[`${l.date}__${l.exerciseKey}`] = l; });
+    return map;
+  }, [logs]);
+  const logsByExercise = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    logs.forEach(l => { (map[l.exerciseKey] ||= []).push(l); });
+    return map;
+  }, [logs]);
+
+  const allSessionExercises = [...(s.skillWork || []).map((ex: any) => ({ ...ex, isSkill: true })), ...(s.exercises || [])];
+  const unloggedExercises = allSessionExercises.filter((ex: any) => !logsByKey[`${s.date}__${getExerciseKey(ex)}`] && ex.levels?.[level]);
+
+  async function markAllSuggested() {
+    setBulkSaving(true);
+    try {
+      for (const ex of unloggedExercises) {
+        const lvl = ex.levels[level];
+        const res = await fetch('/api/calisthenics/exercise-log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            date: s.date, exerciseKey: getExerciseKey(ex), level,
+            movementType: ex.type, isSkillWork: !!ex.isSkill,
+            suggestedVariation: lvl.variation, suggestedReps: lvl.reps,
+            actualVariation: lvl.variation, actualReps: lvl.reps,
+            comparison: 'as_suggested',
+          }),
+        });
+        if (res.ok) onLogged(await res.json());
+      }
+    } finally {
+      setBulkSaving(false);
+    }
+  }
 
   return (
     <div className={`rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-white ${isToday ? 'ring-2 ring-emerald-400 ring-offset-1' : ''}`}>
@@ -240,6 +438,15 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
             </div>
           )}
 
+          {unloggedExercises.length > 0 && (
+            <div className="flex justify-end">
+              <button onClick={markAllSuggested} disabled={bulkSaving}
+                className="text-xs font-bold bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 px-3 py-1.5 rounded-full transition-all disabled:opacity-50">
+                {bulkSaving ? '⏳ جارٍ الحفظ...' : '✅ أنجزت الكل بالمقترح'}
+              </button>
+            </div>
+          )}
+
           {/* Skill Work */}
           {s.skillWork?.length > 0 && (
             <div>
@@ -250,7 +457,12 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
               </h4>
               <div className="space-y-3">
                 {s.skillWork.map((ex: any, i: number) => (
-                  <ExerciseCard key={i} ex={ex} level={level} index={i} isSkill />
+                  <ExerciseCard key={i} ex={ex} level={level} index={i} isSkill
+                    sessionDate={s.date}
+                    existingLog={logsByKey[`${s.date}__${getExerciseKey(ex)}`]}
+                    exerciseLogs={logsByExercise[getExerciseKey(ex)] || []}
+                    onLogged={onLogged} onUnlogged={onUnlogged}
+                  />
                 ))}
               </div>
             </div>
@@ -268,7 +480,12 @@ function SessionCard({ s, isToday }: { s: any; isToday: boolean }) {
               </h4>
               <div className="space-y-3">
                 {s.exercises.map((ex: any, i: number) => (
-                  <ExerciseCard key={i} ex={ex} level={level} index={i} />
+                  <ExerciseCard key={i} ex={ex} level={level} index={i}
+                    sessionDate={s.date}
+                    existingLog={logsByKey[`${s.date}__${getExerciseKey(ex)}`]}
+                    exerciseLogs={logsByExercise[getExerciseKey(ex)] || []}
+                    onLogged={onLogged} onUnlogged={onUnlogged}
+                  />
                 ))}
               </div>
             </div>
@@ -320,6 +537,18 @@ export default function CalisthenicsClient({ member, profile, sessions }: { memb
 
   const totalExercises = currentSessions.reduce((n, s) => n + (s.exercises?.length || 0) + (s.skillWork?.length || 0), 0);
   const trainDays = currentSessions.filter(s => !s.isRest).length;
+
+  // توثيق الإنجاز الفعلي — اختياري بالكامل
+  const [logs, setLogs] = useState<any[]>([]);
+  useEffect(() => {
+    fetch('/api/calisthenics/exercise-log').then(r => r.json()).then(d => setLogs(Array.isArray(d) ? d : [])).catch(() => {});
+  }, []);
+  function handleLogged(log: any) {
+    setLogs(prev => [log, ...prev.filter(l => !(l.date === log.date && l.exerciseKey === log.exerciseKey))]);
+  }
+  function handleUnlogged(date: string, exerciseKey: string) {
+    setLogs(prev => prev.filter(l => !(l.date === date && l.exerciseKey === exerciseKey)));
+  }
 
   if (!profile) {
     return (
@@ -423,7 +652,8 @@ export default function CalisthenicsClient({ member, profile, sessions }: { memb
               {/* Sessions */}
               <div className="space-y-3">
                 {currentSessions.map((s: any) => (
-                  <SessionCard key={s.id || s.date} s={s} isToday={s.date === today} />
+                  <SessionCard key={s.id || s.date} s={s} isToday={s.date === today}
+                    logs={logs} onLogged={handleLogged} onUnlogged={handleUnlogged} />
                 ))}
               </div>
             </>

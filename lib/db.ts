@@ -859,6 +859,7 @@ export interface CaliExerciseLevel {
 export interface CaliExercise {
   name: string;                // الاسم بالعربية
   nameEn: string;
+  exerciseKey?: string;        // مفتاح ثابت من كتالوج معروف (مثال: 'push-up') — لمطابقة السجل عبر الأسابيع رغم اختلاف صياغة الاسم
   targetMuscles: string;
   type: string;                // push | pull | legs | core | skill | conditioning
   sets: number;
@@ -914,4 +915,49 @@ export async function upsertCaliProgramSession(session: CaliProgramSession): Pro
 export async function deleteCaliProgramSessionsByMember(memberId: string, fromDate: string, toDate: string): Promise<void> {
   const db = await getDb();
   await db.collection('calisthenics_programs').deleteMany({ memberId, date: { $gte: fromDate, $lte: toDate } });
+}
+
+// ===================== CALISTHENICS EXERCISE LOGS (توثيق الإنجاز الفعلي) =====================
+// عملة التقدم هنا هي التدرّج (Variation) لا الوزن — العضو يسجّل أي تدرّج أدّى فعلاً
+// وكم تكرار/مدة ثبات حقّق فيه، ما يغذّي البرومت بتصاعد حقيقي مبني على أدائه الفعلي.
+
+export interface CalisthenicsExerciseLog {
+  id: string;
+  memberId: string;
+  date: string;
+  exerciseKey: string;           // من الكتالوج الثابت (أو نسخة مُطبَّعة من nameEn للجلسات القديمة)
+  level: 'beginner' | 'intermediate' | 'advanced' | 'elite';
+  movementType: string;          // push | pull | legs | core | skill | conditioning — لتحليل المستوى الفعلي لكل نمط حركة
+  isSkillWork: boolean;
+  suggestedVariation: string;
+  suggestedReps: string;         // نص حر: تكرار أو مدة ثبات كما هو معروض
+  actualVariation: string;
+  actualReps: string;
+  comparison: 'as_suggested' | 'easier' | 'harder';
+  createdAt: string;
+}
+
+export async function upsertCalisthenicsExerciseLog(log: CalisthenicsExerciseLog): Promise<CalisthenicsExerciseLog> {
+  const db = await getDb();
+  await db.collection('calisthenics_exercise_logs').replaceOne(
+    { memberId: log.memberId, date: log.date, exerciseKey: log.exerciseKey },
+    log,
+    { upsert: true }
+  );
+  return log;
+}
+
+export async function getCalisthenicsExerciseLogs(memberId: string, limit = 300): Promise<CalisthenicsExerciseLog[]> {
+  const db = await getDb();
+  const docs = await db.collection('calisthenics_exercise_logs')
+    .find({ memberId })
+    .sort({ date: -1 })
+    .limit(limit)
+    .toArray();
+  return stripAll<CalisthenicsExerciseLog>(docs);
+}
+
+export async function deleteCalisthenicsExerciseLog(memberId: string, date: string, exerciseKey: string): Promise<void> {
+  const db = await getDb();
+  await db.collection('calisthenics_exercise_logs').deleteOne({ memberId, date, exerciseKey });
 }

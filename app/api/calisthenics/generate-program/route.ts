@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
-import { getCalisthenicsProfile, getCaliProgramSessions, getMemberById, upsertCaliProgramSession, deleteCaliProgramSessionsByMember } from '@/lib/db';
+import { getCalisthenicsProfile, getCaliProgramSessions, getMemberById, upsertCaliProgramSession, deleteCaliProgramSessionsByMember, getCalisthenicsExerciseLogs } from '@/lib/db';
 import { todaySA } from '@/lib/timezone';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+// كتالوج مفاتيح ثابتة للتمارين — يُستخدم لمطابقة سجل الإنجاز الفعلي عبر الأسابيع
+// رغم اختلاف صياغة الاسم الحر الذي يولّده النموذج كل مرة
+const EXERCISE_KEY_CATALOG = [
+  'push-up', 'incline-push-up', 'decline-push-up', 'archer-push-up', 'pseudo-planche-push-up', 'diamond-push-up',
+  'dip', 'ring-dip', 'pike-push-up', 'handstand-push-up',
+  'pull-up', 'chin-up', 'wide-pull-up', 'archer-pull-up', 'australian-row', 'ring-row', 'muscle-up',
+  'air-squat', 'pistol-squat', 'bulgarian-split-squat', 'lunge', 'jump-squat', 'nordic-curl', 'calf-raise', 'glute-bridge', 'hip-thrust',
+  'plank', 'side-plank', 'hollow-hold', 'l-sit', 'dragon-flag', 'hanging-leg-raise', 'v-up', 'russian-twist',
+  'handstand', 'handstand-walk', 'front-lever', 'back-lever', 'planche', 'human-flag', 'muscle-up-transition',
+  'burpee', 'mountain-climber', 'jumping-jack',
+];
 
 const DAY_NAMES: Record<number, string> = {
   0: 'الأحد', 1: 'الاثنين', 2: 'الثلاثاء', 3: 'الأربعاء',
@@ -136,11 +148,52 @@ export async function POST(req: NextRequest) {
   const dates = buildDates(startDate, totalDays);
 
   const recentSessions = await getCaliProgramSessions(memberId);
+
+  // سجل الإنجاز الفعلي (اختياري من المتدرب) — يحل محل التدرّج المقترح كأساس حقيقي للتصاعد
+  const exerciseLogs = await getCalisthenicsExerciseLogs(memberId);
+  const logsByKey: Record<string, any> = {};
+  exerciseLogs.forEach(l => { logsByKey[`${l.date}__${l.exerciseKey}`] = l; });
+
+  function keyOf(e: any): string {
+    return e.exerciseKey || (e.nameEn || e.name || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+
   const recentTraining = recentSessions.slice(0, 7).map(s => ({
     date: s.date,
     type: s.sessionType,
-    exercises: (s.exercises || []).slice(0, 5).map((e: any) => e.nameEn).join(', '),
+    exercises: [...(s.skillWork || []), ...(s.exercises || [])].slice(0, 6).map((e: any) => {
+      const log = logsByKey[`${s.date}__${keyOf(e)}`];
+      if (log) return `${e.nameEn} (فعلي: ${log.actualVariation} — ${log.actualReps}${log.comparison !== 'as_suggested' ? ` — ${log.comparison === 'harder' ? 'أصعب من المقترح' : 'أسهل من المقترح'}` : ''})`;
+      return e.nameEn;
+    }).join(', '),
   }));
+
+  // تحليل ركود/جاهزية للترقية لكل تمرين — من آخر 3 تسجيلات فعلية، محسوب بالكود لا تخميناً
+  const logsByExerciseKey: Record<string, any[]> = {};
+  exerciseLogs.forEach(l => { (logsByExerciseKey[l.exerciseKey] ||= []).push(l); });
+
+  const stuckExercises: string[] = [];
+  const readyToProgressExercises: string[] = [];
+  Object.entries(logsByExerciseKey).forEach(([key, logs]) => {
+    const recent3 = [...logs].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
+    if (recent3.length < 3) return;
+    const sameVariationThroughout = new Set(recent3.map(l => l.actualVariation)).size === 1;
+    const noComparisonGain = recent3.every(l => l.comparison !== 'harder');
+    if (sameVariationThroughout && noComparisonGain) stuckExercises.push(key);
+    if (recent3.filter(l => l.comparison === 'harder').length >= 2) readyToProgressExercises.push(key);
+  });
+
+  // المستوى الفعلي لكل نمط حركة (Push/Pull/Legs/Core/Skill) — قد يختلف كلياً عن المستوى العام في البروفايل
+  const byMovementType: Record<string, any[]> = {};
+  exerciseLogs.forEach(l => { (byMovementType[l.movementType] ||= []).push(l); });
+  const movementTendency: string[] = [];
+  Object.entries(byMovementType).forEach(([type, logs]) => {
+    if (logs.length < 3) return;
+    const harderCount = logs.filter(l => l.comparison === 'harder').length;
+    const easierCount = logs.filter(l => l.comparison === 'easier').length;
+    if (harderCount / logs.length >= 0.5) movementTendency.push(`${type}: يؤدي فعلياً تدرجات أصعب من المستوى المسجَّل — عامله كمستوى أعلى في هذا النمط تحديداً`);
+    else if (easierCount / logs.length >= 0.5) movementTendency.push(`${type}: يحتاج تدرجات أسهل من المستوى المسجَّل — عامله كمستوى أقل في هذا النمط تحديداً`);
+  });
 
   const levelAr = { beginner: 'مبتدئ', intermediate: 'متوسط', advanced: 'متقدم', elite: 'نخبة' }[effective.level as string] || 'مبتدئ';
   const equipmentList = effective.equipment?.length ? effective.equipment.join('، ') : 'الحد الأدنى (أرض + جدار فقط)';
@@ -198,9 +251,14 @@ ${effective.skillGoals?.length ? `━━━━━━━━━━━━━━━�
 ضع Skill Work في بداية الجلسة (بعد الإحماء مباشرة) — الجهاز العصبي طازج. 10-20 دقيقة كحد أقصى.` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 جلسات الأسبوع السابق (تجنّب التكرار الممل)
+📊 جلسات الأسبوع السابق (فعلي إن سُجِّل، وإلا التدرّج المقترح كاحتياط)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${recentTraining.length ? recentTraining.map(s => `• ${s.date} | ${s.type} | ${s.exercises}`).join('\n') : 'لا توجد جلسات سابقة — هذا أول أسبوع. ابدأ بأسبوع تأسيسي لتعلم الحركات'}
+${movementTendency.length || stuckExercises.length || readyToProgressExercises.length ? `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 تحليل الالتزام الفعلي (محسوب من تسجيلات المتدرب الحقيقية)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${movementTendency.length ? `المستوى الفعلي لكل نمط حركة (اعتمده بدل المستوى العام حيث يوجد):\n${movementTendency.map(m => `⚠️ ${m}`).join('\n')}\n` : ''}${stuckExercises.length ? `⚠️ ركود مؤكد (نفس التدرّج بلا تحسّن في آخر 3 تسجيلات): ${stuckExercises.join(', ')}\n→ لا ترقّي هذه التمارين هذا الأسبوع — أضف حجماً داعماً أو ثباتاً إضافياً بدل تكرار نفس الشيء\n` : ''}${readyToProgressExercises.length ? `✅ جاهز للترقية (أدّى تدرّجاً أصعب مرتين من آخر 3 على الأقل): ${readyToProgressExercises.join(', ')}\n→ رقِّ هذا التمرين تحديداً للتدرّج التالي في سلسلته هذا الأسبوع، واذكرها صراحة في coachNote` : ''}` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📅 الأيام المطلوبة لهذا الأسبوع
@@ -231,6 +289,14 @@ ${dates.map(d => `• ${d.date} — ${d.dayName}`).join('\n')}
 ${effective.limitations ? `8. ⚠️ قيود صارمة: ${effective.limitations} — كيّف البرنامج بالكامل حولها` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔑 مفتاح التمرين الثابت (exerciseKey) — إجباري لكل تمرين
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+لكل عنصر في exercises وskillWork، أضف حقل "exerciseKey" يطابق أقرب حركة أساسية من هذه القائمة الثابتة
+(يُستخدم لاحقاً لمطابقة تسجيل إنجاز المتدرب عبر الأسابيع رغم اختلاف اسم العرض بالعربية):
+${EXERCISE_KEY_CATALOG.join(', ')}
+إن لم توجد مطابقة قريبة، استخدم أقرب حركة أساسية من نفس النمط (لا تخترع مفتاحاً جديداً).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 التنسيق المطلوب (JSON فقط)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -259,6 +325,7 @@ ${effective.limitations ? `8. ⚠️ قيود صارمة: ${effective.limitation
         {
           "name": "تدريب الوقوف على اليدين",
           "nameEn": "Handstand Practice",
+          "exerciseKey": "handstand",
           "targetMuscles": "الكتفين + الجذع + التوازن",
           "type": "skill",
           "sets": 5,
@@ -275,6 +342,7 @@ ${effective.limitations ? `8. ⚠️ قيود صارمة: ${effective.limitation
         {
           "name": "تمرين الضغط",
           "nameEn": "Push-up Progression",
+          "exerciseKey": "push-up",
           "targetMuscles": "الصدر + الكتف الأمامي + الترايسبس",
           "type": "push",
           "sets": 4,
@@ -312,14 +380,15 @@ ${effective.limitations ? `8. ⚠️ قيود صارمة: ${effective.limitation
       "coachNote": "العضلات تُبنى في الراحة — نم 7-9 ساعات."
     }
   ],
-  "weekSummary": "ملخص الأسبوع: توزيع أنماط الحركة وفلسفة التدرجات هذا الأسبوع",
-  "progressionNote": "خطة الأسبوع القادم: أي تدرجات يترقى إليها المتدرب وما شروط الترقية"
+  "weekSummary": "ملخص الأسبوع: توزيع أنماط الحركة وفلسفة التدرجات هذا الأسبوع، وكيف بُني على الالتزام الفعلي المسجَّل إن وُجد",
+  "progressionNote": "خطة محددة وقابلة للتنفيذ للأسبوع القادم — اسم التمرين + التدرّج الدقيق (مثال: 'رقِّ الضغط من عادي إلى Archer' وليس كلاماً عاماً) — إن وُجد تحليل التزام فعلي فاستشهد به تحديداً"
 }
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⚠️ قواعد صارمة يجب الالتزام بها
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ كل تمرين: 4 مستويات كاملة، ولكل مستوى variation مختلف حقيقي (تدرج أسهل/أصعب) — ليس نفس التمرين بتكرارات مختلفة
+✅ كل تمرين (وكل عنصر skillWork) يجب أن يحمل حقل exerciseKey من الكتالوج الثابت أعلاه
 ✅ الـ cue تعليمة تقنية محددة (وضعية الجسم، زاوية الكوع، شد الجذع) — ليس كلاماً عاماً
 ✅ الإحماء يتضمن دائماً تجهيز الرسغين والكتفين ولوح الكتف — إجباري في الكاليسثنكس
 ✅ skillWork يظهر فقط إن كانت هناك مهارات مستهدفة، ويكون أول الجلسة، 1-2 مهارة كحد أقصى لكل جلسة
@@ -329,6 +398,8 @@ ${effective.limitations ? `8. ⚠️ قيود صارمة: ${effective.limitation
 ✅ عدد التمارين الرئيسية: 4-6 لكل جلسة (غير المهارات)
 ✅ استخدم المعدات المتاحة فقط — لا تضع Ring Rows لمن لا يملك حلقات
 ✅ coachNote تحفيزية ومحددة وتشرح شرط الترقية للتدرج الأصعب
+${stuckExercises.length ? `✅ طبّق تعليمات الركود أعلاه حرفياً على: ${stuckExercises.join(', ')} — لا تُرقِّها هذا الأسبوع` : ''}
+${readyToProgressExercises.length ? `✅ طبّق تعليمات الترقية أعلاه حرفياً على: ${readyToProgressExercises.join(', ')} — رقِّها للتدرّج التالي واذكرها في coachNote` : ''}
 ✅ لا تكرر نفس تشكيلة تمارين الأسبوع السابق حرفياً
 
 أرجع JSON فقط بدون أي كلمة أو نص قبله أو بعده. لا تشرح. لا تعلق.`;
