@@ -9,8 +9,11 @@ export default async function GymPage() {
   const session = await getSession();
   if (!session) redirect('/login');
   const memberId = session.id;
-  const profile = await getGymProfile(memberId);
-  const allSessions = profile ? await getGymSessions(memberId) : [];
+  // جلب متوازٍ بدل التسلسلي — يقلّل زمن استجابة الصفحة بمقدار جولة استعلام كاملة
+  const [profile, allSessions] = await Promise.all([
+    getGymProfile(memberId),
+    getGymSessions(memberId),
+  ]);
   // فلتر أمان إضافي: تأكيد أن الجلسات تخص هذا العضو فقط
   const sessions = allSessions.filter(s => s.memberId === memberId);
   return <GymClient member={session} profile={profile || null} sessions={sessions} />;

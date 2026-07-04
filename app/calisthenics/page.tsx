@@ -9,8 +9,11 @@ export default async function CalisthenicsPage() {
   const session = await getSession();
   if (!session) redirect('/login');
   const memberId = session.id;
-  const profile = await getCalisthenicsProfile(memberId);
-  const allSessions = profile ? await getCaliProgramSessions(memberId) : [];
+  // جلب متوازٍ بدل التسلسلي — يقلّل زمن استجابة الصفحة بمقدار جولة استعلام كاملة
+  const [profile, allSessions] = await Promise.all([
+    getCalisthenicsProfile(memberId),
+    getCaliProgramSessions(memberId),
+  ]);
   // فلتر أمان إضافي: تأكيد أن الجلسات تخص هذا العضو فقط
   const sessions = allSessions.filter(s => s.memberId === memberId);
   return <CalisthenicsClient member={session} profile={profile || null} sessions={sessions} />;
