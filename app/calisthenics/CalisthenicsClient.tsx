@@ -25,6 +25,20 @@ function parseRepsOrHold(s: string | undefined): { value: number; unit: string }
   return null;
 }
 
+// رابط بحث يوتيوب لشرح التمرين — التمارين هنا نص حر مولَّد وليست من كتالوج ثابت، فبحث ديناميكي يغطي الكل دائماً
+function ytLink(ex: any): string {
+  const q = ex.nameEn || ex.name || 'calisthenics exercise';
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(q + ' calisthenics tutorial')}`;
+}
+
+function YoutubeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current flex-shrink-0">
+      <path d="M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 00.5 6.2 31 31 0 000 12a31 31 0 00.5 5.8 3 3 0 002.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 002.1-2.1A31 31 0 0024 12a31 31 0 00-.5-5.8zM9.75 15.5v-7l6.25 3.5-6.25 3.5z"/>
+    </svg>
+  );
+}
+
 type LevelKey = 'beginner' | 'intermediate' | 'advanced' | 'elite';
 
 const LEVEL_TABS: { key: LevelKey; label: string; emoji: string; active: string; idle: string }[] = [
@@ -160,12 +174,19 @@ function ExerciseCard({
               <div className="font-bold text-slate-800 text-[15px] leading-tight">{ex.name}</div>
               <div className="text-xs text-slate-500 mt-0.5" dir="ltr">{ex.nameEn}</div>
             </div>
-            {trendData.length >= 2 && (
-              <button onClick={() => setShowTrend(t => !t)}
-                className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${showTrend ? 'bg-violet-600 text-white' : 'bg-violet-100 text-violet-700 hover:bg-violet-200'}`}>
-                📈 تطوري
-              </button>
-            )}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {trendData.length >= 2 && (
+                <button onClick={() => setShowTrend(t => !t)}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${showTrend ? 'bg-violet-600 text-white' : 'bg-violet-100 text-violet-700 hover:bg-violet-200'}`}>
+                  📈 تطوري
+                </button>
+              )}
+              <a href={ytLink(ex)} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all">
+                <YoutubeIcon />
+                <span>شرح</span>
+              </a>
+            </div>
           </div>
           <div className="flex items-center gap-1.5 mt-2 flex-wrap">
             {ex.targetMuscles && (
