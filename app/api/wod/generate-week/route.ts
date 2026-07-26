@@ -8,6 +8,7 @@ import {
   buildPatternSequence, accessoryGuidanceFor, cooldownGuidanceFor,
   getBenchmarkGuidance, getClassTimeBudget, getEquipmentGuidance, getRxFocusGuidance,
 } from '@/lib/crossfitProgramming';
+import { parseAiJson } from '@/lib/aiJson';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -320,10 +321,8 @@ KB Swing: مبتدئ 16كجم | متوسط 24كجم | متقدم 28كجم | نخ
     for (const block of message.content) {
       if (block.type === 'text') { jsonText = block.text.trim(); break; }
     }
-    jsonText = jsonText.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
-    jsonText = jsonText.replace(/^```\n?/, '').replace(/\n?```$/, '').trim();
 
-    const result = JSON.parse(jsonText);
+    const result = parseAiJson(jsonText, 'wods');
     return NextResponse.json(result);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

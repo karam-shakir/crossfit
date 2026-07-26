@@ -8,6 +8,7 @@ import {
   suggestPattern, accessoryGuidanceFor, cooldownGuidanceFor,
   getBenchmarkGuidance, getClassTimeBudget, getEquipmentGuidance, getRxFocusGuidance,
 } from '@/lib/crossfitProgramming';
+import { parseAiJson } from '@/lib/aiJson';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -355,10 +356,8 @@ ${isBenchmarkDay ? '- الأكسسوار: مصفوفة فارغة [] — الب�
     for (const block of message.content) {
       if (block.type === 'text') { jsonText = block.text.trim(); break; }
     }
-    jsonText = jsonText.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
-    jsonText = jsonText.replace(/^```\n?/, '').replace(/\n?```$/, '').trim();
 
-    const generated = JSON.parse(jsonText);
+    const generated = parseAiJson(jsonText);
     const validIds = new Set(EXERCISES.map(e => e.id));
 
     const validateSection = (items: any[]) =>

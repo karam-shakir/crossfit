@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
 import { getWods, upsertWod } from '@/lib/db';
+import { parseAiJson } from '@/lib/aiJson';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -144,10 +145,8 @@ export async function POST(req: NextRequest) {
       for (const block of message.content) {
         if (block.type === 'text') { jsonText = block.text.trim(); break; }
       }
-      jsonText = jsonText.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
-      jsonText = jsonText.replace(/^```\n?/, '').replace(/\n?```$/, '').trim();
 
-      const newCooldown = JSON.parse(jsonText);
+      const newCooldown = parseAiJson(jsonText);
 
       if (!Array.isArray(newCooldown) || newCooldown.length === 0) {
         results.push({ date: wod.date, status: 'فشل — استجابة غير صالحة' });

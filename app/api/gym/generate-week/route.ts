@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
 import { getGymProfile, getGymSessions, getMemberById, upsertGymSession, deleteGymSessionsByMember, getLatestGymWeekMeta, upsertGymWeekMeta, getGymExerciseLogs } from '@/lib/db';
 import { todaySA } from '@/lib/timezone';
+import { parseAiJson } from '@/lib/aiJson';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -491,21 +492,8 @@ ${exceedingMachines.length ? `✅ طبّق تعليمات التجاوز أعل�
     for (const block of message.content) {
       if (block.type === 'text') { jsonText = block.text.trim(); break; }
     }
-    jsonText = jsonText.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
-    jsonText = jsonText.replace(/^```\n?/, '').replace(/\n?```$/, '').trim();
 
-    let result: any;
-    try {
-      result = JSON.parse(jsonText);
-    } catch {
-      const match = jsonText.match(/"sessions"\s*:\s*(\[[\s\S]*)/);
-      if (!match) throw new Error('فشل تحليل JSON — حاول مرة أخرى');
-      let arr = match[1];
-      const lastBrace = arr.lastIndexOf('},');
-      if (lastBrace === -1) throw new Error('لم يكتمل توليد الجدول — حاول مرة أخرى');
-      arr = arr.slice(0, lastBrace + 1) + ']';
-      result = { sessions: JSON.parse(arr) };
-    }
+    const result = parseAiJson(jsonText, 'sessions');
 
     const toDate = dates[dates.length - 1].date;
     await deleteGymSessionsByMember(memberId, startDate, toDate);

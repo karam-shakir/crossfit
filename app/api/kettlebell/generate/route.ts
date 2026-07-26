@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
 import { todaySA } from '@/lib/timezone';
 import { getAllKettlebellSessions } from '@/lib/db';
+import { parseAiJson } from '@/lib/aiJson';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -239,10 +240,8 @@ ${date ? `التاريخ: ${date}` : ''}
     for (const block of message.content) {
       if (block.type === 'text') { jsonText = block.text.trim(); break; }
     }
-    jsonText = jsonText.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
-    jsonText = jsonText.replace(/^```\n?/, '').replace(/\n?```$/, '').trim();
 
-    const generated = JSON.parse(jsonText);
+    const generated = parseAiJson(jsonText);
 
     const result = {
       date: date || todaySA(),

@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
 import { todaySA } from '@/lib/timezone';
 import { getAllCalisthenicsSessions } from '@/lib/db';
+import { parseAiJson } from '@/lib/aiJson';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -198,17 +199,6 @@ ${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
 
 أرجع JSON فقط، بدون أي نص قبله أو بعده.`;
 
-  function sanitizeJson(raw: string): string {
-    // Remove markdown fences
-    let s = raw.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
-    s = s.replace(/^```\n?/, '').replace(/\n?```$/, '').trim();
-    // Remove trailing commas before } or ]
-    s = s.replace(/,(\s*[}\]])/g, '$1');
-    // Quote unquoted keys: replace { word: or , word: patterns
-    s = s.replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)(\s*:)/g, '$1"$2"$3');
-    return s;
-  }
-
   try {
     const message = await client.messages.create({
       model: 'claude-opus-4-8',
@@ -221,21 +211,7 @@ ${dates.map(d => `- ${d.date} (${d.dayName})`).join('\n')}
       if (block.type === 'text') { jsonText = block.text.trim(); break; }
     }
 
-    jsonText = sanitizeJson(jsonText);
-
-    let result: any;
-    try {
-      result = JSON.parse(jsonText);
-    } catch {
-      // If still failing, try to extract the sessions array at least
-      const match = jsonText.match(/"sessions"\s*:\s*(\[[\s\S]*?\])\s*[,}]/);
-      if (match) {
-        const sessions = JSON.parse(sanitizeJson(match[1]));
-        result = { sessions, weekSummary: '', weeklyFocus: '' };
-      } else {
-        throw new Error('فشل تحليل JSON المُولَّد — حاول مرة أخرى');
-      }
-    }
+    const result = parseAiJson(jsonText, 'sessions');
 
     return NextResponse.json(result);
   } catch (error: any) {

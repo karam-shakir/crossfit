@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
 import { todaySA } from '@/lib/timezone';
 import { getWods } from '@/lib/db';
+import { parseAiJson } from '@/lib/aiJson';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -86,10 +87,8 @@ ${JSON.stringify(wodSummary, null, 2)}
     for (const block of message.content) {
       if (block.type === 'text') { jsonText = block.text.trim(); break; }
     }
-    jsonText = jsonText.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
-    jsonText = jsonText.replace(/^```\n?/, '').replace(/\n?```$/, '').trim();
 
-    const result = JSON.parse(jsonText);
+    const result = parseAiJson(jsonText);
     return NextResponse.json(result);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
