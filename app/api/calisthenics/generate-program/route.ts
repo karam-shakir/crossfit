@@ -7,6 +7,10 @@ import { parseAiJson } from '@/lib/aiJson';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+// يمنح Vercel وقتاً كافياً لتوليد استجابات طويلة (حتى 32000 توكن) قبل قطع الاتصال —
+// بدون هذا كانت الدالة قد تُقطَع في منتصف الاستجابة فينكسر تحليل JSON لاحقاً
+export const maxDuration = 300;
+
 // كتالوج مفاتيح ثابتة للتمارين — يُستخدم لمطابقة سجل الإنجاز الفعلي عبر الأسابيع
 // رغم اختلاف صياغة الاسم الحر الذي يولّده النموذج كل مرة
 const EXERCISE_KEY_CATALOG = [

@@ -79,6 +79,39 @@ function fixCommonSyntax(text: string): string {
 }
 
 /**
+ * يجد فهرس آخر '}' يُغلق عنصراً كاملاً في المستوى الأول من مصفوفة JSON (نص يبدأ بـ '[')،
+ * بغضّ النظر عن عمق التداخل داخل كل عنصر. هذا يتتبع عمق الأقواس فعلياً بدل البحث
+ * النصي البسيط عن "}," — فالبحث النصي يلتقط بسهولة إغلاق كائن متداخل (مثل
+ * levels.advanced أو exercises[i]) بدل نهاية العنصر الفعلي، وهو تحديداً ما كان
+ * يسبب فشل التعافي في الجداول ذات التداخل العميق (جلسات الجيم بمستوياتها الأربعة).
+ * يرجع -1 إن لم يوجد أي عنصر كامل.
+ */
+function findLastCompleteArrayElementEnd(arrText: string): number {
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  let lastCompleteEnd = -1;
+
+  for (let i = 0; i < arrText.length; i++) {
+    const ch = arrText[i];
+    if (inString) {
+      if (escaped) { escaped = false; continue; }
+      if (ch === '\\') { escaped = true; continue; }
+      if (ch === '"') { inString = false; }
+      continue;
+    }
+    if (ch === '"') { inString = true; continue; }
+    if (ch === '{' || ch === '[') { depth++; continue; }
+    if (ch === '}' || ch === ']') {
+      depth--;
+      if (depth === 1 && ch === '}') lastCompleteEnd = i;
+      continue;
+    }
+  }
+  return lastCompleteEnd;
+}
+
+/**
  * يحلّل استجابة JSON من Claude بأقصى مقاومة ممكنة للأخطاء:
  * 1) إزالة الأسيجة والتنظيف
  * 2) محاولة تحليل مباشرة
@@ -107,17 +140,27 @@ export function parseAiJson(rawText: string, arrayKey?: string): any {
     const re = new RegExp(`"${arrayKey}"\\s*:\\s*(\\[[\\s\\S]*)`);
     const match = fixed.match(re);
     if (match) {
-      let arr = match[1];
-      const lastBrace = arr.lastIndexOf('},');
-      if (lastBrace !== -1) {
-        arr = arr.slice(0, lastBrace + 1) + ']';
+      const arrText = match[1];
+      const endIdx = findLastCompleteArrayElementEnd(arrText);
+      if (endIdx !== -1) {
+        const recovered = arrText.slice(0, endIdx + 1) + ']';
         try {
-          const items = JSON.parse(arr);
-          return { [arrayKey]: items };
+          const items = JSON.parse(recovered);
+          if (Array.isArray(items) && items.length > 0) {
+            return { [arrayKey]: items };
+          }
         } catch {}
       }
     }
   }
+
+  // تشخيص: سجّل مقتطفاً من النص الخام في سجلات الخادم (Vercel logs) بدل الفشل الصامت،
+  // ليتسنى معرفة طبيعة الخلل الفعلي إن تكرر (طول الاستجابة، بداية ونهاية النص)
+  console.error('[parseAiJson] فشل نهائي في التحليل', {
+    length: rawText.length,
+    head: rawText.slice(0, 300),
+    tail: rawText.slice(-300),
+  });
 
   throw new Error('فشل تحليل JSON المُولَّد من الذكاء الاصطناعي — حاول التوليد مرة أخرى');
 }

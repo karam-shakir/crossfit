@@ -12,6 +12,9 @@ import { parseAiJson } from '@/lib/aiJson';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+// يمنح Vercel وقتاً كافياً لتوليد استجابات طويلة قبل قطع الاتصال
+export const maxDuration = 300;
+
 const DAY_NAMES: Record<number, string> = {
   0: 'الأحد', 1: 'الاثنين', 2: 'الثلاثاء', 3: 'الأربعاء',
   4: 'الخميس', 5: 'الجمعة', 6: 'السبت',
