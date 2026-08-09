@@ -5,7 +5,7 @@ import { todaySA } from '@/lib/timezone';
 import { getWods } from '@/lib/db';
 import {
   EXERCISES, MovementPattern, PATTERN_LABELS_AR,
-  buildPatternSequence, accessoryGuidanceFor, cooldownGuidanceFor,
+  buildPatternSequence, accessoryGuidanceFor, cooldownGuidanceFor, strengthGuidanceFor,
   getBenchmarkGuidance, getClassTimeBudget, getEquipmentGuidance, getRxFocusGuidance,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
@@ -73,7 +73,8 @@ export async function POST(req: NextRequest) {
   for (const w of recentWodsRaw) {
     const allEx = [...(w.strength || []), ...(w.metcon || [])].map((e: any) => e.exerciseId);
     const muscles: string[] = [];
-    if (allEx.some((id: string) => ['back-squat','front-squat','overhead-squat','deadlift'].includes(id))) muscles.push('الساق/السلسلة الخلفية');
+    if (allEx.some((id: string) => ['back-squat','front-squat','overhead-squat'].includes(id))) muscles.push('الأرجل — القرفصاء (Squat)');
+    if (allEx.some((id: string) => ['deadlift'].includes(id))) muscles.push('الخلفية — الرفعة المميتة (Hinge)');
     if (allEx.some((id: string) => ['power-clean','clean-and-jerk','snatch'].includes(id))) muscles.push('الأولمبي/الجسم الكامل');
     if (allEx.some((id: string) => ['pull-up','kipping-pull-up','muscle-up','rope-climb'].includes(id))) muscles.push('الظهر/السحب');
     if (allEx.some((id: string) => ['shoulder-press','push-press','handstand-pushup'].includes(id))) muscles.push('الكتف/الدفع');
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest) {
   const muscleFreq: Record<string, number> = {};
   allRecentMuscles.forEach(m => { muscleFreq[m] = (muscleFreq[m] || 0) + 1; });
   const overtrained = Object.entries(muscleFreq).filter(([, v]) => v >= 2).map(([k]) => k);
-  const undertrained = ['الساق/السلسلة الخلفية','الأولمبي/الجسم الكامل','الظهر/السحب','الكتف/الدفع','الجسم الكامل','القلب/التحمل']
+  const undertrained = ['الأرجل — القرفصاء (Squat)','الخلفية — الرفعة المميتة (Hinge)','الأولمبي/الجسم الكامل','الظهر/السحب','الكتف/الدفع','الجسم الكامل','القلب/التحمل']
     .filter(m => !allRecentMuscles.includes(m));
 
   const exerciseList = EXERCISES.map(e => `${e.id} | ${e.nameEn} | ${e.category}`).join('\n');
@@ -193,6 +194,9 @@ ${isBenchmarkWeek ? `(باستثناء يوم البنشمارك بتاريخ ${
 
 **دليل التوافق لكل نمط (طبّقه حرفياً على اليوم الذي يحمل هذا النمط):**
 ${patternLegend}
+
+**دليل اختيار تمرين القوة بالبار لكل نمط (إجباري — لا تخلط بين الأنماط، خصوصاً الرفعة والسحب):**
+${(Object.keys(PATTERN_LABELS_AR) as MovementPattern[]).map(p => `- ${PATTERN_LABELS_AR[p]}: ${strengthGuidanceFor(p)}`).join('\n')}
 
 مبدأ التنوع الإضافي:
 - تنوع الميتكون: AMRAP → للوقت → EMOM → للوقت → AMRAP (لا تكرر نفس الصيغة يومين متتاليين)

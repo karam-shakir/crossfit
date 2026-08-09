@@ -5,7 +5,7 @@ import { todaySA } from '@/lib/timezone';
 import { getWods } from '@/lib/db';
 import {
   EXERCISES, getCalisthenicsExercises, MovementPattern,
-  suggestPattern, accessoryGuidanceFor, cooldownGuidanceFor,
+  suggestPattern, accessoryGuidanceFor, cooldownGuidanceFor, strengthGuidanceFor,
   getBenchmarkGuidance, getClassTimeBudget, getEquipmentGuidance, getRxFocusGuidance,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
@@ -50,7 +50,8 @@ export async function POST(req: NextRequest) {
   for (const w of last7Wods) {
     const allEx = [...(w.strength || []), ...(w.metcon || [])].map((e: any) => e.exerciseId);
     const muscles: string[] = [];
-    if (allEx.some(id => ['back-squat','front-squat','overhead-squat','deadlift'].includes(id))) muscles.push('الساق/السلسلة الخلفية');
+    if (allEx.some(id => ['back-squat','front-squat','overhead-squat'].includes(id))) muscles.push('الأرجل — القرفصاء (Squat)');
+    if (allEx.some(id => ['deadlift'].includes(id))) muscles.push('الخلفية — الرفعة المميتة (Hinge)');
     if (allEx.some(id => ['power-clean','clean-and-jerk','snatch'].includes(id))) muscles.push('الأولمبي/الجسم الكامل');
     if (allEx.some(id => ['pull-up','kipping-pull-up','muscle-up','rope-climb'].includes(id))) muscles.push('الظهر/السحب');
     if (allEx.some(id => ['shoulder-press','push-press','handstand-pushup'].includes(id))) muscles.push('الكتف/الدفع');
@@ -80,7 +81,7 @@ export async function POST(req: NextRequest) {
   const muscleFreq: Record<string, number> = {};
   allRecentMuscles.forEach(m => { muscleFreq[m] = (muscleFreq[m] || 0) + 1; });
   const overtrained = Object.entries(muscleFreq).filter(([, v]) => v >= 2).map(([k]) => k);
-  const undertrained = ['الساق/السلسلة الخلفية','الأولمبي/الجسم الكامل','الظهر/السحب','الكتف/الدفع','الجسم الكامل','القلب/التحمل']
+  const undertrained = ['الأرجل — القرفصاء (Squat)','الخلفية — الرفعة المميتة (Hinge)','الأولمبي/الجسم الكامل','الظهر/السحب','الكتف/الدفع','الجسم الكامل','القلب/التحمل']
     .filter(m => !allRecentMuscles.includes(m));
 
   const recentContext = `
@@ -215,7 +216,9 @@ ${recentContext}
 **⏱️ ميزانية وقت الحصة (${classDuration} دقيقة) — التزم بتوزيع الوقت هذا:**
 ${getClassTimeBudget(classDuration)}
 
-${!isBenchmarkDay ? `**🔗 قاعدة توافق الأكسسوار مع نمط اليوم (${effectivePattern}) — إجبارية:**
+${!isBenchmarkDay ? `**💪 ${strengthGuidanceFor(effectivePattern)}**
+
+**🔗 قاعدة توافق الأكسسوار مع نمط اليوم (${effectivePattern}) — إجبارية:**
 ${accessoryGuidanceFor(effectivePattern)}
 
 **🧘 قاعدة توافق التهدئة مع نمط اليوم (${effectivePattern}) — إجبارية:**

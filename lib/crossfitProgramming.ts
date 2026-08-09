@@ -72,9 +72,12 @@ export const PATTERN_COOLDOWN_MAP: Record<MovementPattern, { targetsAr: string; 
   olympic: { targetsAr: 'الورك (Hip) + الكاحل (Ankle) + الكتف (Shoulder) — Mobility',           rationale: 'الحركات الانفجارية تحتاج تحرير مفصلي لا إطالة عضلية عميقة فقط' },
 };
 
+// ملاحظة: القرفصاء والرفعة المميتة كانتا تشتركان بنفس المجموعة العريضة سابقاً،
+// ما جعل "hinge" لا يُختار عملياً أبداً (القرفصاء يسبقها دوماً في priority القديم)
+// رغم أن الرفعة المميتة تُستنزف فيها عضلات مختلفة تماماً (خلفية) عن القرفصاء (أمامية)
 const PATTERN_TO_BROAD_GROUP: Record<MovementPattern, string> = {
-  squat: 'الساق/السلسلة الخلفية',
-  hinge: 'الساق/السلسلة الخلفية',
+  squat: 'الأرجل — القرفصاء (Squat)',
+  hinge: 'الخلفية — الرفعة المميتة (Hinge)',
   push: 'الكتف/الدفع',
   pull: 'الظهر/السحب',
   olympic: 'الأولمبي/الجسم الكامل',
@@ -82,28 +85,64 @@ const PATTERN_TO_BROAD_GROUP: Record<MovementPattern, string> = {
 
 const PATTERN_ROTATION: MovementPattern[] = ['squat', 'pull', 'push', 'hinge', 'olympic'];
 
-/** يقترح نمط القوة التالي بناءً على المجموعات المُهملة فعلياً في الأسبوع الماضي، مع تجنب تكرار آخر نمط مباشرة */
-export function suggestPattern(undertrainedGroups: string[], avoid?: MovementPattern): MovementPattern {
-  const prioritized = PATTERN_ROTATION.filter(p => undertrainedGroups.includes(PATTERN_TO_BROAD_GROUP[p]) && p !== avoid);
-  if (prioritized.length) return prioritized[0];
-  const pool = PATTERN_ROTATION.filter(p => p !== avoid);
-  return pool[0] || PATTERN_ROTATION[0];
+/**
+ * يقترح نمط القوة التالي بأولوية مزدوجة:
+ * 1) المجموعات المُهملة فعلياً في الأسبوع الماضي (كما كان)
+ * 2) بين المرشحين المتبقين: الأقل استخداماً هذا الأسبوع تحديداً (usageCount)
+ * هذا يمنع هيمنة نمط واحد (القرفصاء/السحب) على حساب بقية الأنماط —
+ * الاعتماد القديم على "أول عنصر غير آخر نمط مستخدم" كان يُرجع 'squat' فعلياً
+ * في كل مرة تقريباً (لأنه أول عنصر في PATTERN_ROTATION)، فيُحرم push/hinge/olympic
+ * من الظهور إلا نادراً جداً.
+ */
+export function suggestPattern(
+  undertrainedGroups: string[],
+  avoid?: MovementPattern,
+  usageCount?: Partial<Record<MovementPattern, number>>
+): MovementPattern {
+  const candidates = PATTERN_ROTATION.filter(p => p !== avoid);
+  const prioritized = candidates.filter(p => undertrainedGroups.includes(PATTERN_TO_BROAD_GROUP[p]));
+  const pool = prioritized.length ? prioritized : candidates;
+
+  const counts = usageCount || {};
+  let best = pool[0];
+  let bestCount = counts[best] ?? 0;
+  for (const p of pool) {
+    const c = counts[p] ?? 0;
+    if (c < bestCount) { best = p; bestCount = c; }
+  }
+  return best;
 }
 
-/** يبني تسلسل أنماط لعدد من الأيام النشطة (بدون تكرار متتالٍ)، بأولوية للمجموعات المُهملة أولاً */
+/** يبني تسلسل أنماط لعدد من الأيام النشطة (بدون تكرار متتالٍ)، بأولوية للمجموعات المُهملة ثم توزيع عادل بين كل الأنماط الخمسة */
 export function buildPatternSequence(activeDaysCount: number, undertrainedGroups: string[]): MovementPattern[] {
   const seq: MovementPattern[] = [];
   let last: MovementPattern | undefined;
   const remaining = [...undertrainedGroups];
+  const usageCount: Partial<Record<MovementPattern, number>> = {};
   for (let i = 0; i < activeDaysCount; i++) {
-    const next = suggestPattern(remaining, last);
+    const next = suggestPattern(remaining, last, usageCount);
     seq.push(next);
+    usageCount[next] = (usageCount[next] ?? 0) + 1;
     const group = PATTERN_TO_BROAD_GROUP[next];
     const idx = remaining.indexOf(group);
     if (idx >= 0) remaining.splice(idx, 1);
     last = next;
   }
   return seq;
+}
+
+export const PATTERN_STRENGTH_MAP: Record<MovementPattern, { idsAr: string; note: string }> = {
+  squat:   { idsAr: 'back-squat / front-squat / overhead-squat',   note: '' },
+  hinge:   { idsAr: 'deadlift حصراً',                                note: 'هذا النمط مختلف تماماً عن السحب (Pull) — يستهدف أوتار الركبة/أسفل الظهر/المؤخرة لا الظهر العريض/البايسبس، فتأكد أن الأكسسوار والتهدئة يعكسان ذلك' },
+  push:    { idsAr: 'shoulder-press / push-press',                  note: '' },
+  pull:    { idsAr: 'power-clean أو snatch (سحب انفجاري علوي)',      note: 'لا تستخدم deadlift كتمرين قوة رئيسي هنا — deadlift ينتمي لنمط "الرفعة" (Hinge) حصراً؛ الميتكون يمكن أن يستثمر pull-up/toes-to-bar بكثافة' },
+  olympic: { idsAr: 'snatch / clean-and-jerk بتقنية عالية ووزن معتدل (70-80%)', note: 'التركيز على المسار لا الحمل الأقصى' },
+};
+
+/** يبني نص إرشادي لتمرين القوة بالبار الصحيح لهذا النمط — يمنع الخلط الشائع بين "الرفعة" (Hinge) و"السحب" (Pull) */
+export function strengthGuidanceFor(pattern: MovementPattern): string {
+  const s = PATTERN_STRENGTH_MAP[pattern];
+  return `تمرين القوة بالبار لهذا النمط: ${s.idsAr}${s.note ? ` — ${s.note}` : ''}`;
 }
 
 export function accessoryGuidanceFor(pattern: MovementPattern): string {
