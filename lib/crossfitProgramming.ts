@@ -263,6 +263,96 @@ export const BENCHMARKS: Record<string, BenchmarkWod> = {
 
 export const BENCHMARK_OPTIONS = Object.values(BENCHMARKS).map(b => ({ key: b.key, label: `${b.nameAr} (${b.nameEn})`, kind: b.kind }));
 
+// ═══════════════════════════════════════════════════════════════
+// دورة التدريج (Periodization) — تحل مشكلة "نفس الوزن كل أسبوع بلا تدرّج
+// حقيقي" و"لا ديلود تلقائي أبداً" التي كانت موجودة سابقاً. أسبوع الكروسفت
+// لم يعد يُبرمج بمعزل عن الأسابيع التي قبله، بل ضمن دورة 4 أسابيع
+// (تأسيس → بناء → ذروة → تفريغ) تتقدم تلقائياً وتُخزَّن بين الأسابيع.
+// ═══════════════════════════════════════════════════════════════
+
+export type CyclePhase = 'foundation' | 'build' | 'peak' | 'deload';
+
+export const CYCLE_ORDER: CyclePhase[] = ['foundation', 'build', 'peak', 'deload'];
+
+export const CYCLE_PHASE_LABELS_AR: Record<CyclePhase, string> = {
+  foundation: 'التأسيس (Foundation)',
+  build: 'البناء (Build)',
+  peak: 'الذروة (Peak)',
+  deload: 'التفريغ (Deload)',
+};
+
+/** multiplier نسبة إلى مرجع الذروة (peak = 1.00) — الجدول القديم كان يمثل الذروة ضمناً، فهذا امتداد له لا استبدال */
+export const CYCLE_PHASE_INFO: Record<CyclePhase, { pctLabel: string; multiplier: number; description: string }> = {
+  foundation: { pctLabel: '~82% من مرجع الذروة', multiplier: 0.82, description: 'بداية الدورة — بناء حجم وتقنية بحمل معتدل، ليست أثقل نقطة في الدورة' },
+  build:      { pctLabel: '~90% من مرجع الذروة', multiplier: 0.90, description: 'زيادة تدريجية في الحمل استعداداً لأسبوع الذروة' },
+  peak:       { pctLabel: '100% (مرجع الذروة)',   multiplier: 1.00, description: 'أعلى نقطة في الدورة — أقرب الأحمال للحد الأقصى ضمن الدورة الحالية' },
+  deload:     { pctLabel: '~68% من مرجع الذروة', multiplier: 0.68, description: 'أسبوع تعافٍ إجباري بعد الذروة — يعيد ضبط الجهاز العصبي المركزي قبل بدء دورة جديدة' },
+};
+
+/**
+ * يحدد مرحلة الدورة القادمة:
+ * - إن طلب المدرب مرحلة محددة (forcePhase) تُطبَّق كما هي
+ * - وإلا: تقدّم طبيعي عبر التسلسل (تأسيس→بناء→ذروة→تفريغ→تأسيس...) بناءً على آخر مرحلة مخزّنة
+ * - إن لم توجد دورة سابقة أصلاً، تبدأ من "التأسيس"
+ */
+export function computeNextCyclePhase(
+  prevCycleIndex: number | null,
+  forcePhase?: CyclePhase
+): { phase: CyclePhase; cycleIndex: number; autoDeloadTriggered: boolean } {
+  if (forcePhase) {
+    const idx = CYCLE_ORDER.indexOf(forcePhase);
+    return { phase: forcePhase, cycleIndex: idx, autoDeloadTriggered: false };
+  }
+  const nextIndex = prevCycleIndex === null ? 0 : (prevCycleIndex + 1) % CYCLE_ORDER.length;
+  const phase = CYCLE_ORDER[nextIndex];
+  // autoDeloadTriggered: وصلنا لتفريغ عبر التقدم الطبيعي وليس لأنه أول أسبوع في التاريخ
+  return { phase, cycleIndex: nextIndex, autoDeloadTriggered: phase === 'deload' && prevCycleIndex !== null };
+}
+
+/** إرشاد RPE (معدل الجهد المُدرَك) للمستويات المتقدمة — يمنع دفعها لنفس الشدة القصوى كل أسبوع بغض النظر عن مرحلة الدورة */
+export function getRpeGuidance(phase: CyclePhase): string {
+  const map: Record<CyclePhase, string> = {
+    foundation: 'RPE 6-7 (تكراران احتياطيان أو أكثر) — أسبوع بناء تقنية لا اختبار قوة',
+    build:      'RPE 7-8 (تكرار احتياطي إلى تكرارين) — اقتراب تدريجي من الحمل الأعلى',
+    peak:       'RPE 8-9 على المجموعة الأخيرة فقط (تكرار احتياطي أو صفر) — لا تصل RPE10 إلا في يوم بنشمارك معلن رسمياً',
+    deload:     'لا تتجاوز RPE 6 هذا الأسبوع مهما شعر المتدرب بجاهزية — الهدف تفريغ الجهاز العصبي المركزي لا الاختبار',
+  };
+  return `للمستويات Advanced/Elite تحديداً: ${map[phase]}`;
+}
+
+// مرجع الذروة (100%) لكل حركة رئيسية — نفس أرقام الجدول الثابت القديم (مستوى "نخبة")
+// حتى تبقى قيم "الذروة" مطابقة لما كان مُستخدَماً سابقاً، مع اشتقاق بقية المستويات والمراحل منها بدل تثبيتها
+const PEAK_REFERENCE: Record<string, { nameAr: string; eliteMale: number }> = {
+  'back-squat':        { nameAr: 'قرفصاء خلفية', eliteMale: 115 },
+  'deadlift':          { nameAr: 'رفعة ميتة',     eliteMale: 150 },
+  'clean-and-jerk':    { nameAr: 'نظيفة ودفع',   eliteMale: 100 },
+  'snatch':            { nameAr: 'خطف',           eliteMale: 85 },
+  'thruster':          { nameAr: 'ثراستر',        eliteMale: 65 },
+  'wall-ball':         { nameAr: 'كرة الحائط',    eliteMale: 9 },
+  'kettle-bell-swing': { nameAr: 'هزة كيتل بيل',  eliteMale: 32 },
+};
+// نسب المستويات مشتقة من الجدول الأصلي (Back Squat: مبتدئ 50 / متوسط 75 / متقدم 95 / نخبة 115)
+const LEVEL_FACTORS: Record<'beginner' | 'intermediate' | 'advanced' | 'elite', number> = {
+  beginner: 50 / 115, intermediate: 75 / 115, advanced: 95 / 115, elite: 1,
+};
+// نفس معامل الفرق بين الجنسين المستخدم في قسم الجيم (lib/gym) — اتساق عبر المنصة بدل رقم جديد مُخترَع
+const FEMALE_FACTOR = 0.65;
+
+/** جدول أوزان مرجعي (رجال/نساء × 4 مستويات) مُدرَّج حسب مرحلة الدورة الحالية — يستبدل الجدول الثابت القديم الذي لم يكن يتغير أبداً بين الأسابيع */
+export function getWeightStandardsTable(phase: CyclePhase): string {
+  const mult = CYCLE_PHASE_INFO[phase].multiplier;
+  const roundTo25 = (n: number) => Math.round(n / 2.5) * 2.5;
+  const rows = Object.entries(PEAK_REFERENCE).map(([id, ref]) => {
+    const cells = (['beginner', 'intermediate', 'advanced', 'elite'] as const).map(lvl => {
+      const male = roundTo25(ref.eliteMale * LEVEL_FACTORS[lvl] * mult);
+      const female = roundTo25(male * FEMALE_FACTOR);
+      return `${lvl}: ${male}كجم♂/${female}كجم♀`;
+    });
+    return `${ref.nameAr} (${id}): ${cells.join(' | ')}`;
+  });
+  return rows.join('\n');
+}
+
 /** يبني نص إرشادي كامل لبنشمارك محدد يُدرج في البرومت — أو '' إن لم يوجد */
 export function getBenchmarkGuidance(key: string): string {
   const b = BENCHMARKS[key];

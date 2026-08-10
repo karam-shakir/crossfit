@@ -655,6 +655,44 @@ export async function getLatestGymWeekMeta(memberId: string, beforeDate: string)
   return docs[0] ? strip_id<GymWeekMeta>(docs[0]) : undefined;
 }
 
+// ===================== WOD CYCLE META (دورة تدريج الكروسفت الأسبوعية) =====================
+// برنامج الكروسفت للنادي بالكامل (لا لكل عضو) — يمرّ بدورة 4 أسابيع
+// (تأسيس→بناء→ذروة→تفريغ) تتقدم تلقائياً بين الأسابيع بدل تكرار نفس الوزن دائماً
+
+export interface WodCycleMeta {
+  id: string;
+  weekStartDate: string;
+  cyclePhase: 'foundation' | 'build' | 'peak' | 'deload';
+  cycleIndex: number; // 0=تأسيس 1=بناء 2=ذروة 3=تفريغ
+  weeklyIntensityLabel: string; // خفيف/متوسط/ثقيل — من تحليل الأسبوع الماضي فعلياً
+  weekSummary: string;
+  progressionNote: string;
+  wasAutoDeload: boolean;
+  createdAt: string;
+}
+
+export async function upsertWodCycleMeta(meta: WodCycleMeta): Promise<WodCycleMeta> {
+  const db = await getDb();
+  await db.collection('wod_cycle_meta').replaceOne(
+    { weekStartDate: meta.weekStartDate },
+    meta,
+    { upsert: true }
+  );
+  return meta;
+}
+
+/** أحدث حالة دورة مخزّنة — إن مُرِّر beforeDate يُقيَّد البحث بما قبله، وإلا يُرجَع أحدث أسبوع مُخزَّن مطلقاً */
+export async function getLatestWodCycleMeta(beforeDate?: string): Promise<WodCycleMeta | undefined> {
+  const db = await getDb();
+  const filter = beforeDate ? { weekStartDate: { $lt: beforeDate } } : {};
+  const docs = await db.collection('wod_cycle_meta')
+    .find(filter)
+    .sort({ weekStartDate: -1 })
+    .limit(1)
+    .toArray();
+  return docs[0] ? strip_id<WodCycleMeta>(docs[0]) : undefined;
+}
+
 // ===================== GYM EXERCISE LOGS (توثيق الإنجاز الفعلي) =====================
 // تسجيل اختياري من العضو لما رفعه فعلياً — يغذّي التصاعد الأسبوعي بأرقام حقيقية
 // بدل الاعتماد فقط على جدول الأوزان العام للمستوى.

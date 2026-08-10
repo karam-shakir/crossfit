@@ -86,6 +86,30 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   const [wodEquipmentNote, setWodEquipmentNote] = useState('');         // قيد معدات اليوم
   const [wodRxFocus, setWodRxFocus] = useState('balanced');             // rx / scaled / balanced
   const [wodBenchmarkName, setWodBenchmarkName] = useState('');         // بنشمارك محدد (fran, cindy, ...)
+  const [wodCyclePhaseOverride, setWodCyclePhaseOverride] = useState('auto'); // auto/foundation/build/peak/deload — تمرين اليوم
+  const [weeklyCyclePhaseOverride, setWeeklyCyclePhaseOverride] = useState('auto'); // نفسها لخطة الأسبوع
+  const [wodGeneratedCyclePhaseLabel, setWodGeneratedCyclePhaseLabel] = useState('');
+
+  // دورة تدريج الكروسفت — حالة القراءة قبل التوليد (تُعرض كشريط توضيحي في لوحة الإدارة)
+  const [wodCycleStatus, setWodCycleStatus] = useState<any>(null);
+  const [wodCycleStatusLoading, setWodCycleStatusLoading] = useState(false);
+  useEffect(() => {
+    if (tab === 'wod' && !wodCycleStatus && !wodCycleStatusLoading) {
+      setWodCycleStatusLoading(true);
+      fetch('/api/wod/cycle-status').then(r => r.json()).then(d => setWodCycleStatus(d)).finally(() => setWodCycleStatusLoading(false));
+    }
+  }, [tab]);
+  function refreshWodCycleStatus() {
+    setWodCycleStatusLoading(true);
+    fetch('/api/wod/cycle-status').then(r => r.json()).then(d => setWodCycleStatus(d)).finally(() => setWodCycleStatusLoading(false));
+  }
+  const CYCLE_PHASE_OPTIONS = [
+    { v: 'auto', label: '🔄 تلقائي' },
+    { v: 'foundation', label: 'التأسيس' },
+    { v: 'build', label: 'البناء' },
+    { v: 'peak', label: 'الذروة' },
+    { v: 'deload', label: 'التفريغ' },
+  ];
   function addWodForbid() {
     const v = wodForbidInput.trim().toLowerCase();
     if (v && !wodForbidExercises.includes(v)) setWodForbidExercises(p => [...p, v]);
@@ -442,6 +466,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
           equipmentNote: wodEquipmentNote || undefined,
           rxFocus: wodRxFocus,
           benchmarkName: wodBenchmarkName || undefined,
+          cyclePhaseOverride: wodCyclePhaseOverride,
         }),
       });
       const data = await res.json();
@@ -456,6 +481,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
         rounds: generated.rounds ? String(generated.rounds) : '',
       });
       if (data.theme) setAiTheme(data.theme);
+      setWodGeneratedCyclePhaseLabel(data.cyclePhaseLabel || '');
       setAiGeneratedMode(wodMode);
       setShowAiPanel(false);
       setActiveSection('strength');
@@ -486,11 +512,13 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
           rxFocus: weeklyRxFocus,
           benchmarkName: weeklyBenchmarkName || undefined,
           benchmarkDate: weeklyBenchmarkName ? (weeklyBenchmarkDate || undefined) : undefined,
+          cyclePhaseOverride: weeklyCyclePhaseOverride,
         }),
       });
       const data = await res.json();
       if (!res.ok) { setWeeklyError(data.error || 'خطأ'); return; }
       setWeeklyPlan(data);
+      refreshWodCycleStatus(); // الأسبوع الجديد قد يكون غيّر مرحلة الدورة — حدّث الشريط التوضيحي
     } catch (e: any) {
       setWeeklyError(e.message);
     } finally {
@@ -739,6 +767,29 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
           {/* WOD Builder */}
           {tab === 'wod' && (
             <div className="space-y-4">
+              {/* شريط دورة التدريج — يعرض المرحلة القادمة قبل التوليد الفعلي */}
+              {wodCycleStatus && (
+                <div className={`rounded-xl border px-4 py-3 text-sm flex items-start gap-3 ${
+                  wodCycleStatus.autoDeloadTriggered
+                    ? 'bg-amber-900/30 border-amber-700/50 text-amber-200'
+                    : 'bg-indigo-900/20 border-indigo-700/40 text-indigo-200'
+                }`}>
+                  <span className="text-lg leading-none">{wodCycleStatus.autoDeloadTriggered ? '⚠️' : '📈'}</span>
+                  <div className="flex-1 leading-relaxed">
+                    <div className="font-semibold text-white">
+                      دورة التدريج القادمة: {wodCycleStatus.nextPhaseLabel} — {wodCycleStatus.nextPhaseInfo?.pctLabel}
+                    </div>
+                    <div className="text-xs opacity-80 mt-0.5">{wodCycleStatus.nextPhaseInfo?.description}</div>
+                    {wodCycleStatus.autoDeloadTriggered && (
+                      <div className="text-xs mt-1 text-amber-300">سيُفرض أسبوع تفريغ تلقائياً عند توليد الأسبوع القادم (4 أسابيع منذ آخر تفريغ) — يمكن تجاوز ذلك من "فرض مرحلة الدورة" أدناه</div>
+                    )}
+                    {wodCycleStatus.latest && (
+                      <div className="text-xs opacity-70 mt-1">آخر أسبوع مُولَّد: {wodCycleStatus.latest.weekStartDate} — {wodCycleStatus.latest.weeklyIntensityLabel}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Date picker + Save */}
               <div className="flex gap-3">
                 <input type="date" value={wod.date}
@@ -968,6 +1019,19 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                             </div>
                           </div>
 
+                          {/* فرض مرحلة دورة التدريج ليوم اليوم فقط */}
+                          <div>
+                            <label className="text-xs text-gray-400 font-semibold block mb-2">📈 مرحلة دورة التدريج (تلقائياً حسب الأسبوع الحالي، أو فرض مرحلة)</label>
+                            <div className="grid grid-cols-5 gap-1.5">
+                              {CYCLE_PHASE_OPTIONS.map(p => (
+                                <button key={p.v} onClick={() => setWodCyclePhaseOverride(p.v)}
+                                  className={`py-2 rounded-xl text-[11px] font-semibold border transition-all ${wodCyclePhaseOverride === p.v ? 'border-indigo-500 bg-indigo-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                                  {p.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
                           {/* بنشمارك محدد */}
                           <div>
                             <label className="text-xs text-gray-400 font-semibold block mb-2">🏆 تمرين بنشمارك محدد (اختياري)</label>
@@ -1050,6 +1114,9 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                         {aiGeneratedMode === 'calisthenics' ? 'هدف تمرين Calisthenics' : 'الرابط بين القوة والميتكون'}
                       </div>
                       <div className="text-xs text-gray-300">{aiTheme}</div>
+                      {wodGeneratedCyclePhaseLabel && (
+                        <div className="text-[11px] text-indigo-300 mt-1">📈 مرحلة الدورة المستخدمة: {wodGeneratedCyclePhaseLabel}</div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1338,6 +1405,22 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                       </div>
                     </div>
 
+                    {/* مرحلة دورة التدريج */}
+                    <div>
+                      <label className="text-xs text-gray-400 font-semibold block mb-2">
+                        📈 مرحلة دورة التدريج {weeklyCyclePhaseOverride === 'auto' && wodCycleStatus ? <span className="text-white">— القادمة تلقائياً: {wodCycleStatus.nextPhaseLabel}</span> : null}
+                      </label>
+                      <div className="grid grid-cols-5 gap-1.5">
+                        {CYCLE_PHASE_OPTIONS.map(p => (
+                          <button key={p.v} onClick={() => setWeeklyCyclePhaseOverride(p.v)}
+                            className={`py-2 rounded-xl text-[11px] font-semibold border transition-all ${weeklyCyclePhaseOverride === p.v ? 'border-indigo-500 bg-indigo-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[11px] text-gray-500 mt-1.5">تلقائي = يتقدم للمرحلة التالية في دورة 4 أسابيع (تأسيس→بناء→ذروة→تفريغ) بناءً على آخر أسبوع مُولَّد. فرض "تفريغ" هنا يعادل تفعيل "أسبوع تفريغ" في التركيز الأسبوعي أعلاه لكن بأوزان مُدرَّجة فعلياً.</p>
+                    </div>
+
                     {/* Hyrox toggle */}
                     <div>
                       <label className="text-xs text-gray-400 font-semibold block mb-2">🏁 Hyrox</label>
@@ -1568,10 +1651,28 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
               {/* Weekly Plan Result */}
               {weeklyPlan && (
                 <div className="space-y-4">
+                  {weeklyPlan.cyclePhaseLabel && (
+                    <div className={`rounded-xl border px-4 py-2.5 text-sm flex items-center gap-2 ${
+                      weeklyPlan.autoDeloadTriggered ? 'bg-amber-900/30 border-amber-700/50 text-amber-200' : 'bg-indigo-900/20 border-indigo-700/40 text-indigo-200'
+                    }`}>
+                      <span>{weeklyPlan.autoDeloadTriggered ? '⚠️' : '📈'}</span>
+                      <span>
+                        هذا الأسبوع بُرمج على مرحلة: <span className="font-semibold text-white">{weeklyPlan.cyclePhaseLabel}</span>
+                        {weeklyPlan.autoDeloadTriggered ? ' — فُرض تلقائياً بعد 4 أسابيع بدون تفريغ' : ''}
+                        {weeklyPlan.weekIntensity ? ` — شدة الأسبوع الماضي: ${weeklyPlan.weekIntensity}` : ''}
+                      </span>
+                    </div>
+                  )}
                   {weeklyPlan.weekSummary && (
                     <div className="bg-indigo-900/20 border border-indigo-700/30 rounded-2xl p-4">
                       <h3 className="font-semibold text-indigo-300 mb-2">📋 فلسفة الأسبوع</h3>
                       <p className="text-sm text-gray-300">{weeklyPlan.weekSummary}</p>
+                    </div>
+                  )}
+                  {weeklyPlan.progressionNote && (
+                    <div className="bg-emerald-900/20 border border-emerald-700/30 rounded-2xl p-4">
+                      <h3 className="font-semibold text-emerald-300 mb-2">🗒️ خطة الأسبوع القادم</h3>
+                      <p className="text-sm text-gray-300">{weeklyPlan.progressionNote}</p>
                     </div>
                   )}
 

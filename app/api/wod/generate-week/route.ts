@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
 import { todaySA } from '@/lib/timezone';
-import { getWods } from '@/lib/db';
+import { getWods, getLatestWodCycleMeta, upsertWodCycleMeta } from '@/lib/db';
 import {
-  EXERCISES, MovementPattern, PATTERN_LABELS_AR,
+  EXERCISES, MovementPattern, PATTERN_LABELS_AR, CyclePhase,
   buildPatternSequence, accessoryGuidanceFor, cooldownGuidanceFor, strengthGuidanceFor,
   getBenchmarkGuidance, getClassTimeBudget, getEquipmentGuidance, getRxFocusGuidance,
+  computeNextCyclePhase, CYCLE_PHASE_LABELS_AR, CYCLE_PHASE_INFO, getRpeGuidance, getWeightStandardsTable,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
 
@@ -42,6 +43,7 @@ export async function POST(req: NextRequest) {
     rxFocus = 'balanced',   // rx / scaled / balanced
     benchmarkName = '',     // بنشمارك محدد (fran, cindy, ...)
     benchmarkDate = '',     // التاريخ الذي يُفرض فيه البنشمارك
+    cyclePhaseOverride = 'auto', // auto / foundation / build / peak / deload — فرض مرحلة دورة تدريج محددة
   } = body;
 
   const startDate = fromDate || todaySA();
@@ -91,6 +93,31 @@ export async function POST(req: NextRequest) {
   const undertrained = ['الأرجل — القرفصاء (Squat)','الخلفية — الرفعة المميتة (Hinge)','الأولمبي/الجسم الكامل','الظهر/السحب','الكتف/الدفع','الجسم الكامل','القلب/التحمل']
     .filter(m => !allRecentMuscles.includes(m));
 
+  // ═══ تتبّع الإجهاد التراكمي (نفس منطق مسار اليوم الواحد — كان مفقوداً هنا رغم أن هذا المسار يولّد أسبوعاً كاملاً دفعة واحدة) ═══
+  const sessionCount = recentWodsRaw.length;
+  const heavyCount = muscleGroupLog.filter(d => d.intensity === 'ثقيلة').length;
+  let weekIntensity: string;
+  let intensityRecommendation: string;
+  if (sessionCount >= 5 || heavyCount >= 3) {
+    weekIntensity = 'ثقيل';
+    intensityRecommendation = 'الأسبوع الماضي كان ثقيلاً — لا تجعل هذا الأسبوع ثقيلاً بنفس الدرجة إلا إذا كانت مرحلة الدورة "ذروة"، وإلا استخدم أوزان مرحلة الدورة كما هي دون رفعها يدوياً';
+  } else if (sessionCount >= 3 || heavyCount >= 1) {
+    weekIntensity = 'متوسط';
+    intensityRecommendation = 'الأسبوع الماضي متوسط — التزم بأحمال مرحلة الدورة الحالية كما هي';
+  } else {
+    weekIntensity = 'خفيف';
+    intensityRecommendation = 'الأسبوع الماضي خفيف نسبياً (قلة جلسات أو راحة) — الجسم جاهز، يمكن الالتزام الكامل بأحمال مرحلة الدورة دون تخفيف إضافي';
+  }
+
+  // ═══ دورة التدريج (Periodization) — تقدّم تلقائي عبر 4 أسابيع (تأسيس→بناء→ذروة→تفريغ) بدل تكرار نفس الوزن كل أسبوع ═══
+  const latestCycleMeta = await getLatestWodCycleMeta(startDate);
+  const validPhases: CyclePhase[] = ['foundation', 'build', 'peak', 'deload'];
+  const forcePhase: CyclePhase | undefined = validPhases.includes(cyclePhaseOverride)
+    ? (cyclePhaseOverride as CyclePhase)
+    : (coachFocus === 'deload' ? 'deload' : undefined); // توافق خلفي مع خيار "أسبوع تفريغ" القديم في coachFocus
+  const { phase: cyclePhase, cycleIndex: newCycleIndex, autoDeloadTriggered } =
+    computeNextCyclePhase(latestCycleMeta?.cycleIndex ?? null, forcePhase);
+
   const exerciseList = EXERCISES.map(e => `${e.id} | ${e.nameEn} | ${e.category}`).join('\n');
 
   // ═══ تسلسل حتمي لأنماط القوة عبر أيام الكروسفيت النشطة (لضمان تنوع + توافق أكسسوار/تهدئة حقيقي) ═══
@@ -108,6 +135,7 @@ export async function POST(req: NextRequest) {
   const recentContext = `
 **═══ تحليل الأسبوع الماضي (آخر 7 أيام قبل بداية هذه الخطة) ═══**
 عدد الجلسات: ${recentWodsRaw.length} جلسات
+شدة الأسبوع الماضي: ${weekIntensity} — ${intensityRecommendation}
 المجموعات العضلية التي تدربت كثيراً (تجنب الإفراط فيها مجدداً):
 ${overtrained.length ? overtrained.map(m => `- ${m}`).join('\n') : '- لا يوجد إجهاد تراكمي واضح'}
 المجموعات العضلية المُهمَلة (أعطها أولوية أعلى في بداية هذه الخطة):
@@ -206,14 +234,14 @@ ${programmingRules}
 **الأيام المطلوبة:**
 ${dates.map(d => `- ${d.date} (${d.dayName})${isBenchmarkWeek && d.date === benchmarkDate ? '  ← 🏆 يوم البنشمارك المفروض' : ''}`).join('\n')}
 
-**══ معايير الأوزان الدقيقة لكل مستوى ══**
-Back Squat: مبتدئ 50كجم | متوسط 75كجم | متقدم 95كجم | نخبة 115كجم
-Deadlift: مبتدئ 60كجم | متوسط 90كجم | متقدم 120كجم | نخبة 150كجم
-Clean & Jerk: مبتدئ 35كجم | متوسط 55كجم | متقدم 80كجم | نخبة 100كجم
-Snatch: مبتدئ 25كجم | متوسط 45كجم | متقدم 65كجم | نخبة 85كجم
-Thruster: مبتدئ 30كجم | متوسط 43كجم | متقدم 55كجم | نخبة 65كجم
-Wall Ball: مبتدئ 6كجم | متوسط 9كجم | متقدم 9كجم | نخبة 9كجم Rx
-KB Swing: مبتدئ 16كجم | متوسط 24كجم | متقدم 28كجم | نخبة 32كجم
+**══ 📈 مرحلة دورة التدريج الحالية (إجباري — استخدم أوزان هذه المرحلة حرفياً، لا تخترع أرقاماً ثابتة) ══**
+${autoDeloadTriggered ? '⚠️ فُرض هذا كأسبوع تفريغ تلقائياً — مرّت 4 أسابيع متتالية منذ آخر تفريغ حقيقي، والجسم يحتاج تعافياً إجبارياً بغض النظر عن أي طلب آخر.\n' : ''}المرحلة: ${CYCLE_PHASE_LABELS_AR[cyclePhase]} (${CYCLE_PHASE_INFO[cyclePhase].pctLabel}) — ${CYCLE_PHASE_INFO[cyclePhase].description}
+${getRpeGuidance(cyclePhase)}
+${cyclePhase === 'deload' ? '⚠️ في أسبوع التفريغ: لا يوجد يوم HEAVY إطلاقاً هذا الأسبوع مهما قال توزيع الأيام أعلاه — كل الأيام النشطة MEDIUM أو أخف، وميزانية الميتكون أقصر من المعتاد.' : ''}
+
+جدول الأوزان المرجعي لهذه المرحلة تحديداً (رجال♂ / نساء♀ لكل مستوى — الجمهور مختلط):
+${getWeightStandardsTable(cyclePhase)}
+${latestCycleMeta?.progressionNote ? `\n🗒️ توصيتك أنت (المدرب الذكي) من الأسبوع الماضي — طبّقها فعلياً الآن ولا تتجاهلها:\n${latestCycleMeta.progressionNote}` : ''}
 
 أرجع JSON بهذا التنسيق (بدون أي نص خارجه):
 {
@@ -294,9 +322,10 @@ KB Swing: مبتدئ 16كجم | متوسط 24كجم | متقدم 28كجم | نخ
       ]
     }
   ],
-  "weekSummary": "ملخص فلسفة الأسبوع: التوزيع الحمل، مراحل التدرج، الهدف الرئيسي لهذا الأسبوع تحديداً، وكيف بُني على أساس الأسبوع الماضي",
+  "weekSummary": "ملخص فلسفة الأسبوع: التوزيع الحمل، مرحلة الدورة الحالية (${CYCLE_PHASE_LABELS_AR[cyclePhase]})، الهدف الرئيسي لهذا الأسبوع تحديداً، وكيف بُني على أساس الأسبوع الماضي",
   "recoveryTips": ["نصيحة تعافٍ محددة وعملية 1", "نصيحة 2", "نصيحة 3"],
-  "nutritionNote": "توصية غذائية مرتبطة بحجم التدريب هذا الأسبوع — كارب وبروتين وتوقيت"
+  "nutritionNote": "توصية غذائية مرتبطة بحجم التدريب هذا الأسبوع — كارب وبروتين وتوقيت",
+  "progressionNote": "توجيه محدد وقابل للتنفيذ حرفياً للأسبوع القادم (مرحلة ${cyclePhase === 'deload' ? CYCLE_PHASE_LABELS_AR['foundation'] : 'الدورة التالية'}) — اسم الحركة والاتجاه الدقيق (مثال: 'في القرفصاء زد إلى 80% الأسبوع القادم' وليس كلاماً عاماً) — هذا النص سيُقرأ حرفياً عند توليد الأسبوع القادم"
 }
 
 **قواعد صارمة:**
@@ -312,6 +341,8 @@ KB Swing: مبتدئ 16كجم | متوسط 24كجم | متقدم 28كجم | نخ
 - لا تكرر نمط الميتكون في يومين متتاليين (AMRAP/للوقت/EMOM يتناوبان)
 - الإحماء: 3-4 تمارين — الأول عام (رفع نبض) ثم خاص (تفعيل نمط اليوم بدون حمل)
 - كل يوم نشاط: strength لا يقل عن تمرينَين compound (إلا يوم البنشمارك)
+- استخدم أوزان جدول "مرحلة دورة التدريج" أعلاه حرفياً حسب المستوى والجنس — لا تستخدم أوزان من ذاكرتك أو من أسابيع سابقة
+- progressionNote يجب أن يكون توجيهاً رقمياً محدداً (اسم حركة + نسبة/وزن دقيق) قابلاً للتنفيذ الحرفي الأسبوع القادم
 
 أرجع JSON فقط، بدون أي نص قبله أو بعده.`;
 
@@ -330,7 +361,27 @@ KB Swing: مبتدئ 16كجم | متوسط 24كجم | متقدم 28كجم | نخ
     }
 
     const result = parseAiJson(jsonText, 'wods');
-    return NextResponse.json(result);
+
+    // احفظ حالة الدورة لهذا الأسبوع — تُقرأ تلقائياً عند توليد الأسبوع القادم لضمان تقدّم حقيقي بدل تكرار نفس الوزن
+    await upsertWodCycleMeta({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+      weekStartDate: startDate,
+      cyclePhase,
+      cycleIndex: newCycleIndex,
+      weeklyIntensityLabel: weekIntensity,
+      weekSummary: result.weekSummary || '',
+      progressionNote: result.progressionNote || '',
+      wasAutoDeload: autoDeloadTriggered,
+      createdAt: new Date().toISOString(),
+    });
+
+    return NextResponse.json({
+      ...result,
+      cyclePhase,
+      cyclePhaseLabel: CYCLE_PHASE_LABELS_AR[cyclePhase],
+      autoDeloadTriggered,
+      weekIntensity,
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

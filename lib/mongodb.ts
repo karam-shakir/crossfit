@@ -42,6 +42,7 @@ async function ensureIndexes(db: Db): Promise<void> {
     byMemberDate('prs'),
     byMemberDate('attendance'),
     db.collection('gym_week_meta').createIndex({ memberId: 1, weekStartDate: -1 }).catch(() => {}),
+    db.collection('wod_cycle_meta').createIndex({ weekStartDate: -1 }, { unique: true }).catch(() => {}),
     db.collection('gym_exercise_logs').createIndex({ memberId: 1, machineId: 1, date: -1 }).catch(() => {}),
     db.collection('calisthenics_exercise_logs').createIndex({ memberId: 1, exerciseKey: 1, date: -1 }).catch(() => {}),
     db.collection('logbook').createIndex({ memberId: 1, createdAt: -1 }).catch(() => {}),

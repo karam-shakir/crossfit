@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
 import { todaySA } from '@/lib/timezone';
-import { getWods } from '@/lib/db';
+import { getWods, getLatestWodCycleMeta } from '@/lib/db';
 import {
-  EXERCISES, getCalisthenicsExercises, MovementPattern,
+  EXERCISES, getCalisthenicsExercises, MovementPattern, CyclePhase,
   suggestPattern, accessoryGuidanceFor, cooldownGuidanceFor, strengthGuidanceFor,
   getBenchmarkGuidance, getClassTimeBudget, getEquipmentGuidance, getRxFocusGuidance,
+  computeNextCyclePhase, CYCLE_PHASE_LABELS_AR, CYCLE_PHASE_INFO, getRpeGuidance, getWeightStandardsTable,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
 
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
     equipmentNote = '',          // قيد معدات حر (مثال: بار واحد فقط اليوم)
     rxFocus = 'balanced',        // rx / scaled / balanced
     benchmarkName = '',          // مفتاح بنشمارك من BENCHMARKS (fran, cindy, ...)
+    cyclePhaseOverride = 'auto', // auto / foundation / build / peak / deload — فرض مرحلة دورة تدريج ليوم هذا التمرين فقط
   } = body;
 
   const CALISTHENICS_EXERCISES = getCalisthenicsExercises();
@@ -104,6 +106,17 @@ ${muscleGroupLog.map(d => `${d.date}: [${d.muscles.join(' + ')}] — شدة: ${d
   const coachPattern = PATTERN_KEYS.includes(strengthPattern as MovementPattern) ? (strengthPattern as MovementPattern) : null;
   const effectivePattern: MovementPattern = coachPattern || suggestPattern(undertrained);
   const patternIsForced = !!coachPattern;
+
+  // ═══ مرحلة دورة التدريج الحالية — قراءة فقط (المسار الأسبوعي هو من يملك الدورة ويحدّثها) ═══
+  // هذا يمنع أن يقترح تمرين يوم واحد وزناً "ذروة" في أسبوع مفروض عليه تفريغ من التوليد الأسبوعي
+  const latestCycleMeta = await getLatestWodCycleMeta(date || todaySA());
+  const validPhases: CyclePhase[] = ['foundation', 'build', 'peak', 'deload'];
+  const dailyForcePhase: CyclePhase | undefined = validPhases.includes(cyclePhaseOverride)
+    ? (cyclePhaseOverride as CyclePhase)
+    : (sessionType === 'deload' ? 'deload' : undefined);
+  const cyclePhase: CyclePhase = dailyForcePhase
+    ?? latestCycleMeta?.cyclePhase
+    ?? computeNextCyclePhase(null).phase; // لا توجد دورة مخزّنة بعد — ابدأ من التأسيس
 
   const benchmarkGuidance = wodMode === 'crossfit' && benchmarkName ? getBenchmarkGuidance(benchmarkName) : '';
   const isBenchmarkDay = !!benchmarkGuidance;
@@ -190,8 +203,8 @@ ${recentContext}
 
 ═══════════════════════════════
 النادي: مجموعة المطانيخ CrossFit
-الجمهور: غالبيتهم رجال (18-40 سنة) — متوسط إلى متقدم — حصة جماعية (Class) وليست تدريباً فردياً
-الأوزان: مبنية على معايير الرجال (RX للرجال)، مع ذكر مكافئ النساء في notes
+الجمهور: رجال ونساء (18-40 سنة) — حصة جماعية (Class) وليست تدريباً فردياً
+الأوزان: استخدم جدول مرحلة الدورة أدناه — يحتوي أوزان الرجال والنساء لكل مستوى
 مدة الحصة الكاملة: ${classDuration} دقيقة
 ${getRxFocusGuidance(rxFocus)}
 ═══════════════════════════════
@@ -222,7 +235,12 @@ ${!isBenchmarkDay ? `**💪 ${strengthGuidanceFor(effectivePattern)}**
 ${accessoryGuidanceFor(effectivePattern)}
 
 **🧘 قاعدة توافق التهدئة مع نمط اليوم (${effectivePattern}) — إجبارية:**
-${cooldownGuidanceFor(effectivePattern)}` : ''}
+${cooldownGuidanceFor(effectivePattern)}
+
+**📈 مرحلة دورة التدريج الحالية — استخدم أوزان هذه المرحلة حرفياً، لا أوزاناً من ذاكرتك:**
+المرحلة: ${CYCLE_PHASE_LABELS_AR[cyclePhase]} (${CYCLE_PHASE_INFO[cyclePhase].pctLabel}) — ${CYCLE_PHASE_INFO[cyclePhase].description}
+${getRpeGuidance(cyclePhase)}
+${getWeightStandardsTable(cyclePhase)}` : ''}
 
 **فلسفة البرمجة الاحترافية:**
 ✦ استخدم تحليل الأسبوع أعلاه لتحديد شدة اليوم والمجموعات المستهدفة
@@ -393,7 +411,13 @@ ${isBenchmarkDay ? '- الأكسسوار: مصفوفة فارغة [] — الب�
       cooldown: validateSection(generated.cooldown),
     };
 
-    return NextResponse.json({ wod: wodData, theme: generated.theme, effectivePattern: wodMode === 'crossfit' ? effectivePattern : null });
+    return NextResponse.json({
+      wod: wodData,
+      theme: generated.theme,
+      effectivePattern: wodMode === 'crossfit' ? effectivePattern : null,
+      cyclePhase: wodMode === 'crossfit' ? cyclePhase : null,
+      cyclePhaseLabel: wodMode === 'crossfit' ? CYCLE_PHASE_LABELS_AR[cyclePhase] : null,
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'خطأ في التوليد' }, { status: 500 });
   }
