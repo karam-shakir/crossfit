@@ -159,12 +159,30 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   const [gymProfile, setGymProfile] = useState<any>(null);
   const [gymOverride, setGymOverride] = useState<any>(null); // قيم المدرب المعدّلة
   const [gymShowOverride, setGymShowOverride] = useState(false);
+  const [gymCyclePhaseOverride, setGymCyclePhaseOverride] = useState('auto'); // auto/foundation/build/peak/deload
+  const [gymCycleStatus, setGymCycleStatus] = useState<any>(null);
+  const [gymCycleStatusLoading, setGymCycleStatusLoading] = useState(false);
 
   useEffect(() => {
     if ((tab === 'gym' || tab === 'running' || tab === 'cali') && gymMembers.length === 0) {
       fetch('/api/members').then(r => r.json()).then(m => setGymMembers(Array.isArray(m) ? m.filter((x: any) => x.role !== 'admin') : []));
     }
   }, [tab]);
+
+  // دورة تدريج الجيم الشخصية — تُجلب لكل عضو عند اختياره
+  useEffect(() => {
+    if (tab === 'gym' && gymSelectedMember) {
+      setGymCycleStatus(null);
+      setGymCyclePhaseOverride('auto');
+      setGymCycleStatusLoading(true);
+      fetch(`/api/gym/cycle-status?memberId=${gymSelectedMember}`).then(r => r.json()).then(d => setGymCycleStatus(d)).finally(() => setGymCycleStatusLoading(false));
+    }
+  }, [tab, gymSelectedMember]);
+  function refreshGymCycleStatus() {
+    if (!gymSelectedMember) return;
+    setGymCycleStatusLoading(true);
+    fetch(`/api/gym/cycle-status?memberId=${gymSelectedMember}`).then(r => r.json()).then(d => setGymCycleStatus(d)).finally(() => setGymCycleStatusLoading(false));
+  }
 
   // ===== Calisthenics Program =====
   const [caliSelectedMember, setCaliSelectedMember] = useState('');
@@ -305,12 +323,13 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
       const res = await fetch('/api/gym/generate-week', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ memberId: gymSelectedMember, fromDate: gymFromDate, override: gymOverride }),
+        body: JSON.stringify({ memberId: gymSelectedMember, fromDate: gymFromDate, override: gymOverride, cyclePhaseOverride: gymCyclePhaseOverride }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل التوليد');
       setGymPlan(data);
       setGymSaved(true);
+      refreshGymCycleStatus();
     } catch (e: any) {
       setGymError(e.message);
     } finally {
@@ -2488,12 +2507,35 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                     {gymProfile.focusAreas?.length > 0 && (
                       <p className="text-xs text-gray-400">💪 {gymProfile.focusAreas.join(' • ')}</p>
                     )}
-                    {gymProfile.limitations && (
+    {gymProfile.limitations && (
                       <p className="text-xs text-yellow-500">⚠️ {gymProfile.limitations}</p>
                     )}
                   </div>
                 )}
               </div>
+
+              {/* شريط دورة التدريج الشخصية لهذا العضو */}
+              {gymSelectedMember && gymCycleStatus && (
+                <div className={`rounded-xl border px-4 py-3 text-sm flex items-start gap-3 ${
+                  gymCycleStatus.autoDeloadTriggered
+                    ? 'bg-amber-900/30 border-amber-700/50 text-amber-200'
+                    : 'bg-indigo-900/20 border-indigo-700/40 text-indigo-200'
+                }`}>
+                  <span className="text-lg leading-none">{gymCycleStatus.autoDeloadTriggered ? '⚠️' : '📈'}</span>
+                  <div className="flex-1 leading-relaxed">
+                    <div className="font-semibold text-white">
+                      دورة التدريج القادمة لهذا العضو: {gymCycleStatus.nextPhaseLabel} — {gymCycleStatus.nextPhaseInfo?.pctLabel}
+                    </div>
+                    <div className="text-xs opacity-80 mt-0.5">{gymCycleStatus.nextPhaseInfo?.description}</div>
+                    {gymCycleStatus.autoDeloadTriggered && (
+                      <div className="text-xs mt-1 text-amber-300">سيُفرض أسبوع تفريغ تلقائياً لهذا العضو (4 أسابيع منذ آخر تفريغ له) — يمكن تجاوز ذلك من "فرض مرحلة الدورة" أدناه</div>
+                    )}
+                    {gymCycleStatus.latest && (
+                      <div className="text-xs opacity-70 mt-1">آخر أسبوع مُولَّد له: {gymCycleStatus.latest.weekStartDate}</div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Step 2 — Coach Overrides */}
               {gymSelectedMember && gymOverride && (
@@ -2521,6 +2563,21 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                             <button key={g.v} onClick={() => setGymOverride((p: any) => ({ ...p, gender: g.v }))}
                               className={`py-2 rounded-xl text-sm font-semibold border transition-all ${gymOverride.gender === g.v ? 'border-indigo-500 bg-indigo-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
                               {g.l}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* مرحلة دورة التدريج */}
+                      <div>
+                        <label className="text-xs text-gray-400 font-semibold block mb-2">
+                          📈 مرحلة دورة التدريج {gymCyclePhaseOverride === 'auto' && gymCycleStatus ? <span className="text-white">— القادمة تلقائياً: {gymCycleStatus.nextPhaseLabel}</span> : null}
+                        </label>
+                        <div className="grid grid-cols-5 gap-1.5">
+                          {CYCLE_PHASE_OPTIONS.map(p => (
+                            <button key={p.v} onClick={() => setGymCyclePhaseOverride(p.v)}
+                              className={`py-2 rounded-xl text-[11px] font-semibold border transition-all ${gymCyclePhaseOverride === p.v ? 'border-indigo-500 bg-indigo-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                              {p.label}
                             </button>
                           ))}
                         </div>
@@ -2671,6 +2728,22 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                     <span className="text-xs text-gray-500">{gymPlan.sessions.filter((s: any) => !s.isRest).length} أيام تمرين • {gymPlan.sessions.filter((s: any) => s.isRest).length} أيام راحة</span>
                   </div>
 
+                  {gymPlan.cyclePhaseLabel && (
+                    <div className={`rounded-xl border px-3 py-2 text-xs flex items-center gap-2 ${
+                      gymPlan.autoDeloadTriggered ? 'bg-amber-900/30 border-amber-700/50 text-amber-200' : 'bg-indigo-900/20 border-indigo-700/40 text-indigo-200'
+                    }`}>
+                      <span>{gymPlan.autoDeloadTriggered ? '⚠️' : '📈'}</span>
+                      <span>
+                        بُرمج على مرحلة: <span className="font-semibold text-white">{gymPlan.cyclePhaseLabel}</span>
+                        {gymPlan.autoDeloadTriggered ? ' — فُرض تلقائياً بعد 4 أسابيع بدون تفريغ' : ''}
+                      </span>
+                    </div>
+                  )}
+                  {gymPlan.estimatedOneRM && Object.keys(gymPlan.estimatedOneRM).length > 0 && (
+                    <div className="bg-emerald-900/20 border border-emerald-700/30 rounded-xl px-3 py-2.5 text-xs text-emerald-300">
+                      🎯 استُخدمت تقديرات 1RM فعلية من سجل العضو لـ: {Object.entries(gymPlan.estimatedOneRM).map(([id, v]) => `${id} (${v}كجم)`).join('، ')}
+                    </div>
+                  )}
                   {gymPlan.weekSummary && (
                     <div className="bg-indigo-900/20 border border-indigo-700/30 rounded-xl px-3 py-2.5 text-xs text-indigo-300">
                       📌 {gymPlan.weekSummary}

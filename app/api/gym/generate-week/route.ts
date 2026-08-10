@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth';
 import { getGymProfile, getGymSessions, getMemberById, upsertGymSession, deleteGymSessionsByMember, getLatestGymWeekMeta, upsertGymWeekMeta, getGymExerciseLogs } from '@/lib/db';
 import { todaySA } from '@/lib/timezone';
 import { parseAiJson } from '@/lib/aiJson';
+import { CyclePhase, computeNextCyclePhase, CYCLE_PHASE_LABELS_AR, CYCLE_PHASE_INFO, getRpeGuidance, estimateOneRepMax } from '@/lib/periodization';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -95,10 +96,23 @@ function getGoalProtocol(goal: string): string {
   }
 }
 
-function getWeightStandards(gender: string, weight?: number): string {
+// أهداف تهدئة/موازنة حسب نوع يوم التقسيم — إجباري تطبيقه على تهدئة كل يوم حسب splitType الخاص به،
+// نفس فكرة PATTERN_COOLDOWN_MAP في قسم الكروسفت لكن بمفاتيح تقسيم الجيم (نفس مفاتيح ALL_SPLITS أدناه)
+const SPLIT_MUSCLE_TARGET_MAP: Record<string, string> = {
+  Push:  'الصدر (Chest) + الكتف الأمامي (Front Delt) + الترايسبس (Triceps)',
+  Pull:  'الظهر العريض (Lat) + البايسبس (Bicep) + الكتف الخلفي (Rear Delt)',
+  Legs:  'الرباعية (Quad) + أوتار الركبة (Hamstring) + المؤخرة (Glute) + الساق (Calf)',
+  Upper: 'الصدر + الظهر + الكتفين + الذراعين — الجزء العلوي كاملاً',
+  Lower: 'الأرجل والورك كاملاً — رباعية + خلفية + مؤخرة + ساق',
+  Full:  'كامل الجسم — لا تركيز عضلي واحد، وزّع التهدئة على أكثر ما استُخدم اليوم',
+};
+
+// f يجمع بين معامل الجنس (0.65 للإناث — نفس معامل قسم الكروسفت للاتساق) ومعامل مرحلة الدورة الحالية،
+// حتى لا يبقى الجدول ثابتاً كل أسبوع بغض النظر عن أين نحن في دورة التدريج
+function getWeightStandards(gender: string, weight: number | undefined, phaseMultiplier: number): string {
   const bw = weight || (gender === 'female' ? 65 : 80);
   const isFemale = gender === 'female';
-  const f = isFemale ? 0.65 : 1;
+  const f = (isFemale ? 0.65 : 1) * phaseMultiplier;
 
   return `جدول أوزان مرجعية (${isFemale ? 'أنثى' : 'ذكر'} — وزن الجسم ${bw}كجم):
 
@@ -133,7 +147,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
-  const { memberId, fromDate, override } = body;
+  const { memberId, fromDate, override, cyclePhaseOverride = 'auto' } = body;
   if (!memberId) return NextResponse.json({ error: 'memberId مطلوب' }, { status: 400 });
 
   const startDate = fromDate || todaySA();
@@ -200,6 +214,22 @@ export async function POST(req: NextRequest) {
     if (recent3.filter(l => l.comparison === 'more').length >= 2) exceedingMachines.push(machineId);
   });
 
+  // تقدير 1RM شخصي فعلي لكل جهاز (معادلة Epley من أفضل أداء ضمن آخر 3 تسجيلات) —
+  // يحل محل شريحة السكان العامة الثابتة حين تتوفر بيانات حقيقية لهذا العضو تحديداً
+  const estimatedOneRM: Record<string, number> = {};
+  Object.entries(logsByMachine).forEach(([machineId, machineLogs]) => {
+    const recentEstimates = [...machineLogs]
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 3)
+      .map(l => {
+        const w = parseNum(l.actualWeight);
+        const r = parseNum(l.actualReps);
+        return w && r ? estimateOneRepMax(w, r) : null;
+      })
+      .filter((v): v is number => v !== null);
+    if (recentEstimates.length > 0) estimatedOneRM[machineId] = Math.round(Math.max(...recentEstimates));
+  });
+
   // تحليل توزيع أنماط التقسيم (Split) على آخر أسبوعين — يكشف الإهمال والتراكم الفعليين، وليس تخميناً
   const last14 = recentSessions.slice(0, 14);
   const splitFreq: Record<string, number> = {};
@@ -217,6 +247,16 @@ export async function POST(req: NextRequest) {
   const isContinuation = trainedSessionsCount >= 3;
   const previousMeta = await getLatestGymWeekMeta(memberId, startDate);
 
+  // ═══ دورة تدريج شخصية لهذا العضو تحديداً (تأسيس→بناء→ذروة→تفريغ) — تقدّم تلقائي بين الأسابيع ═══
+  // بعكس الكروسفت (نادٍ واحد، دورة واحدة)، هنا كل عضو له دورته الخاصة لأن جدول gym_week_meta مفتاحه memberId
+  const validGymPhases: CyclePhase[] = ['foundation', 'build', 'peak', 'deload'];
+  const gymForcePhase: CyclePhase | undefined = validGymPhases.includes(cyclePhaseOverride)
+    ? (cyclePhaseOverride as CyclePhase)
+    : undefined;
+  const { phase: cyclePhase, cycleIndex: newCycleIndex, autoDeloadTriggered } =
+    computeNextCyclePhase(previousMeta?.cycleIndex ?? null, gymForcePhase);
+  const isDeloadWeek = cyclePhase === 'deload';
+
   const continuityContext = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📊 تحليل الأسبوعين الماضيين (${trainedSessionsCount} جلسة تدريب فعلية)
@@ -230,12 +270,19 @@ ${dominantSplits.length ? `\n⚠️ أنماط مُفرطة التكرار (قل
 
 سجل الجلسات الأخيرة (فعلي إن سُجِّل، وإلا مقترح عند مستوى "${currentLevel}" كاحتياط):
 ${recentTraining.length ? recentTraining.map(s => `${s.date} | ${s.split} | ${s.exercises}`).join('\n') : 'لا توجد جلسات سابقة'}
-${plateauedMachines.length || exceedingMachines.length ? `
+${(plateauedMachines.length || exceedingMachines.length) ? `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📊 تحليل الالتزام الفعلي (محسوب من تسجيلات العضو الحقيقية)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${plateauedMachines.length ? `⚠️ ركود مؤكد (لا تصاعد حقيقي في آخر 3 تسجيلات): ${plateauedMachines.join(', ')}\n→ لهذه التمارين تحديداً: خفّف الوزن 10% هذا الأسبوع أو غيّر نطاق التكرارات بدل تكرار نفس الرقم` : ''}
-${exceedingMachines.length ? `✅ تجاوز مستمر للمقترح (رفع أعلى من المطلوب مرتين على الأقل من آخر 3): ${exceedingMachines.join(', ')}\n→ لهذه التمارين: ارفع الوزن الأساسي واذكر صراحة في coachNote اقتراح ترقية المستوى` : ''}` : ''}
+${isDeloadWeek ? '⚠️ هذا أسبوع تفريغ — تجاهل إشارات الركود/التجاوز أدناه تماماً هذا الأسبوع فقط (لا تُخفّض ولا ترفع بناءً عليها)، عُد لتطبيقها ابتداءً من الأسبوع القادم:\n' : ''}${plateauedMachines.length ? `⚠️ ركود مؤكد (لا تصاعد حقيقي في آخر 3 تسجيلات): ${plateauedMachines.join(', ')}${isDeloadWeek ? '' : '\n→ الأرجح أن العضو لا يدفع لـRPE كافٍ (أقل من 7) أو خطأ تقني — لهذه التمارين تحديداً: خفّف الوزن 10% هذا الأسبوع أو غيّر نطاق التكرارات بدل تكرار نفس الرقم'}` : ''}
+${exceedingMachines.length ? `✅ تجاوز مستمر للمقترح (رفع أعلى من المطلوب مرتين على الأقل من آخر 3): ${exceedingMachines.join(', ')}${isDeloadWeek ? '' : '\n→ هذا يعني العضو كان يتدرب دون RPE 7 على هذه التمارين — ارفع الوزن الأساسي ليصل RPE 8-9 على المجموعة الأخيرة، واذكر صراحة في coachNote اقتراح ترقية المستوى'}` : ''}` : ''}
+${Object.keys(estimatedOneRM).length ? `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 تقديرات قوة قصوى فعلية (1RM مُقدَّر من سجل هذا العضو تحديداً — Epley)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+للأجهزة التالية توجد بيانات أداء حقيقية لهذا العضو — استخدم هذا الرقم كأساس حساب وزن مستوى "${currentLevel}" تحديداً بدل شريحة المستوى العامة في الجدول المرجعي أدناه (احسبه كنسبة من بروتوكول الهدف مضروبة في نسبة مرحلة الدورة ${CYCLE_PHASE_INFO[cyclePhase].pctLabel}):
+${Object.entries(estimatedOneRM).map(([id, orm]) => `- ${id}: 1RM مُقدَّر ≈ ${orm}كجم`).join('\n')}
+لأي جهاز آخر غير مذكور هنا: لا توجد بيانات كافية — استخدم الجدول المرجعي العام لكل المستويات كما هو.` : ''}
 ${previousMeta ? `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🗒️ توصيتك أنت (المدرب الذكي) من الأسبوع الماضي — يجب المتابعة عليها اليوم
@@ -277,6 +324,14 @@ ${override?.specialInstructions ? `\n━━━━━━━━━━━━━━�
 🎯 بروتوكول الهدف
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${getGoalProtocol(effective.goal)}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📈 مرحلة دورة التدريج الشخصية لهذا العضو (إجباري)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${autoDeloadTriggered ? '⚠️ فُرض هذا كأسبوع تفريغ تلقائياً لهذا العضو تحديداً — مرّت 4 أسابيع متتالية منذ آخر تفريغ له، وجسمه يحتاج تعافياً بغض النظر عن أي إشارة تجاوز مسجّلة.\n' : ''}المرحلة: ${CYCLE_PHASE_LABELS_AR[cyclePhase]} (${CYCLE_PHASE_INFO[cyclePhase].pctLabel}) — ${CYCLE_PHASE_INFO[cyclePhase].description}
+${getRpeGuidance(cyclePhase)}
+${isDeloadWeek ? '⚠️ في أسبوع التفريغ لهذا العضو: كل الجلسات Light أو Moderate فقط — لا توجد جلسة Heavy واحدة هذا الأسبوع مهما اقترح بروتوكول الهدف أو تحليل الالتزام أعلاه.' : ''}
+جدول الأوزان المرجعية أدناه مُدرَّج بالفعل حسب هذه المرحلة — لا تُعدِّله يدوياً بنسبة إضافية.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📅 هيكل الأسبوع التدريبي
@@ -351,16 +406,16 @@ elliptical | Elliptical Cross-trainer | كارديو كامل الجسم
 rower | Rowing Machine | كارديو + ظهر + ذراعين
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚖️ جدول الأوزان المرجعية
+⚖️ جدول الأوزان المرجعية (مُدرَّج حسب مرحلة الدورة أعلاه)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${getWeightStandards(gender, effective.weight)}
+${getWeightStandards(gender, effective.weight, CYCLE_PHASE_INFO[cyclePhase].multiplier)}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🧠 مبادئ البرمجة الاحترافية
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. Progressive Overload الحقيقي: ${isContinuation ? 'استخدم الأوزان الفعلية المسجلة في سجل الجلسات الأخيرة أعلاه كنقطة انطلاق — زد 2.5-5% على التمارين المركبة التي تكررت بنجاح، ولا تعد لجدول أوزان المستوى العام كأنه أول أسبوع' : 'ابدأ بوزن يسمح بـ 2-3 تكرارات احتياطية (RIR)، اقترح زيادة محددة للأسبوع القادم'}
+1. Progressive Overload الحقيقي: ${isDeloadWeek ? 'هذا أسبوع تفريغ — لا تصاعد هذا الأسبوع إطلاقاً، الأولوية للتعافي' : isContinuation ? 'استخدم الأوزان الفعلية المسجلة في سجل الجلسات الأخيرة أعلاه (أو تقديرات 1RM أعلاه إن وُجدت) كنقطة انطلاق — زد 2.5-5% على التمارين المركبة التي تكررت بنجاح، ولا تعد لجدول أوزان المستوى العام كأنه أول أسبوع' : 'ابدأ بوزن يسمح بـ 2-3 تكرارات احتياطية (RIR) — أي RPE 6-7 (نفس نسبة مرحلة التأسيس)، اقترح زيادة محددة للأسبوع القادم'}
 2. SRA Principle: Stimulus → Recovery → Adaptation — لا تكرر نفس المجموعة العضلية قبل 48 ساعة
-3. تناوب الشدة: Heavy (85%+ 1RM) → Moderate (70-80%) → Light/Volume (60-70%)
+3. تناوب الشدة حسب نوع اليوم — طبّق نسبة مرحلة الدورة أعلاه على كل: Heavy (85%+ 1RM) → Moderate (70-80%) → Light/Volume (60-70%)
 4. Mind-Muscle Connection: في كل cue أكد على الإحساس بالعضلة المستهدفة
 5. تدرج الجلسة: إحماء عام → تفعيل → compound ثقيل → isolation → تهدئة
 6. الكميات الأسبوعية الموصى بها:
@@ -387,7 +442,8 @@ ${effective.focusAreas?.length ? `\n9. 🎯 تضخيم التركيز على: ${
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🧘 هيكل التهدئة المطلوب (4-6 عناصر)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. إطالة العضلات العاملة في هذا اليوم (30-60 ث لكل جانب)
+1. إطالة العضلات العاملة في هذا اليوم تحديداً — إجباري تطبيق الخريطة التالية حسب splitType كل جلسة (لا تُخمِّن):
+${Object.entries(SPLIT_MUSCLE_TARGET_MAP).map(([k, v]) => `   - ${k}: ${v}`).join('\n')}
 2. تمارين التنفس العميق والاسترخاء
 3. Foam Rolling للعضلات المجهدة إذا متاح
 4. ملاحظة المدة لكل إطالة
@@ -458,7 +514,7 @@ ${effective.focusAreas?.length ? `\n9. 🎯 تضخيم التركيز على: ${
       "coachNote": "الراحة جزء من البرنامج — العضلات تنمو خلالها لا خلال التمرين. استرح واهتم بالتغذية والنوم."
     }
   ],
-  "weekSummary": "ملخص الأسبوع: توزيع المجموعات العضلية، وكيف يبني هذا الأسبوع على الأسبوع الماضي تحديداً (اذكر ما تغيّر ولماذا)",
+  "weekSummary": "ملخص الأسبوع: مرحلة الدورة الحالية (${CYCLE_PHASE_LABELS_AR[cyclePhase]})، توزيع المجموعات العضلية، وكيف يبني هذا الأسبوع على الأسبوع الماضي تحديداً (اذكر ما تغيّر ولماذا)",
   "progressionNote": "خطة محددة وقابلة للتنفيذ للأسبوع القادم — اسم التمرين + الزيادة الدقيقة (مثال: 'زد Back Squat من 75كجم إلى 80كجم' وليس كلاماً عاماً مثل 'زد الأوزان تدريجياً') — هذا النص سيُقرأ حرفياً الأسبوع القادم لمتابعته"
 }
 
@@ -476,9 +532,11 @@ ${effective.focusAreas?.length ? `\n9. 🎯 تضخيم التركيز على: ${
 ✅ coachNote يجب أن تكون تحفيزية ومحددة لهذا اليوم وهذا المتدرب
 ✅ intensity لكل جلسة: Heavy | Moderate | Light | Cardio | Rest
 ✅ وزّع أيام التمرين بشكل منطقي — لا يومان ثقيلان على نفس العضلة متتاليان
+✅ استخدم أوزان جدول "مرحلة دورة التدريج" أعلاه حرفياً — لا تستخدم أوزان من ذاكرتك أو من أسابيع سابقة
+${isDeloadWeek ? '✅ أسبوع تفريغ: intensity لكل الجلسات النشطة يجب أن تكون Light أو Moderate فقط — ولا سجل واحد "Heavy" هذا الأسبوع' : ''}
 ${neglectedSplits.length ? `✅ أعطِ أولوية حقيقية للأنماط المُهملة المذكورة أعلاه (${neglectedSplits.join(', ')}) — خصص لها يوماً كاملاً هذا الأسبوع إن أمكن` : ''}
-${plateauedMachines.length ? `✅ طبّق تعليمات الركود أعلاه حرفياً على: ${plateauedMachines.join(', ')} — لا تكرر نفس الوزن دون تغيير` : ''}
-${exceedingMachines.length ? `✅ طبّق تعليمات التجاوز أعلاه حرفياً على: ${exceedingMachines.join(', ')} — واذكر اقتراح الترقية في coachNote` : ''}
+${!isDeloadWeek && plateauedMachines.length ? `✅ طبّق تعليمات الركود أعلاه حرفياً على: ${plateauedMachines.join(', ')} — لا تكرر نفس الوزن دون تغيير` : ''}
+${!isDeloadWeek && exceedingMachines.length ? `✅ طبّق تعليمات التجاوز أعلاه حرفياً على: ${exceedingMachines.join(', ')} — واذكر اقتراح الترقية في coachNote` : ''}
 ✅ progressionNote يجب أن يكون توجيهاً رقمياً محدداً (اسم تمرين + وزن دقيق) قابلاً للتنفيذ الحرفي الأسبوع القادم — لا نصائح عامة، وإن وُجد تحليل التزام فعلي أعلاه فاستشهد به تحديداً
 
 أرجع JSON فقط بدون أي كلمة أو نص قبله أو بعده. لا تشرح. لا تعلق.`;
@@ -507,20 +565,29 @@ ${exceedingMachines.length ? `✅ طبّق تعليمات التجاوز أعل�
       await upsertGymSession({ ...s, id, memberId, createdAt: new Date().toISOString() });
     }
 
-    // احفظ ملخص وخطة التقدم لهذا الأسبوع — تُقرأ تلقائياً عند توليد الأسبوع القادم لضمان استمرارية البرمجة
-    if (result.weekSummary || result.progressionNote) {
-      const metaId = Date.now().toString(36) + Math.random().toString(36).slice(2);
-      await upsertGymWeekMeta({
-        id: metaId,
-        memberId,
-        weekStartDate: startDate,
-        weekSummary: result.weekSummary || '',
-        progressionNote: result.progressionNote || '',
-        createdAt: new Date().toISOString(),
-      });
-    }
+    // احفظ ملخص وخطة التقدم ومرحلة الدورة لهذا الأسبوع — تُقرأ تلقائياً عند توليد الأسبوع القادم لهذا العضو
+    // نحفظ دائماً (وليس فقط عند وجود weekSummary/progressionNote) لأن cyclePhase/cycleIndex يجب أن يتقدما كل أسبوع بغض النظر
+    const metaId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    await upsertGymWeekMeta({
+      id: metaId,
+      memberId,
+      weekStartDate: startDate,
+      weekSummary: result.weekSummary || '',
+      progressionNote: result.progressionNote || '',
+      cyclePhase,
+      cycleIndex: newCycleIndex,
+      createdAt: new Date().toISOString(),
+    });
 
-    return NextResponse.json({ ...result, memberId, fromDate: startDate });
+    return NextResponse.json({
+      ...result,
+      memberId,
+      fromDate: startDate,
+      cyclePhase,
+      cyclePhaseLabel: CYCLE_PHASE_LABELS_AR[cyclePhase],
+      autoDeloadTriggered,
+      estimatedOneRM,
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'خطأ في التوليد' }, { status: 500 });
   }

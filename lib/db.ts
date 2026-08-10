@@ -633,6 +633,9 @@ export interface GymWeekMeta {
   weekSummary: string;
   progressionNote: string;
   createdAt: string;
+  // دورة تدريج شخصية لكل عضو (اختيارية — سجلات قديمة قبل هذه الميزة لن تملكها)
+  cyclePhase?: 'foundation' | 'build' | 'peak' | 'deload';
+  cycleIndex?: number;
 }
 
 export async function upsertGymWeekMeta(meta: GymWeekMeta): Promise<GymWeekMeta> {
@@ -645,10 +648,12 @@ export async function upsertGymWeekMeta(meta: GymWeekMeta): Promise<GymWeekMeta>
   return meta;
 }
 
-export async function getLatestGymWeekMeta(memberId: string, beforeDate: string): Promise<GymWeekMeta | undefined> {
+/** أحدث حالة مُخزَّنة لهذا العضو — إن مُرِّر beforeDate يُقيَّد البحث بما قبله (لبناء برومت التوليد)، وإلا يُرجَع أحدث أسبوع مخزّن مطلقاً (لعرض حالة الدورة قبل التوليد) */
+export async function getLatestGymWeekMeta(memberId: string, beforeDate?: string): Promise<GymWeekMeta | undefined> {
   const db = await getDb();
+  const filter = beforeDate ? { memberId, weekStartDate: { $lt: beforeDate } } : { memberId };
   const docs = await db.collection('gym_week_meta')
-    .find({ memberId, weekStartDate: { $lt: beforeDate } })
+    .find(filter)
     .sort({ weekStartDate: -1 })
     .limit(1)
     .toArray();
