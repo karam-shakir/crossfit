@@ -253,20 +253,33 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   const [runProfile, setRunProfile] = useState<any>(null);
   const [runOverride, setRunOverride] = useState<any>(null);
   const [runShowOverride, setRunShowOverride] = useState(false);
+  const [runCyclePhaseOverride, setRunCyclePhaseOverride] = useState('auto'); // auto/foundation/build/peak/deload — أهداف السباق العادية
+  const [runWalkStageOverride, setRunWalkStageOverride] = useState<number | null>(null); // فرض مرحلة مشي/جري لبرنامج كبار السن
+  const [runCycleStatus, setRunCycleStatus] = useState<any>(null);
+  const [runCycleStatusLoading, setRunCycleStatusLoading] = useState(false);
 
   useEffect(() => {
     if (runSelectedMember) {
-      setRunProfile(null); setRunOverride(null); setRunShowOverride(false);
+      setRunProfile(null); setRunShowOverride(false); setRunCycleStatus(null); setRunCyclePhaseOverride('auto'); setRunWalkStageOverride(null);
       fetch(`/api/running/profile?memberId=${runSelectedMember}`).then(r => r.json()).then(d => {
         setRunProfile(d || null);
-        if (d) setRunOverride({
-          goal: d.goal, level: d.level, daysPerWeek: d.daysPerWeek, gender: d.gender || 'male',
-          surface: d.surface || 'mixed', currentWeeklyKm: d.currentWeeklyKm || '', best5kTime: d.best5kTime || '',
-          targetRaceDate: d.targetRaceDate || '', limitations: d.limitations || '', specialInstructions: '',
+        // نهيّئ دائماً حتى بلا بروفايل محفوظ — يتيح للمدرب إعداد عضو جديد (مثلاً برنامج كبار سن) من الصفر
+        setRunOverride({
+          goal: d?.goal || 'general_endurance', level: d?.level || 'beginner', daysPerWeek: d?.daysPerWeek || 3,
+          gender: d?.gender || 'male', surface: d?.surface || 'mixed', currentWeeklyKm: d?.currentWeeklyKm || '',
+          best5kTime: d?.best5kTime || '', targetRaceDate: d?.targetRaceDate || '', limitations: d?.limitations || '',
+          specialInstructions: '',
         });
       });
+      setRunCycleStatusLoading(true);
+      fetch(`/api/running/cycle-status?memberId=${runSelectedMember}`).then(r => r.json()).then(d => setRunCycleStatus(d)).finally(() => setRunCycleStatusLoading(false));
     }
   }, [runSelectedMember]);
+  function refreshRunCycleStatus() {
+    if (!runSelectedMember) return;
+    setRunCycleStatusLoading(true);
+    fetch(`/api/running/cycle-status?memberId=${runSelectedMember}`).then(r => r.json()).then(d => setRunCycleStatus(d)).finally(() => setRunCycleStatusLoading(false));
+  }
 
   async function generateRunPlan() {
     if (!runSelectedMember) return;
@@ -275,12 +288,17 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
       const res = await fetch('/api/running/generate-week', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ memberId: runSelectedMember, fromDate: runFromDate, override: runOverride }),
+        body: JSON.stringify({
+          memberId: runSelectedMember, fromDate: runFromDate, override: runOverride,
+          cyclePhaseOverride: runCyclePhaseOverride,
+          walkRunStageOverride: runWalkStageOverride === null ? undefined : runWalkStageOverride,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل التوليد');
       setRunPlan(data);
       setRunSaved(true);
+      refreshRunCycleStatus();
     } catch (e: any) {
       setRunError(e.message);
     } finally {
@@ -2864,6 +2882,44 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                 )}
               </div>
 
+              {/* شريط حالة البرنامج — دورة تدريج / تخفيف سباق / مرحلة مشي-جري كبار السن */}
+              {runSelectedMember && runCycleStatus && (
+                <div className={`rounded-xl border px-4 py-3 text-sm flex items-start gap-3 ${
+                  runCycleStatus.mode === 'taper' || runCycleStatus.autoDeloadTriggered
+                    ? 'bg-amber-900/30 border-amber-700/50 text-amber-200'
+                    : runCycleStatus.mode === 'senior'
+                    ? 'bg-emerald-900/20 border-emerald-700/40 text-emerald-200'
+                    : 'bg-cyan-900/20 border-cyan-700/40 text-cyan-200'
+                }`}>
+                  <span className="text-lg leading-none">
+                    {runCycleStatus.mode === 'taper' ? '🏁' : runCycleStatus.mode === 'senior' ? '🚶' : runCycleStatus.autoDeloadTriggered ? '⚠️' : '📈'}
+                  </span>
+                  <div className="flex-1 leading-relaxed">
+                    {runCycleStatus.mode === 'senior' && (
+                      <>
+                        <div className="font-semibold text-white">المرحلة الحالية: {runCycleStatus.currentStageLabel}</div>
+                        <div className="text-xs opacity-80 mt-0.5">
+                          {runCycleStatus.isMaxStage ? 'وصل لمرحلة الحفاظ الصحي — لا حاجة لترقية أكثر' : `متبقٍ ${runCycleStatus.weeksUntilNextStage} ${runCycleStatus.weeksUntilNextStage === 1 ? 'أسبوع' : 'أسابيع'} للترقية التالية`}
+                        </div>
+                      </>
+                    )}
+                    {runCycleStatus.mode === 'taper' && (
+                      <>
+                        <div className="font-semibold text-white">{runCycleStatus.taperInfo?.phaseLabel}</div>
+                        <div className="text-xs opacity-80 mt-0.5">متبقٍ {runCycleStatus.taperInfo?.weeksUntilRace} على السباق — سيُخفَّض الحجم تلقائياً</div>
+                      </>
+                    )}
+                    {runCycleStatus.mode === 'cycle' && (
+                      <>
+                        <div className="font-semibold text-white">دورة التدريج القادمة: {runCycleStatus.nextPhaseLabel}</div>
+                        <div className="text-xs opacity-80 mt-0.5">{runCycleStatus.nextPhaseInfo?.description}</div>
+                        {runCycleStatus.autoDeloadTriggered && <div className="text-xs mt-1 text-amber-300">سيُفرض أسبوع تفريغ تلقائياً (4 أسابيع منذ آخر تفريغ)</div>}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Step 2 — Coach Overrides */}
               {runSelectedMember && runOverride && (
                 <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
@@ -2894,6 +2950,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                             { v: 'half_marathon',     l: '🏅 نصف ماراثون',    sub: 'جري طويل حتى 19كم' },
                             { v: 'marathon',          l: '🏆 ماراثون',         sub: 'أحجام عالية' },
                             { v: 'speed',             l: '💨 سرعة قصوى',       sub: 'انفجارية + تلال' },
+                            { v: 'senior_walk_run',   l: '🚶 مشي وجري لكبار السن', sub: 'صحة عامة — بلا سباقات' },
                           ].map(g => (
                             <button key={g.v} onClick={() => setRunOverride((p: any) => ({ ...p, goal: g.v }))}
                               className={`flex items-center gap-3 px-3 py-2 rounded-xl border text-right text-sm transition-all ${runOverride.goal === g.v ? 'border-cyan-500 bg-cyan-900/30 text-white' : 'border-gray-700 bg-gray-800/50 text-gray-400 hover:border-gray-600'}`}>
@@ -2904,6 +2961,33 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                           ))}
                         </div>
                       </div>
+
+                      {/* فرض مرحلة الدورة (أهداف السباق) أو مرحلة المشي/الجري (كبار السن) */}
+                      {runOverride.goal === 'senior_walk_run' ? (
+                        <div>
+                          <label className="text-xs text-gray-400 font-semibold block mb-2">📈 فرض مرحلة المشي/الجري (اختياري — الافتراضي تلقائي)</label>
+                          <select value={runWalkStageOverride === null ? '' : runWalkStageOverride}
+                            onChange={e => setRunWalkStageOverride(e.target.value === '' ? null : Number(e.target.value))}
+                            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-emerald-500">
+                            <option value="">🔄 تلقائي — حسب التقدّم المُسجَّل</option>
+                            {Array.from({ length: 9 }, (_, i) => i).map(n => (
+                              <option key={n} value={n}>مرحلة {n}</option>
+                            ))}
+                          </select>
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="text-xs text-gray-400 font-semibold block mb-2">📈 فرض مرحلة دورة التدريج (يُتجاهَل تلقائياً إن كان هناك تخفيف سباق نشط)</label>
+                          <div className="grid grid-cols-5 gap-1.5">
+                            {CYCLE_PHASE_OPTIONS.map(p => (
+                              <button key={p.v} onClick={() => setRunCyclePhaseOverride(p.v)}
+                                className={`py-2 rounded-xl text-[11px] font-semibold border transition-all ${runCyclePhaseOverride === p.v ? 'border-cyan-500 bg-cyan-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                                {p.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       {/* المستوى */}
                       <div>
@@ -3062,6 +3146,24 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                     </span>
                   </div>
 
+                  {runPlan.mode === 'senior' && (
+                    <div className="bg-emerald-900/20 border border-emerald-700/30 rounded-xl px-3 py-2.5 text-xs text-emerald-300 flex items-center gap-2">
+                      <span>{runPlan.justAdvanced ? '🎉' : '🚶'}</span>
+                      <span>المرحلة: <span className="font-semibold text-white">{runPlan.stageLabel}</span>{runPlan.justAdvanced ? ' — ترقية جديدة هذا الأسبوع!' : ''}</span>
+                    </div>
+                  )}
+                  {runPlan.mode === 'taper' && (
+                    <div className="bg-amber-900/30 border border-amber-700/50 rounded-xl px-3 py-2.5 text-xs text-amber-200 flex items-center gap-2">
+                      <span>🏁</span>
+                      <span>{runPlan.taperInfo?.phaseLabel} — متبقٍ {runPlan.taperInfo?.weeksUntilRace} على السباق</span>
+                    </div>
+                  )}
+                  {runPlan.mode === 'cycle' && runPlan.cyclePhaseLabel && (
+                    <div className={`rounded-xl border px-3 py-2.5 text-xs flex items-center gap-2 ${runPlan.autoDeloadTriggered ? 'bg-amber-900/30 border-amber-700/50 text-amber-200' : 'bg-cyan-900/20 border-cyan-700/40 text-cyan-200'}`}>
+                      <span>{runPlan.autoDeloadTriggered ? '⚠️' : '📈'}</span>
+                      <span>بُرمج على مرحلة: <span className="font-semibold text-white">{runPlan.cyclePhaseLabel}</span>{runPlan.autoDeloadTriggered ? ' — فُرض تلقائياً' : ''}</span>
+                    </div>
+                  )}
                   {runPlan.weekSummary && (
                     <div className="bg-cyan-900/20 border border-cyan-700/30 rounded-xl px-3 py-2.5 text-xs text-cyan-300">
                       📌 {runPlan.weekSummary}

@@ -746,7 +746,7 @@ export async function deleteGymExerciseLog(memberId: string, date: string, machi
 export interface RunningProfile {
   id: string;
   memberId: string;
-  goal: 'general_endurance' | 'fat_burn' | 'race_5k' | 'race_10k' | 'half_marathon' | 'marathon' | 'speed';
+  goal: 'general_endurance' | 'fat_burn' | 'race_5k' | 'race_10k' | 'half_marathon' | 'marathon' | 'speed' | 'senior_walk_run';
   level: 'beginner' | 'intermediate' | 'advanced' | 'elite';
   gender?: 'male' | 'female';
   age?: number;
@@ -845,6 +845,47 @@ export async function upsertRunningSession(session: RunningSession): Promise<Run
 export async function deleteRunningSessionsByMember(memberId: string, fromDate: string, toDate: string): Promise<void> {
   const db = await getDb();
   await db.collection('running_sessions').deleteMany({ memberId, date: { $gte: fromDate, $lte: toDate } });
+}
+
+// ===================== RUNNING WEEK META (استمرارية البرمجة أسبوعاً بعد أسبوع) =====================
+// نفس فكرة GymWeekMeta: يقرأ توصية الأسبوع الماضي، ويتتبع مرحلة دورة التدريج (سباقات)
+// أو مرحلة تقدّم المشي/الجري (كبار السن) لكل عداء تحديداً
+
+export interface RunningWeekMeta {
+  id: string;
+  memberId: string;
+  weekStartDate: string;
+  weekSummary: string;
+  progressionNote: string;
+  createdAt: string;
+  // دورة تدريج عادية (سباقات) — لا تُستخدم لبرنامج كبار السن
+  cyclePhase?: 'foundation' | 'build' | 'peak' | 'deload';
+  cycleIndex?: number;
+  // مرحلة تقدّم المشي/الجري لبرنامج كبار السن تحديداً (Couch-to-5K الگ) — لا علاقة لها بدورة السباقات
+  runWalkStage?: number;
+  weeksAtStage?: number; // كم أسبوعاً مضى على هذه المرحلة — يُستخدم لتحديد موعد الترقية (كل أسبوعين)
+}
+
+export async function upsertRunningWeekMeta(meta: RunningWeekMeta): Promise<RunningWeekMeta> {
+  const db = await getDb();
+  await db.collection('running_week_meta').replaceOne(
+    { memberId: meta.memberId, weekStartDate: meta.weekStartDate },
+    meta,
+    { upsert: true }
+  );
+  return meta;
+}
+
+/** أحدث حالة مُخزَّنة لهذا العداء — إن مُرِّر beforeDate يُقيَّد البحث بما قبله، وإلا يُرجَع أحدث أسبوع مطلقاً */
+export async function getLatestRunningWeekMeta(memberId: string, beforeDate?: string): Promise<RunningWeekMeta | undefined> {
+  const db = await getDb();
+  const filter = beforeDate ? { memberId, weekStartDate: { $lt: beforeDate } } : { memberId };
+  const docs = await db.collection('running_week_meta')
+    .find(filter)
+    .sort({ weekStartDate: -1 })
+    .limit(1)
+    .toArray();
+  return docs[0] ? strip_id<RunningWeekMeta>(docs[0]) : undefined;
 }
 
 // ===================== CALISTHENICS PROFILES =====================

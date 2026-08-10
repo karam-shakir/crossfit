@@ -11,6 +11,7 @@ const GOALS = [
   { value: 'half_marathon',     label: 'نصف ماراثون',     icon: '🏅', desc: 'الاستعداد لـ 21.1 كم',                  detail: 'جري طويل متدرج حتى 19 كم' },
   { value: 'marathon',          label: 'ماراثون',         icon: '🏆', desc: 'الاستعداد لـ 42.2 كم',                  detail: 'أحجام عالية + جري طويل حتى 34 كم' },
   { value: 'speed',             label: 'سرعة قصوى',       icon: '💨', desc: 'تطوير السرعة الانفجارية',               detail: 'تكرارات قصيرة + Hill Sprints' },
+  { value: 'senior_walk_run',   label: 'مشي وجري لكبار السن', icon: '🚶', desc: 'تحسين الصحة العامة بأمان — لا سباقات ولا أرقام', detail: 'تدرّج بطيء وآمن (مشي→جري) يُتابَع أسبوعياً' },
 ];
 
 const LEVELS = [
@@ -18,6 +19,15 @@ const LEVELS = [
   { value: 'intermediate', label: 'متوسط', icon: '🔵', desc: 'أجري بانتظام منذ 6 أشهر+',      detail: 'جري متواصل مريح، 25-45 كم أسبوعياً' },
   { value: 'advanced',     label: 'متقدم', icon: '🟠', desc: 'سنتان+ وشاركت في سباقات',       detail: 'جلسات جودة منظمة، 45-70 كم أسبوعياً' },
   { value: 'elite',        label: 'نخبة',  icon: '🔴', desc: 'عداء تنافسي جاد',               detail: 'أحجام عالية وجودة مزدوجة، 70+ كم' },
+];
+
+// مستويات مختلفة تماماً لبرنامج كبار السن — لا علاقة لها بالكيلومترات أو السباقات،
+// بل بمستوى الحركة اليومية الحالي الذي يحدد نقطة انطلاق برنامج المشي/الجري
+const SENIOR_LEVELS = [
+  { value: 'beginner',     label: 'خامل حالياً', icon: '🟢', desc: 'لا أمارس رياضة منتظمة حالياً', detail: 'نبدأ بمشي فقط قبل أي جري' },
+  { value: 'intermediate', label: 'أمشي بانتظام', icon: '🔵', desc: 'أمشي بانتظام لكن لم أجرّب الجري', detail: 'نبدأ بمزيج مشي/جري خفيف' },
+  { value: 'advanced',     label: 'نشيط ومتحرك',  icon: '🟠', desc: 'نشيط ومشي مسافات طويلة بانتظام', detail: 'نبدأ بجري متقطع أطول' },
+  { value: 'elite',        label: 'عائد للجري',   icon: '🔴', desc: 'جرّبت الجري من قبل أو نشيط جداً لعمري', detail: 'نبدأ من مرحلة متقدمة أكثر' },
 ];
 
 const SURFACES = [
@@ -127,7 +137,7 @@ export default function RunningProfileClient({ member, initialProfile }: { membe
           <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3 shadow-sm">
             <h2 className="font-bold text-slate-800 text-base flex items-center gap-2"><span>📊</span> مستواك الحالي</h2>
             <div className="space-y-2">
-              {LEVELS.map(l => (
+              {(goal === 'senior_walk_run' ? SENIOR_LEVELS : LEVELS).map(l => (
                 <button key={l.value} onClick={() => setLevel(l.value)}
                   className={`w-full flex items-start gap-3 p-4 rounded-xl border text-right transition-all ${level === l.value ? 'border-cyan-500 bg-cyan-50 ring-1 ring-cyan-300' : 'border-slate-200 bg-slate-50 hover:border-slate-300'}`}>
                   <span className="text-2xl flex-shrink-0">{l.icon}</span>
@@ -153,6 +163,11 @@ export default function RunningProfileClient({ member, initialProfile }: { membe
                 </button>
               ))}
             </div>
+            {goal === 'senior_walk_run' && (
+              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                ⚠️ لأسباب السلامة، برنامج كبار السن لن يتجاوز 3 أيام نشطة أسبوعياً مع راحة كاملة بين كل جلستين — بغض النظر عن اختيارك هنا
+              </p>
+            )}
             {DAYS_INFO[daysPerWeek] && (
               <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-3">
                 <div className="font-bold text-cyan-800 text-sm">{DAYS_INFO[daysPerWeek].split}</div>
@@ -179,38 +194,48 @@ export default function RunningProfileClient({ member, initialProfile }: { membe
             </div>
           </div>
 
-          {/* بيانات الجري الحالية */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 shadow-sm">
-            <h2 className="font-bold text-slate-800 text-base flex items-center gap-2">
-              <span>⏱️</span> مستواك الحالي في الجري
-              <span className="text-xs text-slate-400 font-normal">(تحسّن دقة الإيقاعات المقترحة)</span>
-            </h2>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label className="text-sm text-slate-500 font-medium">🛣️ كم تجري أسبوعياً؟</label>
-                <div className="relative">
-                  <input type="number" value={currentWeeklyKm} onChange={e => setCurrentWeeklyKm(e.target.value)} placeholder="15"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-slate-800 text-base font-semibold focus:outline-none focus:border-cyan-500 pr-3" />
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">كم</span>
+          {/* بيانات الجري الحالية — غير مناسبة لبرنامج كبار السن (لا إيقاعات ولا سباقات) */}
+          {goal === 'senior_walk_run' ? (
+            <div className="bg-emerald-50 rounded-2xl border border-emerald-200 p-5 space-y-2 shadow-sm">
+              <h2 className="font-bold text-emerald-800 text-base flex items-center gap-2"><span>💚</span> برنامج صحي بلا أرقام</h2>
+              <p className="text-sm text-emerald-700 leading-relaxed">
+                هذا البرنامج لا يعتمد على زمن سباق أو إيقاع محدد — فقط على مستوى حركتك الحالي (بالأعلى) والالتزام الأسبوعي.
+                سيتابع مدربك تقدّمك أسبوعاً بعد أسبوع ويرفع مستوى الجلسة تدريجياً بأمان.
+              </p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 shadow-sm">
+              <h2 className="font-bold text-slate-800 text-base flex items-center gap-2">
+                <span>⏱️</span> مستواك الحالي في الجري
+                <span className="text-xs text-slate-400 font-normal">(تحسّن دقة الإيقاعات المقترحة)</span>
+              </h2>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-sm text-slate-500 font-medium">🛣️ كم تجري أسبوعياً؟</label>
+                  <div className="relative">
+                    <input type="number" value={currentWeeklyKm} onChange={e => setCurrentWeeklyKm(e.target.value)} placeholder="15"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-slate-800 text-base font-semibold focus:outline-none focus:border-cyan-500 pr-3" />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">كم</span>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm text-slate-500 font-medium">⚡ أفضل زمن 5 كم</label>
+                  <input type="text" value={best5kTime} onChange={e => setBest5kTime(e.target.value)} placeholder="28:30"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-slate-800 text-base font-semibold focus:outline-none focus:border-cyan-500 text-center font-mono" dir="ltr" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm text-slate-500 font-medium">🏁 أفضل زمن 10 كم</label>
+                  <input type="text" value={best10kTime} onChange={e => setBest10kTime(e.target.value)} placeholder="59:00"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-slate-800 text-base font-semibold focus:outline-none focus:border-cyan-500 text-center font-mono" dir="ltr" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm text-slate-500 font-medium">🗓️ سباق مستهدف (اختياري)</label>
+                  <input type="date" value={targetRaceDate} onChange={e => setTargetRaceDate(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-slate-800 text-sm focus:outline-none focus:border-cyan-500" />
                 </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm text-slate-500 font-medium">⚡ أفضل زمن 5 كم</label>
-                <input type="text" value={best5kTime} onChange={e => setBest5kTime(e.target.value)} placeholder="28:30"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-slate-800 text-base font-semibold focus:outline-none focus:border-cyan-500 text-center font-mono" dir="ltr" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm text-slate-500 font-medium">🏁 أفضل زمن 10 كم</label>
-                <input type="text" value={best10kTime} onChange={e => setBest10kTime(e.target.value)} placeholder="59:00"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-slate-800 text-base font-semibold focus:outline-none focus:border-cyan-500 text-center font-mono" dir="ltr" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm text-slate-500 font-medium">🗓️ سباق مستهدف (اختياري)</label>
-                <input type="date" value={targetRaceDate} onChange={e => setTargetRaceDate(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-slate-800 text-sm focus:outline-none focus:border-cyan-500" />
-              </div>
             </div>
-          </div>
+          )}
 
           {/* البيانات الجسدية */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 shadow-sm">
