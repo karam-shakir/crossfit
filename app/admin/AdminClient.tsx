@@ -14,7 +14,7 @@ const FOCUS_OPTIONS = [
 ];
 
 function emptyWod(date: string) {
-  return { date, title: '', type: 'للوقت', duration: '', rounds: '', notes: '', warmup: [], strength: [], metcon: [], cooldown: [] };
+  return { date, title: '', type: 'للوقت', duration: '', rounds: '', notes: '', warmup: [], strength: [], metcon: [], accessory: [], cooldown: [] };
 }
 
 function emptyExercise() {
@@ -764,6 +764,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
     { key: 'warmup', label: 'الإحماء 🔆' },
     { key: 'strength', label: 'القوة 🏋️' },
     { key: 'metcon', label: 'الـ WOD 🔥' },
+    { key: 'accessory', label: 'الأكسسوار 💪' },
     { key: 'cooldown', label: 'التهدئة 🧘' },
   ];
 
