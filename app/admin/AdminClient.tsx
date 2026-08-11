@@ -21,7 +21,7 @@ function emptyExercise() {
   return { exerciseId: '', reps: '', weight: '', distance: '', time: '', notes: '' };
 }
 
-export default function AdminClient({ member, exercises }: { member: any; exercises: any[] }) {
+export default function AdminClient({ member, exercises, isFullAdmin = true }: { member: any; exercises: any[]; isFullAdmin?: boolean }) {
   const [tab, setTab] = useState<AdminTab>('wod');
   const [wod, setWod] = useState<any>(emptyWod(todaySA()));
   const [wodLoading, setWodLoading] = useState(false);
@@ -785,31 +785,40 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
               className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'weekly' ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
               📅 خطة CrossFit
             </button>
-            <button onClick={() => setTab('sports')}
-              className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'sports' ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
-              🏋️ خطة الرياضات
-            </button>
-            <button onClick={() => setTab('gym')}
-              className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'gym' ? 'bg-violet-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
-              🏛️ جيم Technogym
-            </button>
-            <button onClick={() => setTab('running')}
-              className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'running' ? 'bg-cyan-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
-              🏃 العدّائين
-            </button>
-            <button onClick={() => setTab('cali')}
-              className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'cali' ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
-              🤸 كاليسثنكس
-            </button>
-            <button onClick={() => setTab('members')}
-              className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'members' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
-              👥 الأعضاء
-            </button>
-            <button onClick={() => setTab('logs')}
-              className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'logs' ? 'bg-teal-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
-              📋 سجل الدخول
-            </button>
+            {isFullAdmin && (
+              <>
+                <button onClick={() => setTab('sports')}
+                  className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'sports' ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+                  🏋️ خطة الرياضات
+                </button>
+                <button onClick={() => setTab('gym')}
+                  className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'gym' ? 'bg-violet-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+                  🏛️ جيم Technogym
+                </button>
+                <button onClick={() => setTab('running')}
+                  className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'running' ? 'bg-cyan-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+                  🏃 العدّائين
+                </button>
+                <button onClick={() => setTab('cali')}
+                  className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'cali' ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+                  🤸 كاليسثنكس
+                </button>
+                <button onClick={() => setTab('members')}
+                  className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'members' ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+                  👥 الأعضاء
+                </button>
+                <button onClick={() => setTab('logs')}
+                  className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'logs' ? 'bg-teal-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+                  📋 سجل الدخول
+                </button>
+              </>
+            )}
           </div>
+          {!isFullAdmin && (
+            <div className="bg-pink-900/20 border border-pink-700/30 rounded-xl px-4 py-2.5 text-xs text-pink-300">
+              🤝 صلاحية مدرّب — يمكنك توليد وحفظ تمارين الكروسفت فقط. لإدارة الأعضاء أو الرياضات الأخرى تواصل مع مدير النظام.
+            </div>
+          )}
 
           {/* WOD Builder */}
           {tab === 'wod' && (

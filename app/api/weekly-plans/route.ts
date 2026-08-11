@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import { canManageCrossfitWod } from '@/lib/permissions';
 import { getDb } from '@/lib/mongodb';
 
 function generateId() {
@@ -8,7 +9,7 @@ function generateId() {
 
 export async function GET() {
   const session = await getSession();
-  if (!session || session.role !== 'admin')
+  if (!session || !(await canManageCrossfitWod(session)))
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
   const db = await getDb();
   const plans = await db.collection('weekly_plans')
@@ -18,7 +19,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== 'admin')
+  if (!session || !(await canManageCrossfitWod(session)))
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
   const body = await req.json();
   const db = await getDb();
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== 'admin')
+  if (!session || !(await canManageCrossfitWod(session)))
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
   const { searchParams } = new URL(req.url);
   const id = searchParams.get('id');

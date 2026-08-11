@@ -294,6 +294,7 @@ export default function Navbar({ member }: {
   const [open, setOpen] = useState(false);
 
   const isAdmin = member.role === 'admin';
+  const canManageCrossfit = isAdmin || member.canGenerateWod === true;
   const [impersonationBanner, setImpersonationBanner] = useState(false);
 
   useEffect(() => {
@@ -355,6 +356,8 @@ export default function Navbar({ member }: {
               <div className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
                 {isAdmin
                   ? <><IcUserShield className="w-3 h-3 text-purple-400"/><span className="text-purple-400">مدير النظام</span></>
+                  : canManageCrossfit
+                  ? <><IcUserShield className="w-3 h-3 text-pink-400"/><span className="text-pink-400">مدرّب</span></>
                   : <><IcUser className="w-3 h-3 text-gray-500"/><span>عضو</span></>
                 }
               </div>
@@ -375,7 +378,7 @@ export default function Navbar({ member }: {
             />
           ))}
 
-          {isAdmin && (
+          {canManageCrossfit && (
             <>
               <div className="border-t border-gray-800 my-1.5 mx-1"/>
               <Link href="/admin"
@@ -468,7 +471,7 @@ export default function Navbar({ member }: {
                   </Link>
                 );
               })}
-              {isAdmin && (
+              {canManageCrossfit && (
                 <Link href="/admin" onClick={() => setOpen(false)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '10px',

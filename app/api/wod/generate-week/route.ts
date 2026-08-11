@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
+import { canManageCrossfitWod } from '@/lib/permissions';
 import { todaySA } from '@/lib/timezone';
 import { getWods, getLatestWodCycleMeta, upsertWodCycleMeta } from '@/lib/db';
 import {
@@ -24,7 +25,7 @@ const DAY_NAMES: Record<number, string> = {
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== 'admin')
+  if (!session || !(await canManageCrossfitWod(session)))
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));

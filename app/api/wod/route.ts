@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getWods, getWodByDate, getWodsByMonth, upsertWod, deleteWodById, getExercises } from '@/lib/db';
 import { getSession } from '@/lib/auth';
+import { canManageCrossfitWod } from '@/lib/permissions';
 
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== 'admin')
+  if (!session || !(await canManageCrossfitWod(session)))
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const body = await req.json();
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== 'admin')
+  if (!session || !(await canManageCrossfitWod(session)))
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const { searchParams } = new URL(req.url);
