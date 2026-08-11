@@ -370,11 +370,14 @@ ${latestCycleMeta?.progressionNote ? `\n🗒️ توصيتك أنت (المدر�
   const maxTokens = Math.min(32000, Math.max(16000, days * 4000));
 
   try {
-    const message = await client.messages.create({
+    // البث (stream) إجباري هنا — الحد الأقصى للتوكنز (حتى 32000) قد يستغرق أكثر من 10 دقائق نظرياً،
+    // وواجهة Anthropic البرمجية ترفض طلبات create() العادية بهذا الحجم وتطلب البث صراحة
+    const stream = client.messages.stream({
       model: 'claude-opus-4-8',
       max_tokens: maxTokens,
       messages: [{ role: 'user', content: prompt }],
     });
+    const message = await stream.finalMessage();
 
     let jsonText = '';
     for (const block of message.content) {
