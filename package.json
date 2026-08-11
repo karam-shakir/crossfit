@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed": "npx tsx scripts/seed-mongodb.ts"
+    "seed": "npx tsx scripts/seed-mongodb.ts",
+    "verify:crossfit": "npx tsx scripts/verify-crossfit-week.ts",
+    "verify:crossfit:live": "npx tsx scripts/verify-crossfit-week.ts --live"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.101.0",
