@@ -4,10 +4,11 @@ import { getSession } from '@/lib/auth';
 import { todaySA } from '@/lib/timezone';
 import { getWods, getLatestWodCycleMeta } from '@/lib/db';
 import {
-  EXERCISES, getCalisthenicsExercises, MovementPattern, CyclePhase,
+  EXERCISES, getCalisthenicsExercises, MovementPattern, CyclePhase, PartnerFormat,
   suggestPattern, accessoryGuidanceFor, cooldownGuidanceFor, strengthGuidanceFor, warmupGuidanceFor,
   getBenchmarkGuidance, getClassTimeBudget, getEquipmentGuidance, getRxFocusGuidance,
   computeNextCyclePhase, CYCLE_PHASE_LABELS_AR, CYCLE_PHASE_INFO, getRpeGuidance, getWeightStandardsTable,
+  suggestPartnerFormat, partnerFormatGuidanceFor, PARTNER_SESSION_COHERENCE_GUIDANCE, PARTNER_FORMAT_LABELS_AR,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
 
@@ -35,6 +36,7 @@ export async function POST(req: NextRequest) {
     rxFocus = 'balanced',        // rx / scaled / balanced
     benchmarkName = '',          // مفتاح بنشمارك من BENCHMARKS (fran, cindy, ...)
     cyclePhaseOverride = 'auto', // auto / foundation / build / peak / deload — فرض مرحلة دورة تدريج ليوم هذا التمرين فقط
+    partnerMode = false,         // true = اجعل هذا اليوم جلسة بارتنر متماسكة من الإحماء حتى التهدئة
   } = body;
 
   const CALISTHENICS_EXERCISES = getCalisthenicsExercises();
@@ -134,6 +136,10 @@ ${muscleGroupLog.map(d => `${d.date}: [${d.muscles.join(' + ')}] — شدة: ${d
 
   const benchmarkGuidance = wodMode === 'crossfit' && benchmarkName ? getBenchmarkGuidance(benchmarkName) : '';
   const isBenchmarkDay = !!benchmarkGuidance;
+
+  // ═══ يوم البارتنر — طبقة صيغة فوق نمط اليوم العادي، لا يُفعَّل في أيام البنشمارك الثابتة ═══
+  const isPartnerDay = wodMode === 'crossfit' && partnerMode && !isBenchmarkDay;
+  const partnerFormat: PartnerFormat | null = isPartnerDay ? suggestPartnerFormat(effectivePattern) : null;
 
   const calisthenicsPrompt = `أنت مدرب Calisthenics محترف بخبرة أكثر من 10 سنوات، متخصص في برمجة تمارين وزن الجسم والجمناستيكس على المستوى التنافسي. أسلوبك يشبه أفضل مدربي Street Workout وGymnastics Strength Training (GST).
 
@@ -257,7 +263,8 @@ ${cooldownGuidanceFor(effectivePattern)}
 **📈 مرحلة دورة التدريج الحالية — استخدم أوزان هذه المرحلة حرفياً، لا أوزاناً من ذاكرتك:**
 المرحلة: ${CYCLE_PHASE_LABELS_AR[cyclePhase]} (${CYCLE_PHASE_INFO[cyclePhase].pctLabel}) — ${CYCLE_PHASE_INFO[cyclePhase].description}
 ${getRpeGuidance(cyclePhase)}
-${getWeightStandardsTable(cyclePhase)}` : ''}
+${getWeightStandardsTable(cyclePhase)}
+${isPartnerDay && partnerFormat ? `\n**${partnerFormatGuidanceFor(partnerFormat)}**\n${PARTNER_SESSION_COHERENCE_GUIDANCE}` : ''}` : ''}
 
 **فلسفة البرمجة الاحترافية:**
 ✦ استخدم تحليل الأسبوع أعلاه لتحديد شدة اليوم والمجموعات المستهدفة
@@ -288,6 +295,7 @@ ${!isBenchmarkDay ? `✦ ⚠️ لا تجعل الميتكون معاكساً ب
   "type": "للوقت | AMRAP | قوة | تدريب",
   "duration": 20,
   "rounds": 5,
+  ${isPartnerDay ? `"isPartnerWod": true,\n  "partnerFormat": "${partnerFormat}",` : ''}
   "notes": "ملاحظات تفصيلية: كيف تُقسّم الجهد، متى تتنفس، معايير الحركة (Movement Standards) للحركات الرئيسية",
   "theme": "الرابط التدريبي بين القوة والميتكون ونظام الطاقة المستهدف",
   "targetTimes": {
@@ -380,6 +388,7 @@ ${isBenchmarkDay ? '' : '- القوة: 1-3 تمارين barbell compound حسب 
 ${isBenchmarkDay ? '- الأكسسوار: مصفوفة فارغة [] — البنشمارك هو كامل التحفيز' : '- الأكسسوار: 1-3 تمارين حسب ميزانية الوقت — طبّق قاعدة التوافق أعلاه بدقة صارمة ولا تخرج عنها، واذكر السبب في notes'}
 - التهدئة: 2-3 إطالات ثابتة (static stretches) — طبّق قاعدة توافق التهدئة أعلاه بدقة صارمة، واذكر السبب في notes
 - إن كان اليوم Olympic (snatch/clean-and-jerk/power-clean)، اذكر في notes ملاحظة أمان عن تقنية الإفلات (bail-out) عند الفشل
+${isPartnerDay ? `- 🤝 يوم بارتنر: العنوان (title وtitleEn) يجب أن يتضمن كلمة "بارتنر"/"Partner" بوضوح — طبّق قاعدة تماسك يوم البارتنر أعلاه حرفياً على كل قسم (إحماء/ميتكون/تهدئة)، والقوة تبقى فردية بلا تغيير` : ''}
 
 أرجع JSON فقط، بدون أي كلام قبله أو بعده.`;
 
@@ -423,6 +432,8 @@ ${isBenchmarkDay ? '- الأكسسوار: مصفوفة فارغة [] — الب�
       notes: generated.notes || '',
       aiTheme: generated.theme || '',
       pattern: wodMode === 'crossfit' && !isBenchmarkDay ? effectivePattern : undefined,
+      isPartnerWod: isPartnerDay,
+      partnerFormat: isPartnerDay ? (partnerFormat ?? undefined) : undefined,
       targetTimes: generated.targetTimes || null,
       warmup: validateSection(generated.warmup),
       strength: isBenchmarkDay ? [] : validateSection(generated.strength),
@@ -437,6 +448,8 @@ ${isBenchmarkDay ? '- الأكسسوار: مصفوفة فارغة [] — الب�
       effectivePattern: wodMode === 'crossfit' ? effectivePattern : null,
       cyclePhase: wodMode === 'crossfit' ? cyclePhase : null,
       cyclePhaseLabel: wodMode === 'crossfit' ? CYCLE_PHASE_LABELS_AR[cyclePhase] : null,
+      isPartnerWod: isPartnerDay,
+      partnerFormatLabel: isPartnerDay && partnerFormat ? PARTNER_FORMAT_LABELS_AR[partnerFormat] : null,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'خطأ في التوليد' }, { status: 500 });

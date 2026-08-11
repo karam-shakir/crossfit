@@ -38,6 +38,7 @@ export async function GET(req: NextRequest) {
       date: w.date, title: w.title, titleEn: w.titleEn || '', type: w.type,
       duration: w.duration ?? null, isRest: (w as any).isRest || false,
       isCalisthenics: w.isCalisthenics || false,
+      isPartnerWod: w.isPartnerWod || false,
     })));
   }
 

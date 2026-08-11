@@ -213,6 +213,54 @@ export function warmupGuidanceFor(pattern: MovementPattern, avoidIds: string[] =
   return `المرحلة الثانية من الإحماء (خاص) يجب أن تُفعّل نمط ${PATTERN_LABELS_AR[pattern]} بدون حمل ثقيل — اختر من: ${options}${avoidNote}. ركّز أيضاً على تحرير: ${w.mobilityFocusAr} واذكر ذلك صراحة في notes — السبب: ${w.rationale}`;
 }
 
+// ═══ صيغة البارتنر (Partner WOD) — طبقة إضافية فوق نمط اليوم العادي، لا نمط منفصل ═══
+// البارتنر ليس نمط حركة (لا ينافس squat/pull/push/hinge/olympic) بل صيغة جلسة (Format) —
+// أي نمط من الخمسة يمكن أن يُبرمَج ثنائياً. القوة تبقى فردية دائماً (كل عضو بمستواه ووزنه) —
+// الطابع الثنائي يخص الميتكون بشكل أساسي، مع عنصر ثنائي واحد في الإحماء وواحد في التهدئة
+// لضمان جلسة متماسكة من البداية للنهاية لا "ميتكون بارتنر" منعزل داخل يوم فردي بخلاف ذلك.
+
+export type PartnerFormat = 'you_go_i_go' | 'synchro' | 'shared_reps' | 'relay_carry';
+
+export const PARTNER_FORMAT_LABELS_AR: Record<PartnerFormat, string> = {
+  you_go_i_go: 'أنت تعمل/أنا أعمل (You Go, I Go)',
+  synchro:     'متزامن (Synchro)',
+  shared_reps: 'تكرارات مشتركة (Shared Reps)',
+  relay_carry: 'تتابع وحمل (Relay & Carry)',
+};
+
+export const PARTNER_FORMAT_GUIDANCE: Record<PartnerFormat, string> = {
+  you_go_i_go: 'أحد الشريكين يعمل جولة أو محطة كاملة بينما الآخر يستريح تماماً، ثم يتبادلان الأدوار — الأنسب لحركات عالية الشدة أو ثقيلة (Olympic/Heavy) تحتاج راحة كاملة بين المحاولات.',
+  synchro:     'كلا الشريكين يعملان في نفس الوقت — إما نفس التكرار جنباً إلى جنب (rep-for-rep)، أو أحدهما يثبّت وضعية (Plank/Wall-sit/Hold) بينما الآخر يعمل ثم يتبادلان دور الثبات — يبني تحمّلاً عضلياً إضافياً أثناء "راحة" الشريك الآخر.',
+  shared_reps: 'إجمالي تكرارات واحد للفريق (مثال: 100 Wall Ball) يُقسَّم بين الشريكين بأي طريقة يختارانها — الأنسب لحركات تكرار عالٍ بسيطة التقنية.',
+  relay_carry: 'أحد الشريكين يحمل وزناً أو معدات (Farmer Carry / Sandbag) بينما الآخر يؤدي حركة أخرى، ثم يتبادلان — الأنسب لأيام الجسم الكامل وHyrox-style.',
+};
+
+/** يختار صيغة البارتنر الأنسب فسيولوجياً لنمط اليوم — لا اختيار عشوائي */
+export function suggestPartnerFormat(pattern: MovementPattern): PartnerFormat {
+  const map: Record<MovementPattern, PartnerFormat> = {
+    hinge: 'you_go_i_go',   // رفعة ميتة/كيتل بيل ثقيل — يحتاج راحة كاملة بين المحاولات
+    olympic: 'you_go_i_go', // حركات انفجارية تقنية — التعب يخرّب المسار، راحة كاملة إجبارية
+    squat: 'synchro',       // حمل تحمّلي متوسط — يستفيد من عنصر الثبات أثناء راحة الشريك
+    push: 'synchro',        // نفس المنطق — دفع متكرر مع ثبات (Plank) يبني جذعاً إضافياً
+    pull: 'shared_reps',    // سحب/قبضة — تقسيم حر للتكرارات يريح القبضة دون تعقيد التبديل
+  };
+  return map[pattern];
+}
+
+export function partnerFormatGuidanceFor(format: PartnerFormat): string {
+  return `صيغة البارتنر: ${PARTNER_FORMAT_LABELS_AR[format]} — ${PARTNER_FORMAT_GUIDANCE[format]}`;
+}
+
+/** إرشاد تماسك الجلسة الثنائية من الإحماء حتى التهدئة — لا تكتفِ بجعل الميتكون فقط بارتنر */
+export const PARTNER_SESSION_COHERENCE_GUIDANCE = `
+🤝 قاعدة تماسك يوم البارتنر (إجبارية — الجلسة كاملة، لا الميتكون فقط):
+- الإحماء: أضف عنصراً ثنائياً واحداً (مثال: partner-assisted mobility، أو تمرين تنشيط بالتناوب بين الشريكين) لبناء التناغم قبل الميتكون المشترك — اذكر "بارتنر" في notes ذلك العنصر تحديداً.
+- القوة: تبقى فردية بالكامل (4 مستويات كالمعتاد لكل عضو بوزنه الخاص) — لا تُشارَك، فالتحميل الثقيل الثنائي غير آمن لجمهور مختلط المستوى.
+- الميتكون: طبّق صيغة البارتنر المحددة أعلاه حرفياً — اذكر آلية التبديل بوضوح في notes كل حركة، وأضف "(بارتنر)" في reps حيث يلزم لتوضيح أن الرقم إجمالي الفريق لا الفرد.
+- الأكسسوار: فردي كالمعتاد (يطبّق قاعدة التوافق العادية لنمط اليوم).
+- التهدئة: اجعل تمطيطة واحدة على الأقل partner-assisted (الشريك يساعد في تعميق الإطالة بلطف) — اذكر ذلك في notes.
+- العنوان: يجب أن يتضمن "بارتنر" أو "(Partner)" بوضوح.`;
+
 // ═══ تمارين البنشمارك المعروفة (Hero / Girl WODs) ═══
 
 export interface BenchmarkMovement { exerciseId: string; reps: string; distance?: string; notes?: string; }

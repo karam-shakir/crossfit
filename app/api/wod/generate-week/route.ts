@@ -4,10 +4,11 @@ import { getSession } from '@/lib/auth';
 import { todaySA } from '@/lib/timezone';
 import { getWods, getLatestWodCycleMeta, upsertWodCycleMeta } from '@/lib/db';
 import {
-  EXERCISES, MovementPattern, PATTERN_LABELS_AR, CyclePhase,
+  EXERCISES, MovementPattern, PATTERN_LABELS_AR, CyclePhase, PartnerFormat,
   buildPatternSequence, accessoryGuidanceFor, cooldownGuidanceFor, strengthGuidanceFor, warmupGuidanceFor,
   getBenchmarkGuidance, getClassTimeBudget, getEquipmentGuidance, getRxFocusGuidance,
   computeNextCyclePhase, CYCLE_PHASE_LABELS_AR, CYCLE_PHASE_INFO, getRpeGuidance, getWeightStandardsTable,
+  suggestPartnerFormat, partnerFormatGuidanceFor, PARTNER_SESSION_COHERENCE_GUIDANCE, PARTNER_FORMAT_LABELS_AR,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
 
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
     benchmarkName = '',     // بنشمارك محدد (fran, cindy, ...)
     benchmarkDate = '',     // التاريخ الذي يُفرض فيه البنشمارك
     cyclePhaseOverride = 'auto', // auto / foundation / build / peak / deload — فرض مرحلة دورة تدريج محددة
+    partnerDaysCount = -1,  // -1 = auto (الـ AI يقرر 0 أو 1)، 0 = بدون بارتنر، N = عدد أيام بارتنر مطلوب صراحة
   } = body;
 
   const startDate = fromDate || todaySA();
@@ -255,6 +257,18 @@ ${(Object.keys(PATTERN_LABELS_AR) as MovementPattern[]).map(p => `- ${PATTERN_LA
 
 ⚠️ قاعدة الميتكون الإجبارية — لا تجعل الميتكون معاكساً بالكامل لنمط اليوم: أدرج حركة واحدة على الأقل من نفس نمط القوة الرئيسي لليوم في الميتكون (مثال: يوم دفع → thruster أو push-press أو wall-ball ضمن الميتكون، لا فقط pull-up/toes-to-bar). الأكسسوار وحده هو المسؤول عن "الموازنة الكاملة" بالنمط المعاكس — إن كرّرت نفس منطق التعويض في الميتكون أيضاً، يصبح اليوم يحمل اسم نمط لا يُدرّبه فعلياً (رُصد هذا حرفياً في يوم دفع سابق: القوة فقط كانت دفعاً، والميتكون بالكامل تقريباً سحباً).
 
+**══ 🤝 يوم/أيام البارتنر هذا الأسبوع ══**
+${partnerDaysCount === 0
+  ? 'لا تدرج أي يوم بارتنر هذا الأسبوع — كل الأيام فردية.'
+  : `${partnerDaysCount > 0
+      ? `أدرج بالضبط ${partnerDaysCount} ${partnerDaysCount === 1 ? 'يوماً واحداً' : 'أيام'} بصيغة بارتنر هذا الأسبوع (اختر أنسب يوم/أيام من الأيام النشطة العادية — لا يُضاف يوم جديد، بل يُعاد تنسيق يوم موجود أصلاً في التسلسل).`
+      : 'يمكنك اختيارياً جعل يوم واحد من أيام هذا الأسبوع بصيغة بارتنر إن رأيت أن ذلك يحسّن تنوّع الأسبوع والجانب الاجتماعي للحصة — ليس إلزامياً، فقط عند وجود يوم مناسب (لا يوم HEAVY تقني حساس).'}
+
+دليل اختيار صيغة البارتنر حسب نمط اليوم المُختار (طبّقه حرفياً):
+${(Object.keys(PATTERN_LABELS_AR) as MovementPattern[]).map(p => `- ${PATTERN_LABELS_AR[p]}: ${partnerFormatGuidanceFor(suggestPartnerFormat(p))}`).join('\n')}
+${PARTNER_SESSION_COHERENCE_GUIDANCE}
+في JSON اليوم المختار: أضف "isPartnerWod": true و"partnerFormat" بمفتاح الصيغة المستخدمة (you_go_i_go / synchro / shared_reps / relay_carry)، وباقي الأيام: "isPartnerWod": false بلا حقل partnerFormat.`}
+
 ${programmingRules}
 
 **الأيام المطلوبة:**
@@ -284,6 +298,8 @@ ${latestCycleMeta?.progressionNote ? `\n🗒️ توصيتك أنت (المدر�
       "aiTheme": "الرابط الفيزيولوجي والحركي بين القوة والميتكون هذا اليوم + نمط القوة المستخدم",
       "isRest": false,
       "isCalisthenics": false,
+      "isPartnerWod": false,
+      "partnerFormat": "",
       "warmup": [
         { "exerciseId": "run", "reps": "400م", "weight": "", "notes": "عام — 60% إيقاع" },
         { "exerciseId": "air-squat", "reps": "15", "weight": "", "notes": "خاص — تفعيل نمط اليوم بدون حمل" }
@@ -369,6 +385,7 @@ ${latestCycleMeta?.progressionNote ? `\n🗒️ توصيتك أنت (المدر�
 - كل يوم نشاط: strength لا يقل عن تمرينَين compound (إلا يوم البنشمارك)
 - استخدم أوزان جدول "مرحلة دورة التدريج" أعلاه حرفياً حسب المستوى والجنس — لا تستخدم أوزان من ذاكرتك أو من أسابيع سابقة
 - progressionNote يجب أن يكون توجيهاً رقمياً محدداً (اسم حركة + نسبة/وزن دقيق) قابلاً للتنفيذ الحرفي الأسبوع القادم
+- يوم البارتنر (إن وُجد): العنوان (title وtitleEn) يجب أن يتضمن "بارتنر"/"Partner"، والقوة تبقى فردية بلا تغيير، وطبّق قاعدة تماسك يوم البارتنر أعلاه على كل قسم
 
 أرجع JSON فقط، بدون أي نص قبله أو بعده.`;
 
@@ -400,16 +417,23 @@ ${latestCycleMeta?.progressionNote ? `\n🗒️ توصيتك أنت (المدر�
     // هذا يبني تاريخاً موثوقاً لحقل pattern على كل WOD محفوظ، تعتمد عليه أسابيع لاحقة (وحتى التوليد اليومي المنفرد)
     // لمعرفة آخر نمط استُخدم وتجنّب تكراره أو تكرار نفس الأكسسوار/الإحماء الخاص به ═══
     const HYROX_RE = /hyrox/i;
+    const VALID_PARTNER_FORMATS: PartnerFormat[] = ['you_go_i_go', 'synchro', 'shared_reps', 'relay_carry'];
     let patternIdx = 0;
     if (Array.isArray(result.wods)) {
       result.wods = result.wods.map((day: any) => {
         const isBenchmarkDayHere = isBenchmarkWeek && day.date === benchmarkDate;
         const isHyroxDayHere = hyroxMode && !day.isRest && !day.isCalisthenics && HYROX_RE.test(`${day.title || ''} ${day.aiTheme || ''}`);
         const skip = day.isRest || day.isCalisthenics || isBenchmarkDayHere || isHyroxDayHere;
-        if (skip) return day;
+        if (skip) return { ...day, isPartnerWod: false, partnerFormat: undefined };
         const pattern = patternSequence[patternIdx] ?? patternSequence[patternSequence.length - 1];
         patternIdx++;
-        return { ...day, pattern };
+        // تصحيح صيغة البارتنر إن اختار النموذج مفتاحاً غير صالح أو نسيه رغم isPartnerWod:true —
+        // نفس منهج وسم النمط: لا نثق بحقل حر من النموذج دون تحقق
+        const isPartnerWod = !!day.isPartnerWod;
+        const partnerFormat: PartnerFormat | undefined = isPartnerWod
+          ? (VALID_PARTNER_FORMATS.includes(day.partnerFormat) ? day.partnerFormat : suggestPartnerFormat(pattern))
+          : undefined;
+        return { ...day, pattern, isPartnerWod, partnerFormat };
       });
     }
 

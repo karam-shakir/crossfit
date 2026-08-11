@@ -24,7 +24,7 @@ function todayISO() {
 
 interface MonthWod {
   date: string; title: string; titleEn?: string; type: string;
-  duration: number | null; isRest: boolean; isCalisthenics: boolean;
+  duration: number | null; isRest: boolean; isCalisthenics: boolean; isPartnerWod?: boolean;
 }
 
 export default function WodCalendar({ onClose }: { onClose: () => void }) {
@@ -131,12 +131,15 @@ export default function WodCalendar({ onClose }: { onClose: () => void }) {
                   <button key={date} onClick={() => openDate(date)}
                     className={`relative aspect-square rounded-xl flex flex-col items-center justify-center text-sm font-bold transition-all ${
                       isToday ? 'bg-orange-600 text-white shadow-md'
-                      : w ? (w.isRest ? 'bg-slate-100 text-slate-500 border border-slate-200' : w.isCalisthenics ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-orange-50 text-orange-700 border border-orange-200')
+                      : w ? (w.isRest ? 'bg-slate-100 text-slate-500 border border-slate-200' : w.isPartnerWod ? 'bg-pink-50 text-pink-700 border border-pink-200' : w.isCalisthenics ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-orange-50 text-orange-700 border border-orange-200')
                       : 'bg-white text-slate-300 border border-slate-100'
                     }`}>
                     {dayNum}
                     {w && !isToday && (
-                      <span className={`absolute bottom-1 w-1.5 h-1.5 rounded-full ${w.isRest ? 'bg-slate-400' : w.isCalisthenics ? 'bg-emerald-500' : 'bg-orange-500'}`} />
+                      <span className={`absolute bottom-1 w-1.5 h-1.5 rounded-full ${w.isRest ? 'bg-slate-400' : w.isPartnerWod ? 'bg-pink-500' : w.isCalisthenics ? 'bg-emerald-500' : 'bg-orange-500'}`} />
+                    )}
+                    {w?.isPartnerWod && !isToday && (
+                      <span className="absolute top-0.5 right-0.5 text-[9px]">🤝</span>
                     )}
                   </button>
                 );
@@ -147,6 +150,7 @@ export default function WodCalendar({ onClose }: { onClose: () => void }) {
 
             <div className="flex items-center gap-4 justify-center pb-4 text-[11px] text-slate-500">
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500" /> CrossFit</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-pink-500" /> بارتنر 🤝</span>
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Calisthenics</span>
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-400" /> راحة</span>
             </div>
@@ -173,7 +177,12 @@ export default function WodCalendar({ onClose }: { onClose: () => void }) {
               ) : (
                 <>
                   {/* WOD info header */}
-                  <div className="bg-orange-600 rounded-2xl p-4 shadow-lg shadow-orange-100">
+                  <div className={`rounded-2xl p-4 shadow-lg ${dayWod.isPartnerWod ? 'bg-pink-600 shadow-pink-100' : 'bg-orange-600 shadow-orange-100'}`}>
+                    {dayWod.isPartnerWod && (
+                      <div className="mb-2 inline-flex items-center gap-1.5 bg-white/20 rounded-full px-2.5 py-0.5 text-xs text-white font-semibold">
+                        🤝 يوم بارتنر
+                      </div>
+                    )}
                     <div className="text-white font-extrabold text-lg leading-tight mb-2">{dayWod.titleEn || dayWod.title}</div>
                     <div className="flex flex-wrap gap-2">
                       <span className="bg-white/20 text-white text-sm font-bold px-3 py-1.5 rounded-full">

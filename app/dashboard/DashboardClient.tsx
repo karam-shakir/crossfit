@@ -892,8 +892,8 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
           {/* WOD — CrossFit (يظهر فقط عند تبويب CrossFit) */}
           {wod && sportTab === 'crossfit' ? (
             <div className="space-y-4">
-              <div className="bg-orange-600 rounded-2xl p-4 shadow-lg shadow-orange-200">
-                <h2 className="text-xl font-extrabold text-white mb-2">🔥 تمرين اليوم</h2>
+              <div className={`rounded-2xl p-4 shadow-lg ${wod.isPartnerWod ? 'bg-pink-600 shadow-pink-200' : 'bg-orange-600 shadow-orange-200'}`}>
+                <h2 className="text-xl font-extrabold text-white mb-2">{wod.isPartnerWod ? '🤝 تمرين اليوم — بارتنر' : '🔥 تمرين اليوم'}</h2>
                 <div className="text-white font-bold text-lg leading-snug mb-3">{wod.titleEn || wod.title}</div>
 
                 {/* شارات واضحة: نوع التمرين + الوقت/التايم كاب + الجولات */}

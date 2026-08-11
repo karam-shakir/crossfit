@@ -89,6 +89,9 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
   const [wodCyclePhaseOverride, setWodCyclePhaseOverride] = useState('auto'); // auto/foundation/build/peak/deload — تمرين اليوم
   const [weeklyCyclePhaseOverride, setWeeklyCyclePhaseOverride] = useState('auto'); // نفسها لخطة الأسبوع
   const [wodGeneratedCyclePhaseLabel, setWodGeneratedCyclePhaseLabel] = useState('');
+  const [wodPartnerMode, setWodPartnerMode] = useState(false);            // يوم بارتنر — تمرين اليوم
+  const [wodGeneratedPartnerLabel, setWodGeneratedPartnerLabel] = useState(''); // صيغة البارتنر التي اختارها التوليد الأخير
+  const [weeklyPartnerDaysCount, setWeeklyPartnerDaysCount] = useState(-1); // -1 auto / 0 بدون / N عدد أيام صريح — خطة الأسبوع
 
   // دورة تدريج الكروسفت — حالة القراءة قبل التوليد (تُعرض كشريط توضيحي في لوحة الإدارة)
   const [wodCycleStatus, setWodCycleStatus] = useState<any>(null);
@@ -504,6 +507,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
           rxFocus: wodRxFocus,
           benchmarkName: wodBenchmarkName || undefined,
           cyclePhaseOverride: wodCyclePhaseOverride,
+          partnerMode: wodPartnerMode,
         }),
       });
       const data = await res.json();
@@ -519,6 +523,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
       });
       if (data.theme) setAiTheme(data.theme);
       setWodGeneratedCyclePhaseLabel(data.cyclePhaseLabel || '');
+      setWodGeneratedPartnerLabel(data.isPartnerWod ? (data.partnerFormatLabel || 'بارتنر') : '');
       setAiGeneratedMode(wodMode);
       setShowAiPanel(false);
       setActiveSection('strength');
@@ -550,6 +555,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
           benchmarkName: weeklyBenchmarkName || undefined,
           benchmarkDate: weeklyBenchmarkName ? (weeklyBenchmarkDate || undefined) : undefined,
           cyclePhaseOverride: weeklyCyclePhaseOverride,
+          partnerDaysCount: weeklyPartnerDaysCount,
         }),
       });
       const data = await res.json();
@@ -589,6 +595,8 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
             notes: wod.notes || '',
             aiTheme: wod.aiTheme || '',
             pattern: wod.pattern || null,
+            isPartnerWod: wod.isPartnerWod || false,
+            partnerFormat: wod.partnerFormat || null,
             isCalisthenics: wod.isCalisthenics || false,
             warmup:    wod.warmup    || [],
             strength:  wod.strength  || [],
@@ -1085,6 +1093,26 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                             )}
                           </div>
 
+                          {/* يوم بارتنر */}
+                          <div>
+                            <button onClick={() => setWodPartnerMode(!wodPartnerMode)}
+                              disabled={!!wodBenchmarkName}
+                              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all disabled:opacity-40 ${
+                                wodPartnerMode ? 'border-pink-500 bg-pink-900/20' : 'border-gray-700 bg-gray-800'
+                              }`}>
+                              <span className="text-sm font-semibold text-white">🤝 يوم بارتنر</span>
+                              <span className={`w-10 h-5 rounded-full relative transition-all ${wodPartnerMode ? 'bg-pink-500' : 'bg-gray-600'}`}>
+                                <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${wodPartnerMode ? 'right-0.5' : 'left-0.5'}`} />
+                              </span>
+                            </button>
+                            {wodPartnerMode && (
+                              <p className="text-xs text-pink-400 mt-1.5">صيغة البارتنر تُختار تلقائياً حسب نمط اليوم — الميتكون والإحماء والتهدئة ثنائية، والقوة تبقى فردية لكل عضو</p>
+                            )}
+                            {wodBenchmarkName && (
+                              <p className="text-xs text-gray-500 mt-1.5">غير متاح مع يوم البنشمارك</p>
+                            )}
+                          </div>
+
                           {/* قيود المعدات */}
                           <div>
                             <label className="text-xs text-gray-400 font-semibold block mb-2">🛠️ قيود المعدات اليوم (اختياري)</label>
@@ -1106,7 +1134,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                       </div>
 
                       {/* Reset */}
-                      <button onClick={() => { setWodSessionType('balanced'); setWodMetconFormat(''); setWodStrengthPattern(''); setWodForbidExercises([]); setWodForceExercise(''); setWodSpecialNotes(''); setWodDuration(''); setAiDifficulty('متوسط'); setAiFocus(''); setWodClassDuration('60'); setWodEquipmentNote(''); setWodRxFocus('balanced'); setWodBenchmarkName(''); }}
+                      <button onClick={() => { setWodSessionType('balanced'); setWodMetconFormat(''); setWodStrengthPattern(''); setWodForbidExercises([]); setWodForceExercise(''); setWodSpecialNotes(''); setWodDuration(''); setAiDifficulty('متوسط'); setAiFocus(''); setWodClassDuration('60'); setWodEquipmentNote(''); setWodRxFocus('balanced'); setWodBenchmarkName(''); setWodPartnerMode(false); }}
                         className="w-full py-2 rounded-xl border border-gray-700 text-gray-400 text-xs font-semibold hover:border-gray-500 hover:text-gray-300 transition-all">
                         ↺ إعادة تعيين
                       </button>
@@ -1155,7 +1183,16 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                       {wodGeneratedCyclePhaseLabel && (
                         <div className="text-[11px] text-indigo-300 mt-1">📈 مرحلة الدورة المستخدمة: {wodGeneratedCyclePhaseLabel}</div>
                       )}
+                      {wodGeneratedPartnerLabel && (
+                        <div className="text-[11px] text-pink-300 mt-1">🤝 صيغة البارتنر: {wodGeneratedPartnerLabel}</div>
+                      )}
                     </div>
+                  </div>
+                )}
+                {wod.isPartnerWod && !aiTheme && (
+                  <div className="rounded-xl p-3 flex items-center gap-2 bg-pink-900/20 border border-pink-700/30">
+                    <span className="text-pink-400">🤝</span>
+                    <span className="text-xs text-pink-300 font-semibold">هذا تمرين بارتنر محفوظ</span>
                   </div>
                 )}
               </div>
@@ -1443,6 +1480,22 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                       </div>
                     </div>
 
+                    {/* أيام البارتنر */}
+                    <div>
+                      <label className="text-xs text-gray-400 font-semibold block mb-2">
+                        🤝 أيام البارتنر — <span className="text-white">{weeklyPartnerDaysCount < 0 ? 'تلقائي (الـ AI يقرر 0 أو 1)' : weeklyPartnerDaysCount === 0 ? 'بدون' : weeklyPartnerDaysCount + ' يوم'}</span>
+                      </label>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {[-1, 0, 1, 2].map(n => (
+                          <button key={n} onClick={() => setWeeklyPartnerDaysCount(n)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${weeklyPartnerDaysCount === n ? 'border-pink-500 bg-pink-900/30 text-white' : 'border-gray-700 bg-gray-800 text-gray-400'}`}>
+                            {n < 0 ? 'تلقائي' : n === 0 ? 'بدون' : n}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[11px] text-gray-500 mt-1.5">البارتنر صيغة تُعاد بها تنسيق يوم موجود أصلاً في تسلسل الأنماط (ليس يوماً إضافياً) — القوة تبقى فردية، والميتكون والإحماء والتهدئة ثنائية.</p>
+                    </div>
+
                     {/* مرحلة دورة التدريج */}
                     <div>
                       <label className="text-xs text-gray-400 font-semibold block mb-2">
@@ -1578,7 +1631,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                     </div>
 
                     {/* Reset */}
-                    <button onClick={() => { setCoachFocus('balanced'); setIntensityBias('balanced'); setRestDaysCount(-1); setHyroxMode(false); setTargetAudience('all'); setForbidList([]); setForceList([]); setCoachSpecialNotes(''); setAiDifficulty('متوسط'); setWeeklyClassDuration('60'); setWeeklyEquipmentNote(''); setWeeklyRxFocus('balanced'); setWeeklyBenchmarkName(''); setWeeklyBenchmarkDate(''); }}
+                    <button onClick={() => { setCoachFocus('balanced'); setIntensityBias('balanced'); setRestDaysCount(-1); setHyroxMode(false); setTargetAudience('all'); setForbidList([]); setForceList([]); setCoachSpecialNotes(''); setAiDifficulty('متوسط'); setWeeklyClassDuration('60'); setWeeklyEquipmentNote(''); setWeeklyRxFocus('balanced'); setWeeklyBenchmarkName(''); setWeeklyBenchmarkDate(''); setWeeklyPartnerDaysCount(-1); }}
                       className="w-full py-2 rounded-xl border border-gray-700 text-gray-400 text-xs font-semibold hover:border-gray-500 hover:text-gray-300 transition-all">
                       ↺ إعادة تعيين لافتراضيات الـ AI
                     </button>
@@ -1718,6 +1771,10 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                     {weeklyPlan.wods?.map((wod: any, i: number) => {
                       const isRest = wod.isRest || wod.type === 'راحة' || wod.type === 'راحة نشطة';
                       const isCalis = wod.isCalisthenics === true;
+                      const isPartner = wod.isPartnerWod === true;
+                      const PARTNER_FORMAT_LABELS: Record<string, string> = {
+                        you_go_i_go: 'أنت تعمل/أنا أعمل', synchro: 'متزامن', shared_reps: 'تكرارات مشتركة', relay_carry: 'تتابع وحمل',
+                      };
                       const SECTION_LABELS: Record<string, { label: string; icon: string; color: string }> = {
                         warmup:    { label: 'الإحماء',    icon: '🔆', color: 'text-yellow-400' },
                         strength:  { label: 'القوة',      icon: '🏋️', color: 'text-blue-400' },
@@ -1729,18 +1786,24 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                         <div key={i} className={`rounded-2xl border overflow-hidden ${
                           isRest ? 'border-blue-700/30 bg-blue-900/10'
                           : isCalis ? 'border-emerald-700/50 bg-emerald-900/10'
+                          : isPartner ? 'border-pink-700/50 bg-pink-900/10'
                           : 'border-gray-700 bg-gray-900'
                         }`}>
                           {/* Header */}
-                          <div className={`p-4 border-b ${isCalis ? 'border-emerald-800/40' : 'border-gray-800'}`}>
+                          <div className={`p-4 border-b ${isCalis ? 'border-emerald-800/40' : isPartner ? 'border-pink-800/40' : 'border-gray-800'}`}>
                             {isCalis && (
                               <div className="mb-2 inline-flex items-center gap-1.5 bg-emerald-700/30 border border-emerald-600/40 rounded-full px-2.5 py-0.5 text-xs text-emerald-300 font-semibold">
                                 🤸 يوم Calisthenics
                               </div>
                             )}
+                            {isPartner && (
+                              <div className="mb-2 inline-flex items-center gap-1.5 bg-pink-700/30 border border-pink-600/40 rounded-full px-2.5 py-0.5 text-xs text-pink-300 font-semibold">
+                                🤝 يوم بارتنر — {PARTNER_FORMAT_LABELS[wod.partnerFormat] || wod.partnerFormat}
+                              </div>
+                            )}
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <span className="text-lg">{isRest ? '😴' : isCalis ? '🤸' : '🔥'}</span>
+                                <span className="text-lg">{isRest ? '😴' : isCalis ? '🤸' : isPartner ? '🤝' : '🔥'}</span>
                                 <div>
                                   <div className="flex items-center gap-2">
                                     <span className="font-bold text-white text-sm">{wod.dayName}</span>
