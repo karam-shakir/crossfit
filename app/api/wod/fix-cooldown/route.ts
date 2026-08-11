@@ -111,10 +111,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'fromDate و toDate مطلوبان' }, { status: 400 });
 
   const allWods = await getWods();
+  // ملاحظة: w.type يحمل صيغة الميتكون (AMRAP/للوقت/EMOM...) وليس اسم الرياضة —
+  // كان الفلتر القديم يقارنه بالحرف "crossfit" الذي لا يساويه أبداً، فيُرجع دائماً "لا توجد جلسات"
+  // بغض النظر عن النطاق. مجموعة wods بأكملها خاصة بالكروسفت أصلاً (الرياضات الأخرى في مجموعات منفصلة).
   const targetWods = allWods.filter(w =>
     w.date >= fromDate && w.date <= toDate &&
-    w.type === 'crossfit' &&
     !w.isCalisthenics &&
+    !(w as any).isRest &&
     (w.strength?.length > 0 || w.metcon?.length > 0)
   );
 
