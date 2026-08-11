@@ -765,7 +765,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
     { key: 'strength', label: 'القوة 🏋️' },
     { key: 'metcon', label: 'الـ WOD 🔥' },
     { key: 'accessory', label: 'الأكسسوار 💪' },
-    { key: 'cooldown', label: 'التهدئة 🧘' },
+    { key: 'cooldown', label: 'الإطالات 🧘' },
   ];
 
   return (
@@ -1107,7 +1107,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                               </span>
                             </button>
                             {wodPartnerMode && (
-                              <p className="text-xs text-pink-400 mt-1.5">صيغة البارتنر تُختار تلقائياً حسب نمط اليوم — الميتكون والإحماء والتهدئة ثنائية، والقوة تبقى فردية لكل عضو</p>
+                              <p className="text-xs text-pink-400 mt-1.5">صيغة البارتنر تُختار تلقائياً حسب نمط اليوم — الميتكون والإحماء والإطالات ثنائية، والقوة تبقى فردية لكل عضو</p>
                             )}
                             {wodBenchmarkName && (
                               <p className="text-xs text-gray-500 mt-1.5">غير متاح مع يوم البنشمارك</p>
@@ -1494,7 +1494,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                           </button>
                         ))}
                       </div>
-                      <p className="text-[11px] text-gray-500 mt-1.5">البارتنر صيغة تُعاد بها تنسيق يوم موجود أصلاً في تسلسل الأنماط (ليس يوماً إضافياً) — القوة تبقى فردية، والميتكون والإحماء والتهدئة ثنائية.</p>
+                      <p className="text-[11px] text-gray-500 mt-1.5">البارتنر صيغة تُعاد بها تنسيق يوم موجود أصلاً في تسلسل الأنماط (ليس يوماً إضافياً) — القوة تبقى فردية، والميتكون والإحماء والإطالات ثنائية.</p>
                     </div>
 
                     {/* مرحلة دورة التدريج */}
@@ -1781,7 +1781,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                         strength:  { label: 'القوة',      icon: '🏋️', color: 'text-blue-400' },
                         metcon:    { label: 'الـ WOD',    icon: '🔥', color: 'text-orange-400' },
                         accessory: { label: 'الأكسسوار', icon: '💪', color: 'text-purple-400' },
-                        cooldown:  { label: 'التهدئة',    icon: '🧘', color: 'text-teal-400' },
+                        cooldown:  { label: 'الإطالات',   icon: '🧘', color: 'text-teal-400' },
                       };
                       return (
                         <div key={i} className={`rounded-2xl border overflow-hidden ${
@@ -1884,8 +1884,8 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">🧘</span>
                   <div>
-                    <h2 className="font-bold text-yellow-300 text-base">إصلاح التهدئة للجلسات الحالية</h2>
-                    <p className="text-xs text-gray-400">يصلح قسم التهدئة فقط للجلسات المولَّدة دون إعادة توليد التمرين كاملاً</p>
+                    <h2 className="font-bold text-yellow-300 text-base">إصلاح الإطالات للجلسات الحالية</h2>
+                    <p className="text-xs text-gray-400">يصلح قسم الإطالات فقط للجلسات المولَّدة دون إعادة توليد التمرين كاملاً</p>
                   </div>
                 </div>
                 <div className="flex gap-3 items-end flex-wrap">
@@ -1901,7 +1901,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
                   </div>
                   <button onClick={handleFixCooldown} disabled={fixCooldownLoading}
                     className="bg-yellow-600 hover:bg-yellow-500 disabled:opacity-50 text-white font-semibold px-5 py-2 rounded-xl text-sm transition-colors">
-                    {fixCooldownLoading ? '⏳ جاري الإصلاح...' : '🔧 إصلاح التهدئة'}
+                    {fixCooldownLoading ? '⏳ جاري الإصلاح...' : '🔧 إصلاح الإطالات'}
                   </button>
                 </div>
                 {fixCooldownError && (

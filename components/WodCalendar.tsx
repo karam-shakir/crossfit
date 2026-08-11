@@ -92,7 +92,7 @@ export default function WodCalendar({ onClose }: { onClose: () => void }) {
     { key: 'strength',  label: 'القوة 🏋️',     items: dayWod.strength  || [] },
     { key: 'metcon',    label: 'الـ WOD 🔥',   items: dayWod.metcon    || [] },
     { key: 'accessory', label: 'الأكسسوار 💪', items: dayWod.accessory || [] },
-    { key: 'cooldown',  label: 'التهدئة 🧘',   items: dayWod.cooldown  || [] },
+    { key: 'cooldown',  label: 'الإطالات 🧘',  items: dayWod.cooldown  || [] },
   ].filter(s => s.items.length > 0) : [];
 
   return (

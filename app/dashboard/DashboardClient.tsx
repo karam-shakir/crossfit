@@ -717,7 +717,7 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
     { key: 'strength',  label: 'القوة 🏋️',      labelEn: 'Strength',  items: wod?.strength  || [] },
     { key: 'metcon',    label: 'الـ WOD 🔥',    labelEn: 'WOD',       items: wod?.metcon    || [] },
     { key: 'accessory', label: 'الأكسسوار 💪',  labelEn: 'Accessory', items: wod?.accessory || [] },
-    { key: 'cooldown',  label: 'التهدئة 🧘',    labelEn: 'Cool-Down', items: wod?.cooldown  || [] },
+    { key: 'cooldown',  label: 'الإطالات 🧘',   labelEn: 'Stretches', items: wod?.cooldown  || [] },
   ].filter(s => s.items.length > 0);
 
   function buildEnglishText() {
