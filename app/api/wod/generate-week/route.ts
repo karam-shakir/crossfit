@@ -121,10 +121,16 @@ export async function POST(req: NextRequest) {
   const exerciseList = EXERCISES.map(e => `${e.id} | ${e.nameEn} | ${e.category}`).join('\n');
 
   // ═══ تسلسل حتمي لأنماط القوة عبر أيام الكروسفيت النشطة (لضمان تنوع + توافق أكسسوار/تهدئة حقيقي) ═══
-  const estimatedRestDays = restDaysCount >= 0 ? restDaysCount : Math.max(1, Math.round(days * 0.2));
+  // الحد الأدنى رُفع من 1 إلى 2 ليوماً راحة لأي أسبوع 6+ أيام — 1 يوم راحة فقط من 7 كان يترك
+  // (كما رُصد فعلياً في الإنتاج) 4 أيام تدريب متتالية بلا توقف في نصف الأسبوع الآخر، طموح جداً
+  // لجمهور نادٍ عام غير تنافسي. هذا يُوحِّد الرقم أيضاً مع صيغة "يوم DELOAD/REST" أدناه في فلسفة التوزيع
+  // التي كانت تفترض ضمناً ~2 يوم بينما هذا الحساب كان يفترض 1 — التناقض بينهما هو ما سمح للنموذج باختيار الأقل
+  const estimatedRestDays = restDaysCount >= 0 ? restDaysCount : Math.max(days >= 6 ? 2 : 1, Math.round(days * 0.25));
   const estimatedNonCrossfitDays = (weekMode === 'mixed' ? calisthenicsDays : 0) + (hyroxMode ? 1 : 0);
   const activeCrossfitDays = Math.max(1, days - estimatedRestDays - estimatedNonCrossfitDays);
-  const patternSequence = buildPatternSequence(activeCrossfitDays, undertrained);
+  // newCycleIndex كـ rotationOffset — يمنع نمطاً واحداً (القرفصاء) من احتكار "اليوم الإضافي"
+  // في كل أسبوع من 6+ أيام نشطة؛ الفائز بالتعادل يتغيّر مع تقدّم رقم الدورة أسبوعياً
+  const patternSequence = buildPatternSequence(activeCrossfitDays, undertrained, newCycleIndex);
 
   // ═══ تجميع الأكسسوار/الإحماء المُستخدَمَين مؤخراً لكل نمط — يُمرَّر كقائمة تجنّب حتى لا يتكرر نفس التمرين
   // بحرفيته عبر أسابيع متتالية بنفس النمط (المشكلة المرصودة فعلياً: نفس تمرينَي الأكسسوار طوال أسبوعين كاملين) ═══
@@ -226,7 +232,9 @@ ${getClassTimeBudget(classDuration)}
 يوم HEAVY   (~${Math.max(1, Math.round(days * 0.2))} مرة): قوة compound ثقيلة (80-90% 1RM) + ميتكون قصير (8-12 دقيقة — نظام Phosphagen/Glycolytic)
 يوم MEDIUM  (~${Math.max(2, Math.round(days * 0.35))} مرة): قوة أوليمبية أو تحمل (65-75%) + ميتكون متوسط (12-18 دقيقة — Glycolytic)
 يوم SKILL   (~${Math.max(1, Math.round(days * 0.15))} مرة): جمناستيكس + تقنية + ميتكون مختلط
-يوم DELOAD/REST (~${Math.max(1, Math.round(days * 0.25))} مرة): راحة كاملة أو تعافٍ نشط خفيف
+يوم DELOAD/REST (~${estimatedRestDays} مرة): راحة كاملة أو تعافٍ نشط خفيف
+
+⚠️ قاعدة توزيع إجبارية: لا تضع أكثر من 3 أيام تدريب متتالية بدون يوم راحة واحد على الأقل بينها. وزّع أيام الراحة عبر الأسبوع (مثلاً منتصف الأسبوع ونهايته) بدل تجميعها في نصف واحد فقط — الجمهور هنا أعضاء نادٍ عاديون لا رياضيون تنافسيون، فتكديس التدريب طموح زائد لهم.
 
 **══ 🔗 تسلسل أنماط القوة الحتمي عبر أيام الكروسفيت النشطة (إجباري — يضمن توافق الأكسسوار والتهدئة) ══**
 
@@ -244,6 +252,8 @@ ${(Object.keys(PATTERN_LABELS_AR) as MovementPattern[]).map(p => `- ${PATTERN_LA
 
 مبدأ التنوع الإضافي:
 - تنوع الميتكون: AMRAP → للوقت → EMOM → للوقت → AMRAP (لا تكرر نفس الصيغة يومين متتاليين)
+
+⚠️ قاعدة الميتكون الإجبارية — لا تجعل الميتكون معاكساً بالكامل لنمط اليوم: أدرج حركة واحدة على الأقل من نفس نمط القوة الرئيسي لليوم في الميتكون (مثال: يوم دفع → thruster أو push-press أو wall-ball ضمن الميتكون، لا فقط pull-up/toes-to-bar). الأكسسوار وحده هو المسؤول عن "الموازنة الكاملة" بالنمط المعاكس — إن كرّرت نفس منطق التعويض في الميتكون أيضاً، يصبح اليوم يحمل اسم نمط لا يُدرّبه فعلياً (رُصد هذا حرفياً في يوم دفع سابق: القوة فقط كانت دفعاً، والميتكون بالكامل تقريباً سحباً).
 
 ${programmingRules}
 

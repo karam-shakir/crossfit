@@ -103,13 +103,23 @@ const PATTERN_ROTATION: MovementPattern[] = ['squat', 'pull', 'push', 'hinge', '
  * الاعتماد القديم على "أول عنصر غير آخر نمط مستخدم" كان يُرجع 'squat' فعلياً
  * في كل مرة تقريباً (لأنه أول عنصر في PATTERN_ROTATION)، فيُحرم push/hinge/olympic
  * من الظهور إلا نادراً جداً.
+ *
+ * rotationOffset: عند تعادل الاستخدام (كما يحدث دوماً في اليوم السادس من أسبوع 6 أيام نشطة
+ * — خمسة أنماط فقط لستة أيام) كان الفائز يُحسم دوماً بموضع النمط في PATTERN_ROTATION الثابت،
+ * أي أن "القرفصاء" يفوز بالتكرار الإضافي في كل أسبوع 6 أيام إلى الأبد. rotationOffset
+ * (يُفضَّل تمرير cycleIndex الحالي) يُدوِّر ترتيب الفحص نفسه فيتغيّر الفائز بالتعادل من أسبوع لآخر.
  */
 export function suggestPattern(
   undertrainedGroups: string[],
   avoid?: MovementPattern,
-  usageCount?: Partial<Record<MovementPattern, number>>
+  usageCount?: Partial<Record<MovementPattern, number>>,
+  rotationOffset = 0
 ): MovementPattern {
-  const candidates = PATTERN_ROTATION.filter(p => p !== avoid);
+  const n = PATTERN_ROTATION.length;
+  const offset = ((rotationOffset % n) + n) % n;
+  const rotatedOrder = [...PATTERN_ROTATION.slice(offset), ...PATTERN_ROTATION.slice(0, offset)];
+
+  const candidates = rotatedOrder.filter(p => p !== avoid);
   const prioritized = candidates.filter(p => undertrainedGroups.includes(PATTERN_TO_BROAD_GROUP[p]));
   const pool = prioritized.length ? prioritized : candidates;
 
@@ -123,14 +133,15 @@ export function suggestPattern(
   return best;
 }
 
-/** يبني تسلسل أنماط لعدد من الأيام النشطة (بدون تكرار متتالٍ)، بأولوية للمجموعات المُهملة ثم توزيع عادل بين كل الأنماط الخمسة */
-export function buildPatternSequence(activeDaysCount: number, undertrainedGroups: string[]): MovementPattern[] {
+/** يبني تسلسل أنماط لعدد من الأيام النشطة (بدون تكرار متتالٍ)، بأولوية للمجموعات المُهملة ثم توزيع عادل بين كل الأنماط الخمسة.
+ * rotationOffset (عادة cycleIndex الأسبوع الحالي) يمنع نمطاً واحداً من احتكار "اليوم الإضافي" في كل أسبوع من 6+ أيام نشطة. */
+export function buildPatternSequence(activeDaysCount: number, undertrainedGroups: string[], rotationOffset = 0): MovementPattern[] {
   const seq: MovementPattern[] = [];
   let last: MovementPattern | undefined;
   const remaining = [...undertrainedGroups];
   const usageCount: Partial<Record<MovementPattern, number>> = {};
   for (let i = 0; i < activeDaysCount; i++) {
-    const next = suggestPattern(remaining, last, usageCount);
+    const next = suggestPattern(remaining, last, usageCount, rotationOffset);
     seq.push(next);
     usageCount[next] = (usageCount[next] ?? 0) + 1;
     const group = PATTERN_TO_BROAD_GROUP[next];

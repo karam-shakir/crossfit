@@ -102,9 +102,14 @@ ${undertrained.length ? undertrained.map(m => `- ${m}`).join('\n') : '- جميع
 ${muscleGroupLog.map(d => `${d.date}: [${d.muscles.join(' + ')}] — شدة: ${d.intensity}`).join('\n') || 'لا توجد جلسات سابقة'}
 `;
 
+  // ═══ مرحلة دورة التدريج الحالية — قراءة فقط (المسار الأسبوعي هو من يملك الدورة ويحدّثها) ═══
+  // هذا يمنع أن يقترح تمرين يوم واحد وزناً "ذروة" في أسبوع مفروض عليه تفريغ من التوليد الأسبوعي
+  const latestCycleMeta = await getLatestWodCycleMeta(date || todaySA());
+
   // ═══ تحديد نمط القوة الفعلي بشكل حتمي (وليس تخميناً من الذكاء الاصطناعي) ═══
   // نتجنب تكرار نمط الأمس ونوزّع الاستخدام بعدالة عبر آخر 7 أيام — نفس منطق التسلسل الأسبوعي (buildPatternSequence)
-  // لكن مطبَّقاً هنا على التوليد اليومي المنفرد أيضاً، الذي كان يفتقده سابقاً فينتج تكراراً متتالياً لنفس النمط
+  // لكن مطبَّقاً هنا على التوليد اليومي المنفرد أيضاً، الذي كان يفتقده سابقاً فينتج تكراراً متتالياً لنفس النمط.
+  // rotationOffset = cycleIndex الحالي (نفس ما يستخدمه المسار الأسبوعي) لمنع "القرفصاء" من احتكار الفوز بالتعادل دائماً
   const lastWod = last7Wods[0]; // الأحدث زمنياً قبل تاريخ اليوم المطلوب (last7Wods مرتّبة تنازلياً)
   const patternUsageCount: Partial<Record<MovementPattern, number>> = {};
   for (const w of last7Wods) {
@@ -112,16 +117,13 @@ ${muscleGroupLog.map(d => `${d.date}: [${d.muscles.join(' + ')}] — شدة: ${d
     if (p) patternUsageCount[p] = (patternUsageCount[p] ?? 0) + 1;
   }
   const coachPattern = PATTERN_KEYS.includes(strengthPattern as MovementPattern) ? (strengthPattern as MovementPattern) : null;
-  const effectivePattern: MovementPattern = coachPattern || suggestPattern(undertrained, (lastWod as any)?.pattern, patternUsageCount);
+  const effectivePattern: MovementPattern = coachPattern || suggestPattern(undertrained, (lastWod as any)?.pattern, patternUsageCount, latestCycleMeta?.cycleIndex ?? 0);
   const patternIsForced = !!coachPattern;
 
   // ═══ تمارين الأكسسوار/الإحماء المُستخدمة في آخر جلسة — تُمرَّر كقائمة تجنّب لضمان تنوّع فعلي بدل تكرار نفس الاختيار كل مرة ═══
   const lastAccessoryIds: string[] = ((lastWod as any)?.accessory || []).map((e: any) => e.exerciseId).filter(Boolean);
   const lastWarmupIds: string[] = ((lastWod as any)?.warmup || []).map((e: any) => e.exerciseId).filter(Boolean);
 
-  // ═══ مرحلة دورة التدريج الحالية — قراءة فقط (المسار الأسبوعي هو من يملك الدورة ويحدّثها) ═══
-  // هذا يمنع أن يقترح تمرين يوم واحد وزناً "ذروة" في أسبوع مفروض عليه تفريغ من التوليد الأسبوعي
-  const latestCycleMeta = await getLatestWodCycleMeta(date || todaySA());
   const validPhases: CyclePhase[] = ['foundation', 'build', 'peak', 'deload'];
   const dailyForcePhase: CyclePhase | undefined = validPhases.includes(cyclePhaseOverride)
     ? (cyclePhaseOverride as CyclePhase)
@@ -269,6 +271,7 @@ ${getWeightStandardsTable(cyclePhase)}` : ''}
    - "Hero/Benchmark": تنسيقات معروفة (لا تخترع بديلاً إن طُلب بنشمارك محدد أعلاه)
    - "Chipper": تسلسل من 5-7 تمارين يُنجز مرة واحدة بدون تكرار الجولة
    - "EMOM": x تمارين في كل دقيقة لـ 10-20 دقيقة — استخدمه لضبط الإيقاع وليس للحد الأقصى
+${!isBenchmarkDay ? `✦ ⚠️ لا تجعل الميتكون معاكساً بالكامل لنمط اليوم (${effectivePattern}) — أدرج حركة واحدة على الأقل من نفس النمط ضمن الميتكون. الأكسسوار وحده مسؤول عن الموازنة الكاملة بالنمط المعاكس، لا الميتكون أيضاً` : ''}
 ✦ التهدئة: تمطيط هادئ للمجموعات العضلية المُستنزفة اليوم حسب القاعدة أعلاه
 
 **قواعد حقلَي duration و rounds:**
