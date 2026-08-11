@@ -10,6 +10,7 @@ import {
   getBenchmarkGuidance, getClassTimeBudget, getEquipmentGuidance, getRxFocusGuidance,
   computeNextCyclePhase, CYCLE_PHASE_LABELS_AR, CYCLE_PHASE_INFO, getRpeGuidance, getWeightStandardsTable,
   suggestPartnerFormat, partnerFormatGuidanceFor, PARTNER_SESSION_COHERENCE_GUIDANCE, PARTNER_FORMAT_LABELS_AR,
+  heavyDaySpacingGuidance,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
 
@@ -239,11 +240,27 @@ ${getClassTimeBudget(classDuration)}
 
 ⚠️ قاعدة توزيع إجبارية: لا تضع أكثر من 3 أيام تدريب متتالية بدون يوم راحة واحد على الأقل بينها. وزّع أيام الراحة عبر الأسبوع (مثلاً منتصف الأسبوع ونهايته) بدل تجميعها في نصف واحد فقط — الجمهور هنا أعضاء نادٍ عاديون لا رياضيون تنافسيون، فتكديس التدريب طموح زائد لهم.
 
+${heavyDaySpacingGuidance()}
+
 **══ 🔗 تسلسل أنماط القوة الحتمي عبر أيام الكروسفيت النشطة (إجباري — يضمن توافق الأكسسوار والتهدئة) ══**
 
 طبّق هذا الترتيب على أيام الكروسفيت العادية بالتتابع (اليوم الأول من أيام الكروسفيت = النمط الأول، الثاني = الثاني، وهكذا) — تجاهل أيام الراحة/Hyrox/Calisthenics تماماً عند العد ولا تكسر الترتيب بسببها:
 ${patternSequence.map((p, i) => `${i + 1}. ${PATTERN_LABELS_AR[p]}`).join('\n')}
 ${isBenchmarkWeek ? `(باستثناء يوم البنشمارك بتاريخ ${benchmarkDate} — لا يأخذ رقماً من هذا التسلسل)` : ''}
+${(() => {
+  // تحقّق فعلي: هل يقع القرفصاء والرفعة بفارق نمط واحد بينهما في هذا التسلسل تحديداً؟ (المسافة = 2)
+  // هذا يجعل قاعدة تباعد الثقل أعلاه ملموسة برقم اليوم الفعلي بدل نص عام قد يُتجاهل
+  const squatIdx = patternSequence.map((p, i) => p === 'squat' ? i : -1).filter(i => i >= 0);
+  const hingeIdx = patternSequence.map((p, i) => p === 'hinge' ? i : -1).filter(i => i >= 0);
+  const flags: string[] = [];
+  for (const si of squatIdx) for (const hi of hingeIdx) {
+    if (Math.abs(si - hi) === 2) {
+      const [a, b] = si < hi ? [si, hi] : [hi, si];
+      flags.push(`اليوم رقم ${a + 1} (${PATTERN_LABELS_AR[patternSequence[a]]}) واليوم رقم ${b + 1} (${PATTERN_LABELS_AR[patternSequence[b]]}) بفارق يوم نشط واحد فقط بينهما — طبّق قاعدة تباعد الثقل أعلاه إن لم يكن بينهما يوم راحة فعلي في التقويم النهائي.`);
+    }
+  }
+  return flags.length ? `\n🔍 رُصد فعلياً في هذا التسلسل: ${flags.join(' ')}` : '';
+})()}
 
 **دليل التوافق لكل نمط (طبّقه حرفياً على اليوم الذي يحمل هذا النمط):**
 ${patternLegend}

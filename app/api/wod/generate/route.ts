@@ -5,11 +5,12 @@ import { canManageCrossfitWod } from '@/lib/permissions';
 import { todaySA } from '@/lib/timezone';
 import { getWods, getLatestWodCycleMeta } from '@/lib/db';
 import {
-  EXERCISES, getCalisthenicsExercises, MovementPattern, CyclePhase, PartnerFormat,
+  EXERCISES, getCalisthenicsExercises, MovementPattern, CyclePhase, PartnerFormat, PATTERN_LABELS_AR,
   suggestPattern, accessoryGuidanceFor, cooldownGuidanceFor, strengthGuidanceFor, warmupGuidanceFor,
   getBenchmarkGuidance, getClassTimeBudget, getEquipmentGuidance, getRxFocusGuidance,
   computeNextCyclePhase, CYCLE_PHASE_LABELS_AR, CYCLE_PHASE_INFO, getRpeGuidance, getWeightStandardsTable,
   suggestPartnerFormat, partnerFormatGuidanceFor, PARTNER_SESSION_COHERENCE_GUIDANCE, PARTNER_FORMAT_LABELS_AR,
+  HEAVY_BY_DEFAULT_PATTERNS,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
 
@@ -126,6 +127,19 @@ ${muscleGroupLog.map(d => `${d.date}: [${d.muscles.join(' + ')}] — شدة: ${d
   // ═══ تمارين الأكسسوار/الإحماء المُستخدمة في آخر جلسة — تُمرَّر كقائمة تجنّب لضمان تنوّع فعلي بدل تكرار نفس الاختيار كل مرة ═══
   const lastAccessoryIds: string[] = ((lastWod as any)?.accessory || []).map((e: any) => e.exerciseId).filter(Boolean);
   const lastWarmupIds: string[] = ((lastWod as any)?.warmup || []).map((e: any) => e.exerciseId).filter(Boolean);
+
+  // ═══ تباعد أيام الثقل — إن كان أمس (بلا فاصل راحة) قرفصاء أو رفعة، واليوم أيضاً قرفصاء أو رفعة
+  // (نمط مختلف — التكرار الحرفي ممنوع أصلاً)، فهذا تجاور صفري بين يومين ثقيلين بطبيعتهما ═══
+  const targetDate = date || todaySA();
+  const yesterday = new Date(targetDate + 'T00:00:00');
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  const lastPattern = (lastWod as any)?.pattern as MovementPattern | undefined;
+  const isBackToBackHeavyDay =
+    (lastWod as any)?.date === yesterdayStr &&
+    lastPattern && HEAVY_BY_DEFAULT_PATTERNS.includes(lastPattern) &&
+    HEAVY_BY_DEFAULT_PATTERNS.includes(effectivePattern) &&
+    lastPattern !== effectivePattern;
 
   const validPhases: CyclePhase[] = ['foundation', 'build', 'peak', 'deload'];
   const dailyForcePhase: CyclePhase | undefined = validPhases.includes(cyclePhaseOverride)
@@ -265,7 +279,8 @@ ${cooldownGuidanceFor(effectivePattern)}
 المرحلة: ${CYCLE_PHASE_LABELS_AR[cyclePhase]} (${CYCLE_PHASE_INFO[cyclePhase].pctLabel}) — ${CYCLE_PHASE_INFO[cyclePhase].description}
 ${getRpeGuidance(cyclePhase)}
 ${getWeightStandardsTable(cyclePhase)}
-${isPartnerDay && partnerFormat ? `\n**${partnerFormatGuidanceFor(partnerFormat)}**\n${PARTNER_SESSION_COHERENCE_GUIDANCE}` : ''}` : ''}
+${isPartnerDay && partnerFormat ? `\n**${partnerFormatGuidanceFor(partnerFormat)}**\n${PARTNER_SESSION_COHERENCE_GUIDANCE}` : ''}
+${isBackToBackHeavyDay ? `\n**⚠️ قاعدة شدة إجبارية — تباعد أيام الثقل:** أمس (${yesterdayStr}) كان يوم ${PATTERN_LABELS_AR[lastPattern as MovementPattern]} (نمط ثقيل بطبيعته)، واليوم نمط ${PATTERN_LABELS_AR[effectivePattern]} (ثقيل بطبيعته أيضاً) بلا يوم راحة بينهما. خفّف شدة اليوم صراحة إلى MEDIUM: RPE 6-7 بدل 7-8، وأوزان أقل بـ5-10% من جدول المرحلة أعلاه لتمرين القوة تحديداً — واذكر السبب حرفياً في notes ("خُفِّف الحمل لأن أمس كان يوم ثقيل بلا راحة").` : ''}` : ''}
 
 **فلسفة البرمجة الاحترافية:**
 ✦ استخدم تحليل الأسبوع أعلاه لتحديد شدة اليوم والمجموعات المستهدفة

@@ -160,6 +160,21 @@ export const PATTERN_STRENGTH_MAP: Record<MovementPattern, { idsAr: string; note
   olympic: { idsAr: 'snatch / clean-and-jerk بتقنية عالية ووزن معتدل (70-80%)', note: 'التركيز على المسار لا الحمل الأقصى' },
 };
 
+// ═══ تباعد أيام الثقل — القرفصاء والرفعة هما نمطا القوة "الثقيلان بطبيعتهما" (compound بار مباشر
+// بأقرب نسبة لمرجع الذروة)، بعكس الدفع/السحب (أخف عادة) والأولمبي (تقني بوزن معتدل 70-80% بتصميمه أصلاً).
+// رُصد فعلياً: يوما قرفصاء ورفعة بفارق يوم نشط واحد فقط (بلا راحة كاملة بينهما) كلاهما RPE 7-8 —
+// قد يدخل بعض الأعضاء يوم الثاني بجهاز عصبي لم يتعافَ كلياً من الأول. ═══
+export const HEAVY_BY_DEFAULT_PATTERNS: MovementPattern[] = ['squat', 'hinge'];
+
+export function isHeavyByDefaultPattern(pattern: MovementPattern): boolean {
+  return HEAVY_BY_DEFAULT_PATTERNS.includes(pattern);
+}
+
+/** إرشاد التخفيف عندما يتجاور يوما قرفصاء ورفعة بفارق يوم نشط واحد فقط بلا راحة كاملة بينهما */
+export function heavyDaySpacingGuidance(): string {
+  return `⚠️ قاعدة شدة إجبارية — تباعد أيام الثقل: القرفصاء (${PATTERN_LABELS_AR.squat}) والرفعة (${PATTERN_LABELS_AR.hinge}) هما نمطا القوة الأثقل بطبيعتهما (أقرب حمل لمرجع مرحلة الدورة). إذا وقع نمطا القرفصاء والرفعة في يومين نشطين يفصل بينهما يوم نشط واحد فقط (بلا يوم راحة كاملة بينهما)، يجب تخفيف شدة الثاني منهما زمنياً إلى MEDIUM صراحة: RPE 6-7 بدل 7-8، وأوزان أقل بـ 5-10% من جدول المرحلة لتمرين القوة في ذلك اليوم تحديداً — واذكر السبب حرفياً في notes (مثال: "خُفِّف الحمل لأن يوم [النمط] الثقيل سبقه بيوم واحد فقط بلا راحة كاملة"). لا يجوز أن يكون يوما القرفصاء والرفعة كلاهما عند ذروة شدة مرحلة الدورة معاً وهما متجاوران بهذا الشكل.`;
+}
+
 /** يبني نص إرشادي لتمرين القوة بالبار الصحيح لهذا النمط — يمنع الخلط الشائع بين "الرفعة" (Hinge) و"السحب" (Pull) */
 export function strengthGuidanceFor(pattern: MovementPattern): string {
   const s = PATTERN_STRENGTH_MAP[pattern];
