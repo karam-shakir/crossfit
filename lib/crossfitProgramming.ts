@@ -57,19 +57,29 @@ export const PATTERN_LABELS_AR: Record<MovementPattern, string> = {
 };
 
 export const PATTERN_ACCESSORY_MAP: Record<MovementPattern, { targetsAr: string; suggestedIds: string[]; rationale: string }> = {
-  squat:   { targetsAr: 'الصدر + الكتف الأمامي + الترايسبس',        suggestedIds: ['push-up'],            rationale: 'يوم القرفصاء يستهدف الأرجل والجذع بالكامل — الأكسسوار يوازن بتحميل الجزء العلوي الدافع الذي لم يعمل' },
-  hinge:   { targetsAr: 'الصدر + الكتف + الترايسبس',                 suggestedIds: ['push-up'],            rationale: 'الرفعة الميتة تستنزف السلسلة الخلفية (ظهر/مؤخرة/أوتار) — الأكسسوار يوازن بالدفع الأمامي' },
-  push:    { targetsAr: 'الظهر + البايسبس + الجذع',                  suggestedIds: ['pull-up', 'sit-up'],  rationale: 'يوم الدفع (ضغط/كتف) يحتاج موازنة فورية بالسحب لحماية توازن مفصل الكتف من الإصابة' },
-  pull:    { targetsAr: 'الصدر + الترايسبس + الجذع',                 suggestedIds: ['push-up', 'sit-up'],  rationale: 'يوم السحب (عقلة/تجديف) يوازَن بالدفع حتى لا تتغلب عضلات السحب على الدفع بشكل مزمن' },
-  olympic: { targetsAr: 'الجذع + استقرار الكتف + الكاحل',            suggestedIds: ['sit-up'],             rationale: 'الحركات الأولمبية (خطف/نظيفة) تحتاج استقرار جذع ومفاصل لا تحميلاً عضلياً إضافياً ثقيلاً بعدها' },
+  squat:   { targetsAr: 'الصدر + الكتف الأمامي + الترايسبس',        suggestedIds: ['push-up', 'handstand-pushup', 'shoulder-press'],   rationale: 'يوم القرفصاء يستهدف الأرجل والجذع بالكامل — الأكسسوار يوازن بتحميل الجزء العلوي الدافع الذي لم يعمل' },
+  hinge:   { targetsAr: 'الصدر + الكتف + الترايسبس',                 suggestedIds: ['push-up', 'shoulder-press', 'handstand-pushup'],   rationale: 'الرفعة الميتة تستنزف السلسلة الخلفية (ظهر/مؤخرة/أوتار) — الأكسسوار يوازن بالدفع الأمامي' },
+  push:    { targetsAr: 'الظهر + البايسبس + الجذع',                  suggestedIds: ['pull-up', 'kipping-pull-up', 'toes-to-bar', 'sit-up'], rationale: 'يوم الدفع (ضغط/كتف) يحتاج موازنة فورية بالسحب لحماية توازن مفصل الكتف من الإصابة' },
+  pull:    { targetsAr: 'الصدر + الترايسبس + الجذع',                 suggestedIds: ['push-up', 'handstand-pushup', 'sit-up'],           rationale: 'يوم السحب (عقلة/تجديف) يوازَن بالدفع حتى لا تتغلب عضلات السحب على الدفع بشكل مزمن' },
+  olympic: { targetsAr: 'الجذع + استقرار الكتف + الكاحل',            suggestedIds: ['sit-up', 'toes-to-bar', 'push-up'],                 rationale: 'الحركات الأولمبية (خطف/نظيفة) تحتاج استقرار جذع ومفاصل لا تحميلاً عضلياً إضافياً ثقيلاً بعدها' },
 };
 
-export const PATTERN_COOLDOWN_MAP: Record<MovementPattern, { targetsAr: string; rationale: string }> = {
-  squat:   { targetsAr: 'الرباعية (Quad) + عضلة الورك القابضة (Hip Flexor) + المؤخرة (Glute)', rationale: 'القرفصاء يستنزف هذه العضلات مباشرة — الإطالة تسرّع الاسترداد' },
-  hinge:   { targetsAr: 'أوتار الركبة (Hamstring) + أسفل الظهر (Low Back) + المؤخرة (Glute)',  rationale: 'الرفعة الميتة تعتمد كلياً على هذه السلسلة الخلفية' },
-  push:    { targetsAr: 'الصدر (Chest) + الكتف الأمامي (Front Delt) + الترايسبس (Triceps)',    rationale: 'تخفيف التوتر المتراكم من حركات الدفع فوق الرأس والأفقي' },
-  pull:    { targetsAr: 'الظهر العريض (Lat) + البايسبس (Bicep) + الكتف الخلفي (Rear Delt)',     rationale: 'تخفيف توتر السحب المتكرر وحماية المرفق والكتف' },
-  olympic: { targetsAr: 'الورك (Hip) + الكاحل (Ankle) + الكتف (Shoulder) — Mobility',           rationale: 'الحركات الانفجارية تحتاج تحرير مفصلي لا إطالة عضلية عميقة فقط' },
+export const PATTERN_COOLDOWN_MAP: Record<MovementPattern, { targetsAr: string; stretchNamesAr: string[]; rationale: string }> = {
+  squat:   { targetsAr: 'الرباعية (Quad) + عضلة الورك القابضة (Hip Flexor) + المؤخرة (Glute)',
+             stretchNamesAr: ['إطالة الرباعية واقفاً (Standing Quad Stretch)', 'إطالة الورك القابضة على الركبة (Kneeling Hip Flexor Stretch)', 'وضعية الحمامة (Pigeon Pose)'],
+             rationale: 'القرفصاء يستنزف هذه العضلات مباشرة — الإطالة تسرّع الاسترداد' },
+  hinge:   { targetsAr: 'أوتار الركبة (Hamstring) + أسفل الظهر (Low Back) + المؤخرة (Glute)',
+             stretchNamesAr: ['إطالة أوتار الركبة جلوساً (Seated Forward Fold)', 'وضعية الطفل (Child\'s Pose) لأسفل الظهر', 'إطالة أوتار الركبة واقفاً على درجة (Standing Hamstring Stretch)'],
+             rationale: 'الرفعة الميتة تعتمد كلياً على هذه السلسلة الخلفية' },
+  push:    { targetsAr: 'الصدر (Chest) + الكتف الأمامي (Front Delt) + الترايسبس (Triceps)',
+             stretchNamesAr: ['إطالة الصدر على الحائط (Doorway Chest Stretch)', 'إطالة الترايسبس فوق الرأس (Overhead Triceps Stretch)', 'إطالة الكتف الأمامي بالذراع خلف الظهر (Cross-body Shoulder Stretch)'],
+             rationale: 'تخفيف التوتر المتراكم من حركات الدفع فوق الرأس والأفقي' },
+  pull:    { targetsAr: 'الظهر العريض (Lat) + البايسبس (Bicep) + الكتف الخلفي (Rear Delt)',
+             stretchNamesAr: ['تعليق ميت سلبي (Dead Hang) لإطالة اللاتس', 'إطالة اللاتس جانبياً (Side Lat Stretch)', 'إطالة البايسبس والساعد بمدّ الذراع (Bicep/Forearm Stretch)'],
+             rationale: 'تخفيف توتر السحب المتكرر وحماية المرفق والكتف' },
+  olympic: { targetsAr: 'الورك (Hip) + الكاحل (Ankle) + الكتف (Shoulder) — Mobility',
+             stretchNamesAr: ['جلسة القرفصاء العميقة (Deep Squat Hold) لتحرير الورك والكاحل', 'إطالة الكتف بعصا PVC فوق الرأس', 'دوران الكتف بحبل مقاومة (Banded Shoulder Distraction)'],
+             rationale: 'الحركات الانفجارية تحتاج تحرير مفصلي لا إطالة عضلية عميقة فقط' },
 };
 
 // ملاحظة: القرفصاء والرفعة المميتة كانتا تشتركان بنفس المجموعة العريضة سابقاً،
@@ -145,14 +155,51 @@ export function strengthGuidanceFor(pattern: MovementPattern): string {
   return `تمرين القوة بالبار لهذا النمط: ${s.idsAr}${s.note ? ` — ${s.note}` : ''}`;
 }
 
-export function accessoryGuidanceFor(pattern: MovementPattern): string {
+/** يبني نص إرشادي للأكسسوار — avoidIds تمنع تكرار نفس التمرين المُستخدَم في آخر جلسة/جلسات بنفس النمط حتى يتنوّع الاختيار فعلياً بدل تثبيت خيار واحد دائماً */
+export function accessoryGuidanceFor(pattern: MovementPattern, avoidIds: string[] = []): string {
   const a = PATTERN_ACCESSORY_MAP[pattern];
-  return `الأكسسوار يجب أن يستهدف: ${a.targetsAr} (استخدم ${a.suggestedIds.join(' و ')} أو ما يعادلهما) — السبب: ${a.rationale}`;
+  const pool = a.suggestedIds.filter(id => !avoidIds.includes(id));
+  const options = (pool.length ? pool : a.suggestedIds).join(' أو ');
+  const avoidNote = avoidIds.length ? ` — لا تستخدم ${avoidIds.join(' أو ')} لأنه استُخدم في آخر جلسة بنفس النمط، نوّع الاختيار` : '';
+  return `الأكسسوار يجب أن يستهدف: ${a.targetsAr} (اختر من: ${options}${avoidNote}) — السبب: ${a.rationale}`;
 }
 
-export function cooldownGuidanceFor(pattern: MovementPattern): string {
+/** يبني نص إرشادي للتهدئة مع تدوير أسماء الإطالات الفعلية بدل تكرار نفس الصياغة كل يوم بنفس النمط */
+export function cooldownGuidanceFor(pattern: MovementPattern, avoidNames: string[] = []): string {
   const c = PATTERN_COOLDOWN_MAP[pattern];
-  return `التهدئة يجب أن تستهدف: ${c.targetsAr} — السبب: ${c.rationale}`;
+  const pool = c.stretchNamesAr.filter(n => !avoidNames.includes(n));
+  const options = (pool.length ? pool : c.stretchNamesAr).join(' / ');
+  return `التهدئة يجب أن تستهدف: ${c.targetsAr} — اختر إطالة محددة (بالاسم) من: ${options} — لا تكرر نفس اسم الإطالة المُستخدم في الجلسة الأخيرة بنفس النمط — السبب: ${c.rationale}`;
+}
+
+// ═══ مكتبة الإحماء الخاص (Specific Warm-up) لكل نمط — تمنع تكرار نفس التمرين (مثلاً air-squat) في كل يوم قرفصاء ═══
+// كل نمط له بدائل صحيحة من قائمة EXERCISES (لا تستخدم أبداً IDs وهمية مثل "pvc-pass-through" غير الموجودة في القائمة —
+// أي ID غير صالح يُستبعد بصمت عند التحقق من صحة البيانات، ما يُنتج إحماءً ناقصاً)
+export const WARMUP_ACTIVATION_MAP: Record<MovementPattern, { specificIds: string[]; mobilityFocusAr: string; rationale: string }> = {
+  squat:   { specificIds: ['air-squat', 'overhead-squat', 'box-jump'],
+             mobilityFocusAr: 'الكاحل (dorsiflexion) + الورك (hip opener) + الركبة',
+             rationale: 'القرفصاء يحتاج مدى حركة كامل في الكاحل والورك — نقص المدى هنا هو غالباً سبب العمق الناقص لا ضعف العضلة' },
+  hinge:   { specificIds: ['kettle-bell-swing', 'deadlift'],
+             mobilityFocusAr: 'أوتار الركبة + مفصلة الورك (hip hinge pattern) + استقرار أسفل الظهر',
+             rationale: 'الرفعة الميتة تتطلب حس مفصلة ورك دقيق قبل التحميل — الإحماء الخاص يبني هذا الحس العصبي-عضلي' },
+  push:    { specificIds: ['push-up', 'shoulder-press', 'handstand-walk'],
+             mobilityFocusAr: 'الكتف (shoulder flexion/rotation) + الرسغ + الترايسبس',
+             rationale: 'الدفع فوق الرأس يحتاج مدى كتف كامل — تفعيله قبل الحمل يمنع التعويض بأسفل الظهر' },
+  pull:    { specificIds: ['row', 'toes-to-bar', 'kipping-pull-up'],
+             mobilityFocusAr: 'الظهر العريض (lat) + القبضة + الكتف الخلفي',
+             rationale: 'السحب المتكرر يحتاج تفعيل لاتس وقبضة قبل الحمل حتى لا يتحمل الكتف الأمامي العبء بديلاً عن اللاتس' },
+  olympic: { specificIds: ['overhead-squat', 'power-clean', 'snatch'],
+             mobilityFocusAr: 'الورك + الكاحل + الكتف فوق الرأس — Mobility شامل',
+             rationale: 'الحركات الأولمبية أكثر الأنماط حساسية للمرونة — إحماء مختصر هنا يسبب مساراً خاطئاً للبار أو إصابة لاحقاً' },
+};
+
+/** يبني نص إرشادي للمرحلة الخاصة من الإحماء (بعد المرحلة العامة) — avoidIds يمنع تكرار نفس تمرين التفعيل من الجلسة الأخيرة بنفس النمط */
+export function warmupGuidanceFor(pattern: MovementPattern, avoidIds: string[] = []): string {
+  const w = WARMUP_ACTIVATION_MAP[pattern];
+  const pool = w.specificIds.filter(id => !avoidIds.includes(id));
+  const options = (pool.length ? pool : w.specificIds).join(' أو ');
+  const avoidNote = avoidIds.length ? ` (لا تستخدم ${avoidIds.join(' أو ')} — استُخدم في آخر جلسة بنفس النمط)` : '';
+  return `المرحلة الثانية من الإحماء (خاص) يجب أن تُفعّل نمط ${PATTERN_LABELS_AR[pattern]} بدون حمل ثقيل — اختر من: ${options}${avoidNote}. ركّز أيضاً على تحرير: ${w.mobilityFocusAr} واذكر ذلك صراحة في notes — السبب: ${w.rationale}`;
 }
 
 // ═══ تمارين البنشمارك المعروفة (Hero / Girl WODs) ═══

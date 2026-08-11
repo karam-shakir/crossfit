@@ -1,5 +1,6 @@
 import { getDb } from './mongodb';
 import { unstable_cache } from 'next/cache';
+import type { MovementPattern } from './crossfitProgramming';
 
 // ===================== INTERFACES =====================
 
@@ -56,6 +57,7 @@ export interface Wod {
   cooldown: WodExercise[];
   notes?: string;
   aiTheme?: string;
+  pattern?: MovementPattern;
   targetTimes?: Partial<Record<'beginner'|'intermediate'|'advanced'|'elite', string>>;
   isCalisthenics?: boolean;
   createdBy: string;

@@ -588,6 +588,7 @@ export default function AdminClient({ member, exercises }: { member: any; exerci
             rounds: wod.rounds,
             notes: wod.notes || '',
             aiTheme: wod.aiTheme || '',
+            pattern: wod.pattern || null,
             isCalisthenics: wod.isCalisthenics || false,
             warmup:    wod.warmup    || [],
             strength:  wod.strength  || [],

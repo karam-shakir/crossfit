@@ -5,7 +5,7 @@ import { todaySA } from '@/lib/timezone';
 import { getWods, getLatestWodCycleMeta, upsertWodCycleMeta } from '@/lib/db';
 import {
   EXERCISES, MovementPattern, PATTERN_LABELS_AR, CyclePhase,
-  buildPatternSequence, accessoryGuidanceFor, cooldownGuidanceFor, strengthGuidanceFor,
+  buildPatternSequence, accessoryGuidanceFor, cooldownGuidanceFor, strengthGuidanceFor, warmupGuidanceFor,
   getBenchmarkGuidance, getClassTimeBudget, getEquipmentGuidance, getRxFocusGuidance,
   computeNextCyclePhase, CYCLE_PHASE_LABELS_AR, CYCLE_PHASE_INFO, getRpeGuidance, getWeightStandardsTable,
 } from '@/lib/crossfitProgramming';
@@ -125,8 +125,22 @@ export async function POST(req: NextRequest) {
   const estimatedNonCrossfitDays = (weekMode === 'mixed' ? calisthenicsDays : 0) + (hyroxMode ? 1 : 0);
   const activeCrossfitDays = Math.max(1, days - estimatedRestDays - estimatedNonCrossfitDays);
   const patternSequence = buildPatternSequence(activeCrossfitDays, undertrained);
+
+  // ═══ تجميع الأكسسوار/الإحماء المُستخدَمَين مؤخراً لكل نمط — يُمرَّر كقائمة تجنّب حتى لا يتكرر نفس التمرين
+  // بحرفيته عبر أسابيع متتالية بنفس النمط (المشكلة المرصودة فعلياً: نفس تمرينَي الأكسسوار طوال أسبوعين كاملين) ═══
+  const patternRecentAccessory: Partial<Record<MovementPattern, string[]>> = {};
+  const patternRecentWarmup: Partial<Record<MovementPattern, string[]>> = {};
+  for (const w of recentWodsRaw) {
+    const p = (w as any).pattern as MovementPattern | undefined;
+    if (!p) continue;
+    const accIds = ((w as any).accessory || []).map((e: any) => e.exerciseId).filter(Boolean);
+    const warmIds = ((w as any).warmup || []).map((e: any) => e.exerciseId).filter(Boolean);
+    if (accIds.length) patternRecentAccessory[p] = [...(patternRecentAccessory[p] || []), ...accIds];
+    if (warmIds.length) patternRecentWarmup[p] = [...(patternRecentWarmup[p] || []), ...warmIds];
+  }
+
   const patternLegend = (Object.keys(PATTERN_LABELS_AR) as MovementPattern[])
-    .map(p => `- ${PATTERN_LABELS_AR[p]}: ${accessoryGuidanceFor(p)} | ${cooldownGuidanceFor(p)}`)
+    .map(p => `- ${PATTERN_LABELS_AR[p]}:\n  ${warmupGuidanceFor(p, patternRecentWarmup[p] || [])}\n  ${accessoryGuidanceFor(p, patternRecentAccessory[p] || [])}\n  ${cooldownGuidanceFor(p)}`)
     .join('\n');
 
   const isBenchmarkWeek = !!(benchmarkName && benchmarkDate);
@@ -222,6 +236,8 @@ ${isBenchmarkWeek ? `(باستثناء يوم البنشمارك بتاريخ ${
 
 **دليل التوافق لكل نمط (طبّقه حرفياً على اليوم الذي يحمل هذا النمط):**
 ${patternLegend}
+
+⚠️ قاعدة تنوّع إجبارية: إذا تكرر نفس النمط أكثر من مرة في هذا الأسبوع (مثال: القرفصاء يومَين)، لا يجوز أن يستخدم اليومان نفس تمرين الأكسسوار أو نفس تمرين التفعيل الخاص في الإحماء أو نفس اسم الإطالة في التهدئة — اختر بديلاً مختلفاً من القائمة المتاحة لكل يوم.
 
 **دليل اختيار تمرين القوة بالبار لكل نمط (إجباري — لا تخلط بين الأنماط، خصوصاً الرفعة والسحب):**
 ${(Object.keys(PATTERN_LABELS_AR) as MovementPattern[]).map(p => `- ${PATTERN_LABELS_AR[p]}: ${strengthGuidanceFor(p)}`).join('\n')}
@@ -339,7 +355,7 @@ ${latestCycleMeta?.progressionNote ? `\n🗒️ توصيتك أنت (المدر�
 - يوم البنشمارك (إن وُجد): strength = [] وaccessory = [] إجبارياً، والميتكون هو حركات البنشمارك الرسمية فقط
 - أيام الراحة: isRest: true وكل المصفوفات فارغة []
 - لا تكرر نمط الميتكون في يومين متتاليين (AMRAP/للوقت/EMOM يتناوبان)
-- الإحماء: 3-4 تمارين — الأول عام (رفع نبض) ثم خاص (تفعيل نمط اليوم بدون حمل)
+- الإحماء: 3-4 تمارين — الأول عام (رفع نبض بـ row/run) ثم خاص — طبّق دليل التوافق أعلاه لنمط ذلك اليوم بدقة (تمرين تفعيل + ذكر منطقة المرونة المستهدفة في notes)، ولا تستخدم نفس تمرين التفعيل الخاص في يومين من نفس النمط ضمن الأسبوع
 - كل يوم نشاط: strength لا يقل عن تمرينَين compound (إلا يوم البنشمارك)
 - استخدم أوزان جدول "مرحلة دورة التدريج" أعلاه حرفياً حسب المستوى والجنس — لا تستخدم أوزان من ذاكرتك أو من أسابيع سابقة
 - progressionNote يجب أن يكون توجيهاً رقمياً محدداً (اسم حركة + نسبة/وزن دقيق) قابلاً للتنفيذ الحرفي الأسبوع القادم
@@ -361,6 +377,23 @@ ${latestCycleMeta?.progressionNote ? `\n🗒️ توصيتك أنت (المدر�
     }
 
     const result = parseAiJson(jsonText, 'wods');
+
+    // ═══ وسم كل يوم نشط بنمطه الفعلي بشكل حتمي من التسلسل المحسوب مسبقاً (لا نثق بذكر النمط الحر داخل نص aiTheme) —
+    // هذا يبني تاريخاً موثوقاً لحقل pattern على كل WOD محفوظ، تعتمد عليه أسابيع لاحقة (وحتى التوليد اليومي المنفرد)
+    // لمعرفة آخر نمط استُخدم وتجنّب تكراره أو تكرار نفس الأكسسوار/الإحماء الخاص به ═══
+    const HYROX_RE = /hyrox/i;
+    let patternIdx = 0;
+    if (Array.isArray(result.wods)) {
+      result.wods = result.wods.map((day: any) => {
+        const isBenchmarkDayHere = isBenchmarkWeek && day.date === benchmarkDate;
+        const isHyroxDayHere = hyroxMode && !day.isRest && !day.isCalisthenics && HYROX_RE.test(`${day.title || ''} ${day.aiTheme || ''}`);
+        const skip = day.isRest || day.isCalisthenics || isBenchmarkDayHere || isHyroxDayHere;
+        if (skip) return day;
+        const pattern = patternSequence[patternIdx] ?? patternSequence[patternSequence.length - 1];
+        patternIdx++;
+        return { ...day, pattern };
+      });
+    }
 
     // احفظ حالة الدورة لهذا الأسبوع — تُقرأ تلقائياً عند توليد الأسبوع القادم لضمان تقدّم حقيقي بدل تكرار نفس الوزن
     await upsertWodCycleMeta({

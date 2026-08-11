@@ -5,7 +5,7 @@ import { todaySA } from '@/lib/timezone';
 import { getWods, getLatestWodCycleMeta } from '@/lib/db';
 import {
   EXERCISES, getCalisthenicsExercises, MovementPattern, CyclePhase,
-  suggestPattern, accessoryGuidanceFor, cooldownGuidanceFor, strengthGuidanceFor,
+  suggestPattern, accessoryGuidanceFor, cooldownGuidanceFor, strengthGuidanceFor, warmupGuidanceFor,
   getBenchmarkGuidance, getClassTimeBudget, getEquipmentGuidance, getRxFocusGuidance,
   computeNextCyclePhase, CYCLE_PHASE_LABELS_AR, CYCLE_PHASE_INFO, getRpeGuidance, getWeightStandardsTable,
 } from '@/lib/crossfitProgramming';
@@ -103,9 +103,21 @@ ${muscleGroupLog.map(d => `${d.date}: [${d.muscles.join(' + ')}] — شدة: ${d
 `;
 
   // ═══ تحديد نمط القوة الفعلي بشكل حتمي (وليس تخميناً من الذكاء الاصطناعي) ═══
+  // نتجنب تكرار نمط الأمس ونوزّع الاستخدام بعدالة عبر آخر 7 أيام — نفس منطق التسلسل الأسبوعي (buildPatternSequence)
+  // لكن مطبَّقاً هنا على التوليد اليومي المنفرد أيضاً، الذي كان يفتقده سابقاً فينتج تكراراً متتالياً لنفس النمط
+  const lastWod = last7Wods[0]; // الأحدث زمنياً قبل تاريخ اليوم المطلوب (last7Wods مرتّبة تنازلياً)
+  const patternUsageCount: Partial<Record<MovementPattern, number>> = {};
+  for (const w of last7Wods) {
+    const p = (w as any).pattern as MovementPattern | undefined;
+    if (p) patternUsageCount[p] = (patternUsageCount[p] ?? 0) + 1;
+  }
   const coachPattern = PATTERN_KEYS.includes(strengthPattern as MovementPattern) ? (strengthPattern as MovementPattern) : null;
-  const effectivePattern: MovementPattern = coachPattern || suggestPattern(undertrained);
+  const effectivePattern: MovementPattern = coachPattern || suggestPattern(undertrained, (lastWod as any)?.pattern, patternUsageCount);
   const patternIsForced = !!coachPattern;
+
+  // ═══ تمارين الأكسسوار/الإحماء المُستخدمة في آخر جلسة — تُمرَّر كقائمة تجنّب لضمان تنوّع فعلي بدل تكرار نفس الاختيار كل مرة ═══
+  const lastAccessoryIds: string[] = ((lastWod as any)?.accessory || []).map((e: any) => e.exerciseId).filter(Boolean);
+  const lastWarmupIds: string[] = ((lastWod as any)?.warmup || []).map((e: any) => e.exerciseId).filter(Boolean);
 
   // ═══ مرحلة دورة التدريج الحالية — قراءة فقط (المسار الأسبوعي هو من يملك الدورة ويحدّثها) ═══
   // هذا يمنع أن يقترح تمرين يوم واحد وزناً "ذروة" في أسبوع مفروض عليه تفريغ من التوليد الأسبوعي
@@ -231,8 +243,11 @@ ${getClassTimeBudget(classDuration)}
 
 ${!isBenchmarkDay ? `**💪 ${strengthGuidanceFor(effectivePattern)}**
 
+**🔆 قاعدة المرحلة الخاصة من الإحماء لنمط اليوم (${effectivePattern}) — إجبارية:**
+${warmupGuidanceFor(effectivePattern, lastWarmupIds)}
+
 **🔗 قاعدة توافق الأكسسوار مع نمط اليوم (${effectivePattern}) — إجبارية:**
-${accessoryGuidanceFor(effectivePattern)}
+${accessoryGuidanceFor(effectivePattern, lastAccessoryIds)}
 
 **🧘 قاعدة توافق التهدئة مع نمط اليوم (${effectivePattern}) — إجبارية:**
 ${cooldownGuidanceFor(effectivePattern)}
@@ -244,7 +259,8 @@ ${getWeightStandardsTable(cyclePhase)}` : ''}
 
 **فلسفة البرمجة الاحترافية:**
 ✦ استخدم تحليل الأسبوع أعلاه لتحديد شدة اليوم والمجموعات المستهدفة
-✦ الإحماء (3 مراحل إجبارية): (1) عام — رفع معدل القلب 2-3 دقائق (row/run/bike خفيف) (2) خاص — تفعيل نفس نمط الحركة اليوم بدون حمل (air-squat لو اليوم squat، PVC pass-through لو olympic) (3) تحضير المهارة — مجموعة تحضيرية خفيفة من حركة القوة الرئيسية بنسبة 40-50%
+✦ الإحماء (3 مراحل إجبارية): (1) عام — رفع معدل القلب 2-3 دقائق (row/run خفيف) (2) خاص — طبّق قاعدة الإحماء الخاص لنمط اليوم أعلاه حرفياً (تفعيل + تحرير مفصلي بدون حمل) (3) تحضير المهارة — مجموعة تحضيرية خفيفة من حركة القوة الرئيسية بنسبة 40-50%
+✦ استخدم فقط IDs موجودة في قائمة التمارين أعلاه — أي ID غير موجود في القائمة (حتى لو منطقياً كـ "PVC pass-through" أو "banded distraction") يُستبعد تلقائياً من الإحماء الناتج، فلا تخترع IDs جديدة
 ✦ القوة: compound movements بالبار (barbell) بنسب تتناسب مع شدة الأسبوع ونمط اليوم المحدد أعلاه
 ✦ الميتكون — اختر نوعاً يناسب نظام الطاقة المطلوب:
    - زمن أقل من 5 دقائق (AMRAP قصير أو For Time بأثقال ثقيلة): نظام Phosphagen/Glycolytic — شدة قصوى
@@ -403,6 +419,7 @@ ${isBenchmarkDay ? '- الأكسسوار: مصفوفة فارغة [] — الب�
       rounds: generated.rounds ?? null,
       notes: generated.notes || '',
       aiTheme: generated.theme || '',
+      pattern: wodMode === 'crossfit' && !isBenchmarkDay ? effectivePattern : undefined,
       targetTimes: generated.targetTimes || null,
       warmup: validateSection(generated.warmup),
       strength: isBenchmarkDay ? [] : validateSection(generated.strength),
