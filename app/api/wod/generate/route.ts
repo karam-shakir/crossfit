@@ -285,7 +285,7 @@ ${isBackToBackHeavyDay ? `\n**⚠️ قاعدة شدة إجبارية — تبا
 **فلسفة البرمجة الاحترافية:**
 ✦ استخدم تحليل الأسبوع أعلاه لتحديد شدة اليوم والمجموعات المستهدفة
 ✦ الإحماء (3 مراحل إجبارية): (1) عام — رفع معدل القلب 2-3 دقائق (row/run خفيف) (2) خاص — طبّق قاعدة الإحماء الخاص لنمط اليوم أعلاه حرفياً (تفعيل + تحرير مفصلي بدون حمل) (3) تحضير المهارة — مجموعة تحضيرية خفيفة من حركة القوة الرئيسية بنسبة 40-50%
-✦ استخدم فقط IDs موجودة في قائمة التمارين أعلاه — أي ID غير موجود في القائمة (حتى لو منطقياً كـ "PVC pass-through" أو "banded distraction") يُستبعد تلقائياً من الإحماء الناتج، فلا تخترع IDs جديدة
+✦ استخدم فقط IDs موجودة في قائمة التمارين أعلاه — أي ID غير موجود في القائمة يُستبعد تلقائياً من الإحماء الناتج، فلا تخترع IDs جديدة (مثال صحيح موجود فعلياً: pvc-pass-through)
 ✦ القوة: compound movements بالبار (barbell) بنسب تتناسب مع شدة الأسبوع ونمط اليوم المحدد أعلاه
 ✦ الميتكون — اختر نوعاً يناسب نظام الطاقة المطلوب:
    - زمن أقل من 5 دقائق (AMRAP قصير أو For Time بأثقال ثقيلة): نظام Phosphagen/Glycolytic — شدة قصوى
@@ -394,7 +394,7 @@ ${!isBenchmarkDay ? `✦ ⚠️ لا تجعل الميتكون معاكساً ب
 
 **قواعد صارمة:**
 - استخدم فقط IDs من القائمة أعلاه
-${isBenchmarkDay ? '- اليوم بنشمارك: strength = [] وaccessory = [] إجبارياً — الميتكون هو البنشمارك المحدد أعلاه حرفياً بحركاته وتكراراته الرسمية فقط' : `- تمارين القوة (strength) يجب أن تكون بالبار حصراً (back-squat, front-squat, deadlift, power-clean, clean-and-jerk, snatch, overhead-squat, shoulder-press, push-press, thruster) وتنتمي لنمط ${effectivePattern} تحديداً — لا تضع pull-up أو handstand-pushup في القوة`}
+${isBenchmarkDay ? '- اليوم بنشمارك: strength = [] وaccessory = [] إجبارياً — الميتكون هو البنشمارك المحدد أعلاه حرفياً بحركاته وتكراراته الرسمية فقط' : `- تمارين القوة (strength) يجب أن تكون بالبار حصراً (back-squat, front-squat, deadlift, romanian-deadlift, sumo-deadlift, power-clean, hang-power-clean, clean-and-jerk, snatch, hang-power-snatch, overhead-squat, shoulder-press, push-press, bench-press, split-jerk, bent-over-row, pendlay-row, good-morning, hip-thrust, thruster) وتنتمي لنمط ${effectivePattern} تحديداً حسب دليل اختيار تمرين القوة أعلاه — لا تضع pull-up أو handstand-pushup في القوة`}
 - كل تمرين في strength وmetcon يجب أن يحتوي على حقل "levels" بالمستويات الأربعة مع الوزن والتكرارات والنصيحة
 - الإحماء والتهدئة: بدون levels (تُضاف في notes فقط)
 - الإحماء: 3-4 تمارين بالمراحل الثلاث (عام → خاص → تحضير المهارة)

@@ -187,11 +187,11 @@ const COOLDOWN_BANNED_PHRASES = ['لخفض النبض', 'تهدئة القلب',
 // القوة بالبار في lib/crossfitProgramming.ts (PATTERN_STRENGTH_MAP) بشكل موسّع ليشمل حركات
 // الميتكون المرتبطة منطقياً بكل نمط (وليس فقط تمرين القوة بالبار نفسه)
 const PATTERN_METCON_FAMILY: Record<MovementPattern, string[]> = {
-  squat: ['back-squat', 'front-squat', 'overhead-squat', 'thruster', 'wall-ball', 'air-squat', 'box-jump'],
-  hinge: ['deadlift', 'kettle-bell-swing'],
-  push: ['shoulder-press', 'push-press', 'thruster', 'wall-ball', 'handstand-pushup', 'push-up'],
-  pull: ['power-clean', 'snatch', 'pull-up', 'kipping-pull-up', 'toes-to-bar', 'muscle-up', 'rope-climb', 'row'],
-  olympic: ['snatch', 'clean-and-jerk', 'power-clean', 'overhead-squat'],
+  squat: ['back-squat', 'front-squat', 'overhead-squat', 'thruster', 'wall-ball', 'air-squat', 'box-jump', 'box-jump-over', 'pistol-squat', 'dumbbell-thruster', 'kettlebell-goblet-squat', 'bulgarian-split-squat'],
+  hinge: ['deadlift', 'kettle-bell-swing', 'romanian-deadlift', 'sumo-deadlift', 'kettlebell-snatch', 'kettlebell-clean', 'dumbbell-snatch'],
+  push: ['shoulder-press', 'push-press', 'thruster', 'wall-ball', 'handstand-pushup', 'push-up', 'bench-press', 'dumbbell-push-press', 'devils-press', 'dumbbell-thruster'],
+  pull: ['power-clean', 'snatch', 'pull-up', 'kipping-pull-up', 'chest-to-bar-pull-up', 'toes-to-bar', 'muscle-up', 'rope-climb', 'row', 'bent-over-row', 'pendlay-row', 'dumbbell-row'],
+  olympic: ['snatch', 'clean-and-jerk', 'power-clean', 'overhead-squat', 'hang-power-clean', 'hang-power-snatch', 'split-jerk', 'dumbbell-snatch', 'dumbbell-clean-and-jerk', 'dumbbell-power-clean'],
 };
 
 function validateWeek(wods: WodDoc[], label: string) {

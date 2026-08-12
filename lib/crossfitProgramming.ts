@@ -39,6 +39,76 @@ export const EXERCISES: CFExercise[] = [
   { id: 'push-up',           nameEn: 'Push Up',           nameAr: 'الضغط',               category: 'gymnastics' },
   { id: 'sit-up',            nameEn: 'Sit Up',            nameAr: 'الجلوس',              category: 'gymnastics' },
   { id: 'rope-climb',        nameEn: 'Rope Climb',        nameAr: 'تسلق الحبل',          category: 'gymnastics' },
+
+  // ═══ توسعة المكتبة (منظّمة من ٥ قوائم زوّدنا بها المدرب: إحماء/قوة/ميتكون/أكسسوار/إطالات) —
+  // مُنتقاة بعناية من ~٣٥٠ حركة خام: فقط الحركات المختلفة تدريبياً بوضوح عن الموجود أصلاً،
+  // لا كل مؤهّل أسلوب (Strict/Kipping/Pause/Tempo تُذكر في notes لا كمعرّفات منفصلة) ═══
+
+  // إحماء وتفعيل حركي
+  { id: 'pvc-pass-through',  nameEn: 'PVC Pass-Through',    nameAr: 'تمرير عصا PVC',          category: 'gymnastics' },
+  { id: 'band-pull-apart',   nameEn: 'Band Pull-Apart',     nameAr: 'سحب الحزام المطاطي',     category: 'gymnastics' },
+  { id: 'inchworm',          nameEn: 'Inchworm',            nameAr: 'دودة الأرض',              category: 'gymnastics' },
+  { id: 'worlds-greatest-stretch', nameEn: "World's Greatest Stretch", nameAr: 'إطالة العالم العظيم', category: 'gymnastics' },
+  { id: 'bear-crawl',        nameEn: 'Bear Crawl',          nameAr: 'زحف الدب',                category: 'gymnastics' },
+  { id: 'walking-lunge',     nameEn: 'Walking Lunge',       nameAr: 'الطعنة المتحركة',         category: 'gymnastics' },
+  { id: 'leg-swing',         nameEn: 'Leg Swing',           nameAr: 'أرجحة الساق',             category: 'gymnastics' },
+  { id: 'scap-pull-up',      nameEn: 'Scapular Pull-Up',    nameAr: 'عقلة لوح الكتف',          category: 'gymnastics' },
+  { id: 'monster-walk',      nameEn: 'Banded Monster Walk', nameAr: 'مشي الوحش بالحزام',       category: 'gymnastics' },
+  { id: 'good-morning',      nameEn: 'Good Morning',        nameAr: 'الانحناء الأمامي (Good Morning)', category: 'strength' },
+
+  // قوة بالبار
+  { id: 'romanian-deadlift', nameEn: 'Romanian Deadlift',   nameAr: 'الرفعة الرومانية',        category: 'strength' },
+  { id: 'sumo-deadlift',     nameEn: 'Sumo Deadlift',       nameAr: 'الرفعة السومو',           category: 'strength' },
+  { id: 'bent-over-row',     nameEn: 'Barbell Bent-Over Row', nameAr: 'التجديف المنحني بالبار', category: 'strength' },
+  { id: 'pendlay-row',       nameEn: 'Pendlay Row',         nameAr: 'تجديف بندلاي',            category: 'strength' },
+  { id: 'bench-press',       nameEn: 'Barbell Bench Press', nameAr: 'ضغط البنش',               category: 'strength' },
+  { id: 'split-jerk',        nameEn: 'Split Jerk',          nameAr: 'الدفع الانقسامي',         category: 'olympic'  },
+  { id: 'hang-power-clean',  nameEn: 'Hang Power Clean',    nameAr: 'النظيفة القوية المعلّقة', category: 'olympic'  },
+  { id: 'hang-power-snatch', nameEn: 'Hang Power Snatch',   nameAr: 'الخطف القوي المعلّق',     category: 'olympic'  },
+
+  // جمناستيك وميتكون إضافي
+  { id: 'chest-to-bar-pull-up', nameEn: 'Chest-to-Bar Pull-Up', nameAr: 'عقلة الصدر للعارضة', category: 'gymnastics' },
+  { id: 'pistol-squat',      nameEn: 'Pistol Squat',        nameAr: 'قرفصاء المسدس (ساق واحدة)', category: 'gymnastics' },
+  { id: 'wall-walk',         nameEn: 'Wall Walk',           nameAr: 'المشي على الحائط',        category: 'gymnastics' },
+  { id: 'ghd-situp',         nameEn: 'GHD Sit-Up',          nameAr: 'جلوس GHD',                category: 'gymnastics' },
+  { id: 'l-sit',             nameEn: 'L-Sit Hold',          nameAr: 'ثبات L',                  category: 'gymnastics' },
+  { id: 'hollow-rock',       nameEn: 'Hollow Rock',         nameAr: 'تمايل الجسم المجوف',       category: 'gymnastics' },
+  { id: 'bar-facing-burpee', nameEn: 'Bar-Facing Burpee',   nameAr: 'بيربي مواجه للبار',        category: 'cardio'   },
+  { id: 'box-jump-over',     nameEn: 'Box Jump Over',       nameAr: 'القفز فوق الصندوق',        category: 'wod'      },
+
+  // دمبل — معدّات مؤكَّدة التوفر بكمية كافية للحصة الجماعية
+  { id: 'dumbbell-snatch',      nameEn: 'Dumbbell Snatch',        nameAr: 'خطف الدمبل',               category: 'wod' },
+  { id: 'dumbbell-clean-and-jerk', nameEn: 'Dumbbell Clean & Jerk', nameAr: 'نظيفة ودفع الدمبل',      category: 'wod' },
+  { id: 'dumbbell-thruster',    nameEn: 'Dumbbell Thruster',      nameAr: 'ثراستر الدمبل',            category: 'wod' },
+  { id: 'dumbbell-power-clean', nameEn: 'Dumbbell Power Clean',   nameAr: 'نظيفة قوية بالدمبل',       category: 'wod' },
+  { id: 'dumbbell-push-press',  nameEn: 'Dumbbell Push Press',    nameAr: 'دفع بالساقين بالدمبل',     category: 'wod' },
+  { id: 'dumbbell-front-rack-lunge', nameEn: 'DB Front Rack Lunge', nameAr: 'طعنة الرف الأمامي بالدمبل', category: 'wod' },
+  { id: 'dumbbell-overhead-lunge', nameEn: 'DB Overhead Lunge',   nameAr: 'طعنة فوق الرأس بالدمبل',   category: 'wod' },
+  { id: 'devils-press',         nameEn: "Devil's Press",          nameAr: 'دفعة الشيطان',             category: 'wod' },
+  { id: 'farmers-carry',        nameEn: "Farmer's Carry",         nameAr: 'حمل المزارع',              category: 'wod' },
+  { id: 'dumbbell-row',         nameEn: 'Dumbbell Row',           nameAr: 'تجديف الدمبل',             category: 'wod' },
+
+  // كيتل بيل إضافي (أوسع من هزة الكيتل بيل وحدها)
+  { id: 'kettlebell-clean',        nameEn: 'Kettlebell Clean',       nameAr: 'نظيفة الكيتل بيل',      category: 'wod' },
+  { id: 'kettlebell-snatch',       nameEn: 'Kettlebell Snatch',      nameAr: 'خطف الكيتل بيل',        category: 'wod' },
+  { id: 'turkish-get-up',          nameEn: 'Turkish Get-Up',         nameAr: 'النهوض التركي',         category: 'wod' },
+  { id: 'kettlebell-goblet-squat', nameEn: 'Kettlebell Goblet Squat', nameAr: 'قرفصاء الكأس بالكيتل بيل', category: 'wod' },
+
+  // أجهزة كارديو إضافية
+  { id: 'air-bike',   nameEn: 'Air Bike (Echo/Assault)', nameAr: 'دراجة الهواء',    category: 'cardio' },
+  { id: 'ski-erg',    nameEn: 'SkiErg',                  nameAr: 'جهاز التزلج',     category: 'cardio' },
+  { id: 'shuttle-run', nameEn: 'Shuttle Run',            nameAr: 'الجري المكوكي',   category: 'cardio' },
+
+  // أكسسوار إضافي — يملأ فجوة حقيقية: لا تمرين عزل ذراع أو كتف جانبي كان موجوداً سابقاً إطلاقاً
+  { id: 'bicep-curl',       nameEn: 'Dumbbell Bicep Curl',      nameAr: 'ثني العضلة ذات الرأسين',   category: 'wod' },
+  { id: 'tricep-extension', nameEn: 'Overhead Tricep Extension', nameAr: 'مد الترايسبس فوق الرأس',  category: 'wod' },
+  { id: 'lateral-raise',    nameEn: 'Dumbbell Lateral Raise',   nameAr: 'رفعة جانبية بالدمبل',      category: 'wod' },
+  { id: 'face-pull',        nameEn: 'Band Face Pull',           nameAr: 'سحب الوجه بالحزام',        category: 'wod' },
+  { id: 'plank',            nameEn: 'Plank Hold',               nameAr: 'ثبات البلانك',             category: 'gymnastics' },
+  { id: 'russian-twist',    nameEn: 'Russian Twist',            nameAr: 'الالتواء الروسي',          category: 'wod' },
+  { id: 'glute-bridge',     nameEn: 'Glute Bridge',             nameAr: 'جسر المؤخرة',              category: 'gymnastics' },
+  { id: 'bulgarian-split-squat', nameEn: 'Bulgarian Split Squat', nameAr: 'قرفصاء بلغاري منقسم',   category: 'wod' },
+  { id: 'hip-thrust',       nameEn: 'Barbell Hip Thrust',       nameAr: 'دفعة الورك بالبار',        category: 'strength' },
 ];
 
 export function getCalisthenicsExercises(): CFExercise[] {
@@ -57,28 +127,28 @@ export const PATTERN_LABELS_AR: Record<MovementPattern, string> = {
 };
 
 export const PATTERN_ACCESSORY_MAP: Record<MovementPattern, { targetsAr: string; suggestedIds: string[]; rationale: string }> = {
-  squat:   { targetsAr: 'الصدر + الكتف الأمامي + الترايسبس',        suggestedIds: ['push-up', 'handstand-pushup', 'shoulder-press'],   rationale: 'يوم القرفصاء يستهدف الأرجل والجذع بالكامل — الأكسسوار يوازن بتحميل الجزء العلوي الدافع الذي لم يعمل' },
-  hinge:   { targetsAr: 'الصدر + الكتف + الترايسبس',                 suggestedIds: ['push-up', 'shoulder-press', 'handstand-pushup'],   rationale: 'الرفعة الميتة تستنزف السلسلة الخلفية (ظهر/مؤخرة/أوتار) — الأكسسوار يوازن بالدفع الأمامي' },
-  push:    { targetsAr: 'الظهر + البايسبس + الجذع',                  suggestedIds: ['pull-up', 'kipping-pull-up', 'toes-to-bar', 'sit-up'], rationale: 'يوم الدفع (ضغط/كتف) يحتاج موازنة فورية بالسحب لحماية توازن مفصل الكتف من الإصابة' },
-  pull:    { targetsAr: 'الصدر + الترايسبس + الجذع',                 suggestedIds: ['push-up', 'handstand-pushup', 'sit-up'],           rationale: 'يوم السحب (عقلة/تجديف) يوازَن بالدفع حتى لا تتغلب عضلات السحب على الدفع بشكل مزمن' },
-  olympic: { targetsAr: 'الجذع + استقرار الكتف + الكاحل',            suggestedIds: ['sit-up', 'toes-to-bar', 'push-up'],                 rationale: 'الحركات الأولمبية (خطف/نظيفة) تحتاج استقرار جذع ومفاصل لا تحميلاً عضلياً إضافياً ثقيلاً بعدها' },
+  squat:   { targetsAr: 'الصدر + الكتف الأمامي + الترايسبس',        suggestedIds: ['push-up', 'handstand-pushup', 'shoulder-press', 'tricep-extension', 'lateral-raise'], rationale: 'يوم القرفصاء يستهدف الأرجل والجذع بالكامل — الأكسسوار يوازن بتحميل الجزء العلوي الدافع الذي لم يعمل' },
+  hinge:   { targetsAr: 'الصدر + الكتف + الترايسبس',                 suggestedIds: ['push-up', 'shoulder-press', 'handstand-pushup', 'tricep-extension', 'lateral-raise'], rationale: 'الرفعة الميتة تستنزف السلسلة الخلفية (ظهر/مؤخرة/أوتار) — الأكسسوار يوازن بالدفع الأمامي' },
+  push:    { targetsAr: 'الظهر + البايسبس + الجذع',                  suggestedIds: ['pull-up', 'kipping-pull-up', 'toes-to-bar', 'sit-up', 'bicep-curl', 'face-pull', 'dumbbell-row'], rationale: 'يوم الدفع (ضغط/كتف) يحتاج موازنة فورية بالسحب لحماية توازن مفصل الكتف من الإصابة' },
+  pull:    { targetsAr: 'الصدر + الترايسبس + الجذع',                 suggestedIds: ['push-up', 'handstand-pushup', 'sit-up', 'tricep-extension', 'plank'], rationale: 'يوم السحب (عقلة/تجديف) يوازَن بالدفع حتى لا تتغلب عضلات السحب على الدفع بشكل مزمن' },
+  olympic: { targetsAr: 'الجذع + استقرار الكتف + الكاحل',            suggestedIds: ['sit-up', 'toes-to-bar', 'push-up', 'plank', 'russian-twist'], rationale: 'الحركات الأولمبية (خطف/نظيفة) تحتاج استقرار جذع ومفاصل لا تحميلاً عضلياً إضافياً ثقيلاً بعدها' },
 };
 
 export const PATTERN_COOLDOWN_MAP: Record<MovementPattern, { targetsAr: string; stretchNamesAr: string[]; rationale: string }> = {
   squat:   { targetsAr: 'الرباعية (Quad) + عضلة الورك القابضة (Hip Flexor) + المؤخرة (Glute)',
-             stretchNamesAr: ['إطالة الرباعية واقفاً (Standing Quad Stretch)', 'إطالة الورك القابضة على الركبة (Kneeling Hip Flexor Stretch)', 'وضعية الحمامة (Pigeon Pose)'],
+             stretchNamesAr: ['إطالة الرباعية واقفاً (Standing Quad Stretch)', 'إطالة الورك القابضة على الركبة (Kneeling Hip Flexor Stretch)', 'وضعية الحمامة (Pigeon Pose)', 'إطالة الكاوتش على الحائط (Couch Stretch)', 'وضعية الرقم 4 (Figure-4 Stretch)'],
              rationale: 'القرفصاء يستنزف هذه العضلات مباشرة — الإطالة تسرّع الاسترداد' },
   hinge:   { targetsAr: 'أوتار الركبة (Hamstring) + أسفل الظهر (Low Back) + المؤخرة (Glute)',
-             stretchNamesAr: ['إطالة أوتار الركبة جلوساً (Seated Forward Fold)', 'وضعية الطفل (Child\'s Pose) لأسفل الظهر', 'إطالة أوتار الركبة واقفاً على درجة (Standing Hamstring Stretch)'],
+             stretchNamesAr: ['إطالة أوتار الركبة جلوساً (Seated Forward Fold)', 'وضعية الطفل (Child\'s Pose) لأسفل الظهر', 'إطالة أوتار الركبة واقفاً على درجة (Standing Hamstring Stretch)', 'الالتواء الفقري المستلقي (Supine Spinal Twist)', 'ثبات القطة-البقرة الساكن (Cat-Cow Slow Static Hold)'],
              rationale: 'الرفعة الميتة تعتمد كلياً على هذه السلسلة الخلفية' },
   push:    { targetsAr: 'الصدر (Chest) + الكتف الأمامي (Front Delt) + الترايسبس (Triceps)',
-             stretchNamesAr: ['إطالة الصدر على الحائط (Doorway Chest Stretch)', 'إطالة الترايسبس فوق الرأس (Overhead Triceps Stretch)', 'إطالة الكتف الأمامي بالذراع خلف الظهر (Cross-body Shoulder Stretch)'],
+             stretchNamesAr: ['إطالة الصدر على الحائط (Doorway Chest Stretch)', 'إطالة الترايسبس فوق الرأس (Overhead Triceps Stretch)', 'إطالة الكتف الأمامي بالذراع خلف الظهر (Cross-body Shoulder Stretch)', 'وضعية الجرو (Puppy Pose Stretch)'],
              rationale: 'تخفيف التوتر المتراكم من حركات الدفع فوق الرأس والأفقي' },
   pull:    { targetsAr: 'الظهر العريض (Lat) + البايسبس (Bicep) + الكتف الخلفي (Rear Delt)',
-             stretchNamesAr: ['تعليق ميت سلبي (Dead Hang) لإطالة اللاتس', 'إطالة اللاتس جانبياً (Side Lat Stretch)', 'إطالة البايسبس والساعد بمدّ الذراع (Bicep/Forearm Stretch)'],
+             stretchNamesAr: ['تعليق ميت سلبي (Dead Hang) لإطالة اللاتس', 'إطالة اللاتس ركوعاً على صندوق (Kneeling Lat Stretch)', 'إطالة البايسبس والساعد بمدّ الذراع (Bicep/Forearm Stretch)', 'خيط الإبرة (Thread the Needle Stretch)', 'إطالة الرقبة والترابيزيوس العلوي (Upper Trap & Neck Stretch)'],
              rationale: 'تخفيف توتر السحب المتكرر وحماية المرفق والكتف' },
   olympic: { targetsAr: 'الورك (Hip) + الكاحل (Ankle) + الكتف (Shoulder) — Mobility',
-             stretchNamesAr: ['جلسة القرفصاء العميقة (Deep Squat Hold) لتحرير الورك والكاحل', 'إطالة الكتف بعصا PVC فوق الرأس', 'دوران الكتف بحبل مقاومة (Banded Shoulder Distraction)'],
+             stretchNamesAr: ['جلسة القرفصاء العميقة (Deep Squat Hold) لتحرير الورك والكاحل', 'إطالة الكتف بعصا PVC فوق الرأس', 'الإطالة الواقفة العريضة (Standing Straddle Stretch)', 'الكلب الهابط لإطالة الساق (Downward Dog)', 'إطالة ظهر القدم مرفوعة (Elevated Ankle Dorsiflexion Stretch)'],
              rationale: 'الحركات الانفجارية تحتاج تحرير مفصلي لا إطالة عضلية عميقة فقط' },
 };
 
@@ -154,10 +224,10 @@ export function buildPatternSequence(activeDaysCount: number, undertrainedGroups
 
 export const PATTERN_STRENGTH_MAP: Record<MovementPattern, { idsAr: string; note: string }> = {
   squat:   { idsAr: 'back-squat / front-squat / overhead-squat',   note: '' },
-  hinge:   { idsAr: 'deadlift حصراً',                                note: 'هذا النمط مختلف تماماً عن السحب (Pull) — يستهدف أوتار الركبة/أسفل الظهر/المؤخرة لا الظهر العريض/البايسبس، فتأكد أن الأكسسوار والتهدئة يعكسان ذلك' },
-  push:    { idsAr: 'shoulder-press / push-press',                  note: '' },
-  pull:    { idsAr: 'power-clean أو snatch (سحب انفجاري علوي)',      note: 'لا تستخدم deadlift كتمرين قوة رئيسي هنا — deadlift ينتمي لنمط "الرفعة" (Hinge) حصراً؛ الميتكون يمكن أن يستثمر pull-up/toes-to-bar بكثافة' },
-  olympic: { idsAr: 'snatch / clean-and-jerk بتقنية عالية ووزن معتدل (70-80%)', note: 'التركيز على المسار لا الحمل الأقصى' },
+  hinge:   { idsAr: 'deadlift / romanian-deadlift / sumo-deadlift', note: 'هذا النمط مختلف تماماً عن السحب (Pull) — يستهدف أوتار الركبة/أسفل الظهر/المؤخرة لا الظهر العريض/البايسبس، فتأكد أن الأكسسوار والتهدئة يعكسان ذلك' },
+  push:    { idsAr: 'shoulder-press / push-press / bench-press',   note: '' },
+  pull:    { idsAr: 'power-clean أو snatch (سحب انفجاري علوي) — أو bent-over-row/pendlay-row (سحب أفقي بالبار)', note: 'لا تستخدم deadlift كتمرين قوة رئيسي هنا — deadlift ينتمي لنمط "الرفعة" (Hinge) حصراً؛ bent-over-row/pendlay-row بديل ممتاز أخف على الجهاز العصبي من الانفجاري وأكثر تحديداً للظهر العريض؛ الميتكون يمكن أن يستثمر pull-up/toes-to-bar بكثافة' },
+  olympic: { idsAr: 'snatch / clean-and-jerk / hang-power-clean / hang-power-snatch / split-jerk بتقنية عالية ووزن معتدل (70-80%)', note: 'التركيز على المسار لا الحمل الأقصى' },
 };
 
 // ═══ تباعد أيام الثقل — القرفصاء والرفعة هما نمطا القوة "الثقيلان بطبيعتهما" (compound بار مباشر
@@ -202,19 +272,19 @@ export function cooldownGuidanceFor(pattern: MovementPattern, avoidNames: string
 // كل نمط له بدائل صحيحة من قائمة EXERCISES (لا تستخدم أبداً IDs وهمية مثل "pvc-pass-through" غير الموجودة في القائمة —
 // أي ID غير صالح يُستبعد بصمت عند التحقق من صحة البيانات، ما يُنتج إحماءً ناقصاً)
 export const WARMUP_ACTIVATION_MAP: Record<MovementPattern, { specificIds: string[]; mobilityFocusAr: string; rationale: string }> = {
-  squat:   { specificIds: ['air-squat', 'overhead-squat', 'box-jump'],
+  squat:   { specificIds: ['air-squat', 'overhead-squat', 'box-jump', 'walking-lunge', 'worlds-greatest-stretch'],
              mobilityFocusAr: 'الكاحل (dorsiflexion) + الورك (hip opener) + الركبة',
              rationale: 'القرفصاء يحتاج مدى حركة كامل في الكاحل والورك — نقص المدى هنا هو غالباً سبب العمق الناقص لا ضعف العضلة' },
-  hinge:   { specificIds: ['kettle-bell-swing', 'deadlift'],
+  hinge:   { specificIds: ['kettle-bell-swing', 'deadlift', 'good-morning', 'leg-swing'],
              mobilityFocusAr: 'أوتار الركبة + مفصلة الورك (hip hinge pattern) + استقرار أسفل الظهر',
              rationale: 'الرفعة الميتة تتطلب حس مفصلة ورك دقيق قبل التحميل — الإحماء الخاص يبني هذا الحس العصبي-عضلي' },
-  push:    { specificIds: ['push-up', 'shoulder-press', 'handstand-walk'],
+  push:    { specificIds: ['push-up', 'shoulder-press', 'handstand-walk', 'band-pull-apart'],
              mobilityFocusAr: 'الكتف (shoulder flexion/rotation) + الرسغ + الترايسبس',
              rationale: 'الدفع فوق الرأس يحتاج مدى كتف كامل — تفعيله قبل الحمل يمنع التعويض بأسفل الظهر' },
-  pull:    { specificIds: ['row', 'toes-to-bar', 'kipping-pull-up'],
+  pull:    { specificIds: ['row', 'toes-to-bar', 'kipping-pull-up', 'scap-pull-up'],
              mobilityFocusAr: 'الظهر العريض (lat) + القبضة + الكتف الخلفي',
              rationale: 'السحب المتكرر يحتاج تفعيل لاتس وقبضة قبل الحمل حتى لا يتحمل الكتف الأمامي العبء بديلاً عن اللاتس' },
-  olympic: { specificIds: ['overhead-squat', 'power-clean', 'snatch'],
+  olympic: { specificIds: ['overhead-squat', 'power-clean', 'snatch', 'pvc-pass-through', 'hang-power-clean'],
              mobilityFocusAr: 'الورك + الكاحل + الكتف فوق الرأس — Mobility شامل',
              rationale: 'الحركات الأولمبية أكثر الأنماط حساسية للمرونة — إحماء مختصر هنا يسبب مساراً خاطئاً للبار أو إصابة لاحقاً' },
 };
