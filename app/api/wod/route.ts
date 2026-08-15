@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getWods, getWodByDate, getWodsByMonth, upsertWod, deleteWodById, getExercises } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { canManageCrossfitWod } from '@/lib/permissions';
+import { enrichWodSections } from '@/lib/wodBlocks';
 
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -19,17 +20,9 @@ export async function GET(req: NextRequest) {
     const wod = await getWodByDate(date);
     if (!wod) return NextResponse.json(null);
     const exercises = await getExercises();
-    const enrich = (list: any[]) => list.map(item => ({
-      ...item,
-      exercise: exercises.find(e => e.id === item.exerciseId),
-    }));
     return NextResponse.json({
       ...wod,
-      warmup:    enrich(wod.warmup    || []),
-      strength:  enrich(wod.strength  || []),
-      metcon:    enrich(wod.metcon    || []),
-      accessory: enrich(wod.accessory || []),
-      cooldown:  enrich(wod.cooldown  || []),
+      ...enrichWodSections(wod, exercises),
     });
   }
 

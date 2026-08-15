@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import ExerciseCard from './ExerciseCard';
+import WodBlockList from './WodBlockList';
 
 const DAYS_AR = ['أحد', 'إثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت'];
 const MONTHS_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
@@ -88,12 +88,12 @@ export default function WodCalendar({ onClose }: { onClose: () => void }) {
   }
 
   const sections = dayWod ? [
-    { key: 'warmup',    label: 'الإحماء 🔆',   items: dayWod.warmup    || [] },
-    { key: 'strength',  label: 'القوة 🏋️',     items: dayWod.strength  || [] },
-    { key: 'metcon',    label: 'الـ WOD 🔥',   items: dayWod.metcon    || [] },
-    { key: 'accessory', label: 'الأكسسوار 💪', items: dayWod.accessory || [] },
-    { key: 'cooldown',  label: 'الإطالات 🧘',  items: dayWod.cooldown  || [] },
-  ].filter(s => s.items.length > 0) : [];
+    { key: 'warmup',    label: 'الإحماء 🔆',   blocks: dayWod.warmup    || [] },
+    { key: 'strength',  label: 'القوة 🏋️',     blocks: dayWod.strength  || [] },
+    { key: 'metcon',    label: 'الـ WOD 🔥',   blocks: dayWod.metcon    || [] },
+    { key: 'accessory', label: 'الأكسسوار 💪', blocks: dayWod.accessory || [] },
+    { key: 'cooldown',  label: 'الإطالات 🧘',  blocks: dayWod.cooldown  || [] },
+  ].filter(s => s.blocks.length > 0) : [];
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -210,9 +210,7 @@ export default function WodCalendar({ onClose }: { onClose: () => void }) {
                   {sections.map(s => (
                     <div key={s.key} className="space-y-2.5">
                       <h3 className="text-sm font-bold text-slate-500">{s.label}</h3>
-                      {s.items.map((item: any, i: number) => (
-                        <ExerciseCard key={i} item={item} index={i} />
-                      ))}
+                      <WodBlockList blocks={s.blocks} />
                     </div>
                   ))}
                 </>

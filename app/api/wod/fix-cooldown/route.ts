@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth';
 import { canManageCrossfitWod } from '@/lib/permissions';
 import { getWods, upsertWod } from '@/lib/db';
 import { parseAiJson } from '@/lib/aiJson';
+import { flattenMovements } from '@/lib/wodBlocks';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -56,7 +57,7 @@ const MUSCLE_STRETCHES: Record<string, string> = {
 };
 
 function getMusclesFromWod(strength: any[], metcon: any[]): string[] {
-  const allExercises = [...(strength || []), ...(metcon || [])];
+  const allExercises = [...flattenMovements(strength), ...flattenMovements(metcon)];
   const muscles = new Set<string>();
   for (const ex of allExercises) {
     const exMuscles = EXERCISE_MUSCLES[ex.exerciseId] || [];
@@ -118,7 +119,7 @@ export async function POST(req: NextRequest) {
     w.date >= fromDate && w.date <= toDate &&
     !w.isCalisthenics &&
     !(w as any).isRest &&
-    (w.strength?.length > 0 || w.metcon?.length > 0)
+    (flattenMovements(w.strength).length > 0 || flattenMovements(w.metcon).length > 0)
   );
 
   if (targetWods.length === 0)
@@ -128,8 +129,8 @@ export async function POST(req: NextRequest) {
 
   for (const wod of targetWods) {
     try {
-      const strengthIds = (wod.strength || []).map((e: any) => e.exerciseId);
-      const metconIds = (wod.metcon || []).map((e: any) => e.exerciseId);
+      const strengthIds = flattenMovements(wod.strength).map(e => e.exerciseId);
+      const metconIds = flattenMovements(wod.metcon).map(e => e.exerciseId);
       const muscles = getMusclesFromWod(wod.strength, wod.metcon);
 
       if (muscles.length === 0) {
@@ -157,7 +158,9 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      await upsertWod({ ...wod, cooldown: newCooldown });
+      // يُحفَظ كبلوك واحد (بلا صيغة خاصة — الإطالات لا تحتاج format) — كتابة مصفوفة مسطّحة مباشرة
+      // هنا كانت ستُتلف بنية البلوكات لأي أسبوع مولَّد بالنظام الجديد
+      await upsertWod({ ...wod, cooldown: [{ format: '', scoreType: '', movements: newCooldown }] });
       results.push({ date: wod.date, status: `تم — ${newCooldown.length} إطالات (${muscles.slice(0, 3).join(', ')})` });
 
     } catch (err: any) {

@@ -17,8 +17,12 @@ function emptyWod(date: string) {
   return { date, title: '', type: 'للوقت', duration: '', rounds: '', notes: '', warmup: [], strength: [], metcon: [], accessory: [], cooldown: [] };
 }
 
+function emptyBlock() {
+  return { format: '', scoreType: '', movements: [] as any[] };
+}
+
 function emptyExercise() {
-  return { exerciseId: '', reps: '', weight: '', distance: '', time: '', notes: '' };
+  return { exerciseId: '', reps: '', weight: '', distance: '', time: '', notes: '', executionNote: '' };
 }
 
 export default function AdminClient({ member, exercises, isFullAdmin = true }: { member: any; exercises: any[]; isFullAdmin?: boolean }) {
@@ -466,19 +470,44 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
     setWodLoading(false);
   }
 
-  function addExercise(section: string) {
-    setWod((p: any) => ({ ...p, [section]: [...p[section], emptyExercise()] }));
+  function addBlock(section: string) {
+    setWod((p: any) => ({ ...p, [section]: [...(p[section] || []), emptyBlock()] }));
   }
 
-  function updateExercise(section: string, idx: number, field: string, value: string) {
+  function removeBlock(section: string, blockIdx: number) {
+    setWod((p: any) => ({ ...p, [section]: p[section].filter((_: any, i: number) => i !== blockIdx) }));
+  }
+
+  function updateBlockField(section: string, blockIdx: number, field: 'format' | 'scoreType', value: string) {
     setWod((p: any) => ({
       ...p,
-      [section]: p[section].map((e: any, i: number) => i === idx ? { ...e, [field]: value } : e)
+      [section]: p[section].map((b: any, i: number) => i === blockIdx ? { ...b, [field]: value } : b),
     }));
   }
 
-  function removeExercise(section: string, idx: number) {
-    setWod((p: any) => ({ ...p, [section]: p[section].filter((_: any, i: number) => i !== idx) }));
+  function addExercise(section: string, blockIdx: number) {
+    setWod((p: any) => ({
+      ...p,
+      [section]: p[section].map((b: any, i: number) => i === blockIdx ? { ...b, movements: [...b.movements, emptyExercise()] } : b),
+    }));
+  }
+
+  function updateExercise(section: string, blockIdx: number, exIdx: number, field: string, value: string) {
+    setWod((p: any) => ({
+      ...p,
+      [section]: p[section].map((b: any, i: number) => i === blockIdx
+        ? { ...b, movements: b.movements.map((e: any, j: number) => j === exIdx ? { ...e, [field]: value } : e) }
+        : b),
+    }));
+  }
+
+  function removeExercise(section: string, blockIdx: number, exIdx: number) {
+    setWod((p: any) => ({
+      ...p,
+      [section]: p[section].map((b: any, i: number) => i === blockIdx
+        ? { ...b, movements: b.movements.filter((_: any, j: number) => j !== exIdx) }
+        : b),
+    }));
   }
 
   // AI Generate WOD
@@ -1253,63 +1282,92 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
                     }`}>
                     {s.label}
                     {wod[s.key]?.length > 0 && (
-                      <span className="mr-2 bg-white/20 text-xs px-1.5 py-0.5 rounded-full">{wod[s.key].length}</span>
+                      <span className="mr-2 bg-white/20 text-xs px-1.5 py-0.5 rounded-full">
+                        {wod[s.key].reduce((sum: number, b: any) => sum + (b.movements?.length || 0), 0)}
+                      </span>
                     )}
                   </button>
                 ))}
               </div>
 
-              {/* Exercise builder */}
+              {/* Exercise builder — كل قسم مصفوفة بلوكات (بلوك = صيغة + معيار تسجيل + تمارينه) */}
               {sections.map(s => (
                 <div key={s.key} className={activeSection === s.key ? 'space-y-3' : 'hidden'}>
-                  {wod[s.key]?.map((ex: any, i: number) => {
-                    const exInfo = exercises.find((e: any) => e.id === ex.exerciseId);
-                    return (
-                      <div key={i} className="bg-gray-900 rounded-xl border border-gray-800 p-3 space-y-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500 font-bold w-6">#{i + 1}</span>
-                          <select value={ex.exerciseId}
-                            onChange={e => updateExercise(s.key, i, 'exerciseId', e.target.value)}
-                            className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500">
-                            <option value="">اختر التمرين</option>
-                            {exercises.map((e: any) => (
-                              <option key={e.id} value={e.id}>{e.nameAr} ({e.nameEn})</option>
-                            ))}
-                          </select>
-                          <button onClick={() => removeExercise(s.key, i)}
-                            className="w-8 h-8 rounded-lg bg-red-900 hover:bg-red-700 flex items-center justify-center text-sm transition-colors flex-shrink-0">
-                            ×
-                          </button>
-                        </div>
-                        {exInfo && (
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <span>💪 {exInfo.muscles}</span>
-                            <span className="bg-gray-800 px-2 py-0.5 rounded-full">{exInfo.category}</span>
-                          </div>
-                        )}
-                        <div className="grid grid-cols-2 gap-2">
-                          <input type="text" value={ex.reps} onChange={e => updateExercise(s.key, i, 'reps', e.target.value)}
-                            className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-orange-500"
-                            placeholder="تكرارات (مثال: 21-15-9)" />
-                          <input type="text" value={ex.weight} onChange={e => updateExercise(s.key, i, 'weight', e.target.value)}
-                            className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-orange-500"
-                            placeholder="وزن (مثال: 60 كجم)" />
-                          <input type="text" value={ex.distance} onChange={e => updateExercise(s.key, i, 'distance', e.target.value)}
-                            className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-orange-500"
-                            placeholder="مسافة (مثال: 400م)" />
-                          <input type="text" value={ex.time} onChange={e => updateExercise(s.key, i, 'time', e.target.value)}
-                            className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-orange-500"
-                            placeholder="وقت (مثال: 3 دقائق)" />
-                        </div>
-                        <input type="text" value={ex.notes} onChange={e => updateExercise(s.key, i, 'notes', e.target.value)}
-                          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-orange-500"
-                          placeholder="ملاحظة خاصة بهذا التمرين" />
+                  {wod[s.key]?.map((block: any, bi: number) => (
+                    <div key={bi} className="bg-gray-950 rounded-xl border border-gray-800 p-3 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500 font-bold flex-shrink-0">بلوك {bi + 1}</span>
+                        <input type="text" value={block.format} onChange={e => updateBlockField(s.key, bi, 'format', e.target.value)}
+                          className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs font-mono focus:outline-none focus:border-orange-500"
+                          placeholder="صيغة البلوك (مثال: AMRAP x 6 MIN)" />
+                        <input type="text" value={block.scoreType} onChange={e => updateBlockField(s.key, bi, 'scoreType', e.target.value)}
+                          className="w-28 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-orange-500"
+                          placeholder="معيار التسجيل" />
+                        <button onClick={() => removeBlock(s.key, bi)}
+                          className="w-8 h-8 rounded-lg bg-red-900 hover:bg-red-700 flex items-center justify-center text-sm transition-colors flex-shrink-0">
+                          ×
+                        </button>
                       </div>
-                    );
-                  })}
-                  <button onClick={() => addExercise(s.key)}
+
+                      <div className="space-y-3">
+                        {block.movements.map((ex: any, i: number) => {
+                          const exInfo = exercises.find((e: any) => e.id === ex.exerciseId);
+                          return (
+                            <div key={i} className="bg-gray-900 rounded-xl border border-gray-800 p-3 space-y-3">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-500 font-bold w-6">#{i + 1}</span>
+                                <select value={ex.exerciseId}
+                                  onChange={e => updateExercise(s.key, bi, i, 'exerciseId', e.target.value)}
+                                  className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500">
+                                  <option value="">اختر التمرين</option>
+                                  {exercises.map((e: any) => (
+                                    <option key={e.id} value={e.id}>{e.nameAr} ({e.nameEn})</option>
+                                  ))}
+                                </select>
+                                <button onClick={() => removeExercise(s.key, bi, i)}
+                                  className="w-8 h-8 rounded-lg bg-red-900 hover:bg-red-700 flex items-center justify-center text-sm transition-colors flex-shrink-0">
+                                  ×
+                                </button>
+                              </div>
+                              {exInfo && (
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                  <span>💪 {exInfo.muscles}</span>
+                                  <span className="bg-gray-800 px-2 py-0.5 rounded-full">{exInfo.category}</span>
+                                </div>
+                              )}
+                              <div className="grid grid-cols-2 gap-2">
+                                <input type="text" value={ex.reps} onChange={e => updateExercise(s.key, bi, i, 'reps', e.target.value)}
+                                  className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-orange-500"
+                                  placeholder="تكرارات (مثال: 21-15-9)" />
+                                <input type="text" value={ex.weight} onChange={e => updateExercise(s.key, bi, i, 'weight', e.target.value)}
+                                  className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-orange-500"
+                                  placeholder="وزن (مثال: 60 كجم)" />
+                                <input type="text" value={ex.distance} onChange={e => updateExercise(s.key, bi, i, 'distance', e.target.value)}
+                                  className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-orange-500"
+                                  placeholder="مسافة (مثال: 400م)" />
+                                <input type="text" value={ex.time} onChange={e => updateExercise(s.key, bi, i, 'time', e.target.value)}
+                                  className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-orange-500"
+                                  placeholder="وقت (مثال: 3 دقائق)" />
+                              </div>
+                              <input type="text" value={ex.executionNote} onChange={e => updateExercise(s.key, bi, i, 'executionNote', e.target.value)}
+                                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-purple-500"
+                                placeholder="قيد تنفيذ تقني (مثال: Touch & Go / Start @ RPE 6 build to RPE 8/9)" />
+                              <input type="text" value={ex.notes} onChange={e => updateExercise(s.key, bi, i, 'notes', e.target.value)}
+                                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-orange-500"
+                                placeholder="ملاحظة خاصة بهذا التمرين" />
+                            </div>
+                          );
+                        })}
+                        <button onClick={() => addExercise(s.key, bi)}
+                          className="w-full py-2 rounded-xl border border-dashed border-gray-700 text-gray-400 hover:border-orange-500 hover:text-orange-400 text-xs transition-colors">
+                          + إضافة تمرين لهذا البلوك
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  <button onClick={() => addBlock(s.key)}
                     className="w-full py-3 rounded-xl border border-dashed border-gray-700 text-gray-400 hover:border-orange-500 hover:text-orange-400 text-sm transition-colors">
-                    + إضافة تمرين
+                    + إضافة بلوك جديد
                   </button>
                 </div>
               ))}
@@ -1842,22 +1900,36 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
                           {!isRest && (
                             <div className="p-4 space-y-4">
                               {(['warmup', 'strength', 'metcon', 'accessory', 'cooldown'] as const).map(sec => {
-                                const items = ((wod as any)[sec] || []).filter((e: any) => e.exerciseId);
-                                if (!items.length) return null;
+                                const blocks = ((wod as any)[sec] || []).filter((b: any) => (b.movements || []).some((m: any) => m.exerciseId));
+                                if (!blocks.length) return null;
+                                const totalMoves = blocks.reduce((sum: number, b: any) => sum + b.movements.length, 0);
                                 const { label, icon, color } = SECTION_LABELS[sec];
+                                let running = 0;
                                 return (
                                   <div key={sec}>
                                     <h4 className={`font-semibold text-xs mb-2 flex items-center gap-1 ${color}`}>
-                                      <span>{icon}</span>{label} ({items.length})
+                                      <span>{icon}</span>{label} ({totalMoves})
                                     </h4>
-                                    <div className="space-y-1">
-                                      {items.map((ex: any, j: number) => (
-                                        <div key={j} className="flex items-center gap-2 bg-gray-800/60 rounded-lg px-3 py-2 text-xs">
-                                          <span className="text-gray-500 font-mono w-4">{j + 1}</span>
-                                          <span className="text-white font-medium flex-1">{ex.exerciseId}</span>
-                                          {ex.reps && <span className="text-orange-300 bg-orange-900/30 px-2 py-0.5 rounded">{ex.reps}</span>}
-                                          {ex.weight && <span className="text-blue-300 bg-blue-900/30 px-2 py-0.5 rounded">{ex.weight}</span>}
-                                          {ex.notes && <span className="text-gray-400">· {ex.notes}</span>}
+                                    <div className="space-y-2">
+                                      {blocks.map((block: any, bi: number) => (
+                                        <div key={bi} className="space-y-1">
+                                          {block.format && (
+                                            <div className="text-[11px] font-mono text-orange-300 bg-orange-900/20 border border-orange-800/30 rounded px-2 py-0.5 inline-block">
+                                              {block.format}
+                                            </div>
+                                          )}
+                                          {block.movements.map((ex: any, j: number) => {
+                                            running++;
+                                            return (
+                                              <div key={j} className="flex items-center gap-2 bg-gray-800/60 rounded-lg px-3 py-2 text-xs">
+                                                <span className="text-gray-500 font-mono w-4">{running}</span>
+                                                <span className="text-white font-medium flex-1">{ex.exerciseId}</span>
+                                                {ex.reps && <span className="text-orange-300 bg-orange-900/30 px-2 py-0.5 rounded">{ex.reps}</span>}
+                                                {ex.weight && <span className="text-blue-300 bg-blue-900/30 px-2 py-0.5 rounded">{ex.weight}</span>}
+                                                {ex.notes && <span className="text-gray-400">· {ex.notes}</span>}
+                                              </div>
+                                            );
+                                          })}
                                         </div>
                                       ))}
                                     </div>

@@ -39,7 +39,19 @@ export interface WodExercise {
   distance?: string;
   time?: string;
   notes?: string;
+  executionNote?: string; // قيد تنفيذ تقني قصير: "Touch & Go"، "Start @ RPE 6 build to RPE 8/9"، "Single-Arm" ...
   levels?: Partial<Record<'beginner'|'intermediate'|'advanced'|'elite', WodLevelSpec>>;
+  exercise?: Exercise; // للعرض فقط — يُضاف عند القراءة (enrichWodSections)، لا يُحفَظ في قاعدة البيانات
+}
+
+// بلوك واحد داخل أي قسم (إحماء/قوة/ميتكون/أكسسوار/تهدئة) — يحمل صيغته الخاصة
+// (مثال: "AMRAP x 6 MIN"، "EVERY 2:30 (4 SETS)"، "FOR TIME") ومعيار تسجيل اختياري،
+// بدل أن يكون القسم قائمة مسطّحة من التمارين بلا تجميع أو صيغة. راجع lib/wodBlocks.ts
+// للتعامل مع البيانات القديمة المحفوظة بالشكل المسطّح (قبل هذا التحويل).
+export interface WodBlock {
+  format: string;        // "AMRAP x 6 MIN" | "EVERY 2:30 (4 SETS)" | "1-2 SETS" | "FOR TIME" | "5 SETS" | '' (بلا صيغة خاصة)
+  scoreType?: string;     // "Heaviest Weight" | "Weight" | "Time" | "Rounds + Reps" ...
+  movements: WodExercise[];
 }
 
 export interface Wod {
@@ -50,11 +62,11 @@ export interface Wod {
   type: string;
   duration?: number;
   rounds?: number;
-  warmup: WodExercise[];
-  strength: WodExercise[];
-  metcon: WodExercise[];
-  accessory?: WodExercise[];
-  cooldown: WodExercise[];
+  warmup: WodBlock[];
+  strength: WodBlock[];
+  metcon: WodBlock[];
+  accessory?: WodBlock[];
+  cooldown: WodBlock[];
   notes?: string;
   aiTheme?: string;
   pattern?: MovementPattern;

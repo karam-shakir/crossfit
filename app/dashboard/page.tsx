@@ -6,6 +6,7 @@ import {
   getMemberLogEntries, getMemberPRs, getMemberAttendance,
   getAllHyroxSessions, getAllKettlebellSessions, getAllCalisthenicsSessions,
 } from '@/lib/db';
+import { enrichWodSections } from '@/lib/wodBlocks';
 import DashboardClient from './DashboardClient';
 
 export default async function DashboardPage() {
@@ -34,17 +35,9 @@ export default async function DashboardPage() {
   const todayKettlebell   = (allKettlebell   || []).filter((s: any) => s.date === today);
   const todayCalisthenics = (allCalisthenics || []).filter((s: any) => s.date === today);
 
-  const enrich = (list: any[] | undefined) => (list || []).map(item => ({
-    ...item,
-    exercise: exercises.find((e: any) => e.id === item.exerciseId),
-  }));
-
   const wod = rawWod ? {
     ...rawWod,
-    warmup:   enrich(rawWod.warmup),
-    strength: enrich(rawWod.strength),
-    metcon:   enrich(rawWod.metcon),
-    cooldown: enrich(rawWod.cooldown),
+    ...enrichWodSections(rawWod, exercises),
   } : null;
 
   const monthAttendance = (attendance || []).filter((a: any) => a.date.startsWith(thisMonth));

@@ -2,7 +2,7 @@
 import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
-import ExerciseCard from '@/components/ExerciseCard';
+import WodBlockList from '@/components/WodBlockList';
 import WodCalendar, { formatMeta } from '@/components/WodCalendar';
 
 const YOUTUBE_LINKS: Record<string, string> = {
@@ -713,12 +713,14 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
   }
 
   const sections = [
-    { key: 'warmup',    label: 'الإحماء 🔆',    labelEn: 'Warm-Up',   items: wod?.warmup    || [] },
-    { key: 'strength',  label: 'القوة 🏋️',      labelEn: 'Strength',  items: wod?.strength  || [] },
-    { key: 'metcon',    label: 'الـ WOD 🔥',    labelEn: 'WOD',       items: wod?.metcon    || [] },
-    { key: 'accessory', label: 'الأكسسوار 💪',  labelEn: 'Accessory', items: wod?.accessory || [] },
-    { key: 'cooldown',  label: 'الإطالات 🧘',   labelEn: 'Stretches', items: wod?.cooldown  || [] },
-  ].filter(s => s.items.length > 0);
+    { key: 'warmup',    label: 'الإحماء 🔆',    labelEn: 'Warm-Up',   blocks: wod?.warmup    || [] },
+    { key: 'strength',  label: 'القوة 🏋️',      labelEn: 'Strength',  blocks: wod?.strength  || [] },
+    { key: 'metcon',    label: 'الـ WOD 🔥',    labelEn: 'WOD',       blocks: wod?.metcon    || [] },
+    { key: 'accessory', label: 'الأكسسوار 💪',  labelEn: 'Accessory', blocks: wod?.accessory || [] },
+    { key: 'cooldown',  label: 'الإطالات 🧘',   labelEn: 'Stretches', blocks: wod?.cooldown  || [] },
+  ].filter(s => s.blocks.length > 0);
+
+  const flatMovements = (blocks: any[]) => (blocks || []).flatMap((b: any) => b.movements || []);
 
   function buildEnglishText() {
     if (!wod) return '';
@@ -736,13 +738,18 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
     const ICONS: Record<string, string> = { warmup: '🔆', strength: '🏋️', metcon: '🔥', accessory: '💪', cooldown: '🧘' };
     for (const sec of sections) {
       lines.push(`\n${ICONS[sec.key] || '▸'} ${sec.labelEn.toUpperCase()}:`);
-      sec.items.forEach((ex: any, i: number) => {
-        const name = ex.exercise?.nameEn || ex.exerciseId || ex.exercise?.nameAr || '';
-        const reps   = ex.reps   ? ` — ${ex.reps}`   : '';
-        const weight = ex.weight ? ` (${ex.weight})`  : '';
-        const note   = ex.notes  ? ` · ${ex.notes}`   : '';
-        lines.push(`  ${i + 1}. ${name}${reps}${weight}${note}`);
-      });
+      let i = 0;
+      for (const block of sec.blocks) {
+        if (block.format) lines.push(`  [${block.format}]`);
+        for (const ex of (block.movements || [])) {
+          i++;
+          const name = ex.exercise?.nameEn || ex.exerciseId || ex.exercise?.nameAr || '';
+          const reps   = ex.reps   ? ` — ${ex.reps}`   : '';
+          const weight = ex.weight ? ` (${ex.weight})`  : '';
+          const note   = ex.notes  ? ` · ${ex.notes}`   : '';
+          lines.push(`  ${i}. ${name}${reps}${weight}${note}`);
+        }
+      }
     }
     if (wod.notes) lines.push(`\n📝 ${wod.notes}`);
     lines.push(`\n🏋️ Matanikeh CrossFit Group`);
@@ -942,7 +949,7 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
               )}
 
               {/* Level selector */}
-              {wod && [...(wod.strength||[]),...(wod.metcon||[])].some((e:any)=>
+              {wod && [...flatMovements(wod.strength||[]),...flatMovements(wod.metcon||[])].some((e:any)=>
                 e.levels ||
                 (e.weight && (e.weight.includes('|')||e.weight.includes('مبتدئ')) && e.weight.includes('متوسط')) ||
                 (e.notes  && (e.notes.includes('|') ||e.notes.includes('مبتدئ'))  && e.notes.includes('متوسط'))
@@ -969,10 +976,7 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
               {sections.map(s => (
                 <div key={s.key} className={activeSection === s.key ? 'space-y-3' : 'hidden'}>
                   <h3 className="text-sm font-semibold text-slate-500">{s.label}</h3>
-                  {s.items.map((item: any, i: number) => (
-                    <ExerciseCard key={i} item={item} index={i}
-                      selectedLevel={(s.key === 'strength' || s.key === 'metcon') ? selectedLevel : undefined} />
-                  ))}
+                  <WodBlockList blocks={s.blocks} selectedLevel={(s.key === 'strength' || s.key === 'metcon') ? selectedLevel : undefined} />
                 </div>
               ))}
 
@@ -1020,15 +1024,16 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                           cooldown:  { icon: '🧘', color: 'text-teal-400',   bg: 'bg-teal-900/10'    },
                         };
                         const style = SECTION_STYLE[sec.key] || { icon: '▸', color: 'text-gray-400', bg: 'bg-gray-800/30' };
+                        const secItems = flatMovements(sec.blocks);
                         return (
                           <div key={sec.key}>
                             <h4 className={`font-bold text-sm mb-2 flex items-center gap-2 ${style.color}`}>
                               <span>{style.icon}</span>
                               <span>{sec.labelEn.toUpperCase()}</span>
-                              <span className="text-gray-600 font-normal text-xs">({sec.items.length} exercises)</span>
+                              <span className="text-gray-600 font-normal text-xs">({secItems.length} exercises)</span>
                             </h4>
                             <div className="space-y-2">
-                              {sec.items.map((ex: any, i: number) => {
+                              {secItems.map((ex: any, i: number) => {
                                 const nameEn = ex.exercise?.nameEn || ex.exerciseId || '—';
                                 const ytUrl = YOUTUBE_LINKS[ex.exerciseId] ||
                                   `https://www.youtube.com/results?search_query=${encodeURIComponent((nameEn) + ' crossfit tutorial')}`;

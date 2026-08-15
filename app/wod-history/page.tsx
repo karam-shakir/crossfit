@@ -4,6 +4,7 @@ import {
   getMemberById, getWods, getExercises,
   getAllHyroxSessions, getAllKettlebellSessions, getAllCalisthenicsSessions,
 } from '@/lib/db';
+import { enrichWodSections } from '@/lib/wodBlocks';
 import WodHistoryClient from './WodHistoryClient';
 
 export default async function WodHistoryPage() {
@@ -22,17 +23,11 @@ export default async function WodHistoryPage() {
   if (!member) redirect('/login');
   if (member.canViewWods === false && session.role !== 'admin') redirect('/dashboard');
 
-  const enrich = (list: any[] | undefined) =>
-    (list || []).map((e: any) => ({ ...e, exercise: exercises.find(ex => ex.id === e.exerciseId) }));
-
   const wods = (allWods || [])
     .sort((a, b) => b.date.localeCompare(a.date))
     .map(w => ({
       ...w,
-      warmup:   enrich(w.warmup),
-      strength: enrich(w.strength),
-      metcon:   enrich(w.metcon),
-      cooldown: enrich(w.cooldown),
+      ...enrichWodSections(w, exercises),
     }));
 
   const { password: _, ...safeMember } = member;

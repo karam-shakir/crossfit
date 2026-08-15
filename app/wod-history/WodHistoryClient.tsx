@@ -2,8 +2,10 @@
 import { todaySA } from '@/lib/timezone';
 import { useState } from 'react';
 import Navbar from '@/components/Navbar';
-import ExerciseCard from '@/components/ExerciseCard';
+import WodBlockList from '@/components/WodBlockList';
 import { formatMeta } from '@/components/WodCalendar';
+
+const flatMovements = (blocks: any[]) => (blocks || []).flatMap((b: any) => b.movements || []);
 
 // ── ألوان الرياضات (Light theme) ────────────────────────────────────────────
 const SPORT_COLORS = {
@@ -88,7 +90,7 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
   const [selectedLevel, setSelectedLevel] = useState<LevelKey | undefined>(undefined);
   const today = todaySA();
   function hasMultiLevel(s: string) { return (s.includes('|') || s.includes('مبتدئ')) && s.includes('متوسط'); }
-  const hasLevels = [...(wod.strength || []), ...(wod.metcon || [])].some((e: any) =>
+  const hasLevels = [...flatMovements(wod.strength || []), ...flatMovements(wod.metcon || [])].some((e: any) =>
     e.levels ||
     (e.weight && hasMultiLevel(e.weight)) ||
     (e.notes  && hasMultiLevel(e.notes))
@@ -112,7 +114,7 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
       { k: 'cooldown',  icon: '🧘', label: 'التهدئة' },
     ];
     for (const sec of sections) {
-      const items = (wod[sec.k] || []).filter((e: any) => e.exerciseId);
+      const items = flatMovements(wod[sec.k]).filter((e: any) => e.exerciseId);
       if (!items.length) continue;
       lines.push('');
       lines.push(`${sec.icon} ${sec.label}:`);
@@ -216,8 +218,8 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
           )}
 
           {(['warmup','strength','metcon','accessory','cooldown'] as const).map(sec => {
-            const items = (wod as any)[sec]?.filter((e: any) => e.exerciseId);
-            if (!items?.length) return null;
+            const blocks = (wod as any)[sec];
+            if (!blocks?.length) return null;
             const secMeta: Record<string, {label:string;icon:string;color:string;bg:string}> = {
               warmup:    {label:'الإحماء',    icon:'🔆',color:'text-amber-700',  bg:'bg-amber-50 border-amber-200'},
               strength:  {label:'القوة',      icon:'🏋️',color:'text-blue-700',   bg:'bg-blue-50 border-blue-200'},
@@ -233,11 +235,7 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
                   <span className="text-lg">{icon}</span>
                   <h3 className={`font-bold text-base ${color}`}>{label}</h3>
                 </div>
-                <div className="space-y-2">
-                  {items.map((ex: any, i: number) => (
-                    <ExerciseCard key={i} item={ex} index={i} selectedLevel={showLevel} />
-                  ))}
-                </div>
+                <WodBlockList blocks={blocks} selectedLevel={showLevel} />
               </div>
             );
           })}

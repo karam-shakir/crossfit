@@ -26,6 +26,7 @@ interface WodExercise {
   distance?: string;
   time?: string;
   notes?: string;
+  executionNote?: string;
   exercise?: Exercise;
   levels?: Partial<Record<LevelKey, LevelSpec>>;
 }
@@ -202,6 +203,15 @@ export default function ExerciseCard({
           </div>
         )}
       </div>
+
+      {/* ── قيد تنفيذ تقني (Touch & Go / RPE تصاعدي / Single-Arm ...) ── */}
+      {item.executionNote && (
+        <div className="px-3 pb-2">
+          <div className="bg-purple-50 border border-purple-200 text-purple-800 rounded-lg px-3 py-2 text-sm font-semibold">
+            ⚙️ {item.executionNote}
+          </div>
+        </div>
+      )}
 
       {/* ── Coaching cue from level ── */}
       {levelData && (levelData.cue) && (

@@ -27,6 +27,7 @@ import {
   HEAVY_BY_DEFAULT_PATTERNS, PATTERN_ACCESSORY_MAP, PATTERN_METCON_MAP,
 } from '../lib/crossfitProgramming';
 import { computeNextCyclePhase, CyclePhase, CYCLE_ORDER } from '../lib/periodization';
+import { flattenMovements } from '../lib/wodBlocks';
 
 // ═══════════════════════════════════════════════════════════════
 // تقرير موحّد
@@ -206,7 +207,7 @@ function validateWeek(wods: WodDoc[], label: string) {
     const invalid: string[] = [];
     for (const w of wods) {
       for (const sec of ['warmup', 'strength', 'metcon', 'accessory', 'cooldown'] as const) {
-        for (const item of (w as any)[sec] || []) {
+        for (const item of flattenMovements((w as any)[sec])) {
           if (item?.exerciseId && !VALID_EXERCISE_IDS.has(item.exerciseId)) {
             invalid.push(`${w.date}/${sec}: ${item.exerciseId}`);
           }
@@ -220,13 +221,13 @@ function validateWeek(wods: WodDoc[], label: string) {
   {
     const incomplete: string[] = [];
     for (const w of active) {
-      const isBenchmarkLike = (w.strength || []).length === 0 && (w.accessory || []).length === 0 && (w.metcon || []).length > 0;
+      const isBenchmarkLike = flattenMovements(w.strength).length === 0 && flattenMovements(w.accessory).length === 0 && flattenMovements(w.metcon).length > 0;
       for (const sec of ['warmup', 'metcon', 'cooldown'] as const) {
-        if (!(w as any)[sec] || (w as any)[sec].length === 0) incomplete.push(`${w.date}: ${sec} فارغ`);
+        if (flattenMovements((w as any)[sec]).length === 0) incomplete.push(`${w.date}: ${sec} فارغ`);
       }
       if (!isBenchmarkLike) {
         for (const sec of ['strength', 'accessory'] as const) {
-          if (!(w as any)[sec] || (w as any)[sec].length === 0) incomplete.push(`${w.date}: ${sec} فارغ (وليس يوم بنشمارك)`);
+          if (flattenMovements((w as any)[sec]).length === 0) incomplete.push(`${w.date}: ${sec} فارغ (وليس يوم بنشمارك)`);
         }
       }
     }
@@ -237,7 +238,7 @@ function validateWeek(wods: WodDoc[], label: string) {
   {
     const violations: string[] = [];
     for (const w of active) {
-      for (const item of w.cooldown || []) {
+      for (const item of flattenMovements(w.cooldown)) {
         const text = `${item.notes || ''}`;
         if (COOLDOWN_BANNED_PHRASES.some(p => text.includes(p))) violations.push(`${w.date}: "${text.slice(0, 40)}..."`);
       }
@@ -284,8 +285,9 @@ function validateWeek(wods: WodDoc[], label: string) {
     for (const w of partnerDays) {
       const titleText = `${w.title} ${w.titleEn || ''}`;
       if (!/بارتنر|partner/i.test(titleText)) issues.push(`${w.date}: العنوان لا يذكر "بارتنر"`);
-      const strengthHasLevels = (w.strength || []).every((e: any) => e.levels);
-      if ((w.strength || []).length > 0 && !strengthHasLevels) issues.push(`${w.date}: تمرين قوة بلا levels فردية`);
+      const strengthMoves = flattenMovements(w.strength);
+      const strengthHasLevels = strengthMoves.every((e: any) => e.levels);
+      if (strengthMoves.length > 0 && !strengthHasLevels) issues.push(`${w.date}: تمرين قوة بلا levels فردية`);
     }
     check(S, `تماسك يوم/أيام البارتنر (${partnerDays.length} يوم)`, issues.length === 0, issues.join(' | ') || (partnerDays.length === 0 ? 'لا يوجد يوم بارتنر هذا الأسبوع' : undefined));
   }
@@ -296,7 +298,7 @@ function validateWeek(wods: WodDoc[], label: string) {
     for (const w of active) {
       if (!w.pattern) continue;
       const family = PATTERN_METCON_MAP[w.pattern]?.suggestedIds || [];
-      const metconIds = (w.metcon || []).map((e: any) => e.exerciseId);
+      const metconIds = flattenMovements(w.metcon).map(e => e.exerciseId);
       const hasSamePattern = metconIds.some((id: string) => family.includes(id));
       if (metconIds.length > 0 && !hasSamePattern) violations.push(`${w.date} (${PATTERN_LABELS_AR[w.pattern]}): الميتكون [${metconIds.join(', ')}] لا يحتوي أي حركة من نمط اليوم`);
     }
@@ -315,8 +317,8 @@ function validateWeek(wods: WodDoc[], label: string) {
     Array.from(byPattern.entries()).forEach(([pattern, days]: [MovementPattern, WodDoc[]]) => {
       if (days.length < 2) return;
       for (let i = 0; i < days.length; i++) for (let j = i + 1; j < days.length; j++) {
-        const accA = new Set((days[i].accessory || []).map((e: any) => e.exerciseId));
-        const accB: Set<string> = new Set((days[j].accessory || []).map((e: any) => e.exerciseId));
+        const accA = new Set(flattenMovements(days[i].accessory).map(e => e.exerciseId));
+        const accB: Set<string> = new Set(flattenMovements(days[j].accessory).map(e => e.exerciseId));
         const accAList: string[] = Array.from(accA);
         const sameAccessory = accA.size > 0 && accA.size === accB.size && accAList.every(id => accB.has(id));
         if (sameAccessory) repeats.push(`${days[i].date} و${days[j].date} (كلاهما ${PATTERN_LABELS_AR[pattern]}): نفس مجموعة الأكسسوار بالضبط`);

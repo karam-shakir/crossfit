@@ -13,6 +13,7 @@ import {
   HEAVY_BY_DEFAULT_PATTERNS,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
+import { flattenMovements } from '@/lib/wodBlocks';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -54,7 +55,9 @@ export async function POST(req: NextRequest) {
   // تحليل المجموعات العضلية المُدرَّبة في آخر 7 أيام
   const muscleGroupLog: { date: string; muscles: string[]; intensity: string }[] = [];
   for (const w of last7Wods) {
-    const allEx = [...(w.strength || []), ...(w.metcon || [])].map((e: any) => e.exerciseId);
+    const strengthMoves = flattenMovements(w.strength);
+    const metconMoves = flattenMovements(w.metcon);
+    const allEx = [...strengthMoves, ...metconMoves].map((e: any) => e.exerciseId);
     const muscles: string[] = [];
     if (allEx.some(id => ['back-squat','front-squat','overhead-squat'].includes(id))) muscles.push('الأرجل — القرفصاء (Squat)');
     if (allEx.some(id => ['deadlift'].includes(id))) muscles.push('الخلفية — الرفعة المميتة (Hinge)');
@@ -63,8 +66,8 @@ export async function POST(req: NextRequest) {
     if (allEx.some(id => ['shoulder-press','push-press','handstand-pushup'].includes(id))) muscles.push('الكتف/الدفع');
     if (allEx.some(id => ['thruster','wall-ball'].includes(id))) muscles.push('الجسم الكامل');
     if (allEx.some(id => ['row','run','double-under','burpee'].includes(id))) muscles.push('القلب/التحمل');
-    const hasHeavyStrength = (w.strength || []).length >= 2;
-    const intensity = hasHeavyStrength ? 'ثقيلة' : (w.metcon || []).length >= 4 ? 'تحمل' : 'متوسطة';
+    const hasHeavyStrength = strengthMoves.length >= 2;
+    const intensity = hasHeavyStrength ? 'ثقيلة' : metconMoves.length >= 4 ? 'تحمل' : 'متوسطة';
     muscleGroupLog.push({ date: w.date, muscles, intensity });
   }
 
@@ -125,8 +128,8 @@ ${muscleGroupLog.map(d => `${d.date}: [${d.muscles.join(' + ')}] — شدة: ${d
   const patternIsForced = !!coachPattern;
 
   // ═══ تمارين الأكسسوار/الإحماء المُستخدمة في آخر جلسة — تُمرَّر كقائمة تجنّب لضمان تنوّع فعلي بدل تكرار نفس الاختيار كل مرة ═══
-  const lastAccessoryIds: string[] = ((lastWod as any)?.accessory || []).map((e: any) => e.exerciseId).filter(Boolean);
-  const lastWarmupIds: string[] = ((lastWod as any)?.warmup || []).map((e: any) => e.exerciseId).filter(Boolean);
+  const lastAccessoryIds: string[] = flattenMovements((lastWod as any)?.accessory).map(e => e.exerciseId).filter(Boolean);
+  const lastWarmupIds: string[] = flattenMovements((lastWod as any)?.warmup).map(e => e.exerciseId).filter(Boolean);
 
   // ═══ تباعد أيام الثقل — إن كان أمس (بلا فاصل راحة) قرفصاء أو رفعة، واليوم أيضاً قرفصاء أو رفعة
   // (نمط مختلف — التكرار الحرفي ممنوع أصلاً)، فهذا تجاور صفري بين يومين ثقيلين بطبيعتهما ═══
@@ -135,7 +138,7 @@ ${muscleGroupLog.map(d => `${d.date}: [${d.muscles.join(' + ')}] — شدة: ${d
   yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayStr = yesterday.toISOString().split('T')[0];
   const lastPattern = (lastWod as any)?.pattern as MovementPattern | undefined;
-  const lastMetconIds: string[] = (lastPattern === effectivePattern ? ((lastWod as any)?.metcon || []) : []).map((e: any) => e.exerciseId).filter(Boolean);
+  const lastMetconIds: string[] = flattenMovements(lastPattern === effectivePattern ? (lastWod as any)?.metcon : []).map(e => e.exerciseId).filter(Boolean);
   const isBackToBackHeavyDay =
     (lastWod as any)?.date === yesterdayStr &&
     lastPattern && HEAVY_BY_DEFAULT_PATTERNS.includes(lastPattern) &&
@@ -206,32 +209,41 @@ ${recentContext}
   "notes": "ملاحظات تفصيلية للمتدربين تشمل: استراتيجية الجلسة، كيفية تقسيم التكرارات، نقاط الأمان",
   "theme": "الفكرة المحورية للجلسة (مثال: بناء قوة السحب مع تحمل وزن الجسم)",
   "warmup": [
-    {"exerciseId": "run", "reps": "400م", "weight": "", "distance": "400م", "time": "", "notes": "إيقاع هادئ — تنشيط الدورة الدموية"},
-    {"exerciseId": "push-up", "reps": "10", "weight": "", "distance": "", "time": "", "notes": "بطيء — تفعيل الكتف والصدر"},
-    {"exerciseId": "sit-up", "reps": "15", "weight": "", "distance": "", "time": "", "notes": "تفعيل العضلة الوسطى"}
+    {"format": "", "scoreType": "", "movements": [
+      {"exerciseId": "run", "reps": "400م", "weight": "", "distance": "400م", "time": "", "notes": "إيقاع هادئ — تنشيط الدورة الدموية"},
+      {"exerciseId": "push-up", "reps": "10", "weight": "", "distance": "", "time": "", "notes": "بطيء — تفعيل الكتف والصدر"},
+      {"exerciseId": "sit-up", "reps": "15", "weight": "", "distance": "", "time": "", "notes": "تفعيل العضلة الوسطى"}
+    ]}
   ],
   "strength": [
-    {"exerciseId": "pull-up", "reps": "5×3", "weight": "", "distance": "", "time": "", "notes": "Strict فقط — توقف 3 ث في الأعلى، متوسط: Banded، متقدم: Weighted BW"},
-    {"exerciseId": "handstand-pushup", "reps": "4×5", "weight": "", "distance": "", "time": "", "notes": "Strict HSPU — متوسط: Pike Push-up، نخبة: Freestanding HSPU"}
+    {"format": "3 SETS", "scoreType": "", "movements": [
+      {"exerciseId": "pull-up", "reps": "5", "weight": "", "distance": "", "time": "", "notes": "Strict فقط — توقف 3 ث في الأعلى، متوسط: Banded، متقدم: Weighted BW"},
+      {"exerciseId": "handstand-pushup", "reps": "5", "weight": "", "distance": "", "time": "", "notes": "Strict HSPU — متوسط: Pike Push-up، نخبة: Freestanding HSPU"}
+    ]}
   ],
   "metcon": [
-    {"exerciseId": "pull-up", "reps": "21-15-9", "weight": "", "distance": "", "time": "", "notes": "Kipping مسموح — لا تصل للفشل الكامل"},
-    {"exerciseId": "push-up", "reps": "21-15-9", "weight": "", "distance": "", "time": "", "notes": "صدر للأرض في كل تكرار"},
-    {"exerciseId": "burpee", "reps": "21-15-9", "weight": "", "distance": "", "time": "", "notes": "استمر في الحركة — لا توقف"}
+    {"format": "FOR TIME", "scoreType": "Time", "movements": [
+      {"exerciseId": "pull-up", "reps": "21-15-9", "weight": "", "distance": "", "time": "", "notes": "Kipping مسموح — لا تصل للفشل الكامل"},
+      {"exerciseId": "push-up", "reps": "21-15-9", "weight": "", "distance": "", "time": "", "notes": "صدر للأرض في كل تكرار"},
+      {"exerciseId": "burpee", "reps": "21-15-9", "weight": "", "distance": "", "time": "", "notes": "استمر في الحركة — لا توقف"}
+    ]}
   ],
   "cooldown": [
-    {"exerciseId": "sit-up", "reps": "10", "weight": "", "distance": "", "time": "45 ث", "notes": "تمطيط الصدر والكتفين — أمسك 45 ث"}
+    {"format": "", "scoreType": "", "movements": [
+      {"exerciseId": "sit-up", "reps": "10", "weight": "", "distance": "", "time": "45 ث", "notes": "تمطيط الصدر والكتفين — أمسك 45 ث"}
+    ]}
   ]
 }
 
 **قواعد صارمة:**
 - استخدم فقط IDs التمارين المتاحة أعلاه
 - weight يبقى فارغاً دائماً (وزن الجسم)
-- الإحماء: 3-4 تمارين ديناميكية تُهيئ للعمل الرئيسي
-- القوة/Skill: 2-3 تمارين مهارية عالية الجودة
-- الميتكون: 3-5 تمارين مكثفة 7-20 دقيقة
+- **كل قسم مصفوفة بلوكات لا مصفوفة تمارين مباشرة** — كل بلوك: {"format": "...", "scoreType": "...", "movements": [...]}
+- الإحماء: بلوك واحد، 3-4 تمارين ديناميكية تُهيئ للعمل الرئيسي
+- القوة/Skill: بلوك واحد، 2-3 تمارين مهارية عالية الجودة
+- الميتكون: بلوك واحد، 3-5 تمارين مكثفة 7-20 دقيقة
 - في كل notes: اذكر scaling للمبتدئين وللمتقدمين
-- التهدئة: 2-3 تمطيطات للعضلات الأكثر استخداماً
+- التهدئة: بلوك واحد، 2-3 تمطيطات للعضلات الأكثر استخداماً
 
 أرجع JSON فقط، بدون أي كلام قبله أو بعده.`;
 
@@ -285,9 +297,12 @@ ${isBackToBackHeavyDay ? `\n**⚠️ قاعدة شدة إجبارية — تبا
 
 **فلسفة البرمجة الاحترافية:**
 ✦ استخدم تحليل الأسبوع أعلاه لتحديد شدة اليوم والمجموعات المستهدفة
-✦ الإحماء (3 مراحل إجبارية): (1) عام — رفع معدل القلب 2-3 دقائق (row/run خفيف) (2) خاص — طبّق قاعدة الإحماء الخاص لنمط اليوم أعلاه حرفياً (تفعيل + تحرير مفصلي بدون حمل) (3) تحضير المهارة — مجموعة تحضيرية خفيفة من حركة القوة الرئيسية بنسبة 40-50%
+✦ الإحماء — ٣ بلوكات إجبارية بالضبط بهذا الترتيب (كل بلوك له format خاص به، لا قائمة مسطّحة):
+   (١) بلوك عام: format فارغ أو زمني بسيط (مثال: "2:00")، حركة كارديو خفيفة واحدة فقط (row/bike/run) — رفع نبض بحت، بلا تمارين أخرى
+   (٢) بلوك خاص مؤقّت: format = "AMRAP x N MIN" (N بين 4-6)، 3-5 حركات من قاعدة الإحماء الخاص لنمط اليوم أعلاه (تفعيل + تحرير مفصلي بدون حمل)
+   (٣) بلوك تحضير المهارة: format = "1-2 SETS" أو "EVERY X:XX (N SETS)" — **حدّد أولاً أي حركة في جلسة اليوم (القوة أم الميتكون) هي الأعقد تقنياً**، ورشّح لها هذا البلوك تحديداً لا حركة القوة دائماً بشكل تلقائي. إن كانت تلك الحركة مركّبة (مثال: DB Thruster = Front Squat position + Push Press)، فكّكها لمكوّناتها كحركات منفصلة بأوزان/تكرارات خفيفة بدل تكرار الحركة نفسها لايت — هذا تدريب عصبي-عضلي للمسار الحركي قبل تحميله، لا مجرد تسخين
 ✦ استخدم فقط IDs موجودة في قائمة التمارين أعلاه — أي ID غير موجود في القائمة يُستبعد تلقائياً من الإحماء الناتج، فلا تخترع IDs جديدة (مثال صحيح موجود فعلياً: pvc-pass-through)
-✦ القوة: compound movements بالبار (barbell) بنسب تتناسب مع شدة الأسبوع ونمط اليوم المحدد أعلاه
+✦ القوة: compound movements بالبار (barbell) بنسب تتناسب مع شدة الأسبوع ونمط اليوم المحدد أعلاه — بلوك واحد، format بترميز فترات صريح (مثال: "EVERY 2:30 (4 SETS)" أو "5 SETS")، وscoreType واضح ("Heaviest Weight" أو "Weight"). إن كانت الجلسة تصاعدية الشدة، اذكر ذلك في executionNote للحركة نفسها (مثال: "Start @ RPE 6 and Build into RPE 8/9") بدل RPE ثابت لكل المجموعات
 ✦ الميتكون — اختر نوعاً يناسب نظام الطاقة المطلوب:
    - زمن أقل من 5 دقائق (AMRAP قصير أو For Time بأثقال ثقيلة): نظام Phosphagen/Glycolytic — شدة قصوى
    - زمن 5-15 دقيقة: النظام الأكثر شيوعاً في CrossFit — Glycolytic (21-15-9 كلاسيكي، Chipper متوسط)
@@ -296,6 +311,7 @@ ${isBackToBackHeavyDay ? `\n**⚠️ قاعدة شدة إجبارية — تبا
    - "Chipper": تسلسل من 5-7 تمارين يُنجز مرة واحدة بدون تكرار الجولة
    - "EMOM": x تمارين في كل دقيقة لـ 10-20 دقيقة — استخدمه لضبط الإيقاع وليس للحد الأقصى
 ${!isBenchmarkDay ? `✦ ⚠️ **قاعدة توافق الميتكون مع نمط اليوم (${effectivePattern}) — إجبارية:**\n${metconGuidanceFor(effectivePattern, lastMetconIds)} — الأكسسوار وحده مسؤول عن الموازنة الكاملة بالنمط المعاكس، لا الميتكون أيضاً` : ''}
+✦ الميتكون بلوك واحد عادة، format = صيغة الميتكون حرفياً ("FOR TIME" أو "AMRAP x N MIN" أو "EMOM x N MIN"). لا يلزم أن تكون التكرارات متطابقة بين كل الحركات — سلّم غير متماثل مسموح ومرغَّب أحياناً (مثال: حركة أولى 10-15-20-25-30 مقابل حركة ثانية بالتوازي 15-25-35-45) إن كان يخدم توازن الحمل بين الحركتين. عند وجود بنشمارك RX رسمي محدد الأوزان، اذكر الوزن الدقيق في حقل weight لا نطاقاً عاماً
 ✦ التهدئة: تمطيط هادئ للمجموعات العضلية المُستنزفة اليوم حسب القاعدة أعلاه
 
 **قواعد حقلَي duration و rounds:**
@@ -322,88 +338,106 @@ ${!isBenchmarkDay ? `✦ ⚠️ **قاعدة توافق الميتكون مع ن
     "elite": "10-13 دقيقة"
   },
   "warmup": [
-    {"exerciseId": "run", "reps": "400م", "weight": "", "distance": "400م", "time": "", "notes": "هادئ جداً — إيقاع المحادثة (عام)"},
-    {"exerciseId": "air-squat", "reps": "15", "weight": "", "distance": "", "time": "", "notes": "تفعيل نمط القرفصاء بدون حمل (خاص)"}
+    {"format": "2:00", "scoreType": "", "movements": [
+      {"exerciseId": "row", "reps": "", "weight": "", "distance": "", "time": "2:00", "notes": "هادئ جداً — رفع نبض بحت (عام)"}
+    ]},
+    {"format": "AMRAP x 5 MIN", "scoreType": "", "movements": [
+      {"exerciseId": "air-squat", "reps": "8", "weight": "", "distance": "", "time": "", "notes": "تفعيل نمط القرفصاء بدون حمل"},
+      {"exerciseId": "pvc-pass-through", "reps": "8", "weight": "", "distance": "", "time": "", "notes": "تحرير الكتف"}
+    ]},
+    {"format": "1-2 SETS", "scoreType": "", "movements": [
+      {"exerciseId": "back-squat", "reps": "3", "weight": "فارغ", "distance": "", "time": "", "executionNote": "بار فارغ", "notes": "تحضير مسار حركة القوة الرئيسية قبل التحميل"}
+    ]}
   ],
   "strength": [
-    {
-      "exerciseId": "back-squat",
-      "reps": "5×5",
-      "weight": "",
-      "distance": "",
-      "time": "",
-      "notes": "ركز على العمق الكامل — ركبتيك تتبعان أصابع قدميك",
-      "levels": {
-        "beginner":     {"weight": "50كجم", "reps": "5×4", "cue": "عمق موازٍ — ظهر مستقيم"},
-        "intermediate": {"weight": "70كجم", "reps": "5×5", "cue": "عمق كامل — ركبة وفق القدم"},
-        "advanced":     {"weight": "90كجم", "reps": "5×5", "cue": "سرعة في الصعود — حزام"},
-        "elite":        {"weight": "110كجم+", "reps": "5×5", "cue": "Pause Squat 2ث — انفجاري للأعلى"}
+    {"format": "EVERY 2:30 (4 SETS)", "scoreType": "Heaviest Weight", "movements": [
+      {
+        "exerciseId": "back-squat",
+        "reps": "5",
+        "weight": "",
+        "distance": "",
+        "time": "",
+        "executionNote": "Start @ RPE 6 and Build into RPE 8/9",
+        "notes": "ركز على العمق الكامل — ركبتيك تتبعان أصابع قدميك",
+        "levels": {
+          "beginner":     {"weight": "50كجم", "reps": "5", "cue": "عمق موازٍ — ظهر مستقيم"},
+          "intermediate": {"weight": "70كجم", "reps": "5", "cue": "عمق كامل — ركبة وفق القدم"},
+          "advanced":     {"weight": "90كجم", "reps": "5", "cue": "سرعة في الصعود — حزام"},
+          "elite":        {"weight": "110كجم+", "reps": "5", "cue": "Pause Squat 2ث — انفجاري للأعلى"}
+        }
       }
-    }
+    ]}
   ],
   "metcon": [
-    {
-      "exerciseId": "thruster",
-      "reps": "21-15-9",
-      "weight": "",
-      "distance": "",
-      "time": "",
-      "notes": "قسّمها: 15-6 ثم 9-6 ثم 5-4 — معيار الحركة: أسفل من موازٍ ثم قفل الأذرع كاملاً فوق الرأس",
-      "levels": {
-        "beginner":     {"weight": "30كجم", "reps": "21-15-9", "cue": "Push Press بدل Thruster عند الإرهاق"},
-        "intermediate": {"weight": "43كجم", "reps": "21-15-9", "cue": "حافظ على إيقاعك — لا تتوقف طويلاً"},
-        "advanced":     {"weight": "55كجم", "reps": "21-15-9", "cue": "Unbroken أول جولة"},
-        "elite":        {"weight": "65كجم", "reps": "21-15-9", "cue": "Squat Clean into Thruster للأول"}
+    {"format": "FOR TIME", "scoreType": "Time", "movements": [
+      {
+        "exerciseId": "thruster",
+        "reps": "21-15-9",
+        "weight": "",
+        "distance": "",
+        "time": "",
+        "notes": "قسّمها: 15-6 ثم 9-6 ثم 5-4 — معيار الحركة: أسفل من موازٍ ثم قفل الأذرع كاملاً فوق الرأس",
+        "levels": {
+          "beginner":     {"weight": "30كجم", "reps": "21-15-9", "cue": "Push Press بدل Thruster عند الإرهاق"},
+          "intermediate": {"weight": "43كجم", "reps": "21-15-9", "cue": "حافظ على إيقاعك — لا تتوقف طويلاً"},
+          "advanced":     {"weight": "55كجم", "reps": "21-15-9", "cue": "Unbroken أول جولة"},
+          "elite":        {"weight": "65كجم", "reps": "21-15-9", "cue": "Squat Clean into Thruster للأول"}
+        }
+      },
+      {
+        "exerciseId": "pull-up",
+        "reps": "21-15-9",
+        "weight": "",
+        "distance": "",
+        "time": "",
+        "notes": "قسّم التكرارات — لا تصل للفشل الكامل — معيار الحركة: ذقن فوق العارضة",
+        "levels": {
+          "beginner":     {"weight": "", "reps": "21-15-9", "cue": "Banded Pull-up أو Ring Row"},
+          "intermediate": {"weight": "", "reps": "21-15-9", "cue": "Kipping مسموح — مجموعات صغيرة"},
+          "advanced":     {"weight": "", "reps": "21-15-9", "cue": "Butterfly للسرعة"},
+          "elite":        {"weight": "", "reps": "21-15-9", "cue": "Chest-to-Bar — Unbroken أكثر ما يمكن"}
+        }
       }
-    },
-    {
-      "exerciseId": "pull-up",
-      "reps": "21-15-9",
-      "weight": "",
-      "distance": "",
-      "time": "",
-      "notes": "قسّم التكرارات — لا تصل للفشل الكامل — معيار الحركة: ذقن فوق العارضة",
-      "levels": {
-        "beginner":     {"weight": "", "reps": "21-15-9", "cue": "Banded Pull-up أو Ring Row"},
-        "intermediate": {"weight": "", "reps": "21-15-9", "cue": "Kipping مسموح — مجموعات صغيرة"},
-        "advanced":     {"weight": "", "reps": "21-15-9", "cue": "Butterfly للسرعة"},
-        "elite":        {"weight": "", "reps": "21-15-9", "cue": "Chest-to-Bar — Unbroken أكثر ما يمكن"}
-      }
-    }
+    ]}
   ],
   "accessory": [
-    {
-      "exerciseId": "push-up",
-      "reps": "3×15",
-      "weight": "",
-      "distance": "",
-      "time": "",
-      "notes": "تمرين مكمّل — طبّق قاعدة توافق الأكسسوار أعلاه بدقة، واشرح هنا لماذا هذه العضلة تحديداً مُهملة اليوم",
-      "levels": {
-        "beginner":     {"weight": "", "reps": "3×10", "cue": "ركبتين على الأرض مسموح"},
-        "intermediate": {"weight": "", "reps": "3×15", "cue": "صدر للأرض في كل تكرار"},
-        "advanced":     {"weight": "", "reps": "3×20", "cue": "بطيء في النزول — 3 ث"},
-        "elite":        {"weight": "", "reps": "3×25", "cue": "Ring Push-up للصعوبة"}
+    {"format": "3 SETS", "scoreType": "", "movements": [
+      {
+        "exerciseId": "push-up",
+        "reps": "15",
+        "weight": "",
+        "distance": "",
+        "time": "",
+        "notes": "تمرين مكمّل — طبّق قاعدة توافق الأكسسوار أعلاه بدقة، واشرح هنا لماذا هذه العضلة تحديداً مُهملة اليوم",
+        "levels": {
+          "beginner":     {"weight": "", "reps": "10", "cue": "ركبتين على الأرض مسموح"},
+          "intermediate": {"weight": "", "reps": "15", "cue": "صدر للأرض في كل تكرار"},
+          "advanced":     {"weight": "", "reps": "20", "cue": "بطيء في النزول — 3 ث"},
+          "elite":        {"weight": "", "reps": "25", "cue": "Ring Push-up للصعوبة"}
+        }
       }
-    }
+    ]}
   ],
   "cooldown": [
-    {"exerciseId": "sit-up", "reps": "", "weight": "", "distance": "", "time": "60 ث", "notes": "طبّق قاعدة توافق التهدئة أعلاه — اشرح هنا سبب اختيار هذه الإطالة تحديداً لعضلات اليوم"},
-    {"exerciseId": "pull-up", "reps": "", "weight": "", "distance": "", "time": "45 ث", "notes": "إطالة ثابتة ثانية من دليل التوافق — اذكر المنطقة المستهدفة"}
+    {"format": "", "scoreType": "", "movements": [
+      {"exerciseId": "sit-up", "reps": "", "weight": "", "distance": "", "time": "60 ث", "notes": "طبّق قاعدة توافق التهدئة أعلاه — اشرح هنا سبب اختيار هذه الإطالة تحديداً لعضلات اليوم"},
+      {"exerciseId": "pull-up", "reps": "", "weight": "", "distance": "", "time": "45 ث", "notes": "إطالة ثابتة ثانية من دليل التوافق — اذكر المنطقة المستهدفة"}
+    ]}
   ]
 }
 
 **قواعد صارمة:**
 - استخدم فقط IDs من القائمة أعلاه
 ${isBenchmarkDay ? '- اليوم بنشمارك: strength = [] وaccessory = [] إجبارياً — الميتكون هو البنشمارك المحدد أعلاه حرفياً بحركاته وتكراراته الرسمية فقط' : `- تمارين القوة (strength) يجب أن تكون بالبار حصراً (back-squat, front-squat, deadlift, romanian-deadlift, sumo-deadlift, power-clean, hang-power-clean, clean-and-jerk, snatch, hang-power-snatch, overhead-squat, shoulder-press, push-press, bench-press, split-jerk, bent-over-row, pendlay-row, good-morning, hip-thrust, thruster) وتنتمي لنمط ${effectivePattern} تحديداً حسب دليل اختيار تمرين القوة أعلاه — لا تضع pull-up أو handstand-pushup في القوة`}
-- كل تمرين في strength وmetcon يجب أن يحتوي على حقل "levels" بالمستويات الأربعة مع الوزن والتكرارات والنصيحة
+- كل حركة في strength وmetcon يجب أن تحتوي على حقل "levels" بالمستويات الأربعة مع الوزن والتكرارات والنصيحة
 - الإحماء والتهدئة: بدون levels (تُضاف في notes فقط)
-- الإحماء: 3-4 تمارين بالمراحل الثلاث (عام → خاص → تحضير المهارة)
-${isBenchmarkDay ? '' : '- القوة: 1-3 تمارين barbell compound حسب ميزانية الوقت أعلاه'}
-- الميتكون: 3-5 تمارين مكثفة، مدتها متوافقة مع نظام الطاقة المستهدف
+- **كل قسم (warmup/strength/metcon/accessory/cooldown) مصفوفة بلوكات، لا مصفوفة تمارين مباشرة** — كل بلوك: {"format": "...", "scoreType": "...", "movements": [...]}. حتى لو بلوك واحد فقط في القسم، يبقى داخل مصفوفة بلوكات
+- الإحماء: ٣ بلوكات بالضبط بالترتيب المحدد أعلاه (عام زمني → خاص AMRAP → تحضير المهارة)، إجمالي 4-6 حركات موزّعة عليها
+${isBenchmarkDay ? '' : '- القوة: بلوك واحد، 1-3 حركات barbell compound حسب ميزانية الوقت أعلاه، format بترميز فترات صريح'}
+- الميتكون: بلوك واحد عادة (أو بلوكين لو الصيغة تتطلب جزأين منفصلين)، 3-5 حركات مكثفة، مدتها متوافقة مع نظام الطاقة المستهدف
 - targetTimes: أوقات واقعية لإنهاء الميتكون لكل مستوى
-${isBenchmarkDay ? '- الأكسسوار: مصفوفة فارغة [] — البنشمارك هو كامل التحفيز' : '- الأكسسوار: 1-3 تمارين حسب ميزانية الوقت — طبّق قاعدة التوافق أعلاه بدقة صارمة ولا تخرج عنها، واذكر السبب في notes'}
-- التهدئة (الإطالات): 2-3 إطالات ثابتة (static stretches) فقط — لا تضع أي عنصر لخفض النبض أو تهدئة القلب (ممنوع: مشي/جري/تجديف خفيف "لخفض النبض") — كل عنصر يجب أن يكون إطالة عضلية ثابتة فعلية بمدة زمنية في حقل time. طبّق قاعدة توافق التهدئة أعلاه بدقة صارمة، واذكر السبب في notes
+${isBenchmarkDay ? '- الأكسسوار: مصفوفة بلوكات فارغة [] — البنشمارك هو كامل التحفيز' : '- الأكسسوار: بلوك واحد، 1-3 حركات حسب ميزانية الوقت — طبّق قاعدة التوافق أعلاه بدقة صارمة ولا تخرج عنها، واذكر السبب في notes'}
+- التهدئة (الإطالات): بلوك واحد بلا format خاص، 2-3 إطالات ثابتة (static stretches) فقط — لا تضع أي عنصر لخفض النبض أو تهدئة القلب (ممنوع: مشي/جري/تجديف خفيف "لخفض النبض") — كل عنصر يجب أن يكون إطالة عضلية ثابتة فعلية بمدة زمنية في حقل time. طبّق قاعدة توافق التهدئة أعلاه بدقة صارمة، واذكر السبب في notes
 - إن كان اليوم Olympic (snatch/clean-and-jerk/power-clean)، اذكر في notes ملاحظة أمان عن تقنية الإفلات (bail-out) عند الفشل
 ${isPartnerDay ? `- 🤝 يوم بارتنر: العنوان (title وtitleEn) يجب أن يتضمن كلمة "بارتنر"/"Partner" بوضوح — طبّق قاعدة تماسك يوم البارتنر أعلاه حرفياً على كل قسم (إحماء/ميتكون/تهدئة)، والقوة تبقى فردية بلا تغيير` : ''}
 
@@ -426,17 +460,25 @@ ${isPartnerDay ? `- 🤝 يوم بارتنر: العنوان (title وtitleEn) �
     const generated = parseAiJson(jsonText);
     const validIds = new Set(EXERCISES.map(e => e.id));
 
-    const validateSection = (items: any[]) =>
-      (items || []).filter((item: any) => item && validIds.has(item.exerciseId)).map((item: any) => ({
-        ...item,
-        exerciseId: item.exerciseId,
-        reps: item.reps || '',
-        weight: item.weight || '',
-        distance: item.distance || '',
-        time: item.time || '',
-        notes: item.notes || '',
-        levels: item.levels || null,
-      }));
+    const validateMovement = (item: any) => ({
+      exerciseId: item.exerciseId,
+      reps: item.reps || '',
+      weight: item.weight || '',
+      distance: item.distance || '',
+      time: item.time || '',
+      notes: item.notes || '',
+      executionNote: item.executionNote || '',
+      levels: item.levels || null,
+    });
+
+    const validateSection = (blocks: any[]) =>
+      (blocks || [])
+        .map((block: any) => ({
+          format: typeof block?.format === 'string' ? block.format : '',
+          scoreType: block?.scoreType || '',
+          movements: (block?.movements || []).filter((m: any) => m && validIds.has(m.exerciseId)).map(validateMovement),
+        }))
+        .filter((block: any) => block.movements.length > 0);
 
     const wodData = {
       date: date || todaySA(),
