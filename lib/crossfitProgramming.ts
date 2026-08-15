@@ -133,6 +133,26 @@ export const EXERCISES: CFExercise[] = [
   { id: 'muscle-snatch',          nameEn: 'Muscle Snatch',            nameAr: 'الخطف العضلي',                  category: 'olympic'    },
   { id: 'tall-snatch',            nameEn: 'Tall Snatch',              nameAr: 'الخطف الطويل',                  category: 'olympic'    },
 
+  // بقية بنود "الدليل الشامل لتمارين الأكسسوار" غير المستخدَمة في PATTERN_ACCESSORY_MAP مباشرة —
+  // أُضيفت لاكتمال مكتبة الأكسسوار المرجعية (روابط يوتيوب — راجع scripts/seed-accessory-exercises.ts)
+  { id: 'arch-body-hold',         nameEn: 'Arch Body Hold',           nameAr: 'ثبات الجسم المقوّس',            category: 'gymnastics' },
+  { id: 'plank-shoulder-taps',    nameEn: 'Plank Shoulder Taps',      nameAr: 'بلانك مع لمس الكتف',            category: 'gymnastics' },
+  { id: 'windshield-wiper',       nameEn: 'Windshield Wiper',         nameAr: 'ماسحة الزجاج (بطن)',            category: 'gymnastics' },
+  { id: 'deadbug',                nameEn: 'Deadbug',                  nameAr: 'الحشرة الميتة',                 category: 'gymnastics' },
+  { id: 'cuban-rotation',         nameEn: 'Cuban Rotation',           nameAr: 'دوران كوبا للكتف',              category: 'wod'        },
+  { id: 'scapular-pushup',        nameEn: 'Scapular Push-up',         nameAr: 'ضغط لوح الكتف',                 category: 'gymnastics' },
+  { id: 'lateral-band-walk',      nameEn: 'Lateral Band Walk',        nameAr: 'المشي الجانبي بالحزام',         category: 'gymnastics' },
+  { id: 'suitcase-carry',         nameEn: 'Suitcase Carry',           nameAr: 'حمل الحقيبة (جانب واحد)',       category: 'wod'        },
+  { id: 'plate-pinch',            nameEn: 'Plate Pinch',              nameAr: 'قرص الصفيحة بالأصابع',          category: 'wod'        },
+  { id: 'wrist-curls',            nameEn: 'Wrist Curls',              nameAr: 'ثني الرسغ',                     category: 'wod'        },
+  { id: 'overhead-squat-pause',   nameEn: 'Overhead Squat (Pause)',   nameAr: 'قرفصاء فوق الرأس مع توقف',      category: 'olympic'    },
+  { id: 'pause-front-squat',      nameEn: 'Pause Front Squat',        nameAr: 'قرفصاء أمامية مع توقف',         category: 'olympic'    },
+  { id: 'ring-dip-support-hold',  nameEn: 'Ring Dip Support Hold',    nameAr: 'ثبات دعم الحلقات',              category: 'gymnastics' },
+  { id: 'false-grip-hangs',       nameEn: 'False Grip Hangs',         nameAr: 'تعليق القبضة الخاطئة',          category: 'gymnastics' },
+  { id: 'skin-the-cat',           nameEn: 'Skin-the-Cat',             nameAr: 'سكين-ذا-كات (حلقات)',           category: 'gymnastics' },
+  { id: 'lizard-stretch',         nameEn: 'Lizard Stretch',           nameAr: 'إطالة السحلية (الأربية)',       category: 'mobility'   },
+  { id: 'kettlebell-halo',        nameEn: 'Kettlebell Halo',          nameAr: 'هالة الكيتل بيل',               category: 'wod'        },
+
   // إطالات مُسمّاة مخصصة لكل نمط (PATTERN_COOLDOWN_MAP) — معرّفات فعلية بدل استخدام تمرين بديل تقني،
   // كل واحدة مربوطة برابط يوتيوب حقيقي في مجموعة exercises (seed-stretch-exercises.ts)
   { id: 'standing-quad-stretch',        nameEn: 'Standing Quad Stretch',        nameAr: 'إطالة الرباعية واقفاً (Standing Quad Stretch)',              category: 'mobility' },
@@ -224,6 +244,14 @@ export const EXERCISE_FOCUS_CLASS: Record<string, MovementFocusClass> = {
   'ytwl': 'diffuse', 'bent-over-lateral-raise': 'concentrated', 'strict-ring-rows': 'diffuse',
   'supinated-grip-row': 'concentrated', 'dead-hangs': 'diffuse', 'strict-pull-up-negatives': 'diffuse',
   'snatch-balance': 'concentrated', 'muscle-snatch': 'concentrated', 'tall-snatch': 'concentrated',
+
+  // بقية بنود دليل الأكسسوار — راجع تعليق قسمها في EXERCISES أعلاه
+  'arch-body-hold': 'diffuse', 'plank-shoulder-taps': 'diffuse', 'windshield-wiper': 'diffuse', 'deadbug': 'diffuse',
+  'cuban-rotation': 'concentrated', 'scapular-pushup': 'diffuse', 'lateral-band-walk': 'diffuse',
+  'suitcase-carry': 'concentrated', 'plate-pinch': 'concentrated', 'wrist-curls': 'concentrated',
+  'overhead-squat-pause': 'concentrated', 'pause-front-squat': 'concentrated',
+  'ring-dip-support-hold': 'diffuse', 'false-grip-hangs': 'diffuse', 'skin-the-cat': 'diffuse',
+  'kettlebell-halo': 'diffuse',
 };
 
 /** مجموعة التركيز العضلي (١٢ فئة من ملحق الوثيقة) — تحدد "نفس المفصل/السلسلة" بين حركتين */
@@ -265,6 +293,14 @@ export const EXERCISE_MUSCLE_GROUP: Record<string, MuscleFocusGroup> = {
   'ytwl':'warmup-activation','bent-over-lateral-raise':'overhead-push','strict-ring-rows':'back-pull',
   'supinated-grip-row':'back-pull','dead-hangs':'grip','strict-pull-up-negatives':'back-pull',
   'snatch-balance':'full-body-concentrated','muscle-snatch':'full-body-concentrated','tall-snatch':'full-body-concentrated',
+
+  // بقية بنود دليل الأكسسوار — راجع تعليق قسمها في EXERCISES أعلاه
+  'arch-body-hold':'core','plank-shoulder-taps':'core','windshield-wiper':'core','deadbug':'core',
+  'cuban-rotation':'overhead-push','scapular-pushup':'overhead-push','lateral-band-walk':'warmup-activation',
+  'suitcase-carry':'grip','plate-pinch':'grip','wrist-curls':'arms-isolation',
+  'overhead-squat-pause':'squat','pause-front-squat':'squat',
+  'ring-dip-support-hold':'overhead-push','false-grip-hangs':'grip','skin-the-cat':'back-pull',
+  'kettlebell-halo':'warmup-activation',
 };
 
 /** قاعدة ٣ — أزواج ممنوعة معاً في نفس الميتكون (تكديس مهارة عالية أو قبضة مزدوجة) */
