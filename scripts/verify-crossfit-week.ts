@@ -25,6 +25,8 @@ import {
   MovementPattern, PATTERN_LABELS_AR, EXERCISES,
   buildPatternSequence, suggestPartnerFormat, PartnerFormat,
   HEAVY_BY_DEFAULT_PATTERNS, PATTERN_ACCESSORY_MAP, PATTERN_METCON_MAP, PATTERN_COOLDOWN_MAP,
+  EXERCISE_FOCUS_CLASS, EXERCISE_MUSCLE_GROUP, RULE3_BANNED_METCON_PAIRS,
+  stripRule1Violations, stripRule3Violations, detectRule2HeavyOverlap,
 } from '../lib/crossfitProgramming';
 import { computeNextCyclePhase, CyclePhase, CYCLE_ORDER } from '../lib/periodization';
 import { flattenMovements } from '../lib/wodBlocks';
@@ -184,6 +186,54 @@ function runLogicChecks() {
       }
     }
     check(S, 'كل IDs الإطالات في PATTERN_COOLDOWN_MAP موجودة فعلياً في EXERCISES', invalidCooldownIds.length === 0, invalidCooldownIds.join(', '));
+  }
+
+  // ── محظورات دمج الحركات (docs/movement-blacklist-crossfit.md) ──
+  {
+    const nonMobilityIds = new Set(EXERCISES.filter(e => e.category !== 'mobility').map(e => e.id));
+    const classIds = new Set(Object.keys(EXERCISE_FOCUS_CLASS));
+    const groupIds = new Set(Object.keys(EXERCISE_MUSCLE_GROUP));
+    const missingFromClass = Array.from(nonMobilityIds).filter(id => !classIds.has(id));
+    const missingFromGroup = Array.from(nonMobilityIds).filter(id => !groupIds.has(id));
+    const strayInClass = Array.from(classIds).filter(id => !nonMobilityIds.has(id));
+    check(S, 'EXERCISE_FOCUS_CLASS يغطي كل التمارين الـ٧٩ غير الإطالات بدون نقص أو زيادة',
+      missingFromClass.length === 0 && strayInClass.length === 0,
+      `ناقصة: ${missingFromClass.join(', ') || 'لا شيء'} | زائدة: ${strayInClass.join(', ') || 'لا شيء'}`);
+    check(S, 'EXERCISE_MUSCLE_GROUP يغطي كل التمارين الـ٧٩ غير الإطالات', missingFromGroup.length === 0, missingFromGroup.join(', '));
+
+    const invalidRule3Ids = RULE3_BANNED_METCON_PAIRS.flat().filter(id => !nonMobilityIds.has(id));
+    check(S, 'كل IDs في RULE3_BANNED_METCON_PAIRS موجودة فعلياً في EXERCISES', invalidRule3Ids.length === 0, invalidRule3Ids.join(', '));
+
+    // قاعدة ١: تكرار تمرينين مركّزين من نفس المجموعة (Deadlift + Good Morning، كلاهما hinge) يجب أن يُزال ثانيهما
+    const rule1Test = stripRule1Violations([{ format: '', scoreType: '', movements: [
+      { exerciseId: 'deadlift' }, { exerciseId: 'good-morning' },
+    ] }]);
+    const rule1Ids = rule1Test.blocks.flatMap(b => b.movements.map((m: any) => m.exerciseId));
+    check(S, 'stripRule1Violations يحذف تمريناً "مركّز" مكرراً من نفس المجموعة (deadlift+good-morning) ويُبقي الأول',
+      rule1Ids.length === 1 && rule1Ids[0] === 'deadlift' && rule1Test.warnings.length === 1,
+      `الناتج: ${rule1Ids.join(', ')}`);
+
+    // ولا يجب أن يمس تمرينين "مركّزين" من مجموعتين مختلفتين (deadlift+back-squat)
+    const rule1NoFalsePositive = stripRule1Violations([{ format: '', scoreType: '', movements: [
+      { exerciseId: 'deadlift' }, { exerciseId: 'back-squat' },
+    ] }]);
+    const rule1NoFpIds = rule1NoFalsePositive.blocks.flatMap(b => b.movements.map((m: any) => m.exerciseId));
+    check(S, 'stripRule1Violations لا يحذف شيئاً عند تمرينين مركّزين من مجموعتين مختلفتين (deadlift+back-squat)',
+      rule1NoFpIds.length === 2, `الناتج: ${rule1NoFpIds.join(', ')}`);
+
+    // قاعدة ٣: Chest-to-Bar Pull-Up + Toes-to-Bar زوج ممنوع — يجب حذف الثاني
+    const rule3Test = stripRule3Violations([{ format: '', scoreType: '', movements: [
+      { exerciseId: 'chest-to-bar-pull-up' }, { exerciseId: 'toes-to-bar' }, { exerciseId: 'burpee' },
+    ] }]);
+    const rule3Ids = rule3Test.blocks.flatMap(b => b.movements.map((m: any) => m.exerciseId));
+    check(S, 'stripRule3Violations يحذف "toes-to-bar" عند تجاوره مع "chest-to-bar-pull-up" ويُبقي الباقي',
+      rule3Ids.length === 2 && rule3Ids.includes('chest-to-bar-pull-up') && rule3Ids.includes('burpee') && !rule3Ids.includes('toes-to-bar'),
+      `الناتج: ${rule3Ids.join(', ')}`);
+
+    // قاعدة ٢: رصد تكديس مركّز+مركّز من نفس المجموعة بين القوة والميتكون (back-squat قوة + front-squat ميتكون، كلاهما squat)
+    const rule2Warnings = detectRule2HeavyOverlap(['back-squat'], ['front-squat', 'burpee']);
+    check(S, 'detectRule2HeavyOverlap يرصد تكديس مركّز+مركّز من نفس المجموعة (back-squat+front-squat) بلا حذف',
+      rule2Warnings.length === 1, rule2Warnings.join(' | '));
   }
 }
 

@@ -153,6 +153,166 @@ export const PATTERN_LABELS_AR: Record<MovementPattern, string> = {
   squat: 'القرفصاء (Squat)', hinge: 'الرفعة (Hinge)', push: 'الدفع (Push)', pull: 'السحب (Pull)', olympic: 'الأولمبي (Olympic)',
 };
 
+// ═══════════════════════════════════════════════════════════════
+// محظورات دمج الحركات (Movement Combination Blacklist)
+// راجع docs/movement-blacklist-crossfit.md للتوثيق الكامل والأسباب —
+// هذا القسم هو التنفيذ البرمجي الفعلي لقواعد ١ و٣ (تحقق صارم) وقاعدة ٢ (إرشاد + رصد فقط،
+// لأن "متغيّر بحمل ثقيل" يعتمد على حقل weight نصّي حر لا يمكن تفسيره برمجياً بثقة كافية للحذف التلقائي)
+// ═══════════════════════════════════════════════════════════════
+
+export type MovementFocusClass = 'concentrated' | 'variable' | 'diffuse';
+
+/** تصنيف تركيز كل تمرين — مركّز = يُعامل دائماً كـ"ثقيل"، متغيّر = حسب وصفة الويد، منتشر = مسموح دائماً */
+export const EXERCISE_FOCUS_CLASS: Record<string, MovementFocusClass> = {
+  'back-squat': 'concentrated', 'front-squat': 'concentrated', 'overhead-squat': 'concentrated',
+  'air-squat': 'diffuse', 'pistol-squat': 'concentrated', 'bulgarian-split-squat': 'concentrated',
+  'walking-lunge': 'variable', 'dumbbell-front-rack-lunge': 'variable', 'dumbbell-overhead-lunge': 'variable',
+  'kettlebell-goblet-squat': 'variable', 'box-jump': 'diffuse', 'box-jump-over': 'diffuse',
+  'deadlift': 'concentrated', 'romanian-deadlift': 'concentrated', 'sumo-deadlift': 'concentrated',
+  'good-morning': 'concentrated', 'hip-thrust': 'concentrated', 'glute-bridge': 'diffuse',
+  'kettle-bell-swing': 'variable',
+  'bench-press': 'concentrated', 'push-up': 'diffuse',
+  'shoulder-press': 'concentrated', 'push-press': 'concentrated', 'handstand-pushup': 'variable',
+  'handstand-walk': 'concentrated', 'wall-walk': 'concentrated', 'lateral-raise': 'concentrated',
+  'dumbbell-push-press': 'variable', 'thruster': 'variable', 'dumbbell-thruster': 'variable',
+  'bent-over-row': 'concentrated', 'pendlay-row': 'concentrated', 'dumbbell-row': 'concentrated',
+  'pull-up': 'diffuse', 'kipping-pull-up': 'diffuse', 'chest-to-bar-pull-up': 'concentrated',
+  'rope-climb': 'concentrated', 'face-pull': 'concentrated',
+  'farmers-carry': 'concentrated', 'toes-to-bar': 'variable',
+  'sit-up': 'diffuse', 'ghd-situp': 'concentrated', 'l-sit': 'concentrated', 'hollow-rock': 'concentrated',
+  'plank': 'diffuse', 'russian-twist': 'diffuse',
+  'bicep-curl': 'concentrated', 'tricep-extension': 'concentrated',
+  'power-clean': 'concentrated', 'clean-and-jerk': 'concentrated', 'snatch': 'concentrated',
+  'split-jerk': 'concentrated', 'hang-power-clean': 'concentrated', 'hang-power-snatch': 'concentrated',
+  'muscle-up': 'concentrated', 'turkish-get-up': 'concentrated',
+  'dumbbell-snatch': 'variable', 'dumbbell-clean-and-jerk': 'variable', 'dumbbell-power-clean': 'variable',
+  'kettlebell-clean': 'variable', 'kettlebell-snatch': 'variable',
+  'devils-press': 'diffuse', 'burpee': 'diffuse', 'bar-facing-burpee': 'diffuse',
+  'double-under': 'diffuse', 'row': 'diffuse', 'run': 'diffuse', 'air-bike': 'diffuse',
+  'ski-erg': 'diffuse', 'shuttle-run': 'diffuse', 'wall-ball': 'variable',
+  'pvc-pass-through': 'diffuse', 'band-pull-apart': 'diffuse', 'inchworm': 'diffuse',
+  'worlds-greatest-stretch': 'diffuse', 'bear-crawl': 'diffuse', 'leg-swing': 'diffuse',
+  'scap-pull-up': 'diffuse', 'monster-walk': 'diffuse',
+};
+
+/** مجموعة التركيز العضلي (١٢ فئة من ملحق الوثيقة) — تحدد "نفس المفصل/السلسلة" بين حركتين */
+export type MuscleFocusGroup =
+  | 'squat' | 'hinge' | 'chest' | 'overhead-push' | 'back-pull' | 'grip'
+  | 'core' | 'arms-isolation' | 'full-body-concentrated' | 'full-body-variable' | 'cardio' | 'warmup-activation';
+
+export const EXERCISE_MUSCLE_GROUP: Record<string, MuscleFocusGroup> = {
+  'back-squat':'squat','front-squat':'squat','overhead-squat':'squat','air-squat':'squat','pistol-squat':'squat',
+  'bulgarian-split-squat':'squat','walking-lunge':'squat','dumbbell-front-rack-lunge':'squat',
+  'dumbbell-overhead-lunge':'squat','kettlebell-goblet-squat':'squat','box-jump':'squat','box-jump-over':'squat',
+  'deadlift':'hinge','romanian-deadlift':'hinge','sumo-deadlift':'hinge','good-morning':'hinge',
+  'hip-thrust':'hinge','glute-bridge':'hinge','kettle-bell-swing':'hinge',
+  'bench-press':'chest','push-up':'chest',
+  'shoulder-press':'overhead-push','push-press':'overhead-push','handstand-pushup':'overhead-push',
+  'handstand-walk':'overhead-push','wall-walk':'overhead-push','lateral-raise':'overhead-push',
+  'dumbbell-push-press':'overhead-push','thruster':'overhead-push','dumbbell-thruster':'overhead-push',
+  'bent-over-row':'back-pull','pendlay-row':'back-pull','dumbbell-row':'back-pull','pull-up':'back-pull',
+  'kipping-pull-up':'back-pull','chest-to-bar-pull-up':'back-pull','rope-climb':'back-pull','face-pull':'back-pull',
+  'farmers-carry':'grip','toes-to-bar':'grip',
+  'sit-up':'core','ghd-situp':'core','l-sit':'core','hollow-rock':'core','plank':'core','russian-twist':'core',
+  'bicep-curl':'arms-isolation','tricep-extension':'arms-isolation',
+  'power-clean':'full-body-concentrated','clean-and-jerk':'full-body-concentrated','snatch':'full-body-concentrated',
+  'split-jerk':'full-body-concentrated','hang-power-clean':'full-body-concentrated','hang-power-snatch':'full-body-concentrated',
+  'muscle-up':'full-body-concentrated','turkish-get-up':'full-body-concentrated',
+  'dumbbell-snatch':'full-body-variable','dumbbell-clean-and-jerk':'full-body-variable',
+  'dumbbell-power-clean':'full-body-variable','kettlebell-clean':'full-body-variable','kettlebell-snatch':'full-body-variable',
+  'devils-press':'full-body-variable','burpee':'full-body-variable','bar-facing-burpee':'full-body-variable',
+  'double-under':'cardio','row':'cardio','run':'cardio','air-bike':'cardio','ski-erg':'cardio',
+  'shuttle-run':'cardio','wall-ball':'cardio',
+  'pvc-pass-through':'warmup-activation','band-pull-apart':'warmup-activation','inchworm':'warmup-activation',
+  'worlds-greatest-stretch':'warmup-activation','bear-crawl':'warmup-activation','leg-swing':'warmup-activation',
+  'scap-pull-up':'warmup-activation','monster-walk':'warmup-activation',
+};
+
+/** قاعدة ٣ — أزواج ممنوعة معاً في نفس الميتكون (تكديس مهارة عالية أو قبضة مزدوجة) */
+export const RULE3_BANNED_METCON_PAIRS: [string, string][] = [
+  ['muscle-up', 'deadlift'],
+  ['muscle-up', 'toes-to-bar'],
+  ['rope-climb', 'kettle-bell-swing'],
+  ['rope-climb', 'farmers-carry'],
+  ['chest-to-bar-pull-up', 'toes-to-bar'],
+];
+
+type ProgBlock = { format: string; scoreType: string; movements: any[] };
+
+/** يزيل انتهاكات القاعدة ١ (أكثر من تمرين "مركّز" واحد من نفس مجموعة الحركة في بلوكات القوة) — يُبقي أول تمرين ويحذف الباقي */
+export function stripRule1Violations(blocks: ProgBlock[]): { blocks: ProgBlock[]; warnings: string[] } {
+  const seenGroups = new Set<MuscleFocusGroup>();
+  const warnings: string[] = [];
+  const newBlocks = blocks
+    .map(block => ({
+      ...block,
+      movements: block.movements.filter((m: any) => {
+        if (EXERCISE_FOCUS_CLASS[m.exerciseId] !== 'concentrated') return true;
+        const group = EXERCISE_MUSCLE_GROUP[m.exerciseId];
+        if (!group) return true;
+        if (seenGroups.has(group)) {
+          warnings.push(`قاعدة ١ (محظورات دمج الحركات): أُزيل "${m.exerciseId}" من القوة — تكرار تمرين مركّز من مجموعة "${group}"`);
+          return false;
+        }
+        seenGroups.add(group);
+        return true;
+      }),
+    }))
+    .filter(b => b.movements.length > 0);
+  return { blocks: newBlocks, warnings };
+}
+
+/** يزيل انتهاكات القاعدة ٣ (تكديس مهارة عالية/قبضة) من بلوكات الميتكون — يُبقي أول تمرين من كل زوج ممنوع ويحذف الثاني */
+export function stripRule3Violations(blocks: ProgBlock[]): { blocks: ProgBlock[]; warnings: string[] } {
+  const allIds = blocks.flatMap(b => b.movements.map((m: any) => m.exerciseId));
+  const toRemove = new Set<string>();
+  const warnings: string[] = [];
+  for (const [a, b] of RULE3_BANNED_METCON_PAIRS) {
+    if (allIds.includes(a) && allIds.includes(b) && !toRemove.has(a) && !toRemove.has(b)) {
+      toRemove.add(b);
+      warnings.push(`قاعدة ٣ (محظورات دمج الحركات): أُزيل "${b}" من الميتكون — تكديس مهارة عالية/قبضة مع "${a}"`);
+    }
+  }
+  if (!toRemove.size) return { blocks, warnings: [] };
+  const newBlocks = blocks
+    .map(block => ({ ...block, movements: block.movements.filter((m: any) => !toRemove.has(m.exerciseId)) }))
+    .filter(b => b.movements.length > 0);
+  return { blocks: newBlocks, warnings };
+}
+
+/** قاعدة ٢ (رصد فقط، لا حذف تلقائي) — يكتشف تكديساً محتملاً بين تمرين قوة "مركّز" وتمرين ميتكون "مركّز" من نفس المجموعة،
+ * ليُسجَّل في السجلات للمراجعة. لا يحذف تلقائياً لأن حذف حركة ميتكون بلا بديل مناسب قد يُفرغ الميتكون من محتواه —
+ * البديل الآمن هو الإرشاد النصي في البرومت (movementBlacklistGuidance) الذي يوجّه النموذج لاختيار بديل مناسب مسبقاً */
+export function detectRule2HeavyOverlap(strengthMovementIds: string[], metconMovementIds: string[]): string[] {
+  const heavyGroups = new Set(
+    strengthMovementIds
+      .filter(id => EXERCISE_FOCUS_CLASS[id] === 'concentrated')
+      .map(id => EXERCISE_MUSCLE_GROUP[id])
+      .filter(Boolean)
+  );
+  if (!heavyGroups.size) return [];
+  const warnings: string[] = [];
+  for (const id of metconMovementIds) {
+    if (EXERCISE_FOCUS_CLASS[id] !== 'concentrated') continue;
+    const group = EXERCISE_MUSCLE_GROUP[id];
+    if (group && heavyGroups.has(group)) {
+      warnings.push(`قاعدة ٢ (محظورات دمج الحركات): تنبيه فقط — "${id}" في الميتكون من نفس مجموعة تمرين القوة المركّز (${group})`);
+    }
+  }
+  return warnings;
+}
+
+/** نص إرشادي لمحظورات دمج الحركات يُدرج في البرومت — راجع docs/movement-blacklist-crossfit.md للتفاصيل والأسباب الكاملة.
+ * pattern اختياري: مرّره عند توليد يوم واحد بنمط معروف مسبقاً (المسار اليومي)؛ اتركه فارغاً في التوليد الأسبوعي
+ * حيث يختلف النمط من يوم لآخر — النص عندها يشير إلى "نمط ذلك اليوم" بدل اسم نمط محدد */
+export function movementBlacklistGuidance(pattern?: MovementPattern): string {
+  const patternRef = pattern ? PATTERN_LABELS_AR[pattern] : 'نمط ذلك اليوم';
+  return `⛔ محظورات دمج الحركات (إجبارية — راجع docs/movement-blacklist-crossfit.md):
+١) لا تجمع أكثر من تمرين "مركّز" واحد من نفس مجموعة الحركة داخل بلوك القوة (مثال: لا Deadlift + Good Morning معاً، لا Back Squat + Front Squat معاً) — اختر تمريناً أساسياً واحداً فقط مطابقاً لـ${patternRef}.
+٢) لا تكدّس حملاً ثقيلاً على نفس المفصل بين القوة والميتكون: إن كان تمرين القوة اليوم "مركّز" (ثقيل بطبيعته دائماً)، لا تضع في الميتكون تمريناً آخر من نفس مجموعة التركيز العضلي يكون أيضاً "مركّز" أو "متغيّر" منفَّذاً بوزن ثقيل — استخدم بدلاً منه تمارين خفيفة/تكييفية أو من مجموعة عضلية مختلفة.
+٣) لا تجمع في نفس الميتكون: Muscle-Up + Deadlift ثقيل، أو Muscle-Up Kipping + Toes-to-Bar، أو Rope Climb + KB Swing ثقيل/Farmer's Carry، أو Chest-to-Bar Pull-Up + Toes-to-Bar (تكديس مهارة عالية أو قبضة مزدوجة يرفع خطر الفشل التقني تحت التعب بشكل حاد).`;
+}
+
 export const PATTERN_ACCESSORY_MAP: Record<MovementPattern, { targetsAr: string; suggestedIds: string[]; rationale: string }> = {
   squat:   { targetsAr: 'الصدر + الكتف الأمامي + الترايسبس',        suggestedIds: ['push-up', 'handstand-pushup', 'shoulder-press', 'tricep-extension', 'lateral-raise'], rationale: 'يوم القرفصاء يستهدف الأرجل والجذع بالكامل — الأكسسوار يوازن بتحميل الجزء العلوي الدافع الذي لم يعمل' },
   hinge:   { targetsAr: 'الصدر + الكتف + الترايسبس',                 suggestedIds: ['push-up', 'shoulder-press', 'handstand-pushup', 'tricep-extension', 'lateral-raise'], rationale: 'الرفعة الميتة تستنزف السلسلة الخلفية (ظهر/مؤخرة/أوتار) — الأكسسوار يوازن بالدفع الأمامي' },

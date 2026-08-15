@@ -11,6 +11,7 @@ import {
   computeNextCyclePhase, CYCLE_PHASE_LABELS_AR, CYCLE_PHASE_INFO, getRpeGuidance, getWeightStandardsTable,
   suggestPartnerFormat, partnerFormatGuidanceFor, PARTNER_SESSION_COHERENCE_GUIDANCE, PARTNER_FORMAT_LABELS_AR,
   HEAVY_BY_DEFAULT_PATTERNS,
+  movementBlacklistGuidance, stripRule1Violations, stripRule3Violations, detectRule2HeavyOverlap,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
 import { flattenMovements } from '@/lib/wodBlocks';
@@ -312,6 +313,7 @@ ${isBackToBackHeavyDay ? `\n**⚠️ قاعدة شدة إجبارية — تبا
    - "Chipper": تسلسل من 5-7 تمارين يُنجز مرة واحدة بدون تكرار الجولة
    - "EMOM": x تمارين في كل دقيقة لـ 10-20 دقيقة — استخدمه لضبط الإيقاع وليس للحد الأقصى
 ${!isBenchmarkDay ? `✦ ⚠️ **قاعدة توافق الميتكون مع نمط اليوم (${effectivePattern}) — إجبارية:**\n${metconGuidanceFor(effectivePattern, lastMetconIds)} — الأكسسوار وحده مسؤول عن الموازنة الكاملة بالنمط المعاكس، لا الميتكون أيضاً` : ''}
+${!isBenchmarkDay ? `\n${movementBlacklistGuidance(effectivePattern)}` : ''}
 ✦ الميتكون بلوك واحد عادة، format = صيغة الميتكون حرفياً ("FOR TIME" أو "AMRAP x N MIN" أو "EMOM x N MIN"). لا يلزم أن تكون التكرارات متطابقة بين كل الحركات — سلّم غير متماثل مسموح ومرغَّب أحياناً (مثال: حركة أولى 10-15-20-25-30 مقابل حركة ثانية بالتوازي 15-25-35-45) إن كان يخدم توازن الحمل بين الحركتين. عند وجود بنشمارك RX رسمي محدد الأوزان، اذكر الوزن الدقيق في حقل weight لا نطاقاً عاماً
 ✦ التهدئة: تمطيط هادئ للمجموعات العضلية المُستنزفة اليوم حسب القاعدة أعلاه
 
@@ -482,6 +484,23 @@ ${isPartnerDay ? `- 🤝 يوم بارتنر: العنوان (title وtitleEn) �
         }))
         .filter((block: any) => block.movements.length > 0);
 
+    // ═══ محظورات دمج الحركات — تحقق صارم بعد التوليد (قاعدتا ١ و٣ فقط، راجع lib/crossfitProgramming.ts) ═══
+    let strengthBlocks = isBenchmarkDay ? [] : validateSection(generated.strength);
+    let metconBlocks = validateSection(generated.metcon);
+    const blacklistWarnings: string[] = [];
+    if (wodMode === 'crossfit' && !isBenchmarkDay) {
+      const rule1 = stripRule1Violations(strengthBlocks);
+      strengthBlocks = rule1.blocks;
+      const rule3 = stripRule3Violations(metconBlocks);
+      metconBlocks = rule3.blocks;
+      blacklistWarnings.push(...rule1.warnings, ...rule3.warnings);
+      blacklistWarnings.push(...detectRule2HeavyOverlap(
+        strengthBlocks.flatMap(b => b.movements.map((m: any) => m.exerciseId)),
+        metconBlocks.flatMap(b => b.movements.map((m: any) => m.exerciseId)),
+      ));
+      if (blacklistWarnings.length) console.warn(`[generate/wod ${date || todaySA()}]`, blacklistWarnings.join(' | '));
+    }
+
     const wodData = {
       date: date || todaySA(),
       title:   generated.title   || (wodMode === 'calisthenics' ? 'تمرين Calisthenics' : 'تمرين يومي'),
@@ -497,8 +516,8 @@ ${isPartnerDay ? `- 🤝 يوم بارتنر: العنوان (title وtitleEn) �
       partnerFormat: isPartnerDay ? (partnerFormat ?? undefined) : undefined,
       targetTimes: generated.targetTimes || null,
       warmup: validateSection(generated.warmup),
-      strength: isBenchmarkDay ? [] : validateSection(generated.strength),
-      metcon: validateSection(generated.metcon),
+      strength: strengthBlocks,
+      metcon: metconBlocks,
       accessory: isBenchmarkDay ? [] : validateSection(generated.accessory || []),
       cooldown: validateSection(generated.cooldown),
     };

@@ -11,6 +11,7 @@ import {
   computeNextCyclePhase, CYCLE_PHASE_LABELS_AR, CYCLE_PHASE_INFO, getRpeGuidance, getWeightStandardsTable,
   suggestPartnerFormat, partnerFormatGuidanceFor, PARTNER_SESSION_COHERENCE_GUIDANCE, PARTNER_FORMAT_LABELS_AR,
   heavyDaySpacingGuidance,
+  movementBlacklistGuidance, stripRule1Violations, stripRule3Violations, detectRule2HeavyOverlap,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
 import { flattenMovements } from '@/lib/wodBlocks';
@@ -288,6 +289,8 @@ ${(Object.keys(PATTERN_LABELS_AR) as MovementPattern[]).map(p => `- ${PATTERN_LA
 
 ⚠️ قاعدة الميتكون الإجبارية — لا تجعل الميتكون معاكساً بالكامل لنمط اليوم: طبّق سطر "الميتكون يجب أن يتضمن..." المذكور لكل نمط ضمن دليل التوافق أعلاه حرفياً (يذكر معرّفات محددة مقترحة لكل نمط). الأكسسوار وحده هو المسؤول عن "الموازنة الكاملة" بالنمط المعاكس — إن كرّرت نفس منطق التعويض في الميتكون أيضاً، يصبح اليوم يحمل اسم نمط لا يُدرّبه فعلياً (رُصد هذا حرفياً في يوم دفع سابق: القوة فقط كانت دفعاً، والميتكون بالكامل تقريباً سحباً).
 
+${movementBlacklistGuidance()}
+
 **══ 🏗️ بنية البلوكات لكل يوم نشط (إجبارية) ══**
 
 كل قسم (warmup/strength/metcon/accessory/cooldown) مصفوفة **بلوكات** لا مصفوفة تمارين مباشرة — كل بلوك: {"format": "...", "scoreType": "...", "movements": [...]}. حتى بلوك واحد يبقى داخل مصفوفة.
@@ -443,7 +446,7 @@ ${latestCycleMeta?.progressionNote ? `\n🗒️ توصيتك أنت (المدر�
 - أيام الراحة: isRest: true وكل المصفوفات فارغة []
 - لا تكرر نمط الميتكون في يومين متتاليين (AMRAP/للوقت/EMOM يتناوبان)
 - الإحماء: ٣ بلوكات بالضبط بالترتيب المحدد في "بنية البلوكات" أعلاه (عام → خاص AMRAP → تحضير المهارة)، ولا تستخدم نفس تمرين التفعيل الخاص في يومين من نفس النمط ضمن الأسبوع
-- كل يوم نشاط: strength لا يقل عن تمرينَين compound داخل بلوكها (إلا يوم البنشمارك)
+- كل يوم نشاط: strength يحتوي تمريناً "مركّز" واحداً بالضبط مطابقاً لنمط ذلك اليوم (إلا يوم البنشمارك) — لا تضف تمريناً "مركّز" ثانياً من نفس مجموعة الحركة معه في نفس البلوك (راجع محظورات دمج الحركات قاعدة ١ أعلاه؛ هذا يُلغي أي قاعدة سابقة تطلب ≥٢ حركات compound في القوة إن تعارضت مع هذا)
 - استخدم أوزان جدول "مرحلة دورة التدريج" أعلاه حرفياً حسب المستوى والجنس — لا تستخدم أوزان من ذاكرتك أو من أسابيع سابقة
 - progressionNote يجب أن يكون توجيهاً رقمياً محدداً (اسم حركة + نسبة/وزن دقيق) قابلاً للتنفيذ الحرفي الأسبوع القادم
 - يوم البارتنر (إن وُجد): العنوان (title وtitleEn) يجب أن يتضمن "بارتنر"/"Partner"، والقوة تبقى فردية بلا تغيير، وطبّق قاعدة تماسك يوم البارتنر أعلاه على كل قسم
@@ -514,11 +517,30 @@ ${latestCycleMeta?.progressionNote ? `\n🗒️ توصيتك أنت (المدر�
         const isBenchmarkDayHere = isBenchmarkWeek && day.date === benchmarkDate;
         const isHyroxDayHere = hyroxMode && !day.isRest && !day.isCalisthenics && HYROX_RE.test(`${day.title || ''} ${day.aiTheme || ''}`);
         const skip = day.isRest || day.isCalisthenics || isBenchmarkDayHere || isHyroxDayHere;
+
+        // ═══ محظورات دمج الحركات — تحقق صارم بعد التوليد (قاعدتا ١ و٣ فقط، راجع lib/crossfitProgramming.ts) ═══
+        let dayStrength = validateSection(day.strength);
+        let dayMetcon = validateSection(day.metcon);
+        if (!skip) {
+          const rule1 = stripRule1Violations(dayStrength);
+          dayStrength = rule1.blocks;
+          const rule3 = stripRule3Violations(dayMetcon);
+          dayMetcon = rule3.blocks;
+          const warnings = [
+            ...rule1.warnings, ...rule3.warnings,
+            ...detectRule2HeavyOverlap(
+              dayStrength.flatMap(b => b.movements.map((m: any) => m.exerciseId)),
+              dayMetcon.flatMap(b => b.movements.map((m: any) => m.exerciseId)),
+            ),
+          ];
+          if (warnings.length) console.warn(`[generate-week ${day.date}]`, warnings.join(' | '));
+        }
+
         const withValidatedSections = {
           ...day,
           warmup: validateSection(day.warmup),
-          strength: validateSection(day.strength),
-          metcon: validateSection(day.metcon),
+          strength: dayStrength,
+          metcon: dayMetcon,
           accessory: validateSection(day.accessory),
           cooldown: validateSection(day.cooldown),
         };
