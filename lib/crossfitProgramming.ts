@@ -300,6 +300,15 @@ export const PATTERN_STRENGTH_MAP: Record<MovementPattern, { idsAr: string; note
   olympic: { idsAr: 'snatch / clean-and-jerk / hang-power-clean / hang-power-snatch / split-jerk بتقنية عالية ووزن معتدل (70-80%)', note: 'التركيز على المسار لا الحمل الأقصى' },
 };
 
+// قائمة موحّدة لكل حركات القوة بالبار المسموحة عبر كل الأنماط الخمسة — مصدر واحد للحقيقة
+// بدل نسخ نفس القائمة يدوياً في كل من generate/route.ts وgenerate-week/route.ts ولوحة التحكم
+export const BARBELL_STRENGTH_IDS = [
+  'back-squat', 'front-squat', 'deadlift', 'romanian-deadlift', 'sumo-deadlift',
+  'power-clean', 'hang-power-clean', 'clean-and-jerk', 'snatch', 'hang-power-snatch',
+  'overhead-squat', 'shoulder-press', 'push-press', 'bench-press', 'split-jerk',
+  'bent-over-row', 'pendlay-row', 'good-morning', 'hip-thrust', 'thruster',
+];
+
 // ═══ تباعد أيام الثقل — القرفصاء والرفعة هما نمطا القوة "الثقيلان بطبيعتهما" (compound بار مباشر
 // بأقرب نسبة لمرجع الذروة)، بعكس الدفع/السحب (أخف عادة) والأولمبي (تقني بوزن معتدل 70-80% بتصميمه أصلاً).
 // رُصد فعلياً: يوما قرفصاء ورفعة بفارق يوم نشط واحد فقط (بلا راحة كاملة بينهما) كلاهما RPE 7-8 —

@@ -6,7 +6,7 @@ import { todaySA } from '@/lib/timezone';
 import { getWods, getLatestWodCycleMeta } from '@/lib/db';
 import {
   EXERCISES, getCalisthenicsExercises, MovementPattern, CyclePhase, PartnerFormat, PATTERN_LABELS_AR,
-  suggestPattern, accessoryGuidanceFor, cooldownGuidanceFor, strengthGuidanceFor, warmupGuidanceFor, metconGuidanceFor,
+  suggestPattern, accessoryGuidanceFor, cooldownGuidanceFor, strengthGuidanceFor, warmupGuidanceFor, metconGuidanceFor, BARBELL_STRENGTH_IDS,
   getBenchmarkGuidance, getClassTimeBudget, getEquipmentGuidance, getRxFocusGuidance,
   computeNextCyclePhase, CYCLE_PHASE_LABELS_AR, CYCLE_PHASE_INFO, getRpeGuidance, getWeightStandardsTable,
   suggestPartnerFormat, partnerFormatGuidanceFor, PARTNER_SESSION_COHERENCE_GUIDANCE, PARTNER_FORMAT_LABELS_AR,
@@ -429,7 +429,7 @@ ${!isBenchmarkDay ? `✦ ⚠️ **قاعدة توافق الميتكون مع ن
 
 **قواعد صارمة:**
 - استخدم فقط IDs من القائمة أعلاه
-${isBenchmarkDay ? '- اليوم بنشمارك: strength = [] وaccessory = [] إجبارياً — الميتكون هو البنشمارك المحدد أعلاه حرفياً بحركاته وتكراراته الرسمية فقط' : `- تمارين القوة (strength) يجب أن تكون بالبار حصراً (back-squat, front-squat, deadlift, romanian-deadlift, sumo-deadlift, power-clean, hang-power-clean, clean-and-jerk, snatch, hang-power-snatch, overhead-squat, shoulder-press, push-press, bench-press, split-jerk, bent-over-row, pendlay-row, good-morning, hip-thrust, thruster) وتنتمي لنمط ${effectivePattern} تحديداً حسب دليل اختيار تمرين القوة أعلاه — لا تضع pull-up أو handstand-pushup في القوة`}
+${isBenchmarkDay ? '- اليوم بنشمارك: strength = [] وaccessory = [] إجبارياً — الميتكون هو البنشمارك المحدد أعلاه حرفياً بحركاته وتكراراته الرسمية فقط' : `- تمارين القوة (strength) يجب أن تكون بالبار حصراً (${BARBELL_STRENGTH_IDS.join(', ')}) وتنتمي لنمط ${effectivePattern} تحديداً حسب دليل اختيار تمرين القوة أعلاه — لا تضع pull-up أو handstand-pushup في القوة`}
 - كل حركة في strength وmetcon يجب أن تحتوي على حقل "levels" بالمستويات الأربعة مع الوزن والتكرارات والنصيحة
 - الإحماء والتهدئة: بدون levels (تُضاف في notes فقط)
 - **كل قسم (warmup/strength/metcon/accessory/cooldown) مصفوفة بلوكات، لا مصفوفة تمارين مباشرة** — كل بلوك: {"format": "...", "scoreType": "...", "movements": [...]}. حتى لو بلوك واحد فقط في القسم، يبقى داخل مصفوفة بلوكات

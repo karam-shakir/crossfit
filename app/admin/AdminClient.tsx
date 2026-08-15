@@ -2,7 +2,23 @@
 import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
-import { BENCHMARK_OPTIONS, EXERCISES, getCalisthenicsExercises } from '@/lib/crossfitProgramming';
+import {
+  BENCHMARK_OPTIONS, EXERCISES, getCalisthenicsExercises, MovementPattern,
+  WARMUP_ACTIVATION_MAP, PATTERN_METCON_MAP, PATTERN_ACCESSORY_MAP, PATTERN_COOLDOWN_MAP, BARBELL_STRENGTH_IDS,
+} from '@/lib/crossfitProgramming';
+
+const ALL_PATTERNS: MovementPattern[] = ['squat', 'hinge', 'push', 'pull', 'olympic'];
+
+// القائمة الدقيقة المسموحة لكل قسم — مُشتقّة من نفس خرائط النمط الحقيقية التي يعتمدها التوليد
+// الآلي بالذكاء الاصطناعي (اتحاد كل الأنماط الخمسة لكل خريطة)، لا تخمين حسب تصنيف عام واسع —
+// هذا يضمن أن المحرر اليدوي لا يمنع المدرب من أي تمرين يستخدمه النظام فعلاً لهذا القسم
+const SECTION_ALLOWED_IDS: Record<string, string[]> = {
+  warmup:    Array.from(new Set(ALL_PATTERNS.flatMap(p => WARMUP_ACTIVATION_MAP[p].specificIds))),
+  strength:  BARBELL_STRENGTH_IDS,
+  metcon:    Array.from(new Set(ALL_PATTERNS.flatMap(p => PATTERN_METCON_MAP[p].suggestedIds))),
+  accessory: Array.from(new Set(ALL_PATTERNS.flatMap(p => PATTERN_ACCESSORY_MAP[p].suggestedIds))),
+  cooldown:  Array.from(new Set(ALL_PATTERNS.flatMap(p => PATTERN_COOLDOWN_MAP[p].stretches.map(s => s.id)))),
+};
 
 type AdminTab = 'wod' | 'members' | 'weekly' | 'sports' | 'gym' | 'running' | 'cali' | 'logs';
 
@@ -131,17 +147,6 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
   // من مجموعة أصلية أصغر بكثير — القوائم الثابتة تُنسى عند توسعة المكتبة، فهذه القوائم تتحدّث تلقائياً معها
   const CROSSFIT_EXERCISES = EXERCISES;
   const CALISTHENICS_EXERCISES = getCalisthenicsExercises();
-
-  // فلترة واسعة لمحرر البلوكات اليدوي: كل تبويب يُبرز التصنيفات (category الفعلية في مجموعة exercises
-  // بقاعدة البيانات — قيم عربية حرة، منفصلة عن enum الكود الإنجليزي) الأقرب له أولاً كمجموعة منفصلة،
-  // مع إبقاء بقية التمارين متاحة كخيار ثانوي بلا تقييد — المدرب قد يحتاج شرعياً وضع أي تمرين في أي قسم
-  const SECTION_PRIMARY_CATEGORIES: Record<string, string[]> = {
-    warmup:    ['جمناستيك'],
-    strength:  ['قوة', 'رفع أثقال أولمبي'],
-    metcon:    ['وود', 'تحمل', 'قوة وتحمل'],
-    accessory: ['وود', 'قوة'],
-    cooldown:  ['إطالة'],
-  };
 
   // ===== Fix Cooldown =====
   const [fixCooldownFrom, setFixCooldownFrom] = useState(todaySA());
@@ -1334,25 +1339,13 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
                                   className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500">
                                   <option value="">اختر التمرين</option>
                                   {(() => {
-                                    const primaryCats = SECTION_PRIMARY_CATEGORIES[s.key] || [];
-                                    const primary = exercises.filter((e: any) => primaryCats.includes(e.category));
-                                    const secondary = exercises.filter((e: any) => !primaryCats.includes(e.category));
-                                    return (
-                                      <>
-                                        {primary.length > 0 && (
-                                          <optgroup label="✅ الأنسب لهذا القسم">
-                                            {primary.map((e: any) => (
-                                              <option key={e.id} value={e.id}>{e.nameAr} ({e.nameEn})</option>
-                                            ))}
-                                          </optgroup>
-                                        )}
-                                        <optgroup label="بقية التمارين">
-                                          {secondary.map((e: any) => (
-                                            <option key={e.id} value={e.id}>{e.nameAr} ({e.nameEn})</option>
-                                          ))}
-                                        </optgroup>
-                                      </>
-                                    );
+                                    const allowedIds = SECTION_ALLOWED_IDS[s.key] || [];
+                                    // نُبقي التمرين المُختار حالياً ظاهراً حتى لو كان خارج القائمة (بيانات محفوظة سابقاً)
+                                    // — لكن الخيارات الجديدة تقتصر على قائمة هذا القسم فقط
+                                    const options = exercises.filter((e: any) => allowedIds.includes(e.id) || e.id === ex.exerciseId);
+                                    return options.map((e: any) => (
+                                      <option key={e.id} value={e.id}>{e.nameAr} ({e.nameEn})</option>
+                                    ));
                                   })()}
                                 </select>
                                 <button onClick={() => removeExercise(s.key, bi, i)}

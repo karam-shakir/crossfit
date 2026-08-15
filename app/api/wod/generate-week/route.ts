@@ -6,7 +6,7 @@ import { todaySA } from '@/lib/timezone';
 import { getWods, getLatestWodCycleMeta, upsertWodCycleMeta } from '@/lib/db';
 import {
   EXERCISES, MovementPattern, PATTERN_LABELS_AR, CyclePhase, PartnerFormat,
-  buildPatternSequence, accessoryGuidanceFor, cooldownGuidanceFor, strengthGuidanceFor, warmupGuidanceFor, metconGuidanceFor,
+  buildPatternSequence, accessoryGuidanceFor, cooldownGuidanceFor, strengthGuidanceFor, warmupGuidanceFor, metconGuidanceFor, BARBELL_STRENGTH_IDS,
   getBenchmarkGuidance, getClassTimeBudget, getEquipmentGuidance, getRxFocusGuidance,
   computeNextCyclePhase, CYCLE_PHASE_LABELS_AR, CYCLE_PHASE_INFO, getRpeGuidance, getWeightStandardsTable,
   suggestPartnerFormat, partnerFormatGuidanceFor, PARTNER_SESSION_COHERENCE_GUIDANCE, PARTNER_FORMAT_LABELS_AR,
@@ -197,7 +197,7 @@ ${muscleGroupLog.map(d => `${d.date}: [${d.muscles.join(' + ')}] — شدة: ${d
     : `**قواعد البرمجة — CrossFit${hyroxMode ? ' + Hyrox' : ' كامل'}:**
 ${hyroxMode ? '- أدرج يوماً واحداً مخصصاً لـ Hyrox (run + row + sled push + burpee broad jump) — يوم Hyrox يكون بعد يوم راحة\n- باقي الأيام CrossFit كلاسيكي\n' : '- هذا أسبوع CrossFit خالص — لا يوم Calisthenics ولا يوم Hyrox ولا Kettlebell\n'}
 - كل يوم نشاط هو CrossFit كلاسيكي: قوة بالبار + ميتكون مع أوزان
-- تمارين القوة (strength): يجب أن تكون بالبار حصراً (back-squat, deadlift, romanian-deadlift, sumo-deadlift, front-squat, overhead-squat, power-clean, hang-power-clean, clean-and-jerk, snatch, hang-power-snatch, shoulder-press, push-press, bench-press, split-jerk, bent-over-row, pendlay-row, good-morning, hip-thrust, thruster) — حسب دليل اختيار تمرين القوة لكل نمط أدناه
+- تمارين القوة (strength): يجب أن تكون بالبار حصراً (${BARBELL_STRENGTH_IDS.join(', ')}) — حسب دليل اختيار تمرين القوة لكل نمط أدناه
 - الميتكون: يجمع تمارين الحديد (بار/دمبل/كيتل بيل) مع gymnastics وcardio بحرية — لا يقتصر على قائمة ضيقة، استخدم أي تمرين من القائمة أعلاه يناسب نظام الطاقة المستهدف ونمط اليوم
 - وزّع الأيام: HEAVY (1-2 مرة) + MEDIUM (2-3 مرة) + SKILL (مرة) + REST (1-2 مرة)
 - يوم SKILL: تقنية أولمبية (snatch, clean) أو جمناستيكس (muscle-up, handstand) — مع ميتكون قصير
