@@ -2,7 +2,7 @@
 import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
-import { BENCHMARK_OPTIONS } from '@/lib/crossfitProgramming';
+import { BENCHMARK_OPTIONS, EXERCISES, getCalisthenicsExercises } from '@/lib/crossfitProgramming';
 
 type AdminTab = 'wod' | 'members' | 'weekly' | 'sports' | 'gym' | 'running' | 'cali' | 'logs';
 
@@ -127,8 +127,10 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
     setWodForceExercise('');
     setWodBenchmarkName('');
   }
-  const CROSSFIT_EXERCISE_IDS = ['back-squat','front-squat','deadlift','power-clean','clean-and-jerk','snatch','shoulder-press','push-press','thruster','pull-up','kipping-pull-up','muscle-up','handstand-pushup','toes-to-bar','double-under','burpee','wall-ball','kettle-bell-swing','row','run','air-squat'];
-  const CALISTHENICS_EXERCISE_IDS = ['pull-up','push-up','muscle-up','handstand-pushup','toes-to-bar','rope-climb','double-under','burpee','box-jump','sit-up','air-squat'];
+  // مشتقّة من مكتبة EXERCISES الحقيقية (١٠٣ تمريناً) بدل قائمة ثابتة قديمة كانت تقتصر على ٢١ تمريناً
+  // من مجموعة أصلية أصغر بكثير — القوائم الثابتة تُنسى عند توسعة المكتبة، فهذه القوائم تتحدّث تلقائياً معها
+  const CROSSFIT_EXERCISES = EXERCISES;
+  const CALISTHENICS_EXERCISES = getCalisthenicsExercises();
 
   // ===== Fix Cooldown =====
   const [fixCooldownFrom, setFixCooldownFrom] = useState(todaySA());
@@ -1041,8 +1043,8 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
                         <select value={wodForceExercise} onChange={e => setWodForceExercise(e.target.value)}
                           className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-green-500">
                           <option value="">لا يوجد — الـ AI يختار</option>
-                          {(wodMode === 'crossfit' ? CROSSFIT_EXERCISE_IDS : CALISTHENICS_EXERCISE_IDS).map(id => (
-                            <option key={id} value={id}>{id}</option>
+                          {(wodMode === 'crossfit' ? CROSSFIT_EXERCISES : CALISTHENICS_EXERCISES).map(e => (
+                            <option key={e.id} value={e.id}>{e.nameAr} ({e.nameEn})</option>
                           ))}
                         </select>
                       </div>
@@ -1054,8 +1056,8 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
                           <select value={wodForbidInput} onChange={e => setWodForbidInput(e.target.value)}
                             className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-2 py-2 text-white text-xs focus:outline-none focus:border-red-500">
                             <option value="">اختر تمريناً لحذفه...</option>
-                            {(wodMode === 'crossfit' ? CROSSFIT_EXERCISE_IDS : CALISTHENICS_EXERCISE_IDS).map(id => (
-                              <option key={id} value={id}>{id}</option>
+                            {(wodMode === 'crossfit' ? CROSSFIT_EXERCISES : CALISTHENICS_EXERCISES).map(e => (
+                              <option key={e.id} value={e.id}>{e.nameAr} ({e.nameEn})</option>
                             ))}
                           </select>
                           <button onClick={addWodForbid} className="px-3 py-2 bg-red-900/40 border border-red-700/50 rounded-xl text-red-300 text-xs font-bold hover:bg-red-900/60">+</button>
