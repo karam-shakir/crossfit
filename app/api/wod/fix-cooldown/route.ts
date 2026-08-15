@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
       const prompt = buildCooldownPrompt(wod.title, strengthIds, metconIds, muscles);
 
       const message = await client.messages.create({
-        model: 'claude-opus-4-8',
+        model: 'claude-opus-5',
         max_tokens: 1000,
         messages: [{ role: 'user', content: prompt }],
       });

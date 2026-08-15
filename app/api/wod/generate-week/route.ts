@@ -457,7 +457,7 @@ ${latestCycleMeta?.progressionNote ? `\n🗒️ توصيتك أنت (المدر�
     // البث (stream) إجباري هنا — الحد الأقصى للتوكنز (حتى 32000) قد يستغرق أكثر من 10 دقائق نظرياً،
     // وواجهة Anthropic البرمجية ترفض طلبات create() العادية بهذا الحجم وتطلب البث صراحة
     const stream = client.messages.stream({
-      model: 'claude-opus-4-8',
+      model: 'claude-opus-5',
       max_tokens: maxTokens,
       messages: [{ role: 'user', content: prompt }],
     });
