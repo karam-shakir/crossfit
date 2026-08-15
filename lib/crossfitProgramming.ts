@@ -294,7 +294,7 @@ export function buildPatternSequence(activeDaysCount: number, undertrainedGroups
 
 export const PATTERN_STRENGTH_MAP: Record<MovementPattern, { idsAr: string; note: string }> = {
   squat:   { idsAr: 'back-squat / front-squat / overhead-squat',   note: '' },
-  hinge:   { idsAr: 'deadlift / romanian-deadlift / sumo-deadlift', note: 'هذا النمط مختلف تماماً عن السحب (Pull) — يستهدف أوتار الركبة/أسفل الظهر/المؤخرة لا الظهر العريض/البايسبس، فتأكد أن الأكسسوار والتهدئة يعكسان ذلك' },
+  hinge:   { idsAr: 'deadlift / romanian-deadlift / sumo-deadlift / good-morning / hip-thrust', note: 'هذا النمط مختلف تماماً عن السحب (Pull) — يستهدف أوتار الركبة/أسفل الظهر/المؤخرة لا الظهر العريض/البايسبس، فتأكد أن الأكسسوار والتهدئة يعكسان ذلك' },
   push:    { idsAr: 'shoulder-press / push-press / bench-press',   note: '' },
   pull:    { idsAr: 'power-clean أو snatch (سحب انفجاري علوي) — أو bent-over-row/pendlay-row (سحب أفقي بالبار)', note: 'لا تستخدم deadlift كتمرين قوة رئيسي هنا — deadlift ينتمي لنمط "الرفعة" (Hinge) حصراً؛ bent-over-row/pendlay-row بديل ممتاز أخف على الجهاز العصبي من الانفجاري وأكثر تحديداً للظهر العريض؛ الميتكون يمكن أن يستثمر pull-up/toes-to-bar بكثافة' },
   olympic: { idsAr: 'snatch / clean-and-jerk / hang-power-clean / hang-power-snatch / split-jerk بتقنية عالية ووزن معتدل (70-80%)', note: 'التركيز على المسار لا الحمل الأقصى' },
