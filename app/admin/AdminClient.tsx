@@ -20,6 +20,25 @@ const SECTION_ALLOWED_IDS: Record<string, string[]> = {
   cooldown:  Array.from(new Set(ALL_PATTERNS.flatMap(p => PATTERN_COOLDOWN_MAP[p].stretches.map(s => s.id)))),
 };
 
+// يقرأ استجابة توليد الخطط الأسبوعية بأمان — كان الكود السابق يستدعي res.json() مباشرة، فإن
+// انتهت مهلة دالة Vercel (٣٠٠ ثانية) قبل اكتمال التوليد، يرجع Vercel صفحة نص عادي (ليست JSON)،
+// فيفشل JSON.parse برسالة خطأ برمجية مبهمة غير مفهومة للمدرب (رُصد فعلياً في الإنتاج:
+// "Unexpected token 'A', "An error o"... is not valid JSON" — أول أحرف صفحة خطأ Vercel النصية)
+async function parseGenerateResponse(res: Response): Promise<any> {
+  const text = await res.text();
+  let data: any = null;
+  try { data = JSON.parse(text); } catch { /* ليست JSON — سنبني رسالة واضحة أدناه */ }
+
+  if (data === null) {
+    if (res.status === 504) {
+      throw new Error('⏱️ انتهت مهلة التوليد قبل الاكتمال (يحدث غالباً مع عدد أيام كبير كـ٧). جرّب عدد أيام أقل (٤-٥) أو أعد المحاولة.');
+    }
+    throw new Error(`استجابة غير متوقعة من الخادم (HTTP ${res.status}) — جرّب مرة أخرى، وإن تكرر أبلغ المطوّر.`);
+  }
+  if (!res.ok) throw new Error(data.error || `فشل التوليد (HTTP ${res.status})`);
+  return data;
+}
+
 type AdminTab = 'wod' | 'members' | 'weekly' | 'sports' | 'gym' | 'running' | 'cali' | 'logs';
 
 const WOD_TYPES = ['AMRAP', 'للوقت', 'قوة', 'تدريب'];
@@ -257,8 +276,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ memberId: caliSelectedMember, fromDate: caliFromDate, override: caliOverride }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'فشل التوليد');
+      const data = await parseGenerateResponse(res);
       setCaliPlan(data);
       setCaliSaved(true);
     } catch (e: any) {
@@ -319,8 +337,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
           walkRunStageOverride: runWalkStageOverride === null ? undefined : runWalkStageOverride,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'فشل التوليد');
+      const data = await parseGenerateResponse(res);
       setRunPlan(data);
       setRunSaved(true);
       refreshRunCycleStatus();
@@ -368,8 +385,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ memberId: gymSelectedMember, fromDate: gymFromDate, override: gymOverride, cyclePhaseOverride: gymCyclePhaseOverride }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'فشل التوليد');
+      const data = await parseGenerateResponse(res);
       setGymPlan(data);
       setGymSaved(true);
       refreshGymCycleStatus();
@@ -421,8 +437,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
           ...(sportsTab === 'calisthenics' && { skillFocus: calisSkillFocus }),
         }),
       });
-      const data = await res.json();
-      if (!res.ok) { setSportsError(data.error || 'خطأ في التوليد'); return; }
+      const data = await parseGenerateResponse(res);
       setSportsPlan(data);
     } catch (e: any) { setSportsError(e.message); }
     setSportsLoading(false);
@@ -557,11 +572,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
           partnerMode: wodPartnerMode,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setAiError(data.error || 'حدث خطأ في التوليد');
-        return;
-      }
+      const data = await parseGenerateResponse(res);
       const generated = data.wod;
       setWod({
         ...generated,
@@ -605,8 +616,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
           partnerDaysCount: weeklyPartnerDaysCount,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) { setWeeklyError(data.error || 'خطأ'); return; }
+      const data = await parseGenerateResponse(res);
       setWeeklyPlan(data);
       refreshWodCycleStatus(); // الأسبوع الجديد قد يكون غيّر مرحلة الدورة — حدّث الشريط التوضيحي
     } catch (e: any) {
