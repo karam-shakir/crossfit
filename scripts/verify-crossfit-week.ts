@@ -24,7 +24,7 @@ import dns from 'dns';
 import {
   MovementPattern, PATTERN_LABELS_AR, EXERCISES,
   buildPatternSequence, suggestPartnerFormat, PartnerFormat,
-  HEAVY_BY_DEFAULT_PATTERNS, PATTERN_ACCESSORY_MAP, PATTERN_METCON_MAP,
+  HEAVY_BY_DEFAULT_PATTERNS, PATTERN_ACCESSORY_MAP, PATTERN_METCON_MAP, PATTERN_COOLDOWN_MAP,
 } from '../lib/crossfitProgramming';
 import { computeNextCyclePhase, CyclePhase, CYCLE_ORDER } from '../lib/periodization';
 import { flattenMovements } from '../lib/wodBlocks';
@@ -175,6 +175,15 @@ function runLogicChecks() {
       }
     }
     check(S, 'كل IDs الميتكون المقترحة في PATTERN_METCON_MAP موجودة فعلياً في EXERCISES', invalidMetconIds.length === 0, invalidMetconIds.join(', '));
+
+    // نفس الفحص للإطالات المخصصة لكل نمط (PATTERN_COOLDOWN_MAP.stretches) — كل إطالة الآن exerciseId فعلي
+    const invalidCooldownIds: string[] = [];
+    for (const pattern of Object.keys(PATTERN_COOLDOWN_MAP) as MovementPattern[]) {
+      for (const s of PATTERN_COOLDOWN_MAP[pattern].stretches) {
+        if (!unique.has(s.id)) invalidCooldownIds.push(`${pattern}:${s.id}`);
+      }
+    }
+    check(S, 'كل IDs الإطالات في PATTERN_COOLDOWN_MAP موجودة فعلياً في EXERCISES', invalidCooldownIds.length === 0, invalidCooldownIds.join(', '));
   }
 }
 
@@ -303,6 +312,19 @@ function validateWeek(wods: WodDoc[], label: string) {
       if (metconIds.length > 0 && !hasSamePattern) violations.push(`${w.date} (${PATTERN_LABELS_AR[w.pattern]}): الميتكون [${metconIds.join(', ')}] لا يحتوي أي حركة من نمط اليوم`);
     }
     check(S, 'كل ميتكون يحتوي حركة واحدة على الأقل من نمط يومه', violations.length === 0, violations.join(' || '));
+  }
+
+  // ── التهدئة تستخدم exerciseId الإطالة المخصص لنمط اليوم — لا تمريناً بديلاً غير مطابق ──
+  {
+    const violations: string[] = [];
+    for (const w of active) {
+      if (!w.pattern) continue;
+      const validStretchIds = new Set(PATTERN_COOLDOWN_MAP[w.pattern].stretches.map(s => s.id));
+      const cooldownIds = flattenMovements(w.cooldown).map(e => e.exerciseId);
+      const mismatched = cooldownIds.filter(id => !validStretchIds.has(id));
+      if (mismatched.length > 0) violations.push(`${w.date} (${PATTERN_LABELS_AR[w.pattern]}): إطالات [${mismatched.join(', ')}] ليست من قائمة الإطالات المخصصة لهذا النمط`);
+    }
+    check(S, 'كل التهدئة تستخدم exerciseId إطالة مخصصاً من قائمة نمط يومها (لا تمريناً بديلاً)', violations.length === 0, violations.join(' || '));
   }
 
   // ── تنوّع الأكسسوار/الإحماء بين يومين من نفس النمط ──

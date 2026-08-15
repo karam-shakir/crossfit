@@ -8,7 +8,7 @@ export interface CFExercise {
   id: string;
   nameEn: string;
   nameAr: string;
-  category: 'strength' | 'olympic' | 'gymnastics' | 'cardio' | 'wod';
+  category: 'strength' | 'olympic' | 'gymnastics' | 'cardio' | 'wod' | 'mobility';
 }
 
 export const EXERCISES: CFExercise[] = [
@@ -109,6 +109,33 @@ export const EXERCISES: CFExercise[] = [
   { id: 'glute-bridge',     nameEn: 'Glute Bridge',             nameAr: 'جسر المؤخرة',              category: 'gymnastics' },
   { id: 'bulgarian-split-squat', nameEn: 'Bulgarian Split Squat', nameAr: 'قرفصاء بلغاري منقسم',   category: 'wod' },
   { id: 'hip-thrust',       nameEn: 'Barbell Hip Thrust',       nameAr: 'دفعة الورك بالبار',        category: 'strength' },
+
+  // إطالات مُسمّاة مخصصة لكل نمط (PATTERN_COOLDOWN_MAP) — معرّفات فعلية بدل استخدام تمرين بديل تقني،
+  // كل واحدة مربوطة برابط يوتيوب حقيقي في مجموعة exercises (seed-stretch-exercises.ts)
+  { id: 'standing-quad-stretch',        nameEn: 'Standing Quad Stretch',        nameAr: 'إطالة الرباعية واقفاً (Standing Quad Stretch)',              category: 'mobility' },
+  { id: 'kneeling-hip-flexor-stretch',  nameEn: 'Kneeling Hip Flexor Stretch',  nameAr: 'إطالة الورك القابضة على الركبة (Kneeling Hip Flexor Stretch)', category: 'mobility' },
+  { id: 'pigeon-pose-stretch',          nameEn: 'Pigeon Pose',                  nameAr: 'وضعية الحمامة (Pigeon Pose)',                                category: 'mobility' },
+  { id: 'couch-stretch',                nameEn: 'Couch Stretch',                nameAr: 'إطالة الكاوتش على الحائط (Couch Stretch)',                   category: 'mobility' },
+  { id: 'figure-4-stretch',             nameEn: 'Figure-4 Stretch',             nameAr: 'وضعية الرقم 4 (Figure-4 Stretch)',                           category: 'mobility' },
+  { id: 'seated-forward-fold-stretch',  nameEn: 'Seated Forward Fold',          nameAr: 'إطالة أوتار الركبة جلوساً (Seated Forward Fold)',            category: 'mobility' },
+  { id: 'childs-pose-stretch',          nameEn: "Child's Pose",                 nameAr: "وضعية الطفل (Child's Pose) لأسفل الظهر",                     category: 'mobility' },
+  { id: 'standing-hamstring-stretch',   nameEn: 'Standing Hamstring Stretch',   nameAr: 'إطالة أوتار الركبة واقفاً على درجة (Standing Hamstring Stretch)', category: 'mobility' },
+  { id: 'supine-spinal-twist-stretch',  nameEn: 'Supine Spinal Twist',          nameAr: 'الالتواء الفقري المستلقي (Supine Spinal Twist)',             category: 'mobility' },
+  { id: 'cat-cow-hold-stretch',         nameEn: 'Cat-Cow Static Hold',          nameAr: 'ثبات القطة-البقرة الساكن (Cat-Cow Slow Static Hold)',        category: 'mobility' },
+  { id: 'doorway-chest-stretch',        nameEn: 'Doorway Chest Stretch',        nameAr: 'إطالة الصدر على الحائط (Doorway Chest Stretch)',             category: 'mobility' },
+  { id: 'overhead-tricep-stretch',      nameEn: 'Overhead Tricep Stretch',      nameAr: 'إطالة الترايسبس فوق الرأس (Overhead Triceps Stretch)',       category: 'mobility' },
+  { id: 'cross-body-shoulder-stretch',  nameEn: 'Cross-Body Shoulder Stretch',  nameAr: 'إطالة الكتف الأمامي بالذراع خلف الظهر (Cross-body Shoulder Stretch)', category: 'mobility' },
+  { id: 'puppy-pose-stretch',           nameEn: 'Puppy Pose Stretch',           nameAr: 'وضعية الجرو (Puppy Pose Stretch)',                           category: 'mobility' },
+  { id: 'dead-hang-lat-stretch',        nameEn: 'Dead Hang Lat Stretch',        nameAr: 'تعليق ميت سلبي (Dead Hang) لإطالة اللاتس',                   category: 'mobility' },
+  { id: 'kneeling-lat-stretch-box',     nameEn: 'Kneeling Lat Stretch (Box)',   nameAr: 'إطالة اللاتس ركوعاً على صندوق (Kneeling Lat Stretch)',       category: 'mobility' },
+  { id: 'bicep-forearm-stretch',        nameEn: 'Bicep & Forearm Stretch',      nameAr: 'إطالة البايسبس والساعد بمدّ الذراع (Bicep/Forearm Stretch)', category: 'mobility' },
+  { id: 'thread-the-needle-stretch',    nameEn: 'Thread the Needle Stretch',    nameAr: 'خيط الإبرة (Thread the Needle Stretch)',                     category: 'mobility' },
+  { id: 'upper-trap-neck-stretch',      nameEn: 'Upper Trap & Neck Stretch',    nameAr: 'إطالة الرقبة والترابيزيوس العلوي (Upper Trap & Neck Stretch)', category: 'mobility' },
+  { id: 'deep-squat-hold-stretch',      nameEn: 'Deep Squat Hold',              nameAr: 'جلسة القرفصاء العميقة (Deep Squat Hold)',                    category: 'mobility' },
+  { id: 'pvc-overhead-shoulder-stretch', nameEn: 'PVC Overhead Shoulder Stretch', nameAr: 'إطالة الكتف بعصا PVC فوق الرأس',                           category: 'mobility' },
+  { id: 'standing-straddle-stretch',    nameEn: 'Standing Straddle Stretch',    nameAr: 'الإطالة الواقفة العريضة (Standing Straddle Stretch)',        category: 'mobility' },
+  { id: 'downward-dog-stretch',         nameEn: 'Downward Dog',                 nameAr: 'الكلب الهابط لإطالة الساق (Downward Dog)',                   category: 'mobility' },
+  { id: 'ankle-dorsiflexion-stretch',   nameEn: 'Ankle Dorsiflexion Stretch',   nameAr: 'إطالة ظهر القدم مرفوعة (Elevated Ankle Dorsiflexion Stretch)', category: 'mobility' },
 ];
 
 export function getCalisthenicsExercises(): CFExercise[] {
@@ -144,21 +171,54 @@ export const PATTERN_METCON_MAP: Record<MovementPattern, { targetsAr: string; su
   olympic: { targetsAr: 'الجسم الكامل بتقنية انفجارية — نفس تركيز النمط الأولمبي', suggestedIds: ['snatch', 'clean-and-jerk', 'power-clean', 'overhead-squat', 'hang-power-clean', 'hang-power-snatch', 'split-jerk', 'dumbbell-snatch', 'dumbbell-clean-and-jerk', 'dumbbell-power-clean'], rationale: 'نمط الأولمبي تقني بطبيعته — الميتكون يجب أن يحافظ على عنصر تقني ولو خفيف الوزن، لا يتحول لتحمّل بحت' },
 };
 
-export const PATTERN_COOLDOWN_MAP: Record<MovementPattern, { targetsAr: string; stretchNamesAr: string[]; rationale: string }> = {
+export interface CooldownStretch { id: string; nameAr: string; }
+
+// كل إطالة الآن exerciseId فعلي (مربوط برابط يوتيوب حقيقي في مجموعة exercises) بدل استخدام
+// تمرين بديل تقني غير مطابق — راجع seed-stretch-exercises.ts للروابط الفعلية
+export const PATTERN_COOLDOWN_MAP: Record<MovementPattern, { targetsAr: string; stretches: CooldownStretch[]; rationale: string }> = {
   squat:   { targetsAr: 'الرباعية (Quad) + عضلة الورك القابضة (Hip Flexor) + المؤخرة (Glute)',
-             stretchNamesAr: ['إطالة الرباعية واقفاً (Standing Quad Stretch)', 'إطالة الورك القابضة على الركبة (Kneeling Hip Flexor Stretch)', 'وضعية الحمامة (Pigeon Pose)', 'إطالة الكاوتش على الحائط (Couch Stretch)', 'وضعية الرقم 4 (Figure-4 Stretch)'],
+             stretches: [
+               { id: 'standing-quad-stretch',       nameAr: 'إطالة الرباعية واقفاً (Standing Quad Stretch)' },
+               { id: 'kneeling-hip-flexor-stretch',  nameAr: 'إطالة الورك القابضة على الركبة (Kneeling Hip Flexor Stretch)' },
+               { id: 'pigeon-pose-stretch',          nameAr: 'وضعية الحمامة (Pigeon Pose)' },
+               { id: 'couch-stretch',                nameAr: 'إطالة الكاوتش على الحائط (Couch Stretch)' },
+               { id: 'figure-4-stretch',             nameAr: 'وضعية الرقم 4 (Figure-4 Stretch)' },
+             ],
              rationale: 'القرفصاء يستنزف هذه العضلات مباشرة — الإطالة تسرّع الاسترداد' },
   hinge:   { targetsAr: 'أوتار الركبة (Hamstring) + أسفل الظهر (Low Back) + المؤخرة (Glute)',
-             stretchNamesAr: ['إطالة أوتار الركبة جلوساً (Seated Forward Fold)', 'وضعية الطفل (Child\'s Pose) لأسفل الظهر', 'إطالة أوتار الركبة واقفاً على درجة (Standing Hamstring Stretch)', 'الالتواء الفقري المستلقي (Supine Spinal Twist)', 'ثبات القطة-البقرة الساكن (Cat-Cow Slow Static Hold)'],
+             stretches: [
+               { id: 'seated-forward-fold-stretch', nameAr: 'إطالة أوتار الركبة جلوساً (Seated Forward Fold)' },
+               { id: 'childs-pose-stretch',          nameAr: "وضعية الطفل (Child's Pose) لأسفل الظهر" },
+               { id: 'standing-hamstring-stretch',   nameAr: 'إطالة أوتار الركبة واقفاً على درجة (Standing Hamstring Stretch)' },
+               { id: 'supine-spinal-twist-stretch',  nameAr: 'الالتواء الفقري المستلقي (Supine Spinal Twist)' },
+               { id: 'cat-cow-hold-stretch',         nameAr: 'ثبات القطة-البقرة الساكن (Cat-Cow Slow Static Hold)' },
+             ],
              rationale: 'الرفعة الميتة تعتمد كلياً على هذه السلسلة الخلفية' },
   push:    { targetsAr: 'الصدر (Chest) + الكتف الأمامي (Front Delt) + الترايسبس (Triceps)',
-             stretchNamesAr: ['إطالة الصدر على الحائط (Doorway Chest Stretch)', 'إطالة الترايسبس فوق الرأس (Overhead Triceps Stretch)', 'إطالة الكتف الأمامي بالذراع خلف الظهر (Cross-body Shoulder Stretch)', 'وضعية الجرو (Puppy Pose Stretch)'],
+             stretches: [
+               { id: 'doorway-chest-stretch',       nameAr: 'إطالة الصدر على الحائط (Doorway Chest Stretch)' },
+               { id: 'overhead-tricep-stretch',      nameAr: 'إطالة الترايسبس فوق الرأس (Overhead Triceps Stretch)' },
+               { id: 'cross-body-shoulder-stretch',  nameAr: 'إطالة الكتف الأمامي بالذراع خلف الظهر (Cross-body Shoulder Stretch)' },
+               { id: 'puppy-pose-stretch',           nameAr: 'وضعية الجرو (Puppy Pose Stretch)' },
+             ],
              rationale: 'تخفيف التوتر المتراكم من حركات الدفع فوق الرأس والأفقي' },
   pull:    { targetsAr: 'الظهر العريض (Lat) + البايسبس (Bicep) + الكتف الخلفي (Rear Delt)',
-             stretchNamesAr: ['تعليق ميت سلبي (Dead Hang) لإطالة اللاتس', 'إطالة اللاتس ركوعاً على صندوق (Kneeling Lat Stretch)', 'إطالة البايسبس والساعد بمدّ الذراع (Bicep/Forearm Stretch)', 'خيط الإبرة (Thread the Needle Stretch)', 'إطالة الرقبة والترابيزيوس العلوي (Upper Trap & Neck Stretch)'],
+             stretches: [
+               { id: 'dead-hang-lat-stretch',       nameAr: 'تعليق ميت سلبي (Dead Hang) لإطالة اللاتس' },
+               { id: 'kneeling-lat-stretch-box',     nameAr: 'إطالة اللاتس ركوعاً على صندوق (Kneeling Lat Stretch)' },
+               { id: 'bicep-forearm-stretch',        nameAr: 'إطالة البايسبس والساعد بمدّ الذراع (Bicep/Forearm Stretch)' },
+               { id: 'thread-the-needle-stretch',    nameAr: 'خيط الإبرة (Thread the Needle Stretch)' },
+               { id: 'upper-trap-neck-stretch',      nameAr: 'إطالة الرقبة والترابيزيوس العلوي (Upper Trap & Neck Stretch)' },
+             ],
              rationale: 'تخفيف توتر السحب المتكرر وحماية المرفق والكتف' },
   olympic: { targetsAr: 'الورك (Hip) + الكاحل (Ankle) + الكتف (Shoulder) — Mobility',
-             stretchNamesAr: ['جلسة القرفصاء العميقة (Deep Squat Hold) لتحرير الورك والكاحل', 'إطالة الكتف بعصا PVC فوق الرأس', 'الإطالة الواقفة العريضة (Standing Straddle Stretch)', 'الكلب الهابط لإطالة الساق (Downward Dog)', 'إطالة ظهر القدم مرفوعة (Elevated Ankle Dorsiflexion Stretch)'],
+             stretches: [
+               { id: 'deep-squat-hold-stretch',         nameAr: 'جلسة القرفصاء العميقة (Deep Squat Hold)' },
+               { id: 'pvc-overhead-shoulder-stretch',   nameAr: 'إطالة الكتف بعصا PVC فوق الرأس' },
+               { id: 'standing-straddle-stretch',       nameAr: 'الإطالة الواقفة العريضة (Standing Straddle Stretch)' },
+               { id: 'downward-dog-stretch',            nameAr: 'الكلب الهابط لإطالة الساق (Downward Dog)' },
+               { id: 'ankle-dorsiflexion-stretch',      nameAr: 'إطالة ظهر القدم مرفوعة (Elevated Ankle Dorsiflexion Stretch)' },
+             ],
              rationale: 'الحركات الانفجارية تحتاج تحرير مفصلي لا إطالة عضلية عميقة فقط' },
 };
 
@@ -279,12 +339,12 @@ export function metconGuidanceFor(pattern: MovementPattern, avoidIds: string[] =
   return `الميتكون يجب أن يتضمن حركة واحدة على الأقل تستهدف: ${m.targetsAr} (اختر من: ${options}${avoidNote}) — السبب: ${m.rationale}`;
 }
 
-/** يبني نص إرشادي للتهدئة مع تدوير أسماء الإطالات الفعلية بدل تكرار نفس الصياغة كل يوم بنفس النمط */
-export function cooldownGuidanceFor(pattern: MovementPattern, avoidNames: string[] = []): string {
+/** يبني نص إرشادي للتهدئة مع تدوير الإطالات الفعلية (exerciseId مخصص لكل إطالة، لا تمرين بديل) بدل تكرار نفس الصياغة كل يوم بنفس النمط */
+export function cooldownGuidanceFor(pattern: MovementPattern, avoidIds: string[] = []): string {
   const c = PATTERN_COOLDOWN_MAP[pattern];
-  const pool = c.stretchNamesAr.filter(n => !avoidNames.includes(n));
-  const options = (pool.length ? pool : c.stretchNamesAr).join(' / ');
-  return `التهدئة يجب أن تستهدف: ${c.targetsAr} — اختر إطالة محددة (بالاسم) من: ${options} — لا تكرر نفس اسم الإطالة المُستخدم في الجلسة الأخيرة بنفس النمط — السبب: ${c.rationale}`;
+  const pool = c.stretches.filter(s => !avoidIds.includes(s.id));
+  const options = (pool.length ? pool : c.stretches).map(s => `${s.id} (${s.nameAr})`).join(' / ');
+  return `التهدئة يجب أن تستهدف: ${c.targetsAr} — استخدم exerciseId محدداً (وليس تمريناً بديلاً) من: ${options} — لا تكرر نفس exerciseId المُستخدم في الجلسة الأخيرة بنفس النمط — السبب: ${c.rationale}`;
 }
 
 // ═══ مكتبة الإحماء الخاص (Specific Warm-up) لكل نمط — تمنع تكرار نفس التمرين (مثلاً air-squat) في كل يوم قرفصاء ═══

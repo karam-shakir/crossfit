@@ -130,6 +130,7 @@ ${muscleGroupLog.map(d => `${d.date}: [${d.muscles.join(' + ')}] — شدة: ${d
   // ═══ تمارين الأكسسوار/الإحماء المُستخدمة في آخر جلسة — تُمرَّر كقائمة تجنّب لضمان تنوّع فعلي بدل تكرار نفس الاختيار كل مرة ═══
   const lastAccessoryIds: string[] = flattenMovements((lastWod as any)?.accessory).map(e => e.exerciseId).filter(Boolean);
   const lastWarmupIds: string[] = flattenMovements((lastWod as any)?.warmup).map(e => e.exerciseId).filter(Boolean);
+  const lastCooldownIds: string[] = flattenMovements((lastWod as any)?.cooldown).map(e => e.exerciseId).filter(Boolean);
 
   // ═══ تباعد أيام الثقل — إن كان أمس (بلا فاصل راحة) قرفصاء أو رفعة، واليوم أيضاً قرفصاء أو رفعة
   // (نمط مختلف — التكرار الحرفي ممنوع أصلاً)، فهذا تجاور صفري بين يومين ثقيلين بطبيعتهما ═══
@@ -286,7 +287,7 @@ ${warmupGuidanceFor(effectivePattern, lastWarmupIds)}
 ${accessoryGuidanceFor(effectivePattern, lastAccessoryIds)}
 
 **🧘 قاعدة توافق التهدئة مع نمط اليوم (${effectivePattern}) — إجبارية:**
-${cooldownGuidanceFor(effectivePattern)}
+${cooldownGuidanceFor(effectivePattern, lastCooldownIds)}
 
 **📈 مرحلة دورة التدريج الحالية — استخدم أوزان هذه المرحلة حرفياً، لا أوزاناً من ذاكرتك:**
 المرحلة: ${CYCLE_PHASE_LABELS_AR[cyclePhase]} (${CYCLE_PHASE_INFO[cyclePhase].pctLabel}) — ${CYCLE_PHASE_INFO[cyclePhase].description}
@@ -420,8 +421,8 @@ ${!isBenchmarkDay ? `✦ ⚠️ **قاعدة توافق الميتكون مع ن
   ],
   "cooldown": [
     {"format": "", "scoreType": "", "movements": [
-      {"exerciseId": "sit-up", "reps": "", "weight": "", "distance": "", "time": "60 ث", "notes": "طبّق قاعدة توافق التهدئة أعلاه — اشرح هنا سبب اختيار هذه الإطالة تحديداً لعضلات اليوم"},
-      {"exerciseId": "pull-up", "reps": "", "weight": "", "distance": "", "time": "45 ث", "notes": "إطالة ثابتة ثانية من دليل التوافق — اذكر المنطقة المستهدفة"}
+      {"exerciseId": "standing-quad-stretch", "reps": "", "weight": "", "distance": "", "time": "60 ث", "notes": "طبّق قاعدة توافق التهدئة أعلاه — استخدم exerciseId الإطالة نفسه من القائمة، لا تمريناً بديلاً — اشرح هنا سبب اختيار هذه الإطالة تحديداً لعضلات اليوم"},
+      {"exerciseId": "kneeling-hip-flexor-stretch", "reps": "", "weight": "", "distance": "", "time": "45 ث", "notes": "إطالة ثابتة ثانية من دليل التوافق — اذكر المنطقة المستهدفة"}
     ]}
   ]
 }
@@ -437,7 +438,7 @@ ${isBenchmarkDay ? '' : '- القوة: بلوك واحد، 1-3 حركات barbel
 - الميتكون: بلوك واحد عادة (أو بلوكين لو الصيغة تتطلب جزأين منفصلين)، 3-5 حركات مكثفة، مدتها متوافقة مع نظام الطاقة المستهدف
 - targetTimes: أوقات واقعية لإنهاء الميتكون لكل مستوى
 ${isBenchmarkDay ? '- الأكسسوار: مصفوفة بلوكات فارغة [] — البنشمارك هو كامل التحفيز' : '- الأكسسوار: بلوك واحد، 1-3 حركات حسب ميزانية الوقت — طبّق قاعدة التوافق أعلاه بدقة صارمة ولا تخرج عنها، واذكر السبب في notes'}
-- التهدئة (الإطالات): بلوك واحد بلا format خاص، 2-3 إطالات ثابتة (static stretches) فقط — لا تضع أي عنصر لخفض النبض أو تهدئة القلب (ممنوع: مشي/جري/تجديف خفيف "لخفض النبض") — كل عنصر يجب أن يكون إطالة عضلية ثابتة فعلية بمدة زمنية في حقل time. طبّق قاعدة توافق التهدئة أعلاه بدقة صارمة، واذكر السبب في notes
+- التهدئة (الإطالات): بلوك واحد بلا format خاص، 2-3 إطالات ثابتة (static stretches) فقط — لا تضع أي عنصر لخفض النبض أو تهدئة القلب (ممنوع: مشي/جري/تجديف خفيف "لخفض النبض") — كل عنصر يجب أن يكون إطالة عضلية ثابتة فعلية بمدة زمنية في حقل time. **استخدم دائماً exerciseId الإطالة المخصص من قاعدة التوافق أعلاه حرفياً — لا تستخدم تمريناً بديلاً غير مطابق (ممنوع مثلاً استخدام sit-up أو pull-up كبديل لإطالة اسمها مختلف)**، واذكر السبب في notes
 - إن كان اليوم Olympic (snatch/clean-and-jerk/power-clean)، اذكر في notes ملاحظة أمان عن تقنية الإفلات (bail-out) عند الفشل
 ${isPartnerDay ? `- 🤝 يوم بارتنر: العنوان (title وtitleEn) يجب أن يتضمن كلمة "بارتنر"/"Partner" بوضوح — طبّق قاعدة تماسك يوم البارتنر أعلاه حرفياً على كل قسم (إحماء/ميتكون/تهدئة)، والقوة تبقى فردية بلا تغيير` : ''}
 

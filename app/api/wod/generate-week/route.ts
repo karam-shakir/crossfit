@@ -144,19 +144,22 @@ export async function POST(req: NextRequest) {
   const patternRecentAccessory: Partial<Record<MovementPattern, string[]>> = {};
   const patternRecentWarmup: Partial<Record<MovementPattern, string[]>> = {};
   const patternRecentMetcon: Partial<Record<MovementPattern, string[]>> = {};
+  const patternRecentCooldown: Partial<Record<MovementPattern, string[]>> = {};
   for (const w of recentWodsRaw) {
     const p = (w as any).pattern as MovementPattern | undefined;
     if (!p) continue;
     const accIds = flattenMovements((w as any).accessory).map(e => e.exerciseId).filter(Boolean);
     const warmIds = flattenMovements((w as any).warmup).map(e => e.exerciseId).filter(Boolean);
     const metconIds = flattenMovements((w as any).metcon).map(e => e.exerciseId).filter(Boolean);
+    const cooldownIds = flattenMovements((w as any).cooldown).map(e => e.exerciseId).filter(Boolean);
     if (accIds.length) patternRecentAccessory[p] = [...(patternRecentAccessory[p] || []), ...accIds];
     if (warmIds.length) patternRecentWarmup[p] = [...(patternRecentWarmup[p] || []), ...warmIds];
     if (metconIds.length) patternRecentMetcon[p] = [...(patternRecentMetcon[p] || []), ...metconIds];
+    if (cooldownIds.length) patternRecentCooldown[p] = [...(patternRecentCooldown[p] || []), ...cooldownIds];
   }
 
   const patternLegend = (Object.keys(PATTERN_LABELS_AR) as MovementPattern[])
-    .map(p => `- ${PATTERN_LABELS_AR[p]}:\n  ${warmupGuidanceFor(p, patternRecentWarmup[p] || [])}\n  ${accessoryGuidanceFor(p, patternRecentAccessory[p] || [])}\n  ${cooldownGuidanceFor(p)}\n  ${metconGuidanceFor(p, patternRecentMetcon[p] || [])}`)
+    .map(p => `- ${PATTERN_LABELS_AR[p]}:\n  ${warmupGuidanceFor(p, patternRecentWarmup[p] || [])}\n  ${accessoryGuidanceFor(p, patternRecentAccessory[p] || [])}\n  ${cooldownGuidanceFor(p, patternRecentCooldown[p] || [])}\n  ${metconGuidanceFor(p, patternRecentMetcon[p] || [])}`)
     .join('\n');
 
   const isBenchmarkWeek = !!(benchmarkName && benchmarkDate);
@@ -410,8 +413,8 @@ ${latestCycleMeta?.progressionNote ? `\n🗒️ توصيتك أنت (المدر�
       ],
       "cooldown": [
         {"format": "", "scoreType": "", "movements": [
-          {"exerciseId": "sit-up",  "reps": "", "weight": "", "time": "60 ث", "notes": "طبّق دليل التوافق أعلاه حسب نمط اليوم — اذكر السبب هنا"},
-          {"exerciseId": "pull-up", "reps": "", "weight": "", "time": "45 ث", "notes": "إطالة ثابتة ثانية من دليل التوافق — اذكر المنطقة المستهدفة"}
+          {"exerciseId": "standing-quad-stretch",      "reps": "", "weight": "", "time": "60 ث", "notes": "طبّق دليل التوافق أعلاه حسب نمط اليوم — استخدم exerciseId الإطالة نفسه، لا تمريناً بديلاً — اذكر السبب هنا"},
+          {"exerciseId": "kneeling-hip-flexor-stretch", "reps": "", "weight": "", "time": "45 ث", "notes": "إطالة ثابتة ثانية من دليل التوافق — اذكر المنطقة المستهدفة"}
         ]}
       ]
     }
@@ -431,7 +434,7 @@ ${latestCycleMeta?.progressionNote ? `\n🗒️ توصيتك أنت (المدر�
 - الإحماء والتهدئة: بدون levels
 - كل حركة في accessory يجب أن تحتوي على levels بالمستويات الأربعة
 - الأكسسوار والتهدئة في كل يوم كروسفيت عادي: يجب أن يطابقا دليل التوافق الخاص بنمط ذلك اليوم في التسلسل أعلاه بدقة صارمة — لا اجتهاد حر
-- التهدئة (الإطالات): بلوك واحد، 2-3 إطالات ثابتة (static stretches) فقط في كل يوم — ممنوع أي عنصر لخفض النبض أو تهدئة القلب (مشي/جري/تجديف هادئ) — كل عنصر إطالة عضلية ثابتة فعلية بمدة زمنية في حقل time
+- التهدئة (الإطالات): بلوك واحد، 2-3 إطالات ثابتة (static stretches) فقط في كل يوم — ممنوع أي عنصر لخفض النبض أو تهدئة القلب (مشي/جري/تجديف هادئ) — كل عنصر إطالة عضلية ثابتة فعلية بمدة زمنية في حقل time. **استخدم دائماً exerciseId الإطالة المخصص من دليل التوافق أعلاه حرفياً — لا تمريناً بديلاً غير مطابق**
 - يوم البنشمارك (إن وُجد): strength = [] وaccessory = [] إجبارياً (مصفوفة بلوكات فارغة)، والميتكون هو حركات البنشمارك الرسمية فقط
 - أيام الراحة: isRest: true وكل المصفوفات فارغة []
 - لا تكرر نمط الميتكون في يومين متتاليين (AMRAP/للوقت/EMOM يتناوبان)
