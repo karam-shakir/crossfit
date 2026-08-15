@@ -73,6 +73,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
 
   // Weekly AI plan state
   const [weeklyLoading, setWeeklyLoading] = useState(false);
+  const [weeklyProvider, setWeeklyProvider] = useState<'claude' | 'gpt'>('claude'); // أي مزوّد قيد التوليد/آخر مزوّد استُخدم — للعرض فقط
   const [weeklyPlan, setWeeklyPlan] = useState<any>(null);
   const [weeklyError, setWeeklyError] = useState('');
   const [weeklyFromDate, setWeeklyFromDate] = useState(todaySA());
@@ -597,14 +598,15 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
   }
 
   // Weekly AI plan — full WODs
-  async function generateWeeklyPlan() {
+  async function generateWeeklyPlan(provider: 'claude' | 'gpt' = 'claude') {
+    setWeeklyProvider(provider);
     setWeeklyLoading(true);
     setWeeklyError('');
     setWeeklyPlan(null);
     setPlanSaved(false);
     setViewingSaved(null);
     try {
-      const res = await fetch('/api/wod/generate-week', {
+      const res = await fetch(provider === 'gpt' ? '/api/wod/generate-week-gpt' : '/api/wod/generate-week', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1758,18 +1760,26 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
               {weeklyError && (
                 <div className="bg-red-900/30 border border-red-700/50 rounded-xl p-3 text-red-400 text-xs">⚠️ {weeklyError}</div>
               )}
-              <button onClick={generateWeeklyPlan} disabled={weeklyLoading}
+              <button onClick={() => generateWeeklyPlan('claude')} disabled={weeklyLoading}
                 className={`w-full py-4 rounded-2xl text-white font-extrabold text-base transition-all shadow-lg disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed ${
                   weekMode === 'mixed'
                     ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-900/30'
                     : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-indigo-900/30'
                 }`}>
-                {weeklyLoading ? (
+                {weeklyLoading && weeklyProvider === 'claude' ? (
                   <span className="flex items-center justify-center gap-2"><span className="animate-spin">⚙️</span> يحلل التمارين السابقة ويبني الخطة...</span>
                 ) : weekMode === 'mixed' ? (
                   <><span>🤸</span> توليد أسبوع مختلط CrossFit + Calisthenics</>
                 ) : (
                   <><span>🤖</span> توليد الخطة الأسبوعية</>
+                )}
+              </button>
+              <button onClick={() => generateWeeklyPlan('gpt')} disabled={weeklyLoading}
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white font-bold text-sm transition-all shadow-lg shadow-teal-900/30 disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed">
+                {weeklyLoading && weeklyProvider === 'gpt' ? (
+                  <span className="flex items-center justify-center gap-2"><span className="animate-spin">⚙️</span> يحلل التمارين السابقة ويبني الخطة...</span>
+                ) : (
+                  <>✨ توليد الخطة الأسبوعية بـ GPT</>
                 )}
               </button>
               {weeklyLoading && (
