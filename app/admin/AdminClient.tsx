@@ -642,6 +642,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
             notes: wod.notes || '',
             aiTheme: wod.aiTheme || '',
             pattern: wod.pattern || null,
+            stimulusType: wod.stimulusType || null,
             isPartnerWod: wod.isPartnerWod || false,
             partnerFormat: wod.partnerFormat || null,
             isCalisthenics: wod.isCalisthenics || false,

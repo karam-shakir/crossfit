@@ -313,6 +313,84 @@ export function movementBlacklistGuidance(pattern?: MovementPattern): string {
 ٣) لا تجمع في نفس الميتكون: Muscle-Up + Deadlift ثقيل، أو Muscle-Up Kipping + Toes-to-Bar، أو Rope Climb + KB Swing ثقيل/Farmer's Carry، أو Chest-to-Bar Pull-Up + Toes-to-Bar (تكديس مهارة عالية أو قبضة مزدوجة يرفع خطر الفشل التقني تحت التعب بشكل حاد).`;
 }
 
+// ═══════════════════════════════════════════════════════════════
+// قاعدة ٤ — دوران نوع التحفيز اليومي عبر الأسبوع (Stimulus Rotation)
+// راجع docs/movement-blacklist-crossfit.md قاعدة ٤ للتوثيق الكامل.
+//
+// تصميم التقاطع مع الأنظمة القائمة (كان غير محدد في الوثيقة، صُمِّم هنا صراحة):
+// - محور مستقل تماماً عن نمط الحركة (Squat/Hinge/Push/Pull/Olympic): النمط يحدد "أي حركة قوة"،
+//   نوع التحفيز يحدد "طابع الميتكون" (مدة/وتيرة/فئة معدات) فقط — لا تعارض لأن أحدهما لا يُقيّد
+//   اختيار حركة القوة والآخر لا يُقيّد اختيار حركة الميتكون بالـ id، فقط خصائصه العامة. الاثنان
+//   يُطبَّقان معاً بلا أولوية تفوز على الأخرى لأنهما يحكمان جانبين مختلفين من نفس اليوم.
+// - مرحلة دورة التدريج (تأسيس/بناء/ذروة/تفريغ): في أسبوع "تفريغ" تحديداً — حيث القاعدة القائمة
+//   أصلاً تمنع أي يوم HEAVY كلياً — يُستبعد نوعا التحفيز الأعلى شدة (القوة الانفجارية والتكييف
+//   الثقيل) من دورة ذلك الأسبوع بالكامل، فيبقى فقط التحمل العضلي والمحرك الهوائي يتناوبان.
+// - أيام الراحة/البنشمارك/البارتنر/Hyrox/Calisthenics: لا تأخذ نوع تحفيز إطلاقاً (نفس معاملة
+//   حقل pattern تماماً) — الدوران يُحسب فقط على أيام الكروسفيت العادية النشطة.
+// ═══════════════════════════════════════════════════════════════
+
+export type StimulusType = 'explosive-power' | 'muscular-endurance' | 'aerobic-engine' | 'heavy-conditioning';
+
+export const STIMULUS_LABELS_AR: Record<StimulusType, string> = {
+  'explosive-power':    'القوة الانفجارية (Explosive Power)',
+  'muscular-endurance': 'التحمل العضلي (Muscular Endurance)',
+  'aerobic-engine':      'المحرك الهوائي (Aerobic Engine)',
+  'heavy-conditioning':  'التكييف الثقيل (Heavy Conditioning)',
+};
+
+const STIMULUS_ROTATION: StimulusType[] = ['explosive-power', 'muscular-endurance', 'aerobic-engine', 'heavy-conditioning'];
+const DELOAD_ALLOWED_STIMULI: StimulusType[] = ['muscular-endurance', 'aerobic-engine'];
+
+const STIMULUS_METCON_PROFILE: Record<StimulusType, { durationAr: string; profileAr: string }> = {
+  'explosive-power':    { durationAr: 'قصيرة جداً (أقل من ٨ دقائق)', profileAr: 'شدة قصوى وحجم منخفض — تكرارات قليلة من حركات ثقيلة/قفز/أولمبية أو مركّبات قوة قصيرة' },
+  'muscular-endurance': { durationAr: 'متوسطة (١٢-١٨ دقيقة)', profileAr: 'تكرارات متوسطة-عالية من حركات جمناستيك/دمبل — إنهاك عضلي موضعي، ليس حملاً قلبياً تنفسياً كعنصر أساسي' },
+  'aerobic-engine':      { durationAr: 'طويلة (١٨+ دقيقة أو AMRAP طويل)', profileAr: 'حركات كارديو مونوستركتشورال (جري/تجديف/دراجة هواء/سكي إرغ) كعنصر أساسي في الميتكون، لا ثانوي فقط' },
+  'heavy-conditioning':  { durationAr: 'متوسطة (١٠-١٥ دقيقة)', profileAr: 'حمل خارجي متوسط-ثقيل مختلط (بار/دمبل/كيتل بيل) بوتيرة عالية، بلا معدات كارديو أساسية' },
+};
+
+/** يقترح نوع التحفيز التالي — نفس منطق suggestPattern (كسر تعادل يدور عبر rotationOffset لمنع احتكار نوع واحد أسبوعياً) */
+export function suggestStimulusType(
+  avoid?: StimulusType,
+  usageCount?: Partial<Record<StimulusType, number>>,
+  rotationOffset = 0,
+  cyclePhase?: _CyclePhase,
+): StimulusType {
+  const pool = cyclePhase === 'deload' ? DELOAD_ALLOWED_STIMULI : STIMULUS_ROTATION;
+  const n = pool.length;
+  const offset = ((rotationOffset % n) + n) % n;
+  const rotated = [...pool.slice(offset), ...pool.slice(0, offset)];
+  const candidates = rotated.filter(s => s !== avoid);
+  const pickFrom = candidates.length ? candidates : rotated;
+  const counts = usageCount || {};
+  let best = pickFrom[0];
+  let bestCount = counts[best] ?? 0;
+  for (const s of pickFrom) {
+    const c = counts[s] ?? 0;
+    if (c < bestCount) { best = s; bestCount = c; }
+  }
+  return best;
+}
+
+/** يبني تسلسل أنواع تحفيز لعدد من الأيام النشطة — بلا تكرار متتالٍ، توزيع عادل، واستبعاد الأنواع الأعلى شدة في أسبوع التفريغ */
+export function buildStimulusSequence(activeDaysCount: number, cyclePhase?: _CyclePhase, rotationOffset = 0): StimulusType[] {
+  const seq: StimulusType[] = [];
+  let last: StimulusType | undefined;
+  const usageCount: Partial<Record<StimulusType, number>> = {};
+  for (let i = 0; i < activeDaysCount; i++) {
+    const next = suggestStimulusType(last, usageCount, rotationOffset, cyclePhase);
+    seq.push(next);
+    usageCount[next] = (usageCount[next] ?? 0) + 1;
+    last = next;
+  }
+  return seq;
+}
+
+/** نص إرشادي لنوع تحفيز اليوم — يُقيّد مدة/وتيرة/فئة معدات الميتكون فقط، لا يُلغي قاعدة توافق الميتكون مع نمط اليوم (يُطبَّقان معاً) */
+export function stimulusGuidanceFor(stimulus: StimulusType): string {
+  const p = STIMULUS_METCON_PROFILE[stimulus];
+  return `🔄 نوع تحفيز اليوم (دوران أسبوعي مستقل عن نمط الحركة — قاعدة ٤ من محظورات دمج الحركات): ${STIMULUS_LABELS_AR[stimulus]}. مدة الميتكون: ${p.durationAr}. طابعه: ${p.profileAr}. هذا يُقيّد مدة/وتيرة/فئة حركات الميتكون فقط — لا يُلغي قاعدة توافق الميتكون مع نمط اليوم؛ اختر حركات تحقق الاثنين معاً.`;
+}
+
 export const PATTERN_ACCESSORY_MAP: Record<MovementPattern, { targetsAr: string; suggestedIds: string[]; rationale: string }> = {
   squat:   { targetsAr: 'الصدر + الكتف الأمامي + الترايسبس',        suggestedIds: ['push-up', 'handstand-pushup', 'shoulder-press', 'tricep-extension', 'lateral-raise'], rationale: 'يوم القرفصاء يستهدف الأرجل والجذع بالكامل — الأكسسوار يوازن بتحميل الجزء العلوي الدافع الذي لم يعمل' },
   hinge:   { targetsAr: 'الصدر + الكتف + الترايسبس',                 suggestedIds: ['push-up', 'shoulder-press', 'handstand-pushup', 'tricep-extension', 'lateral-raise'], rationale: 'الرفعة الميتة تستنزف السلسلة الخلفية (ظهر/مؤخرة/أوتار) — الأكسسوار يوازن بالدفع الأمامي' },

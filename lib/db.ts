@@ -1,6 +1,6 @@
 import { getDb } from './mongodb';
 import { unstable_cache } from 'next/cache';
-import type { MovementPattern, PartnerFormat } from './crossfitProgramming';
+import type { MovementPattern, PartnerFormat, StimulusType } from './crossfitProgramming';
 
 // ===================== INTERFACES =====================
 
@@ -70,6 +70,7 @@ export interface Wod {
   notes?: string;
   aiTheme?: string;
   pattern?: MovementPattern;
+  stimulusType?: StimulusType;
   targetTimes?: Partial<Record<'beginner'|'intermediate'|'advanced'|'elite', string>>;
   isCalisthenics?: boolean;
   isPartnerWod?: boolean;

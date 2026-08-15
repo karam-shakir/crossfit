@@ -27,6 +27,7 @@ import {
   HEAVY_BY_DEFAULT_PATTERNS, PATTERN_ACCESSORY_MAP, PATTERN_METCON_MAP, PATTERN_COOLDOWN_MAP,
   EXERCISE_FOCUS_CLASS, EXERCISE_MUSCLE_GROUP, RULE3_BANNED_METCON_PAIRS,
   stripRule1Violations, stripRule3Violations, detectRule2HeavyOverlap,
+  StimulusType, STIMULUS_LABELS_AR, buildStimulusSequence, suggestStimulusType,
 } from '../lib/crossfitProgramming';
 import { computeNextCyclePhase, CyclePhase, CYCLE_ORDER } from '../lib/periodization';
 import { flattenMovements } from '../lib/wodBlocks';
@@ -234,6 +235,25 @@ function runLogicChecks() {
     const rule2Warnings = detectRule2HeavyOverlap(['back-squat'], ['front-squat', 'burpee']);
     check(S, 'detectRule2HeavyOverlap يرصد تكديس مركّز+مركّز من نفس المجموعة (back-squat+front-squat) بلا حذف',
       rule2Warnings.length === 1, rule2Warnings.join(' | '));
+
+    // قاعدة ٤ (دوران نوع التحفيز) — لا تكرار متتالٍ عبر تسلسل طويل، وتوزيع عادل لأنواع الأربعة
+    const stimulusSeq = buildStimulusSequence(12, 'build', 0);
+    const noConsecutiveRepeat = stimulusSeq.every((s, i) => i === 0 || s !== stimulusSeq[i - 1]);
+    check(S, 'buildStimulusSequence: لا تكرار متتالٍ عبر 12 يوماً نشطاً (مرحلة بناء)', noConsecutiveRepeat, stimulusSeq.join(' → '));
+    const stimulusCounts = new Set(stimulusSeq).size;
+    check(S, 'buildStimulusSequence: تُستخدم كل الأنواع الأربعة عبر تسلسل طويل بما فيه الكفاية', stimulusCounts === 4, `أنواع مستخدمة: ${stimulusCounts}/4`);
+
+    // قاعدة ٤ — أسبوع تفريغ: النوعان الأعلى شدة (القوة الانفجارية والتكييف الثقيل) يجب ألا يظهرا إطلاقاً
+    const deloadSeq = buildStimulusSequence(8, 'deload', 0);
+    const noHighIntensityInDeload = deloadSeq.every(s => s === 'muscular-endurance' || s === 'aerobic-engine');
+    check(S, 'buildStimulusSequence: أسبوع التفريغ يستبعد القوة الانفجارية والتكييف الثقيل كلياً',
+      noHighIntensityInDeload, deloadSeq.join(' → '));
+
+    // قاعدة ٤ — كسر التعادل يدور مع rotationOffset (نفس منطق عدالة تناوب الأنماط أعلاه)
+    const stimulusTieBreakWinners = [0, 1, 2, 3].map(offset => suggestStimulusType(undefined, {}, offset, 'build'));
+    const uniqueStimulusWinners = new Set(stimulusTieBreakWinners).size;
+    check(S, 'suggestStimulusType: الفائز الأول يتغيّر عبر rotationOffset مختلفة (لا نوع واحد يحتكر البداية)',
+      uniqueStimulusWinners > 1, stimulusTieBreakWinners.join(', '));
   }
 }
 

@@ -12,6 +12,7 @@ import {
   suggestPartnerFormat, partnerFormatGuidanceFor, PARTNER_SESSION_COHERENCE_GUIDANCE, PARTNER_FORMAT_LABELS_AR,
   heavyDaySpacingGuidance,
   movementBlacklistGuidance, stripRule1Violations, stripRule3Violations, detectRule2HeavyOverlap,
+  StimulusType, STIMULUS_LABELS_AR, buildStimulusSequence, stimulusGuidanceFor,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
 import { flattenMovements } from '@/lib/wodBlocks';
@@ -144,6 +145,11 @@ export async function POST(req: NextRequest) {
   // في كل أسبوع من 6+ أيام نشطة؛ الفائز بالتعادل يتغيّر مع تقدّم رقم الدورة أسبوعياً
   const patternSequence = buildPatternSequence(activeCrossfitDays, undertrained, newCycleIndex);
 
+  // ═══ تسلسل حتمي لنوع التحفيز الأسبوعي (قاعدة ٤ من محظورات دمج الحركات) — محور مستقل عن تسلسل
+  // الأنماط أعلاه، بنفس عدد الأيام النشطة ونفس rotationOffset لثبات منطق كسر التعادل عبر الأسابيع.
+  // في أسبوع تفريغ يُستبعد النوعان الأعلى شدة تلقائياً (راجع buildStimulusSequence) ═══
+  const stimulusSequence = buildStimulusSequence(activeCrossfitDays, cyclePhase, newCycleIndex);
+
   // ═══ تجميع الأكسسوار/الإحماء المُستخدَمَين مؤخراً لكل نمط — يُمرَّر كقائمة تجنّب حتى لا يتكرر نفس التمرين
   // بحرفيته عبر أسابيع متتالية بنفس النمط (المشكلة المرصودة فعلياً: نفس تمرينَي الأكسسوار طوال أسبوعين كاملين) ═══
   const patternRecentAccessory: Partial<Record<MovementPattern, string[]>> = {};
@@ -275,6 +281,16 @@ ${(() => {
   }
   return flags.length ? `\n🔍 رُصد فعلياً في هذا التسلسل: ${flags.join(' ')}` : '';
 })()}
+
+**══ 🔄 تسلسل نوع التحفيز الحتمي عبر نفس أيام الكروسفيت النشطة (قاعدة ٤ — محور مستقل عن تسلسل الأنماط أعلاه، يُطبَّق معه لا بدلاً منه) ══**
+
+طبّق هذا الترتيب بنفس تتابع اليوم (اليوم الأول من أيام الكروسفيت = النوع الأول، وهكذا — نفس عدّ الأيام المستخدَم في تسلسل الأنماط، تجاهل الراحة/Hyrox/Calisthenics/البنشمارك):
+${stimulusSequence.map((s, i) => `${i + 1}. ${STIMULUS_LABELS_AR[s]}`).join('\n')}
+${cyclePhase === 'deload' ? '⚠️ أسبوع تفريغ: النوعان الأعلى شدة (القوة الانفجارية والتكييف الثقيل) مُستبعدان تلقائياً من هذا التسلسل — لن تراهما في القائمة أعلاه.' : ''}
+هذا التسلسل يُقيّد مدة/وتيرة/فئة معدات الميتكون لكل يوم فقط — لا يُغيّر نمط القوة المحدد له، ولا يُلغي قاعدة توافق الميتكون مع نمط اليوم أدناه؛ اختر حركات ميتكون تحقق الاثنين معاً (تطابق نمط اليوم + تناسب طابع نوع التحفيز).
+
+دليل كل نوع تحفيز (طبّقه حرفياً على اليوم الذي يحمل هذا الرقم في التسلسل أعلاه):
+${(Object.keys(STIMULUS_LABELS_AR) as StimulusType[]).map(s => `- ${stimulusGuidanceFor(s)}`).join('\n')}
 
 **دليل التوافق لكل نمط (طبّقه حرفياً على اليوم الذي يحمل هذا النمط):**
 ${patternLegend}
@@ -546,6 +562,9 @@ ${latestCycleMeta?.progressionNote ? `\n🗒️ توصيتك أنت (المدر�
         };
         if (skip) return { ...withValidatedSections, isPartnerWod: false, partnerFormat: undefined };
         const pattern = patternSequence[patternIdx] ?? patternSequence[patternSequence.length - 1];
+        // stimulusSequence بنفس طول وترتيب patternSequence (نُبنيا من نفس activeCrossfitDays) — نفس
+        // المؤشّر patternIdx يُستخدم للاثنين معاً، فلا حاجة لعدّاد منفصل
+        const stimulusType: StimulusType = stimulusSequence[patternIdx] ?? stimulusSequence[stimulusSequence.length - 1];
         patternIdx++;
         // تصحيح صيغة البارتنر إن اختار النموذج مفتاحاً غير صالح أو نسيه رغم isPartnerWod:true —
         // نفس منهج وسم النمط: لا نثق بحقل حر من النموذج دون تحقق
@@ -553,7 +572,7 @@ ${latestCycleMeta?.progressionNote ? `\n🗒️ توصيتك أنت (المدر�
         const partnerFormat: PartnerFormat | undefined = isPartnerWod
           ? (VALID_PARTNER_FORMATS.includes(day.partnerFormat) ? day.partnerFormat : suggestPartnerFormat(pattern))
           : undefined;
-        return { ...withValidatedSections, pattern, isPartnerWod, partnerFormat };
+        return { ...withValidatedSections, pattern, stimulusType, isPartnerWod, partnerFormat };
       });
     }
 

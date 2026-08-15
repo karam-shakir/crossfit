@@ -12,6 +12,7 @@ import {
   suggestPartnerFormat, partnerFormatGuidanceFor, PARTNER_SESSION_COHERENCE_GUIDANCE, PARTNER_FORMAT_LABELS_AR,
   HEAVY_BY_DEFAULT_PATTERNS,
   movementBlacklistGuidance, stripRule1Violations, stripRule3Violations, detectRule2HeavyOverlap,
+  StimulusType, suggestStimulusType, stimulusGuidanceFor,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
 import { flattenMovements } from '@/lib/wodBlocks';
@@ -154,6 +155,17 @@ ${muscleGroupLog.map(d => `${d.date}: [${d.muscles.join(' + ')}] — شدة: ${d
   const cyclePhase: CyclePhase = dailyForcePhase
     ?? latestCycleMeta?.cyclePhase
     ?? computeNextCyclePhase(null).phase; // لا توجد دورة مخزّنة بعد — ابدأ من التأسيس
+
+  // ═══ تحديد نوع التحفيز الفعلي بشكل حتمي (قاعدة ٤ من محظورات دمج الحركات) — نفس منطق تحديد النمط
+  // أعلاه لكن على محور مستقل (طابع الميتكون لا حركة القوة)، مع استبعاد الأنواع الأعلى شدة في أسبوع تفريغ ═══
+  const stimulusUsageCount: Partial<Record<StimulusType, number>> = {};
+  for (const w of last7Wods) {
+    const s = (w as any).stimulusType as StimulusType | undefined;
+    if (s) stimulusUsageCount[s] = (stimulusUsageCount[s] ?? 0) + 1;
+  }
+  const effectiveStimulus: StimulusType = suggestStimulusType(
+    (lastWod as any)?.stimulusType, stimulusUsageCount, latestCycleMeta?.cycleIndex ?? 0, cyclePhase
+  );
 
   const benchmarkGuidance = wodMode === 'crossfit' && benchmarkName ? getBenchmarkGuidance(benchmarkName) : '';
   const isBenchmarkDay = !!benchmarkGuidance;
@@ -313,7 +325,7 @@ ${isBackToBackHeavyDay ? `\n**⚠️ قاعدة شدة إجبارية — تبا
    - "Chipper": تسلسل من 5-7 تمارين يُنجز مرة واحدة بدون تكرار الجولة
    - "EMOM": x تمارين في كل دقيقة لـ 10-20 دقيقة — استخدمه لضبط الإيقاع وليس للحد الأقصى
 ${!isBenchmarkDay ? `✦ ⚠️ **قاعدة توافق الميتكون مع نمط اليوم (${effectivePattern}) — إجبارية:**\n${metconGuidanceFor(effectivePattern, lastMetconIds)} — الأكسسوار وحده مسؤول عن الموازنة الكاملة بالنمط المعاكس، لا الميتكون أيضاً` : ''}
-${!isBenchmarkDay ? `\n${movementBlacklistGuidance(effectivePattern)}` : ''}
+${!isBenchmarkDay ? `\n${movementBlacklistGuidance(effectivePattern)}\n\n${stimulusGuidanceFor(effectiveStimulus)}` : ''}
 ✦ الميتكون بلوك واحد عادة، format = صيغة الميتكون حرفياً ("FOR TIME" أو "AMRAP x N MIN" أو "EMOM x N MIN"). لا يلزم أن تكون التكرارات متطابقة بين كل الحركات — سلّم غير متماثل مسموح ومرغَّب أحياناً (مثال: حركة أولى 10-15-20-25-30 مقابل حركة ثانية بالتوازي 15-25-35-45) إن كان يخدم توازن الحمل بين الحركتين. عند وجود بنشمارك RX رسمي محدد الأوزان، اذكر الوزن الدقيق في حقل weight لا نطاقاً عاماً
 ✦ التهدئة: تمطيط هادئ للمجموعات العضلية المُستنزفة اليوم حسب القاعدة أعلاه
 
@@ -512,6 +524,7 @@ ${isPartnerDay ? `- 🤝 يوم بارتنر: العنوان (title وtitleEn) �
       notes: generated.notes || '',
       aiTheme: generated.theme || '',
       pattern: wodMode === 'crossfit' && !isBenchmarkDay ? effectivePattern : undefined,
+      stimulusType: wodMode === 'crossfit' && !isBenchmarkDay ? effectiveStimulus : undefined,
       isPartnerWod: isPartnerDay,
       partnerFormat: isPartnerDay ? (partnerFormat ?? undefined) : undefined,
       targetTimes: generated.targetTimes || null,
