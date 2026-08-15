@@ -105,6 +105,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
 
   // AI generation state
   const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiGeneratingProvider, setAiGeneratingProvider] = useState<'claude' | 'gpt'>('claude'); // أي مزوّد قيد التوليد/آخر مزوّد استُخدم — للعرض فقط
   const [aiError, setAiError] = useState('');
   const [aiTheme, setAiTheme] = useState('');
   const [showAiPanel, setShowAiPanel] = useState(false);
@@ -543,13 +544,16 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
     }));
   }
 
-  // AI Generate WOD
-  async function generateAiWod() {
+  // AI Generate WOD — provider: 'claude' (افتراضي) أو 'gpt'. نفس البرومت ونفس التحقق ونفس محظورات
+  // دمج الحركات لكلا المزوّدين (lib/wodDailyGeneration.ts) — الفرق الوحيد هو أي نموذج يُستدعى فعلياً،
+  // ما يسمح بمقارنة عادلة بين Claude وGPT لنفس الإعدادات بالضبط
+  async function generateAiWod(provider: 'claude' | 'gpt' = 'claude') {
     setAiGenerating(true);
+    setAiGeneratingProvider(provider);
     setAiError('');
     setAiTheme('');
     try {
-      const res = await fetch('/api/wod/generate', {
+      const res = await fetch(provider === 'gpt' ? '/api/wod/generate-gpt' : '/api/wod/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1211,19 +1215,27 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
                         <div className="bg-red-900/30 border border-red-700/50 rounded-xl p-3 text-red-400 text-xs">⚠️ {aiError}</div>
                       )}
 
-                      {/* Generate Button */}
-                      <button onClick={generateAiWod} disabled={aiGenerating}
+                      {/* Generate Buttons — نفس البرومت والتحقق تماماً، الفرق فقط أي مزوّد ذكاء اصطناعي يُستدعى (lib/wodDailyGeneration.ts) */}
+                      <button onClick={() => generateAiWod('claude')} disabled={aiGenerating}
                         className={`w-full py-3.5 rounded-xl disabled:from-gray-700 disabled:to-gray-700 text-white font-extrabold text-sm transition-all flex items-center justify-center gap-2 shadow-lg ${
                           wodMode === 'calisthenics'
                             ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-900/30'
                             : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-purple-900/30'
                         }`}>
-                        {aiGenerating ? (
+                        {aiGenerating && aiGeneratingProvider === 'claude' ? (
                           <><span className="animate-spin">⚙️</span> يحلل الأسبوع ويولد التمرين...</>
                         ) : wodMode === 'calisthenics' ? (
                           <>🤸 توليد تمرين Calisthenics</>
                         ) : (
                           <>🤖 توليد WOD بـ Claude AI</>
+                        )}
+                      </button>
+                      <button onClick={() => generateAiWod('gpt')} disabled={aiGenerating}
+                        className="w-full py-3.5 rounded-xl bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 disabled:from-gray-700 disabled:to-gray-700 text-white font-extrabold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-teal-900/30">
+                        {aiGenerating && aiGeneratingProvider === 'gpt' ? (
+                          <><span className="animate-spin">⚙️</span> يحلل الأسبوع ويولد التمرين...</>
+                        ) : (
+                          <>✨ توليد WOD بـ GPT</>
                         )}
                       </button>
                       {aiGenerating && (
