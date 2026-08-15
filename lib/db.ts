@@ -180,14 +180,18 @@ export async function updateMemberFields(id: string, fields: Record<string, any>
 
 // ===================== EXERCISES =====================
 
-// Exercises are static — cached for 1 hour (they rarely change)
+// Exercises are static — cached for 1 hour (they rarely change). المفتاح تغيّر إلى exercises-v2
+// لإبطال كاش أي نشر سابق فوراً — سكربتات seed-*.ts تكتب مباشرة على MongoDB بمعزل تام عن التطبيق،
+// فكاش Vercel المستمر بين عمليات النشر (unstable_cache) لا يعرف بالكتابة ويستمر بإرجاع القائمة القديمة
+// حتى انتهاء الـ TTL (حتى ساعة كاملة) — رُصد هذا فعلياً بعد زرع إطالات التهدئة الـ٢٤: لوحة التحكم
+// استمرت تعرض القائمة القديمة رغم أن البيانات في قاعدة البيانات كانت صحيحة فعلاً
 export const getExercises = unstable_cache(
   async (): Promise<Exercise[]> => {
     const db = await getDb();
     const docs = await db.collection('exercises').find({}).toArray();
     return stripAll<Exercise>(docs);
   },
-  ['exercises'],
+  ['exercises-v2'],
   { revalidate: 3600 }
 );
 
