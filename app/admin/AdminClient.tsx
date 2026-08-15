@@ -132,6 +132,17 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
   const CROSSFIT_EXERCISES = EXERCISES;
   const CALISTHENICS_EXERCISES = getCalisthenicsExercises();
 
+  // فلترة واسعة لمحرر البلوكات اليدوي: كل تبويب يُبرز التصنيفات (category الفعلية في مجموعة exercises
+  // بقاعدة البيانات — قيم عربية حرة، منفصلة عن enum الكود الإنجليزي) الأقرب له أولاً كمجموعة منفصلة،
+  // مع إبقاء بقية التمارين متاحة كخيار ثانوي بلا تقييد — المدرب قد يحتاج شرعياً وضع أي تمرين في أي قسم
+  const SECTION_PRIMARY_CATEGORIES: Record<string, string[]> = {
+    warmup:    ['جمناستيك'],
+    strength:  ['قوة', 'رفع أثقال أولمبي'],
+    metcon:    ['وود', 'تحمل', 'قوة وتحمل'],
+    accessory: ['وود', 'قوة'],
+    cooldown:  ['إطالة'],
+  };
+
   // ===== Fix Cooldown =====
   const [fixCooldownFrom, setFixCooldownFrom] = useState(todaySA());
   const [fixCooldownTo, setFixCooldownTo] = useState(todaySA());
@@ -1322,9 +1333,27 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
                                   onChange={e => updateExercise(s.key, bi, i, 'exerciseId', e.target.value)}
                                   className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500">
                                   <option value="">اختر التمرين</option>
-                                  {exercises.map((e: any) => (
-                                    <option key={e.id} value={e.id}>{e.nameAr} ({e.nameEn})</option>
-                                  ))}
+                                  {(() => {
+                                    const primaryCats = SECTION_PRIMARY_CATEGORIES[s.key] || [];
+                                    const primary = exercises.filter((e: any) => primaryCats.includes(e.category));
+                                    const secondary = exercises.filter((e: any) => !primaryCats.includes(e.category));
+                                    return (
+                                      <>
+                                        {primary.length > 0 && (
+                                          <optgroup label="✅ الأنسب لهذا القسم">
+                                            {primary.map((e: any) => (
+                                              <option key={e.id} value={e.id}>{e.nameAr} ({e.nameEn})</option>
+                                            ))}
+                                          </optgroup>
+                                        )}
+                                        <optgroup label="بقية التمارين">
+                                          {secondary.map((e: any) => (
+                                            <option key={e.id} value={e.id}>{e.nameAr} ({e.nameEn})</option>
+                                          ))}
+                                        </optgroup>
+                                      </>
+                                    );
+                                  })()}
                                 </select>
                                 <button onClick={() => removeExercise(s.key, bi, i)}
                                   className="w-8 h-8 rounded-lg bg-red-900 hover:bg-red-700 flex items-center justify-center text-sm transition-colors flex-shrink-0">
