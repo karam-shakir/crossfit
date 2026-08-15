@@ -134,6 +134,16 @@ export const PATTERN_ACCESSORY_MAP: Record<MovementPattern, { targetsAr: string;
   olympic: { targetsAr: 'الجذع + استقرار الكتف + الكاحل',            suggestedIds: ['sit-up', 'toes-to-bar', 'push-up', 'plank', 'russian-twist'], rationale: 'الحركات الأولمبية (خطف/نظيفة) تحتاج استقرار جذع ومفاصل لا تحميلاً عضلياً إضافياً ثقيلاً بعدها' },
 };
 
+// ═══ مكتبة الميتكون الخاص بكل نمط — تمنع أن يعاكس الميتكون نمط قوة اليوم بالكامل
+// (المشكلة المرصودة فعلياً: يوم دفع كانت قوته دفعاً والميتكون بالكامل تقريباً سحباً) ═══
+export const PATTERN_METCON_MAP: Record<MovementPattern, { targetsAr: string; suggestedIds: string[]; rationale: string }> = {
+  squat:   { targetsAr: 'الأرجل والمؤخرة — نفس تركيز نمط القرفصاء', suggestedIds: ['back-squat', 'front-squat', 'overhead-squat', 'thruster', 'wall-ball', 'air-squat', 'box-jump', 'box-jump-over', 'pistol-squat', 'dumbbell-thruster', 'kettlebell-goblet-squat', 'bulgarian-split-squat'], rationale: 'الميتكون يجب أن يواصل استنزاف نفس نمط القوة الرئيسي لليوم لا يعاكسه بالكامل — وإلا فقد اليوم هويته التدريبية رغم اسمه' },
+  hinge:   { targetsAr: 'أوتار الركبة وأسفل الظهر والمؤخرة — نفس تركيز نمط الرفعة', suggestedIds: ['deadlift', 'kettle-bell-swing', 'romanian-deadlift', 'sumo-deadlift', 'kettlebell-snatch', 'kettlebell-clean', 'dumbbell-snatch'], rationale: 'نفس المنطق — نمط الرفعة يحتاج ميتكون يواصل نفس السلسلة الخلفية لا يهملها' },
+  push:    { targetsAr: 'الأكتاف والصدر والترايسبس — نفس تركيز نمط الدفع', suggestedIds: ['shoulder-press', 'push-press', 'thruster', 'wall-ball', 'handstand-pushup', 'push-up', 'bench-press', 'dumbbell-push-press', 'devils-press', 'dumbbell-thruster'], rationale: 'يوم الدفع قوته دفع — إن كان الميتكون سحباً بالكامل (pull-up/toes-to-bar فقط) يفقد اليوم هويته رغم اسمه، كما رُصد فعلياً سابقاً' },
+  pull:    { targetsAr: 'الظهر العريض والبايسبس والقبضة — نفس تركيز نمط السحب', suggestedIds: ['power-clean', 'snatch', 'pull-up', 'kipping-pull-up', 'chest-to-bar-pull-up', 'toes-to-bar', 'muscle-up', 'rope-climb', 'row', 'bent-over-row', 'pendlay-row', 'dumbbell-row'], rationale: 'نفس المنطق — نمط السحب يحتاج ميتكون يواصل نفس مجموعة السحب' },
+  olympic: { targetsAr: 'الجسم الكامل بتقنية انفجارية — نفس تركيز النمط الأولمبي', suggestedIds: ['snatch', 'clean-and-jerk', 'power-clean', 'overhead-squat', 'hang-power-clean', 'hang-power-snatch', 'split-jerk', 'dumbbell-snatch', 'dumbbell-clean-and-jerk', 'dumbbell-power-clean'], rationale: 'نمط الأولمبي تقني بطبيعته — الميتكون يجب أن يحافظ على عنصر تقني ولو خفيف الوزن، لا يتحول لتحمّل بحت' },
+};
+
 export const PATTERN_COOLDOWN_MAP: Record<MovementPattern, { targetsAr: string; stretchNamesAr: string[]; rationale: string }> = {
   squat:   { targetsAr: 'الرباعية (Quad) + عضلة الورك القابضة (Hip Flexor) + المؤخرة (Glute)',
              stretchNamesAr: ['إطالة الرباعية واقفاً (Standing Quad Stretch)', 'إطالة الورك القابضة على الركبة (Kneeling Hip Flexor Stretch)', 'وضعية الحمامة (Pigeon Pose)', 'إطالة الكاوتش على الحائط (Couch Stretch)', 'وضعية الرقم 4 (Figure-4 Stretch)'],
@@ -258,6 +268,15 @@ export function accessoryGuidanceFor(pattern: MovementPattern, avoidIds: string[
   const options = (pool.length ? pool : a.suggestedIds).join(' أو ');
   const avoidNote = avoidIds.length ? ` — لا تستخدم ${avoidIds.join(' أو ')} لأنه استُخدم في آخر جلسة بنفس النمط، نوّع الاختيار` : '';
   return `الأكسسوار يجب أن يستهدف: ${a.targetsAr} (اختر من: ${options}${avoidNote}) — السبب: ${a.rationale}`;
+}
+
+/** يبني نص إرشادي للميتكون — يضمن أنه يحتوي حركة واحدة على الأقل من نفس نمط قوة اليوم، لا يعاكسه بالكامل. avoidIds يقلل تكرار حرفي لنفس الحركة الرئيسية من آخر جلسة بنفس النمط */
+export function metconGuidanceFor(pattern: MovementPattern, avoidIds: string[] = []): string {
+  const m = PATTERN_METCON_MAP[pattern];
+  const pool = m.suggestedIds.filter(id => !avoidIds.includes(id));
+  const options = (pool.length ? pool : m.suggestedIds).join(' أو ');
+  const avoidNote = avoidIds.length ? ` — تجنّب تكرار نفس حركة الميتكون الرئيسية من آخر جلسة بنفس النمط (${avoidIds.join(' أو ')}) قدر الإمكان` : '';
+  return `الميتكون يجب أن يتضمن حركة واحدة على الأقل تستهدف: ${m.targetsAr} (اختر من: ${options}${avoidNote}) — السبب: ${m.rationale}`;
 }
 
 /** يبني نص إرشادي للتهدئة مع تدوير أسماء الإطالات الفعلية بدل تكرار نفس الصياغة كل يوم بنفس النمط */

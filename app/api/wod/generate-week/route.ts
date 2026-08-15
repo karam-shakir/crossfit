@@ -6,7 +6,7 @@ import { todaySA } from '@/lib/timezone';
 import { getWods, getLatestWodCycleMeta, upsertWodCycleMeta } from '@/lib/db';
 import {
   EXERCISES, MovementPattern, PATTERN_LABELS_AR, CyclePhase, PartnerFormat,
-  buildPatternSequence, accessoryGuidanceFor, cooldownGuidanceFor, strengthGuidanceFor, warmupGuidanceFor,
+  buildPatternSequence, accessoryGuidanceFor, cooldownGuidanceFor, strengthGuidanceFor, warmupGuidanceFor, metconGuidanceFor,
   getBenchmarkGuidance, getClassTimeBudget, getEquipmentGuidance, getRxFocusGuidance,
   computeNextCyclePhase, CYCLE_PHASE_LABELS_AR, CYCLE_PHASE_INFO, getRpeGuidance, getWeightStandardsTable,
   suggestPartnerFormat, partnerFormatGuidanceFor, PARTNER_SESSION_COHERENCE_GUIDANCE, PARTNER_FORMAT_LABELS_AR,
@@ -140,17 +140,20 @@ export async function POST(req: NextRequest) {
   // بحرفيته عبر أسابيع متتالية بنفس النمط (المشكلة المرصودة فعلياً: نفس تمرينَي الأكسسوار طوال أسبوعين كاملين) ═══
   const patternRecentAccessory: Partial<Record<MovementPattern, string[]>> = {};
   const patternRecentWarmup: Partial<Record<MovementPattern, string[]>> = {};
+  const patternRecentMetcon: Partial<Record<MovementPattern, string[]>> = {};
   for (const w of recentWodsRaw) {
     const p = (w as any).pattern as MovementPattern | undefined;
     if (!p) continue;
     const accIds = ((w as any).accessory || []).map((e: any) => e.exerciseId).filter(Boolean);
     const warmIds = ((w as any).warmup || []).map((e: any) => e.exerciseId).filter(Boolean);
+    const metconIds = ((w as any).metcon || []).map((e: any) => e.exerciseId).filter(Boolean);
     if (accIds.length) patternRecentAccessory[p] = [...(patternRecentAccessory[p] || []), ...accIds];
     if (warmIds.length) patternRecentWarmup[p] = [...(patternRecentWarmup[p] || []), ...warmIds];
+    if (metconIds.length) patternRecentMetcon[p] = [...(patternRecentMetcon[p] || []), ...metconIds];
   }
 
   const patternLegend = (Object.keys(PATTERN_LABELS_AR) as MovementPattern[])
-    .map(p => `- ${PATTERN_LABELS_AR[p]}:\n  ${warmupGuidanceFor(p, patternRecentWarmup[p] || [])}\n  ${accessoryGuidanceFor(p, patternRecentAccessory[p] || [])}\n  ${cooldownGuidanceFor(p)}`)
+    .map(p => `- ${PATTERN_LABELS_AR[p]}:\n  ${warmupGuidanceFor(p, patternRecentWarmup[p] || [])}\n  ${accessoryGuidanceFor(p, patternRecentAccessory[p] || [])}\n  ${cooldownGuidanceFor(p)}\n  ${metconGuidanceFor(p, patternRecentMetcon[p] || [])}`)
     .join('\n');
 
   const isBenchmarkWeek = !!(benchmarkName && benchmarkDate);
@@ -273,7 +276,7 @@ ${(Object.keys(PATTERN_LABELS_AR) as MovementPattern[]).map(p => `- ${PATTERN_LA
 مبدأ التنوع الإضافي:
 - تنوع الميتكون: AMRAP → للوقت → EMOM → للوقت → AMRAP (لا تكرر نفس الصيغة يومين متتاليين)
 
-⚠️ قاعدة الميتكون الإجبارية — لا تجعل الميتكون معاكساً بالكامل لنمط اليوم: أدرج حركة واحدة على الأقل من نفس نمط القوة الرئيسي لليوم في الميتكون (مثال: يوم دفع → thruster أو push-press أو wall-ball ضمن الميتكون، لا فقط pull-up/toes-to-bar). الأكسسوار وحده هو المسؤول عن "الموازنة الكاملة" بالنمط المعاكس — إن كرّرت نفس منطق التعويض في الميتكون أيضاً، يصبح اليوم يحمل اسم نمط لا يُدرّبه فعلياً (رُصد هذا حرفياً في يوم دفع سابق: القوة فقط كانت دفعاً، والميتكون بالكامل تقريباً سحباً).
+⚠️ قاعدة الميتكون الإجبارية — لا تجعل الميتكون معاكساً بالكامل لنمط اليوم: طبّق سطر "الميتكون يجب أن يتضمن..." المذكور لكل نمط ضمن دليل التوافق أعلاه حرفياً (يذكر معرّفات محددة مقترحة لكل نمط). الأكسسوار وحده هو المسؤول عن "الموازنة الكاملة" بالنمط المعاكس — إن كرّرت نفس منطق التعويض في الميتكون أيضاً، يصبح اليوم يحمل اسم نمط لا يُدرّبه فعلياً (رُصد هذا حرفياً في يوم دفع سابق: القوة فقط كانت دفعاً، والميتكون بالكامل تقريباً سحباً).
 
 **══ 🤝 يوم/أيام البارتنر هذا الأسبوع ══**
 ${partnerDaysCount === 0

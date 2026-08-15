@@ -6,7 +6,7 @@ import { todaySA } from '@/lib/timezone';
 import { getWods, getLatestWodCycleMeta } from '@/lib/db';
 import {
   EXERCISES, getCalisthenicsExercises, MovementPattern, CyclePhase, PartnerFormat, PATTERN_LABELS_AR,
-  suggestPattern, accessoryGuidanceFor, cooldownGuidanceFor, strengthGuidanceFor, warmupGuidanceFor,
+  suggestPattern, accessoryGuidanceFor, cooldownGuidanceFor, strengthGuidanceFor, warmupGuidanceFor, metconGuidanceFor,
   getBenchmarkGuidance, getClassTimeBudget, getEquipmentGuidance, getRxFocusGuidance,
   computeNextCyclePhase, CYCLE_PHASE_LABELS_AR, CYCLE_PHASE_INFO, getRpeGuidance, getWeightStandardsTable,
   suggestPartnerFormat, partnerFormatGuidanceFor, PARTNER_SESSION_COHERENCE_GUIDANCE, PARTNER_FORMAT_LABELS_AR,
@@ -135,6 +135,7 @@ ${muscleGroupLog.map(d => `${d.date}: [${d.muscles.join(' + ')}] — شدة: ${d
   yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayStr = yesterday.toISOString().split('T')[0];
   const lastPattern = (lastWod as any)?.pattern as MovementPattern | undefined;
+  const lastMetconIds: string[] = (lastPattern === effectivePattern ? ((lastWod as any)?.metcon || []) : []).map((e: any) => e.exerciseId).filter(Boolean);
   const isBackToBackHeavyDay =
     (lastWod as any)?.date === yesterdayStr &&
     lastPattern && HEAVY_BY_DEFAULT_PATTERNS.includes(lastPattern) &&
@@ -294,7 +295,7 @@ ${isBackToBackHeavyDay ? `\n**⚠️ قاعدة شدة إجبارية — تبا
    - "Hero/Benchmark": تنسيقات معروفة (لا تخترع بديلاً إن طُلب بنشمارك محدد أعلاه)
    - "Chipper": تسلسل من 5-7 تمارين يُنجز مرة واحدة بدون تكرار الجولة
    - "EMOM": x تمارين في كل دقيقة لـ 10-20 دقيقة — استخدمه لضبط الإيقاع وليس للحد الأقصى
-${!isBenchmarkDay ? `✦ ⚠️ لا تجعل الميتكون معاكساً بالكامل لنمط اليوم (${effectivePattern}) — أدرج حركة واحدة على الأقل من نفس النمط ضمن الميتكون. الأكسسوار وحده مسؤول عن الموازنة الكاملة بالنمط المعاكس، لا الميتكون أيضاً` : ''}
+${!isBenchmarkDay ? `✦ ⚠️ **قاعدة توافق الميتكون مع نمط اليوم (${effectivePattern}) — إجبارية:**\n${metconGuidanceFor(effectivePattern, lastMetconIds)} — الأكسسوار وحده مسؤول عن الموازنة الكاملة بالنمط المعاكس، لا الميتكون أيضاً` : ''}
 ✦ التهدئة: تمطيط هادئ للمجموعات العضلية المُستنزفة اليوم حسب القاعدة أعلاه
 
 **قواعد حقلَي duration و rounds:**

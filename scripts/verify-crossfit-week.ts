@@ -24,7 +24,7 @@ import dns from 'dns';
 import {
   MovementPattern, PATTERN_LABELS_AR, EXERCISES,
   buildPatternSequence, suggestPartnerFormat, PartnerFormat,
-  HEAVY_BY_DEFAULT_PATTERNS, PATTERN_ACCESSORY_MAP,
+  HEAVY_BY_DEFAULT_PATTERNS, PATTERN_ACCESSORY_MAP, PATTERN_METCON_MAP,
 } from '../lib/crossfitProgramming';
 import { computeNextCyclePhase, CyclePhase, CYCLE_ORDER } from '../lib/periodization';
 
@@ -165,6 +165,15 @@ function runLogicChecks() {
       }
     }
     check(S, 'كل IDs الأكسسوار المقترحة في PATTERN_ACCESSORY_MAP موجودة فعلياً في EXERCISES', invalidAccessoryIds.length === 0, invalidAccessoryIds.join(', '));
+
+    // نفس الفحص لقائمة الميتكون المستقلة الجديدة لكل نمط (PATTERN_METCON_MAP)
+    const invalidMetconIds: string[] = [];
+    for (const pattern of Object.keys(PATTERN_METCON_MAP) as MovementPattern[]) {
+      for (const id of PATTERN_METCON_MAP[pattern].suggestedIds) {
+        if (!unique.has(id)) invalidMetconIds.push(`${pattern}:${id}`);
+      }
+    }
+    check(S, 'كل IDs الميتكون المقترحة في PATTERN_METCON_MAP موجودة فعلياً في EXERCISES', invalidMetconIds.length === 0, invalidMetconIds.join(', '));
   }
 }
 
@@ -186,13 +195,7 @@ const COOLDOWN_BANNED_PHRASES = ['لخفض النبض', 'تهدئة القلب',
 // خرائط تقريبية: أي حركات في الميتكون تُعتبر "من نفس نمط اليوم" — تطابق دليل اختيار تمرين
 // القوة بالبار في lib/crossfitProgramming.ts (PATTERN_STRENGTH_MAP) بشكل موسّع ليشمل حركات
 // الميتكون المرتبطة منطقياً بكل نمط (وليس فقط تمرين القوة بالبار نفسه)
-const PATTERN_METCON_FAMILY: Record<MovementPattern, string[]> = {
-  squat: ['back-squat', 'front-squat', 'overhead-squat', 'thruster', 'wall-ball', 'air-squat', 'box-jump', 'box-jump-over', 'pistol-squat', 'dumbbell-thruster', 'kettlebell-goblet-squat', 'bulgarian-split-squat'],
-  hinge: ['deadlift', 'kettle-bell-swing', 'romanian-deadlift', 'sumo-deadlift', 'kettlebell-snatch', 'kettlebell-clean', 'dumbbell-snatch'],
-  push: ['shoulder-press', 'push-press', 'thruster', 'wall-ball', 'handstand-pushup', 'push-up', 'bench-press', 'dumbbell-push-press', 'devils-press', 'dumbbell-thruster'],
-  pull: ['power-clean', 'snatch', 'pull-up', 'kipping-pull-up', 'chest-to-bar-pull-up', 'toes-to-bar', 'muscle-up', 'rope-climb', 'row', 'bent-over-row', 'pendlay-row', 'dumbbell-row'],
-  olympic: ['snatch', 'clean-and-jerk', 'power-clean', 'overhead-squat', 'hang-power-clean', 'hang-power-snatch', 'split-jerk', 'dumbbell-snatch', 'dumbbell-clean-and-jerk', 'dumbbell-power-clean'],
-};
+// مصدر واحد للحقيقة الآن: lib/crossfitProgramming.ts (PATTERN_METCON_MAP) — كان مكرَّراً محلياً هنا سابقاً
 
 function validateWeek(wods: WodDoc[], label: string) {
   const S = `القسم ٢ — محتوى حقيقي: ${label}`;
@@ -292,7 +295,7 @@ function validateWeek(wods: WodDoc[], label: string) {
     const violations: string[] = [];
     for (const w of active) {
       if (!w.pattern) continue;
-      const family = PATTERN_METCON_FAMILY[w.pattern] || [];
+      const family = PATTERN_METCON_MAP[w.pattern]?.suggestedIds || [];
       const metconIds = (w.metcon || []).map((e: any) => e.exerciseId);
       const hasSamePattern = metconIds.some((id: string) => family.includes(id));
       if (metconIds.length > 0 && !hasSamePattern) violations.push(`${w.date} (${PATTERN_LABELS_AR[w.pattern]}): الميتكون [${metconIds.join(', ')}] لا يحتوي أي حركة من نمط اليوم`);
