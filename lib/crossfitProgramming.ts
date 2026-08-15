@@ -110,6 +110,29 @@ export const EXERCISES: CFExercise[] = [
   { id: 'bulgarian-split-squat', nameEn: 'Bulgarian Split Squat', nameAr: 'قرفصاء بلغاري منقسم',   category: 'wod' },
   { id: 'hip-thrust',       nameEn: 'Barbell Hip Thrust',       nameAr: 'دفعة الورك بالبار',        category: 'strength' },
 
+  // ═══ أكسسوار مُحدَّث (من "الدليل الشامل لتمارين الأكسسوار في CrossFit" الذي زوّدنا به المدرب) —
+  // فلسفة هذه الدفعة مختلفة عن الأكسسوار أعلاه: ليست لموازنة نمط معاكس، بل لتعزيز نفس مجموعة
+  // عضلات نمط اليوم من زاوية/أداة مختلفة (أحادي الطرف، لامركزي، عزل، ثبات) لضمان تغطية كاملة —
+  // راجع PATTERN_ACCESSORY_MAP أدناه لكيفية استخدامها فعلياً لكل نمط ═══
+  { id: 'cossack-squat',          nameEn: 'Cossack Squat',            nameAr: 'قرفصاء القوزاق (جانبي)',        category: 'gymnastics' },
+  { id: 'reverse-hyperextension', nameEn: 'Reverse Hyperextension',   nameAr: 'التمديد العكسي',                category: 'wod'        },
+  { id: 'ghd-hip-extension',      nameEn: 'GHD Hip Extension',        nameAr: 'تمديد الورك على GHD',           category: 'gymnastics' },
+  { id: 'hollow-body-hold',       nameEn: 'Hollow Body Hold',         nameAr: 'ثبات الجسم المجوف',             category: 'gymnastics' },
+  { id: 'single-leg-rdl',         nameEn: 'Single-Leg RDL',           nameAr: 'رفعة رومانية بساق واحدة',       category: 'wod'        },
+  { id: 'nordic-curl',            nameEn: 'Nordic Curl',              nameAr: 'ثني نوردك لأوتار الركبة',       category: 'gymnastics' },
+  { id: 'db-z-press',             nameEn: 'DB Z-Press',               nameAr: 'ضغط Z بالدمبل',                 category: 'wod'        },
+  { id: 'skull-crusher',          nameEn: 'Skull Crusher',            nameAr: 'سكل كراشر للترايسبس',           category: 'wod'        },
+  { id: 'tricep-pushdown',        nameEn: 'Tricep Pushdown',          nameAr: 'دفع الترايسبس بالحزام',         category: 'wod'        },
+  { id: 'ytwl',                   nameEn: 'YTWL',                     nameAr: 'حروف YTWL لصحة الكتف',          category: 'gymnastics' },
+  { id: 'bent-over-lateral-raise', nameEn: 'Bent-over Lateral Raise', nameAr: 'رفعة جانبية منحنية',            category: 'wod'        },
+  { id: 'strict-ring-rows',       nameEn: 'Strict Ring Rows',         nameAr: 'تجديف الحلقات الصارم',          category: 'gymnastics' },
+  { id: 'supinated-grip-row',     nameEn: 'Supinated Grip Row',       nameAr: 'تجديف بقبضة مقلوبة',            category: 'wod'        },
+  { id: 'dead-hangs',             nameEn: 'Dead Hangs',               nameAr: 'التعليق الميت',                 category: 'gymnastics' },
+  { id: 'strict-pull-up-negatives', nameEn: 'Strict Pull-up Negatives', nameAr: 'عقلة سلبية صارمة',            category: 'gymnastics' },
+  { id: 'snatch-balance',         nameEn: 'Snatch Balance',           nameAr: 'توازن الخطف',                   category: 'olympic'    },
+  { id: 'muscle-snatch',          nameEn: 'Muscle Snatch',            nameAr: 'الخطف العضلي',                  category: 'olympic'    },
+  { id: 'tall-snatch',            nameEn: 'Tall Snatch',              nameAr: 'الخطف الطويل',                  category: 'olympic'    },
+
   // إطالات مُسمّاة مخصصة لكل نمط (PATTERN_COOLDOWN_MAP) — معرّفات فعلية بدل استخدام تمرين بديل تقني،
   // كل واحدة مربوطة برابط يوتيوب حقيقي في مجموعة exercises (seed-stretch-exercises.ts)
   { id: 'standing-quad-stretch',        nameEn: 'Standing Quad Stretch',        nameAr: 'إطالة الرباعية واقفاً (Standing Quad Stretch)',              category: 'mobility' },
@@ -193,6 +216,14 @@ export const EXERCISE_FOCUS_CLASS: Record<string, MovementFocusClass> = {
   'pvc-pass-through': 'diffuse', 'band-pull-apart': 'diffuse', 'inchworm': 'diffuse',
   'worlds-greatest-stretch': 'diffuse', 'bear-crawl': 'diffuse', 'leg-swing': 'diffuse',
   'scap-pull-up': 'diffuse', 'monster-walk': 'diffuse',
+
+  // أكسسوار الدليل المُحدَّث — راجع تعليق قسمها في EXERCISES أعلاه
+  'cossack-squat': 'diffuse', 'reverse-hyperextension': 'diffuse', 'ghd-hip-extension': 'diffuse',
+  'hollow-body-hold': 'diffuse', 'single-leg-rdl': 'variable', 'nordic-curl': 'variable',
+  'db-z-press': 'concentrated', 'skull-crusher': 'concentrated', 'tricep-pushdown': 'concentrated',
+  'ytwl': 'diffuse', 'bent-over-lateral-raise': 'concentrated', 'strict-ring-rows': 'diffuse',
+  'supinated-grip-row': 'concentrated', 'dead-hangs': 'diffuse', 'strict-pull-up-negatives': 'diffuse',
+  'snatch-balance': 'concentrated', 'muscle-snatch': 'concentrated', 'tall-snatch': 'concentrated',
 };
 
 /** مجموعة التركيز العضلي (١٢ فئة من ملحق الوثيقة) — تحدد "نفس المفصل/السلسلة" بين حركتين */
@@ -226,6 +257,14 @@ export const EXERCISE_MUSCLE_GROUP: Record<string, MuscleFocusGroup> = {
   'pvc-pass-through':'warmup-activation','band-pull-apart':'warmup-activation','inchworm':'warmup-activation',
   'worlds-greatest-stretch':'warmup-activation','bear-crawl':'warmup-activation','leg-swing':'warmup-activation',
   'scap-pull-up':'warmup-activation','monster-walk':'warmup-activation',
+
+  // أكسسوار الدليل المُحدَّث — راجع تعليق قسمها في EXERCISES أعلاه
+  'cossack-squat':'squat','reverse-hyperextension':'hinge','ghd-hip-extension':'hinge',
+  'hollow-body-hold':'core','single-leg-rdl':'hinge','nordic-curl':'hinge',
+  'db-z-press':'overhead-push','skull-crusher':'arms-isolation','tricep-pushdown':'arms-isolation',
+  'ytwl':'warmup-activation','bent-over-lateral-raise':'overhead-push','strict-ring-rows':'back-pull',
+  'supinated-grip-row':'back-pull','dead-hangs':'grip','strict-pull-up-negatives':'back-pull',
+  'snatch-balance':'full-body-concentrated','muscle-snatch':'full-body-concentrated','tall-snatch':'full-body-concentrated',
 };
 
 /** قاعدة ٣ — أزواج ممنوعة معاً في نفس الميتكون (تكديس مهارة عالية أو قبضة مزدوجة) */
@@ -391,12 +430,18 @@ export function stimulusGuidanceFor(stimulus: StimulusType): string {
   return `🔄 نوع تحفيز اليوم (دوران أسبوعي مستقل عن نمط الحركة — قاعدة ٤ من محظورات دمج الحركات): ${STIMULUS_LABELS_AR[stimulus]}. مدة الميتكون: ${p.durationAr}. طابعه: ${p.profileAr}. هذا يُقيّد مدة/وتيرة/فئة حركات الميتكون فقط — لا يُلغي قاعدة توافق الميتكون مع نمط اليوم؛ اختر حركات تحقق الاثنين معاً.`;
 }
 
+// ═══ فلسفة الأكسسوار (مصدرها "الدليل الشامل لتمارين الأكسسوار في CrossFit" الذي زوّدنا به المدرب) —
+// الأكسسوار ليس للكمالية ولا لموازنة نمط معاكس، بل تمارين إضافية تستهدف نفس مجموعة العضلات التي
+// عملت عليها القوة والميتكون اليوم بالفعل، لكن من زاوية/أداة مختلفة (أحادي الطرف، لامركزي، عزل،
+// ثبات ساكن) — الهدف: التأكد أن كل عضلات هذا الجزء بالذات (لا الجزء المعاكس) غُطّيت بالكامل.
+// مثال: يوم القرفصاء (ثنائي الطرف، مركّز) → أكسسوار أحادي الطرف (بلغاري/قوزاق) + تمديد ورك خلفي
+// لم يعمل بنفس الكثافة + ثبات جذع — كلها أرجل/جذع، لا صدر أو كتف. ═══
 export const PATTERN_ACCESSORY_MAP: Record<MovementPattern, { targetsAr: string; suggestedIds: string[]; rationale: string }> = {
-  squat:   { targetsAr: 'الصدر + الكتف الأمامي + الترايسبس',        suggestedIds: ['push-up', 'handstand-pushup', 'shoulder-press', 'tricep-extension', 'lateral-raise'], rationale: 'يوم القرفصاء يستهدف الأرجل والجذع بالكامل — الأكسسوار يوازن بتحميل الجزء العلوي الدافع الذي لم يعمل' },
-  hinge:   { targetsAr: 'الصدر + الكتف + الترايسبس',                 suggestedIds: ['push-up', 'shoulder-press', 'handstand-pushup', 'tricep-extension', 'lateral-raise'], rationale: 'الرفعة الميتة تستنزف السلسلة الخلفية (ظهر/مؤخرة/أوتار) — الأكسسوار يوازن بالدفع الأمامي' },
-  push:    { targetsAr: 'الظهر + البايسبس + الجذع',                  suggestedIds: ['pull-up', 'kipping-pull-up', 'toes-to-bar', 'sit-up', 'bicep-curl', 'face-pull', 'dumbbell-row'], rationale: 'يوم الدفع (ضغط/كتف) يحتاج موازنة فورية بالسحب لحماية توازن مفصل الكتف من الإصابة' },
-  pull:    { targetsAr: 'الصدر + الترايسبس + الجذع',                 suggestedIds: ['push-up', 'handstand-pushup', 'sit-up', 'tricep-extension', 'plank'], rationale: 'يوم السحب (عقلة/تجديف) يوازَن بالدفع حتى لا تتغلب عضلات السحب على الدفع بشكل مزمن' },
-  olympic: { targetsAr: 'الجذع + استقرار الكتف + الكاحل',            suggestedIds: ['sit-up', 'toes-to-bar', 'push-up', 'plank', 'russian-twist'], rationale: 'الحركات الأولمبية (خطف/نظيفة) تحتاج استقرار جذع ومفاصل لا تحميلاً عضلياً إضافياً ثقيلاً بعدها' },
+  squat:   { targetsAr: 'الأرجل والأرداف من زاوية أحادية الطرف + استقرار الجذع تحت الحمل', suggestedIds: ['bulgarian-split-squat', 'cossack-squat', 'reverse-hyperextension', 'ghd-hip-extension', 'hollow-body-hold'], rationale: 'القرفصاء ثنائي الطرف ومتماثل — الأكسسوار يعزّز نفس عضلات الأرجل/الأرداف بحمل أحادي الطرف (توازن + عضلات ثابتة لم تعمل بنفس الكثافة) ويضيف تمديد ورك خلفي وثبات جذع لم يُستهدفا مباشرة في نمط القرفصاء الأمامي' },
+  hinge:   { targetsAr: 'أوتار الركبة والأرداف وأسفل الظهر من زاوية أحادية الطرف ولامركزية + قبضة', suggestedIds: ['single-leg-rdl', 'nordic-curl', 'glute-bridge', 'reverse-hyperextension', 'farmers-carry'], rationale: 'الرفعة الميتة تحميل ثنائي الطرف مركّز — الأكسسوار يعزّز نفس السلسلة الخلفية (أوتار/أرداف/أسفل الظهر) بعمل أحادي الطرف وتوازني (Single-Leg RDL) وانقباض لامركزي بحت (Nordic Curl) لم يعمل عليهما الرفع القياسي، بالإضافة لقبضة الرفعة نفسها بحمل ثابت (Farmer\'s Carry)' },
+  push:    { targetsAr: 'الكتف والترايسبس من زاوية عزل واستقرار دوراني', suggestedIds: ['db-z-press', 'skull-crusher', 'tricep-pushdown', 'ytwl', 'bent-over-lateral-raise'], rationale: 'الدفع فوق الرأس يحمّل الدالية الأمامية والترايسبس بحركة مركّبة — الأكسسوار يعزّز نفس منطقة الكتف/الترايسبس بعزل صريح (Z-Press يزيل دفع الأرجل، Skull Crusher يعزل الرأس الطويل) ويضيف الدالية الخلفية ومثبتات الكتف الدورانية (YTWL) التي لا تعمل في الضغط الأمامي البحت — لضمان تغطية كامل مجموعة الكتف لا نصفها الأمامي فقط' },
+  pull:    { targetsAr: 'الظهر العريض والبايسبس والقبضة من زاوية وزن الجسم وعزل', suggestedIds: ['strict-ring-rows', 'supinated-grip-row', 'dead-hangs', 'face-pull', 'strict-pull-up-negatives'], rationale: 'السحب الانفجاري/الأفقي بالبار يحمّل الظهر العريض بسرعة — الأكسسوار يعزّز نفس عضلات السحب (لاتس/بايسبس/قبضة) بوزن جسم صريح وإيقاع بطيء (Ring Rows، Negatives) وعزل قبضة ثابت (Dead Hangs)، ويضيف الكتف الخلفي والمعينات (Face Pull) المكمّلة للاتس ضمن نفس "الجزء الخلفي" لا جزء دفع معاكس' },
+  olympic: { targetsAr: 'نفس أنماط الحركة الأولمبية (خطف/نظيفة) بتقنية معزولة أبطأ', suggestedIds: ['snatch-balance', 'muscle-snatch', 'tall-snatch', 'overhead-squat', 'front-squat'], rationale: 'الأولمبي انفجاري وسريع بطبيعته — الأكسسوار يعزّز نفس المسار الحركي والعضلات (استقبال الخطف، انفجار الكتفين، ثبات القرفصاء تحت البار) بوتيرة أبطأ وتقنية معزولة (Snatch Balance، Muscle Snatch، Pause) بدل تمارين من مجموعة عضلية مختلفة تماماً' },
 };
 
 // ═══ مكتبة الميتكون الخاص بكل نمط — تمنع أن يعاكس الميتكون نمط قوة اليوم بالكامل
