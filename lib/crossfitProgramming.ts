@@ -456,11 +456,43 @@ export const STIMULUS_LABELS_AR: Record<StimulusType, string> = {
 const STIMULUS_ROTATION: StimulusType[] = ['explosive-power', 'muscular-endurance', 'aerobic-engine', 'heavy-conditioning'];
 const DELOAD_ALLOWED_STIMULI: StimulusType[] = ['muscular-endurance', 'aerobic-engine'];
 
-const STIMULUS_METCON_PROFILE: Record<StimulusType, { durationAr: string; profileAr: string }> = {
-  'explosive-power':    { durationAr: 'قصيرة جداً (أقل من ٨ دقائق)', profileAr: 'شدة قصوى وحجم منخفض — تكرارات قليلة من حركات ثقيلة/قفز/أولمبية أو مركّبات قوة قصيرة' },
-  'muscular-endurance': { durationAr: 'متوسطة (١٢-١٨ دقيقة)', profileAr: 'تكرارات متوسطة-عالية من حركات جمناستيك/دمبل — إنهاك عضلي موضعي، ليس حملاً قلبياً تنفسياً كعنصر أساسي' },
-  'aerobic-engine':      { durationAr: 'طويلة (١٨+ دقيقة أو AMRAP طويل)', profileAr: 'حركات كارديو مونوستركتشورال (جري/تجديف/دراجة هواء/سكي إرغ) كعنصر أساسي في الميتكون، لا ثانوي فقط' },
-  'heavy-conditioning':  { durationAr: 'متوسطة (١٠-١٥ دقيقة)', profileAr: 'حمل خارجي متوسط-ثقيل مختلط (بار/دمبل/كيتل بيل) بوتيرة عالية، بلا معدات كارديو أساسية' },
+// ═══ وصفة الميتكون العلمية (زوّدنا بها المدرب — منهجية CompTrain/PRVN) — المدة الزمنية تحدد
+// مسار الطاقة، والذي يحدد بدوره نطاق الحمل ونوع الحركات، لا اجتهاد حر. أعيد ضبط حدود المدة
+// والمحتوى هنا حرفياً حسب الوصفة، مع إعادة تعيين ذكية لأنواع StimulusType الأربعة الموجودة أصلاً
+// بدل استحداث نظام مواز: ترتيب الشدة القديم (الانفجارية والتكييف الثقيل مُستبعدان في أسبوع
+// التفريغ، التحمل العضلي والمحرك الهوائي مسموحان) يطابق تماماً ترتيب الحمل في الوصفة من الأثقل
+// للأخف (فوسفاجيني > لاكتيكي > هوائي-لاكتيكي مختلط > هوائي بحت) — فلا حاجة لتغيير منطق التفريغ. ═══
+const STIMULUS_METCON_PROFILE: Record<StimulusType, {
+  durationAr: string; energySystemAr: string; loadPctAr: string; profileAr: string; breathingAr: string;
+}> = {
+  'explosive-power': {
+    durationAr: 'قصيرة جداً (أقل من ٥ دقائق)',
+    energySystemAr: 'فوسفاجيني بحت (Phosphocreatine) — انفجارات قصوى متكررة لا تتجاوز 5-10 ثوانٍ لكل انفجار',
+    loadPctAr: 'ثقيل — 60% فأعلى من الحمل الأقصى للحركات المُحمَّلة، أو حركات انفجارية بوزن الجسم (قفزات/سباقات سرعة قصيرة)',
+    profileAr: 'حركات انفجارية ثقيلة فقط (قفز، سرعة، أولمبي/قوة بحمل عالٍ) — لا مكان لمعدات كارديو مونوستركتشورال أساسية هنا إطلاقاً',
+    breathingAr: 'تنفس 1:1 (شهيق مع الحركة، زفير مع العودة) — اندفاع عصبي كامل',
+  },
+  'heavy-conditioning': {
+    durationAr: 'متوسطة (٥-١٢ دقيقة)',
+    energySystemAr: 'لاكتيكي (حامض اللبنيك) — المسار اللاهوائي المُنتِج لإحساس "الحرق" العضلي',
+    loadPctAr: 'متوسط — 40-55% من الحمل الأقصى للحركات المُحمَّلة',
+    profileAr: 'مزيج حركات متوسطة الوزن (بار/دمبل/كيتل بيل) مع حركات جمناستيك — هذا هو نطاق "المُكيِّف الحقيقي" للياقة',
+    breathingAr: 'انتقالي بين 1:1 و2:1 حسب موضع الدقيقة داخل النطاق — كلما اقترب من 12 دقيقة اتجه لـ2:1',
+  },
+  'muscular-endurance': {
+    durationAr: 'طويلة نسبياً (١٢-٢٠ دقيقة)',
+    energySystemAr: 'هوائي-لاكتيكي مختلط',
+    loadPctAr: 'خفيف — 30-40% من الحمل الأقصى، مع فترات راحة "خفية" مبنية داخل تصميم الحركات نفسها',
+    profileAr: 'حركات خفيفة الوزن مدموجة مع آلات كارديو (تجديف/دراجة) — لا تعتمد على الثقل كمصدر شدة',
+    breathingAr: '2:1 أو 3:1 (نفسان-ثلاثة داخل الحركة، نفس واحد للخروج) — للحفاظ على ثبات ثاني أكسيد الكربون في الدم',
+  },
+  'aerobic-engine': {
+    durationAr: 'طويلة (٢٠+ دقيقة أو AMRAP طويل)',
+    energySystemAr: 'هوائي بحت (Aerobic) — يعتمد كلياً على الأكسجين، لا مسار لاهوائي مساهم فعلياً',
+    loadPctAr: 'خفيف جداً — وزن الجسم أو ~20% من الحمل الأقصى، التركيز على الاستمرارية لا الشدة اللحظية',
+    profileAr: 'حركات كارديو مونوستركتشورال (جري/تجديف/دراجة هواء/سكي إرغ) كعنصر أساسي في الميتكون، لا ثانوي فقط',
+    breathingAr: 'اختبار الجملة الكاملة: يجب أن يقدر اللاعب على نطق جملة كاملة أثناء الأداء — إن لم يستطع، الحمل أثقل من المطلوب ويجب تخفيفه فوراً',
+  },
 };
 
 /** يقترح نوع التحفيز التالي — نفس منطق suggestPattern (كسر تعادل يدور عبر rotationOffset لمنع احتكار نوع واحد أسبوعياً) */
@@ -503,7 +535,94 @@ export function buildStimulusSequence(activeDaysCount: number, cyclePhase?: _Cyc
 /** نص إرشادي لنوع تحفيز اليوم — يُقيّد مدة/وتيرة/فئة معدات الميتكون فقط، لا يُلغي قاعدة توافق الميتكون مع نمط اليوم (يُطبَّقان معاً) */
 export function stimulusGuidanceFor(stimulus: StimulusType): string {
   const p = STIMULUS_METCON_PROFILE[stimulus];
-  return `🔄 نوع تحفيز اليوم (دوران أسبوعي مستقل عن نمط الحركة — قاعدة ٤ من محظورات دمج الحركات): ${STIMULUS_LABELS_AR[stimulus]}. مدة الميتكون: ${p.durationAr}. طابعه: ${p.profileAr}. هذا يُقيّد مدة/وتيرة/فئة حركات الميتكون فقط — لا يُلغي قاعدة توافق الميتكون مع نمط اليوم؛ اختر حركات تحقق الاثنين معاً.`;
+  return `🔄 نوع تحفيز اليوم (دوران أسبوعي مستقل عن نمط الحركة — قاعدة ٤ من محظورات دمج الحركات): ${STIMULUS_LABELS_AR[stimulus]}.
+مدة الميتكون: ${p.durationAr}. مسار الطاقة: ${p.energySystemAr}.
+حمل خارجي: ${p.loadPctAr}.
+طابع الحركات: ${p.profileAr}.
+إيقاع التنفس: ${p.breathingAr}.
+هذا يُقيّد مدة/وتيرة/حمل/فئة حركات الميتكون فقط — لا يُلغي قاعدة توافق الميتكون مع نمط اليوم؛ اختر حركات تحقق الاثنين معاً.`;
+}
+
+// ═══ قاعدة المحفزات الأربعة (وصفة الميتكون العلمية — خطوة ٢) — تصنيف حركات الميتكون إلى 4 فئات:
+// الدفع العمودي/الأفقي، السحب، الورك/الانفجار (يشمل القرفصاء والرفعة والأولمبي والبيربي — كلها
+// حركات هوجمة بالورك)، والمونو (آلات كارديو + حمل ثابت كـ"فاصل"). التمارين غير المصنَّفة هنا
+// (أكسسوار عزل، إحماء، تحضير مهارة) تُستبعد ضمنياً من حساب النسب — ليست حركات ميتكون رئيسية أصلاً. ═══
+export type MetconStimulusCategory = 'push' | 'pull' | 'hip-explode' | 'mono';
+
+export const METCON_STIMULUS_CATEGORY_LABELS_AR: Record<MetconStimulusCategory, string> = {
+  'push': 'الدفع العمودي/الأفقي (Push)',
+  'pull': 'السحب (Pull)',
+  'hip-explode': 'الورك/الانفجار (Hip/Explode)',
+  'mono': 'المونو/الآلة (Mono)',
+};
+
+export const METCON_STIMULUS_CATEGORY: Record<string, MetconStimulusCategory> = {
+  // الدفع — لا تزيد عن 30% من التكرارات
+  'shoulder-press': 'push', 'push-press': 'push', 'thruster': 'push', 'handstand-pushup': 'push',
+  'push-up': 'push', 'bench-press': 'push', 'dumbbell-thruster': 'push', 'dumbbell-push-press': 'push',
+  'wall-ball': 'push', 'db-z-press': 'push', 'ring-dip': 'push', 'bar-dip': 'push',
+  // السحب — لا تزيد عن 30% من التكرارات
+  'pull-up': 'pull', 'kipping-pull-up': 'pull', 'chest-to-bar-pull-up': 'pull', 'rope-climb': 'pull',
+  'bent-over-row': 'pull', 'pendlay-row': 'pull', 'dumbbell-row': 'pull', 'strict-ring-rows': 'pull',
+  'supinated-grip-row': 'pull', 'toes-to-bar': 'pull', 'knees-to-elbows': 'pull', 'muscle-up': 'pull',
+  // الورك/الانفجار — لا تزيد عن 40% من التكرارات
+  'back-squat': 'hip-explode', 'front-squat': 'hip-explode', 'air-squat': 'hip-explode', 'deadlift': 'hip-explode',
+  'power-clean': 'hip-explode', 'clean-and-jerk': 'hip-explode', 'snatch': 'hip-explode', 'overhead-squat': 'hip-explode',
+  'box-jump': 'hip-explode', 'burpee': 'hip-explode', 'kettle-bell-swing': 'hip-explode', 'romanian-deadlift': 'hip-explode',
+  'sumo-deadlift': 'hip-explode', 'split-jerk': 'hip-explode', 'hang-power-clean': 'hip-explode', 'hang-power-snatch': 'hip-explode',
+  'pistol-squat': 'hip-explode', 'bar-facing-burpee': 'hip-explode', 'box-jump-over': 'hip-explode', 'dumbbell-snatch': 'hip-explode',
+  'dumbbell-clean-and-jerk': 'hip-explode', 'dumbbell-power-clean': 'hip-explode', 'dumbbell-front-rack-lunge': 'hip-explode',
+  'dumbbell-overhead-lunge': 'hip-explode', 'devils-press': 'hip-explode', 'kettlebell-clean': 'hip-explode',
+  'kettlebell-snatch': 'hip-explode', 'turkish-get-up': 'hip-explode', 'kettlebell-goblet-squat': 'hip-explode',
+  'bulgarian-split-squat': 'hip-explode', 'hip-thrust': 'hip-explode',
+  // المونو — فاصل بين المحفزات، لا حركة رئيسية
+  'double-under': 'mono', 'row': 'mono', 'run': 'mono', 'air-bike': 'mono', 'ski-erg': 'mono',
+  'shuttle-run': 'mono', 'bike-erg': 'mono', 'jump-rope': 'mono', 'farmers-carry': 'mono',
+  'front-rack-carry': 'mono', 'suitcase-carry': 'mono',
+};
+
+/** نص إرشادي لقاعدة المحفزات الأربعة — يُدرَج مرة واحدة في البرومت (لا يتغيّر حسب النمط أو نوع التحفيز) */
+export function metconStimulusMixGuidance(): string {
+  return `🧩 قاعدة المحفزات الأربعة (وصفة الميتكون العلمية — خطوة ٢): كل حركة ميتكون رئيسية تنتمي لفئة واحدة من:
+- ${METCON_STIMULUS_CATEGORY_LABELS_AR['push']}: مثل Push Press، Handstand Push-up، Thruster — لا تزيد عن 30% من إجمالي التكرارات
+- ${METCON_STIMULUS_CATEGORY_LABELS_AR['pull']}: مثل Pull-ups، Rows، Rope Climb — لا تزيد عن 30% من إجمالي التكرارات
+- ${METCON_STIMULUS_CATEGORY_LABELS_AR['hip-explode']}: مثل Kettlebell Swing، Box Jump، Burpee، القرفصاء، الرفعة، الأولمبي — لا تزيد عن 40% من إجمالي التكرارات
+- ${METCON_STIMULUS_CATEGORY_LABELS_AR['mono']}: آلات كارديو (تجديف/دراجة هواء/سكي إرغ/جري) — تُستخدم كـ"فاصل" بين المحفزات، لا كحركة رئيسية وحيدة للميتكون
+اختر **فئتين أو ثلاث فقط** من هذه الأربع لكل ميتكون (لا الأربع معاً — الفئة الرابعة تُنهك الجهاز العصبي المركزي بلا فائدة إضافية). ⛔ ممنوع دمج فئة الدفع مع نفسها في نفس الميتكون (مثال: Thruster + Handstand Push-up ممنوع لأن كلاهما دفع عمودي) — اخلط (دفع+سحب) أو (ورك+مونو) بدلاً من ذلك.`;
+}
+
+/** رصد فقط (بلا حذف تلقائي — النسب المئوية للتكرارات تعتمد على حقل reps النصي الحر الذي لا يمكن تفسيره برمجياً بثقة كافية):
+ * يكتشف إن كانت كل حركات الميتكون من فئة محفز واحدة فقط (خرق واضح لقاعدة "فئتان أو ثلاث") */
+export function detectMetconStimulusImbalance(metconMovementIds: string[]): string[] {
+  const categories = Array.from(new Set(
+    metconMovementIds.map(id => METCON_STIMULUS_CATEGORY[id]).filter((c): c is MetconStimulusCategory => !!c)
+  ));
+  if (categories.length === 1) {
+    const only = categories[0];
+    return [`قاعدة المحفزات الأربعة: كل حركات الميتكون من فئة "${METCON_STIMULUS_CATEGORY_LABELS_AR[only]}" فقط — يجب المزج بين فئتين أو ثلاث`];
+  }
+  if (categories.length >= 4) {
+    return [`قاعدة المحفزات الأربعة: الميتكون يخلط الفئات الأربع معاً — اختر فئتين أو ثلاثاً فقط لتجنّب إنهاك الجهاز العصبي المركزي بلا فائدة إضافية`];
+  }
+  return [];
+}
+
+// ═══ قانون التحميل حسب عدد التكرارات (وصفة الميتكون العلمية — خطوة ٣) — الوزن نسبة من 1RM
+// اللاعب، تُحدَّد بعدد التكرارات المتوقعة في الجولة الواحدة، لا بمرحلة دورة التدريج وحدها. ═══
+export function metconRepLoadGuidance(): string {
+  return `🏋️ قانون التحميل حسب التكرارات (وصفة الميتكون العلمية — خطوة ٣، تُطبَّق على حركات الميتكون المُحمَّلة فقط، لا تمارين القوة الرئيسية التي تتبع جدول مرحلة الدورة أعلاه):
+- 1-3 تكرارات في الجولة: 80-90% من الحمل الأقصى (ثقيل جداً/انفجاري)
+- 5-8 تكرارات: 65-75% (ثقيل يمكن التحكم به)
+- 10-15 تكراراً: 50-60% (متوسط — يبدأ الحرق تقريباً في الدقيقة الثالثة)
+- 15-20+ تكراراً: 30-45% (خفيف — هوائي/تحمل عضلي)
+مثال: سلّم 21-15-9 عدد تكراراته الأعلى (21) يقع في نطاق "15-20+" رغم أن الجولة الأخيرة (9) تقترب من "5-8" — التزم بالنطاق الأثقل للحركة عبر السلّم كاملاً، لا بجولة واحدة فقط. لا تستخدم وزناً ثابتاً بمعزل عن عدد التكرارات المطلوب.`;
+}
+
+// ═══ التايم كاب (وصفة الميتكون العلمية — خطوة ٤) — أداة لضبط الكثافة النسبية، لا حداً للفشل ═══
+export function metconTimeCapGuidance(): string {
+  return `⏳ قاعدة التايم كاب (وصفة الميتكون العلمية — خطوة ٤):
+- "AMRAP": التايم كاب هو مدة العمل نفسها (مثال: AMRAP x 12 MIN) — الهدف الحفاظ على إيقاع ثابت، لا إنهاء جولات أكثر بأي ثمن.
+- "For Time": التايم كاب يجب أن يكون تقريباً **ضعف** الزمن المتوقع لإنهاء رياضي بمستوى نخبة لهذا الميتكون تحديداً — قدّر زمن النخبة أولاً من حجم وشدة الحركات، ثم اضربه ×2 للتايم كاب. إن كان زمن النخبة المتوقع 6 دقائق مثلاً، التايم كاب 12 دقيقة.`;
 }
 
 // ═══ فلسفة الأكسسوار (مصدرها "الدليل الشامل لتمارين الأكسسوار في CrossFit" الذي زوّدنا به المدرب) —

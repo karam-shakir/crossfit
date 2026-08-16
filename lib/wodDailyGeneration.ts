@@ -20,6 +20,7 @@ import {
   HEAVY_BY_DEFAULT_PATTERNS,
   movementBlacklistGuidance, stripRule1Violations, stripRule3Violations, detectRule2HeavyOverlap,
   StimulusType, suggestStimulusType, stimulusGuidanceFor,
+  metconStimulusMixGuidance, metconRepLoadGuidance, metconTimeCapGuidance, detectMetconStimulusImbalance,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
 import { flattenMovements } from '@/lib/wodBlocks';
@@ -307,7 +308,7 @@ ${accessoryGuidanceFor(effectivePattern, lastAccessoryIds)}
 **🧘 قاعدة توافق التهدئة مع نمط اليوم (${effectivePattern}) — إجبارية:**
 ${cooldownGuidanceFor(effectivePattern, lastCooldownIds)}
 
-**📈 مرحلة دورة التدريج الحالية — استخدم أوزان هذه المرحلة حرفياً، لا أوزاناً من ذاكرتك:**
+**📈 مرحلة دورة التدريج الحالية — استخدم أوزان هذه المرحلة حرفياً لتمرين القوة الرئيسي، لا أوزاناً من ذاكرتك. لحركات الميتكون المُحمَّلة: استخدم هذا الجدول كمرجع 1RM أساسي ثم طبّق "قانون التحميل حسب التكرارات" (خطوة ٣ أعلاه) بدل نسخ وزن القوة مباشرة:**
 المرحلة: ${CYCLE_PHASE_LABELS_AR[cyclePhase]} (${CYCLE_PHASE_INFO[cyclePhase].pctLabel}) — ${CYCLE_PHASE_INFO[cyclePhase].description}
 ${getRpeGuidance(cyclePhase)}
 ${getWeightStandardsTable(cyclePhase)}
@@ -322,15 +323,9 @@ ${isBackToBackHeavyDay ? `\n**⚠️ قاعدة شدة إجبارية — تبا
    (٣) بلوك تحضير المهارة: format = "1-2 SETS" أو "EVERY X:XX (N SETS)" — **حدّد أولاً أي حركة في جلسة اليوم (القوة أم الميتكون) هي الأعقد تقنياً**، ورشّح لها هذا البلوك تحديداً لا حركة القوة دائماً بشكل تلقائي. إن كانت تلك الحركة مركّبة (مثال: DB Thruster = Front Squat position + Push Press)، فكّكها لمكوّناتها كحركات منفصلة بأوزان/تكرارات خفيفة بدل تكرار الحركة نفسها لايت — هذا تدريب عصبي-عضلي للمسار الحركي قبل تحميله، لا مجرد تسخين
 ✦ استخدم فقط IDs موجودة في قائمة التمارين أعلاه — أي ID غير موجود في القائمة يُستبعد تلقائياً من الإحماء الناتج، فلا تخترع IDs جديدة (مثال صحيح موجود فعلياً: pvc-pass-through)
 ✦ القوة: compound movements بالبار (barbell) بنسب تتناسب مع شدة الأسبوع ونمط اليوم المحدد أعلاه — بلوك واحد، format بترميز فترات صريح (مثال: "EVERY 2:30 (4 SETS)" أو "5 SETS")، وscoreType واضح ("Heaviest Weight" أو "Weight"). إن كانت الجلسة تصاعدية الشدة، اذكر ذلك في executionNote للحركة نفسها (مثال: "Start @ RPE 6 and Build into RPE 8/9") بدل RPE ثابت لكل المجموعات
-✦ الميتكون — اختر نوعاً يناسب نظام الطاقة المطلوب:
-   - زمن أقل من 5 دقائق (AMRAP قصير أو For Time بأثقال ثقيلة): نظام Phosphagen/Glycolytic — شدة قصوى
-   - زمن 5-15 دقيقة: النظام الأكثر شيوعاً في CrossFit — Glycolytic (21-15-9 كلاسيكي، Chipper متوسط)
-   - زمن 15-30+ دقيقة: نظام Oxidative — AMRAP طويل أو أعداد جولات كثيرة، أثقال أخف
-   - "Hero/Benchmark": تنسيقات معروفة (لا تخترع بديلاً إن طُلب بنشمارك محدد أعلاه)
-   - "Chipper": تسلسل من 5-7 تمارين يُنجز مرة واحدة بدون تكرار الجولة
-   - "EMOM": x تمارين في كل دقيقة لـ 10-20 دقيقة — استخدمه لضبط الإيقاع وليس للحد الأقصى
+✦ الميتكون — نوعه ("Hero/Benchmark" تنسيقات معروفة لا تخترع بديلاً إن طُلب بنشمارك محدد أعلاه، "Chipper" تسلسل 5-7 تمارين مرة واحدة، "EMOM" لضبط الإيقاع لا الحد الأقصى) يُختار بما يخدم مدة/نظام الطاقة المحدَّدين في "نوع تحفيز اليوم" أدناه — لا تختر مدة أو نظام طاقة يعارضهما
 ${!isBenchmarkDay ? `✦ ⚠️ **قاعدة توافق الميتكون مع نمط اليوم (${effectivePattern}) — إجبارية:**\n${metconGuidanceFor(effectivePattern, lastMetconIds)} — الأكسسوار أيضاً يعزّز نفس مجموعة عضلات نمط اليوم من زاوية مختلفة (راجع قاعدة توافق الأكسسوار أعلاه)، لا يعوّض بنمط معاكس` : ''}
-${!isBenchmarkDay ? `\n${movementBlacklistGuidance(effectivePattern)}\n\n${stimulusGuidanceFor(effectiveStimulus)}` : ''}
+${!isBenchmarkDay ? `\n${movementBlacklistGuidance(effectivePattern)}\n\n${stimulusGuidanceFor(effectiveStimulus)}\n\n${metconStimulusMixGuidance()}\n\n${metconRepLoadGuidance()}\n\n${metconTimeCapGuidance()}` : ''}
 ✦ الميتكون بلوك واحد عادة، format = صيغة الميتكون حرفياً ("FOR TIME" أو "AMRAP x N MIN" أو "EMOM x N MIN"). لا يلزم أن تكون التكرارات متطابقة بين كل الحركات — سلّم غير متماثل مسموح ومرغَّب أحياناً (مثال: حركة أولى 10-15-20-25-30 مقابل حركة ثانية بالتوازي 15-25-35-45) إن كان يخدم توازن الحمل بين الحركتين. عند وجود بنشمارك RX رسمي محدد الأوزان، اذكر الوزن الدقيق في حقل weight لا نطاقاً عاماً
 ✦ التهدئة: تمطيط هادئ للمجموعات العضلية المُستنزفة اليوم حسب القاعدة أعلاه
 
@@ -349,7 +344,7 @@ ${!isBenchmarkDay ? `\n${movementBlacklistGuidance(effectivePattern)}\n\n${stimu
   "duration": 20,
   "rounds": 5,
   ${isPartnerDay ? `"isPartnerWod": true,\n  "partnerFormat": "${partnerFormat}",` : ''}
-  "notes": "ملاحظات تفصيلية: كيف تُقسّم الجهد، متى تتنفس، معايير الحركة (Movement Standards) للحركات الرئيسية",
+  "notes": "ملاحظات تفصيلية: كيف تُقسّم الجهد، إيقاع التنفس المحدد أعلاه في نوع تحفيز اليوم (طبّقه حرفياً)، معايير الحركة (Movement Standards) للحركات الرئيسية",
   "theme": "الرابط التدريبي بين القوة والميتكون ونظام الطاقة المستهدف",
   "targetTimes": {
     "beginner": "25-30 دقيقة",
@@ -517,6 +512,9 @@ export function processDailyWodResult(rawText: string, ctx: DailyWodContext) {
     blacklistWarnings.push(...rule1.warnings, ...rule3.warnings);
     blacklistWarnings.push(...detectRule2HeavyOverlap(
       strengthBlocks.flatMap(b => b.movements.map((m: any) => m.exerciseId)),
+      metconBlocks.flatMap(b => b.movements.map((m: any) => m.exerciseId)),
+    ));
+    blacklistWarnings.push(...detectMetconStimulusImbalance(
       metconBlocks.flatMap(b => b.movements.map((m: any) => m.exerciseId)),
     ));
     if (blacklistWarnings.length) console.warn(`[generate/wod ${ctx.date}]`, blacklistWarnings.join(' | '));

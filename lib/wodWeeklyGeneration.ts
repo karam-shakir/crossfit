@@ -9,6 +9,7 @@ import {
   heavyDaySpacingGuidance,
   movementBlacklistGuidance, stripRule1Violations, stripRule3Violations, detectRule2HeavyOverlap,
   StimulusType, STIMULUS_LABELS_AR, buildStimulusSequence, stimulusGuidanceFor,
+  metconStimulusMixGuidance, metconRepLoadGuidance, metconTimeCapGuidance, detectMetconStimulusImbalance,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
 import { flattenMovements } from '@/lib/wodBlocks';
@@ -289,6 +290,12 @@ ${(Object.keys(PATTERN_LABELS_AR) as MovementPattern[]).map(p => `- ${PATTERN_LA
 
 ${movementBlacklistGuidance()}
 
+${metconStimulusMixGuidance()}
+
+${metconRepLoadGuidance()}
+
+${metconTimeCapGuidance()}
+
 **══ 🏗️ بنية البلوكات لكل يوم نشط (إجبارية) ══**
 
 كل قسم (warmup/strength/metcon/accessory/cooldown) مصفوفة **بلوكات** لا مصفوفة تمارين مباشرة — كل بلوك: {"format": "...", "scoreType": "...", "movements": [...]}. حتى بلوك واحد يبقى داخل مصفوفة.
@@ -338,7 +345,7 @@ ${latestCycleMeta?.progressionNote ? `\n🗒️ توصيتك أنت (المدر�
       "type": "للوقت | AMRAP | قوة | تدريب | راحة | راحة نشطة",
       "duration": 20,
       "rounds": null,
-      "notes": "استراتيجية الجلسة: كيف يُقسّم المتدرب طاقته، ما هو الهدف الزمني لكل مستوى، معايير الحركة الأساسية",
+      "notes": "استراتيجية الجلسة: كيف يُقسّم المتدرب طاقته، إيقاع التنفس المحدد في دليل نوع التحفيز أعلاه (طبّقه حرفياً)، ما هو الهدف الزمني لكل مستوى، معايير الحركة الأساسية",
       "aiTheme": "الرابط الفيزيولوجي والحركي بين القوة والميتكون هذا اليوم + نمط القوة المستخدم",
       "isRest": false,
       "isCalisthenics": false,
@@ -445,7 +452,7 @@ ${latestCycleMeta?.progressionNote ? `\n🗒️ توصيتك أنت (المدر�
 - لا تكرر نمط الميتكون في يومين متتاليين (AMRAP/للوقت/EMOM يتناوبان)
 - الإحماء: ٣ بلوكات بالضبط بالترتيب المحدد في "بنية البلوكات" أعلاه (عام → خاص AMRAP → تحضير المهارة)، ولا تستخدم نفس تمرين التفعيل الخاص في يومين من نفس النمط ضمن الأسبوع
 - كل يوم نشاط: strength يحتوي تمريناً "مركّز" واحداً بالضبط مطابقاً لنمط ذلك اليوم (إلا يوم البنشمارك) — لا تضف تمريناً "مركّز" ثانياً من نفس مجموعة الحركة معه في نفس البلوك (راجع محظورات دمج الحركات قاعدة ١ أعلاه؛ هذا يُلغي أي قاعدة سابقة تطلب ≥٢ حركات compound في القوة إن تعارضت مع هذا)
-- استخدم أوزان جدول "مرحلة دورة التدريج" أعلاه حرفياً حسب المستوى والجنس — لا تستخدم أوزان من ذاكرتك أو من أسابيع سابقة
+- تمرين القوة الرئيسي: استخدم أوزان جدول "مرحلة دورة التدريج" أعلاه حرفياً حسب المستوى والجنس — لا تستخدم أوزان من ذاكرتك أو من أسابيع سابقة. حركات الميتكون المُحمَّلة: طبّق "قانون التحميل حسب التكرارات" (خطوة ٣) بدلاً من جدول المرحلة مباشرة — استخدم جدول المرحلة كمرجع لتقدير 1RM الأساسي فقط، ثم اضرب في نسبة عدد التكرارات
 - progressionNote يجب أن يكون توجيهاً رقمياً محدداً (اسم حركة + نسبة/وزن دقيق) قابلاً للتنفيذ الحرفي الأسبوع القادم
 - يوم البارتنر (إن وُجد): العنوان (title وtitleEn) يجب أن يتضمن "بارتنر"/"Partner"، والقوة تبقى فردية بلا تغيير، وطبّق قاعدة تماسك يوم البارتنر أعلاه على كل قسم
 
@@ -502,6 +509,7 @@ export async function processWeeklyWodResult(rawText: string, ctx: WeeklyWodCont
             dayStrength.flatMap(b => b.movements.map((m: any) => m.exerciseId)),
             dayMetcon.flatMap(b => b.movements.map((m: any) => m.exerciseId)),
           ),
+          ...detectMetconStimulusImbalance(dayMetcon.flatMap(b => b.movements.map((m: any) => m.exerciseId))),
         ];
         if (warnings.length) console.warn(`[generate-week ${day.date}]`, warnings.join(' | '));
       }

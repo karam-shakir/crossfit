@@ -28,6 +28,8 @@ import {
   EXERCISE_FOCUS_CLASS, EXERCISE_MUSCLE_GROUP, RULE3_BANNED_METCON_PAIRS,
   stripRule1Violations, stripRule3Violations, detectRule2HeavyOverlap,
   StimulusType, STIMULUS_LABELS_AR, buildStimulusSequence, suggestStimulusType,
+  METCON_STIMULUS_CATEGORY, detectMetconStimulusImbalance,
+  metconStimulusMixGuidance, metconRepLoadGuidance, metconTimeCapGuidance,
 } from '../lib/crossfitProgramming';
 import { computeNextCyclePhase, CyclePhase, CYCLE_ORDER } from '../lib/periodization';
 import { flattenMovements } from '../lib/wodBlocks';
@@ -254,6 +256,27 @@ function runLogicChecks() {
     const uniqueStimulusWinners = new Set(stimulusTieBreakWinners).size;
     check(S, 'suggestStimulusType: الفائز الأول يتغيّر عبر rotationOffset مختلفة (لا نوع واحد يحتكر البداية)',
       uniqueStimulusWinners > 1, stimulusTieBreakWinners.join(', '));
+
+    // وصفة الميتكون العلمية (خطوات ٢-٤) — قاعدة المحفزات الأربعة، قانون التحميل، التايم كاب
+    const validIdsSet = new Set(EXERCISES.map(e => e.id));
+    const invalidCategoryIds = Object.keys(METCON_STIMULUS_CATEGORY).filter(id => !validIdsSet.has(id));
+    check(S, 'كل IDs في METCON_STIMULUS_CATEGORY موجودة فعلياً في EXERCISES', invalidCategoryIds.length === 0, invalidCategoryIds.join(', '));
+
+    const allPushWarnings = detectMetconStimulusImbalance(['shoulder-press', 'push-press', 'thruster']);
+    check(S, 'detectMetconStimulusImbalance يرصد ميتكون من فئة محفز واحدة فقط (دفع فقط)', allPushWarnings.length === 1, allPushWarnings.join(' | '));
+
+    const goodMixWarnings = detectMetconStimulusImbalance(['pull-up', 'box-jump', 'row']);
+    check(S, 'detectMetconStimulusImbalance لا يُطلق تنبيهاً على مزيج سليم من فئتين-ثلاث (سحب+ورك+مونو)', goodMixWarnings.length === 0, goodMixWarnings.join(' | '));
+
+    const fourCatWarnings = detectMetconStimulusImbalance(['push-press', 'pull-up', 'box-jump', 'row']);
+    check(S, 'detectMetconStimulusImbalance يرصد خلط الفئات الأربع معاً في ميتكون واحد', fourCatWarnings.length === 1, fourCatWarnings.join(' | '));
+
+    const mixGuidance = metconStimulusMixGuidance();
+    const loadGuidance = metconRepLoadGuidance();
+    const timeCapGuidance = metconTimeCapGuidance();
+    check(S, 'نصوص إرشاد الميتكون العلمية الثلاثة (خطوات ٢-٤) غير فارغة وتحتوي محتوى فعلي',
+      mixGuidance.length > 100 && loadGuidance.length > 50 && timeCapGuidance.length > 50,
+      `mix=${mixGuidance.length} load=${loadGuidance.length} timeCap=${timeCapGuidance.length} حرف`);
   }
 }
 
