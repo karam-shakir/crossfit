@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import {
   BENCHMARK_OPTIONS, EXERCISES, getCalisthenicsExercises, MovementPattern,
-  WARMUP_ACTIVATION_MAP, PATTERN_METCON_MAP, PATTERN_ACCESSORY_MAP, PATTERN_COOLDOWN_MAP, BARBELL_STRENGTH_IDS,
+  WARMUP_ACTIVATION_MAP, PATTERN_METCON_MAP, PATTERN_COOLDOWN_MAP, BARBELL_STRENGTH_IDS,
+  ACCESSORY_LIBRARY_IDS,
 } from '@/lib/crossfitProgramming';
 
 const ALL_PATTERNS: MovementPattern[] = ['squat', 'hinge', 'push', 'pull', 'olympic'];
@@ -16,7 +17,7 @@ const SECTION_ALLOWED_IDS: Record<string, string[]> = {
   warmup:    Array.from(new Set(ALL_PATTERNS.flatMap(p => WARMUP_ACTIVATION_MAP[p].specificIds))),
   strength:  BARBELL_STRENGTH_IDS,
   metcon:    Array.from(new Set(ALL_PATTERNS.flatMap(p => PATTERN_METCON_MAP[p].suggestedIds))),
-  accessory: Array.from(new Set(ALL_PATTERNS.flatMap(p => PATTERN_ACCESSORY_MAP[p].suggestedIds))),
+  accessory: ACCESSORY_LIBRARY_IDS,
   cooldown:  Array.from(new Set(ALL_PATTERNS.flatMap(p => PATTERN_COOLDOWN_MAP[p].stretches.map(s => s.id)))),
 };
 

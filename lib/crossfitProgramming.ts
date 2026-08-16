@@ -511,6 +511,25 @@ export const PATTERN_ACCESSORY_MAP: Record<MovementPattern, { targetsAr: string;
   olympic: { targetsAr: 'نفس أنماط الحركة الأولمبية (خطف/نظيفة) بتقنية معزولة أبطأ', suggestedIds: ['snatch-balance', 'muscle-snatch', 'tall-snatch', 'overhead-squat', 'front-squat'], rationale: 'الأولمبي انفجاري وسريع بطبيعته — الأكسسوار يعزّز نفس المسار الحركي والعضلات (استقبال الخطف، انفجار الكتفين، ثبات القرفصاء تحت البار) بوتيرة أبطأ وتقنية معزولة (Snatch Balance، Muscle Snatch، Pause) بدل تمارين من مجموعة عضلية مختلفة تماماً' },
 };
 
+// ═══ مكتبة الأكسسوار الكاملة — كل تمرين أُضيف عبر دفعات "الدليل الشامل لتمارين الأكسسوار" على
+// مدى الجلسة، بصرف النظر عن كونه ضمن الاقتراحات المُختارة لكل نمط في PATTERN_ACCESSORY_MAP أعلاه
+// (تلك قائمة مصغّرة (5-6 لكل نمط) مُستخدَمة فقط كتوجيه نصي لتوليد الذكاء الاصطناعي). هذه القائمة
+// هي المصدر الوحيد للحقيقة لأي واجهة تحتاج عرض "كل تمارين الأكسسوار المتاحة" (مثال: قائمة الاختيار
+// اليدوي في لوحة التحكم عند تعديل قسم الأكسسوار في WOD محفوظ مسبقاً) — كانت تلك الواجهة تستخدم
+// suggestedIds المصغّرة خطأً فتُخفي عشرات التمارين الفعلية عن المدرب عند التعديل اليدوي.
+export const ACCESSORY_LIBRARY_IDS: string[] = [
+  'bicep-curl', 'tricep-extension', 'lateral-raise', 'face-pull', 'plank', 'russian-twist',
+  'glute-bridge', 'bulgarian-split-squat', 'hip-thrust', 'farmers-carry',
+  'cossack-squat', 'reverse-hyperextension', 'ghd-hip-extension', 'hollow-body-hold',
+  'single-leg-rdl', 'nordic-curl', 'band-lying-leg-curl', 'db-z-press', 'skull-crusher',
+  'tricep-pushdown', 'ytwl', 'bent-over-lateral-raise', 'strict-ring-rows', 'supinated-grip-row',
+  'dead-hangs', 'strict-pull-up-negatives', 'snatch-balance', 'muscle-snatch', 'tall-snatch',
+  'arch-body-hold', 'plank-shoulder-taps', 'windshield-wiper', 'deadbug', 'cuban-rotation',
+  'scapular-pushup', 'lateral-band-walk', 'suitcase-carry', 'plate-pinch', 'wrist-curls',
+  'reverse-wrist-curls', 'overhead-squat-pause', 'pause-front-squat', 'ring-dip-support-hold',
+  'false-grip-hangs', 'skin-the-cat', 'kettlebell-halo',
+];
+
 // ═══ مكتبة الميتكون الخاص بكل نمط — تمنع أن يعاكس الميتكون نمط قوة اليوم بالكامل
 // (المشكلة المرصودة فعلياً: يوم دفع كانت قوته دفعاً والميتكون بالكامل تقريباً سحباً) ═══
 export const PATTERN_METCON_MAP: Record<MovementPattern, { targetsAr: string; suggestedIds: string[]; rationale: string }> = {
