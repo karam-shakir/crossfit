@@ -153,6 +153,15 @@ export const EXERCISES: CFExercise[] = [
   { id: 'lizard-stretch',         nameEn: 'Lizard Stretch',           nameAr: 'إطالة السحلية (الأربية)',       category: 'mobility'   },
   { id: 'kettlebell-halo',        nameEn: 'Kettlebell Halo',          nameAr: 'هالة الكيتل بيل',               category: 'wod'        },
 
+  // ═══ فجوات حركية حقيقية في مكتبة الميتكون — رصدها المدرب عبر مراجعة قائمة حركات ميتكون قياسية
+  // في CrossFit ووجد ستّ حركات شائعة غائبة كلياً عن المكتبة (لا معرّف بديل قريب يغطيها) ═══
+  { id: 'front-rack-carry',   nameEn: 'Front Rack Carry',   nameAr: 'حمل الصدر (بار أمامي)',       category: 'wod'        },
+  { id: 'ring-dip',           nameEn: 'Ring Dip',           nameAr: 'ضغط المتوازي على الحلقات',    category: 'gymnastics' },
+  { id: 'bar-dip',            nameEn: 'Bar Dip',            nameAr: 'ضغط المتوازي على البار',      category: 'gymnastics' },
+  { id: 'knees-to-elbows',    nameEn: 'Knees to Elbows',    nameAr: 'الركبتين إلى المرفقين',       category: 'gymnastics' },
+  { id: 'bike-erg',           nameEn: 'BikeErg',            nameAr: 'دراجة المقاومة (BikeErg)',    category: 'cardio'     },
+  { id: 'jump-rope',          nameEn: 'Jump Rope (Single)', nameAr: 'القفز على الحبل (عادي)',      category: 'cardio'     },
+
   // إطالات مُسمّاة مخصصة لكل نمط (PATTERN_COOLDOWN_MAP) — معرّفات فعلية بدل استخدام تمرين بديل تقني،
   // كل واحدة مربوطة برابط يوتيوب حقيقي في مجموعة exercises (seed-stretch-exercises.ts)
   { id: 'standing-quad-stretch',        nameEn: 'Standing Quad Stretch',        nameAr: 'إطالة الرباعية واقفاً (Standing Quad Stretch)',              category: 'mobility' },
@@ -252,6 +261,10 @@ export const EXERCISE_FOCUS_CLASS: Record<string, MovementFocusClass> = {
   'overhead-squat-pause': 'concentrated', 'pause-front-squat': 'concentrated',
   'ring-dip-support-hold': 'diffuse', 'false-grip-hangs': 'diffuse', 'skin-the-cat': 'diffuse',
   'kettlebell-halo': 'diffuse',
+
+  // فجوات مكتبة الميتكون — راجع تعليق قسمها في EXERCISES أعلاه
+  'front-rack-carry': 'concentrated', 'ring-dip': 'concentrated', 'bar-dip': 'concentrated',
+  'knees-to-elbows': 'variable', 'bike-erg': 'diffuse', 'jump-rope': 'diffuse',
 };
 
 /** مجموعة التركيز العضلي (١٢ فئة من ملحق الوثيقة) — تحدد "نفس المفصل/السلسلة" بين حركتين */
@@ -301,6 +314,10 @@ export const EXERCISE_MUSCLE_GROUP: Record<string, MuscleFocusGroup> = {
   'overhead-squat-pause':'squat','pause-front-squat':'squat',
   'ring-dip-support-hold':'overhead-push','false-grip-hangs':'grip','skin-the-cat':'back-pull',
   'kettlebell-halo':'warmup-activation',
+
+  // فجوات مكتبة الميتكون — راجع تعليق قسمها في EXERCISES أعلاه
+  'front-rack-carry':'grip','ring-dip':'chest','bar-dip':'chest',
+  'knees-to-elbows':'grip','bike-erg':'cardio','jump-rope':'cardio',
 };
 
 /** قاعدة ٣ — أزواج ممنوعة معاً في نفس الميتكون (تكديس مهارة عالية أو قبضة مزدوجة) */
@@ -488,11 +505,15 @@ export const PATTERN_METCON_MAP: Record<MovementPattern, { targetsAr: string; su
   // كانت غائبة تماماً عن هذا الجدول رغم كونها من أكثر حركات الميتكون شيوعاً في CrossFit فعلياً.
   // اللانجيز بالدمبل (مقدم/فوق الرأس) أُضيفت لنمط القرفصاء تحديداً — حركة أرجل/مؤخرة أحادية الطرف
   // تخدم نفس تركيز النمط، وكانت غائبة عن الميتكون تماماً رغم شيوعها.
-  squat:   { targetsAr: 'الأرجل والمؤخرة — نفس تركيز نمط القرفصاء', suggestedIds: ['back-squat', 'front-squat', 'overhead-squat', 'thruster', 'wall-ball', 'air-squat', 'box-jump', 'box-jump-over', 'pistol-squat', 'dumbbell-thruster', 'kettlebell-goblet-squat', 'bulgarian-split-squat', 'dumbbell-front-rack-lunge', 'dumbbell-overhead-lunge', 'burpee'], rationale: 'الميتكون يجب أن يواصل استنزاف نفس نمط القوة الرئيسي لليوم لا يعاكسه بالكامل — وإلا فقد اليوم هويته التدريبية رغم اسمه' },
-  hinge:   { targetsAr: 'أوتار الركبة وأسفل الظهر والمؤخرة — نفس تركيز نمط الرفعة', suggestedIds: ['deadlift', 'kettle-bell-swing', 'romanian-deadlift', 'sumo-deadlift', 'kettlebell-snatch', 'kettlebell-clean', 'dumbbell-snatch', 'burpee'], rationale: 'نفس المنطق — نمط الرفعة يحتاج ميتكون يواصل نفس السلسلة الخلفية لا يهملها' },
-  push:    { targetsAr: 'الأكتاف والصدر والترايسبس — نفس تركيز نمط الدفع', suggestedIds: ['shoulder-press', 'push-press', 'thruster', 'wall-ball', 'handstand-pushup', 'push-up', 'bench-press', 'dumbbell-push-press', 'devils-press', 'dumbbell-thruster', 'burpee'], rationale: 'يوم الدفع قوته دفع — إن كان الميتكون سحباً بالكامل (pull-up/toes-to-bar فقط) يفقد اليوم هويته رغم اسمه، كما رُصد فعلياً سابقاً' },
-  pull:    { targetsAr: 'الظهر العريض والبايسبس والقبضة — نفس تركيز نمط السحب', suggestedIds: ['power-clean', 'snatch', 'pull-up', 'kipping-pull-up', 'chest-to-bar-pull-up', 'toes-to-bar', 'muscle-up', 'rope-climb', 'row', 'bent-over-row', 'pendlay-row', 'dumbbell-row', 'burpee'], rationale: 'نفس المنطق — نمط السحب يحتاج ميتكون يواصل نفس مجموعة السحب' },
-  olympic: { targetsAr: 'الجسم الكامل بتقنية انفجارية — نفس تركيز النمط الأولمبي', suggestedIds: ['snatch', 'clean-and-jerk', 'power-clean', 'overhead-squat', 'hang-power-clean', 'hang-power-snatch', 'split-jerk', 'dumbbell-snatch', 'dumbbell-clean-and-jerk', 'dumbbell-power-clean', 'burpee'], rationale: 'نمط الأولمبي تقني بطبيعته — الميتكون يجب أن يحافظ على عنصر تقني ولو خفيف الوزن، لا يتحول لتحمّل بحت' },
+  // 'bike-erg' و'jump-rope' أُضيفا لكل الأنماط لنفس منطق burpee (كارديو محايد الاتجاه). حمل الصدر
+  // (front-rack-carry) أُضيف لنمط القرفصاء (تحميل أرجل/جذع مشابه)، ضغط المتوازي (ring-dip/bar-dip)
+  // لنمط الدفع، والركبتين للمرفقين (knees-to-elbows) لنمط السحب (نفس عائلة toes-to-bar) — راجع
+  // فحص المدرب لقائمة حركات ميتكون قياسية وجد هذه الستة غائبة كلياً عن مكتبة التمارين.
+  squat:   { targetsAr: 'الأرجل والمؤخرة — نفس تركيز نمط القرفصاء', suggestedIds: ['back-squat', 'front-squat', 'overhead-squat', 'thruster', 'wall-ball', 'air-squat', 'box-jump', 'box-jump-over', 'pistol-squat', 'dumbbell-thruster', 'kettlebell-goblet-squat', 'bulgarian-split-squat', 'dumbbell-front-rack-lunge', 'dumbbell-overhead-lunge', 'front-rack-carry', 'burpee', 'bike-erg', 'jump-rope'], rationale: 'الميتكون يجب أن يواصل استنزاف نفس نمط القوة الرئيسي لليوم لا يعاكسه بالكامل — وإلا فقد اليوم هويته التدريبية رغم اسمه' },
+  hinge:   { targetsAr: 'أوتار الركبة وأسفل الظهر والمؤخرة — نفس تركيز نمط الرفعة', suggestedIds: ['deadlift', 'kettle-bell-swing', 'romanian-deadlift', 'sumo-deadlift', 'kettlebell-snatch', 'kettlebell-clean', 'dumbbell-snatch', 'burpee', 'bike-erg', 'jump-rope'], rationale: 'نفس المنطق — نمط الرفعة يحتاج ميتكون يواصل نفس السلسلة الخلفية لا يهملها' },
+  push:    { targetsAr: 'الأكتاف والصدر والترايسبس — نفس تركيز نمط الدفع', suggestedIds: ['shoulder-press', 'push-press', 'thruster', 'wall-ball', 'handstand-pushup', 'push-up', 'bench-press', 'dumbbell-push-press', 'devils-press', 'dumbbell-thruster', 'ring-dip', 'bar-dip', 'burpee', 'bike-erg', 'jump-rope'], rationale: 'يوم الدفع قوته دفع — إن كان الميتكون سحباً بالكامل (pull-up/toes-to-bar فقط) يفقد اليوم هويته رغم اسمه، كما رُصد فعلياً سابقاً' },
+  pull:    { targetsAr: 'الظهر العريض والبايسبس والقبضة — نفس تركيز نمط السحب', suggestedIds: ['power-clean', 'snatch', 'pull-up', 'kipping-pull-up', 'chest-to-bar-pull-up', 'toes-to-bar', 'knees-to-elbows', 'muscle-up', 'rope-climb', 'row', 'bent-over-row', 'pendlay-row', 'dumbbell-row', 'burpee', 'bike-erg', 'jump-rope'], rationale: 'نفس المنطق — نمط السحب يحتاج ميتكون يواصل نفس مجموعة السحب' },
+  olympic: { targetsAr: 'الجسم الكامل بتقنية انفجارية — نفس تركيز النمط الأولمبي', suggestedIds: ['snatch', 'clean-and-jerk', 'power-clean', 'overhead-squat', 'hang-power-clean', 'hang-power-snatch', 'split-jerk', 'dumbbell-snatch', 'dumbbell-clean-and-jerk', 'dumbbell-power-clean', 'burpee', 'bike-erg', 'jump-rope'], rationale: 'نمط الأولمبي تقني بطبيعته — الميتكون يجب أن يحافظ على عنصر تقني ولو خفيف الوزن، لا يتحول لتحمّل بحت' },
 };
 
 export interface CooldownStretch { id: string; nameAr: string; }
