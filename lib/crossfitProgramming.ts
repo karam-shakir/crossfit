@@ -120,6 +120,7 @@ export const EXERCISES: CFExercise[] = [
   { id: 'hollow-body-hold',       nameEn: 'Hollow Body Hold',         nameAr: 'ثبات الجسم المجوف',             category: 'gymnastics' },
   { id: 'single-leg-rdl',         nameEn: 'Single-Leg RDL',           nameAr: 'رفعة رومانية بساق واحدة',       category: 'wod'        },
   { id: 'nordic-curl',            nameEn: 'Nordic Curl',              nameAr: 'ثني نوردك لأوتار الركبة',       category: 'gymnastics' },
+  { id: 'band-lying-leg-curl',    nameEn: 'Band Lying Leg Curl',      nameAr: 'ثني الرجل الأرضي بالشريط',      category: 'wod'        },
   { id: 'db-z-press',             nameEn: 'DB Z-Press',               nameAr: 'ضغط Z بالدمبل',                 category: 'wod'        },
   { id: 'skull-crusher',          nameEn: 'Skull Crusher',            nameAr: 'سكل كراشر للترايسبس',           category: 'wod'        },
   { id: 'tricep-pushdown',        nameEn: 'Tricep Pushdown',          nameAr: 'دفع الترايسبس بالحزام',         category: 'wod'        },
@@ -261,7 +262,7 @@ export const EXERCISE_FOCUS_CLASS: Record<string, MovementFocusClass> = {
 
   // أكسسوار الدليل المُحدَّث — راجع تعليق قسمها في EXERCISES أعلاه
   'cossack-squat': 'diffuse', 'reverse-hyperextension': 'diffuse', 'ghd-hip-extension': 'diffuse',
-  'hollow-body-hold': 'diffuse', 'single-leg-rdl': 'variable', 'nordic-curl': 'variable',
+  'hollow-body-hold': 'diffuse', 'single-leg-rdl': 'variable', 'nordic-curl': 'variable', 'band-lying-leg-curl': 'concentrated',
   'db-z-press': 'concentrated', 'skull-crusher': 'concentrated', 'tricep-pushdown': 'concentrated',
   'ytwl': 'diffuse', 'bent-over-lateral-raise': 'concentrated', 'strict-ring-rows': 'diffuse',
   'supinated-grip-row': 'concentrated', 'dead-hangs': 'diffuse', 'strict-pull-up-negatives': 'diffuse',
@@ -314,7 +315,7 @@ export const EXERCISE_MUSCLE_GROUP: Record<string, MuscleFocusGroup> = {
 
   // أكسسوار الدليل المُحدَّث — راجع تعليق قسمها في EXERCISES أعلاه
   'cossack-squat':'squat','reverse-hyperextension':'hinge','ghd-hip-extension':'hinge',
-  'hollow-body-hold':'core','single-leg-rdl':'hinge','nordic-curl':'hinge',
+  'hollow-body-hold':'core','single-leg-rdl':'hinge','nordic-curl':'hinge','band-lying-leg-curl':'hinge',
   'db-z-press':'overhead-push','skull-crusher':'arms-isolation','tricep-pushdown':'arms-isolation',
   'ytwl':'warmup-activation','bent-over-lateral-raise':'overhead-push','strict-ring-rows':'back-pull',
   'supinated-grip-row':'back-pull','dead-hangs':'grip','strict-pull-up-negatives':'back-pull',
@@ -504,7 +505,7 @@ export function stimulusGuidanceFor(stimulus: StimulusType): string {
 // لم يعمل بنفس الكثافة + ثبات جذع — كلها أرجل/جذع، لا صدر أو كتف. ═══
 export const PATTERN_ACCESSORY_MAP: Record<MovementPattern, { targetsAr: string; suggestedIds: string[]; rationale: string }> = {
   squat:   { targetsAr: 'الأرجل والأرداف من زاوية أحادية الطرف + استقرار الجذع تحت الحمل', suggestedIds: ['bulgarian-split-squat', 'cossack-squat', 'reverse-hyperextension', 'ghd-hip-extension', 'hollow-body-hold'], rationale: 'القرفصاء ثنائي الطرف ومتماثل — الأكسسوار يعزّز نفس عضلات الأرجل/الأرداف بحمل أحادي الطرف (توازن + عضلات ثابتة لم تعمل بنفس الكثافة) ويضيف تمديد ورك خلفي وثبات جذع لم يُستهدفا مباشرة في نمط القرفصاء الأمامي' },
-  hinge:   { targetsAr: 'أوتار الركبة والأرداف وأسفل الظهر من زاوية أحادية الطرف ولامركزية + قبضة', suggestedIds: ['single-leg-rdl', 'nordic-curl', 'glute-bridge', 'reverse-hyperextension', 'farmers-carry'], rationale: 'الرفعة الميتة تحميل ثنائي الطرف مركّز — الأكسسوار يعزّز نفس السلسلة الخلفية (أوتار/أرداف/أسفل الظهر) بعمل أحادي الطرف وتوازني (Single-Leg RDL) وانقباض لامركزي بحت (Nordic Curl) لم يعمل عليهما الرفع القياسي، بالإضافة لقبضة الرفعة نفسها بحمل ثابت (Farmer\'s Carry)' },
+  hinge:   { targetsAr: 'أوتار الركبة والأرداف وأسفل الظهر من زاوية أحادية الطرف ولامركزية + قبضة', suggestedIds: ['single-leg-rdl', 'nordic-curl', 'band-lying-leg-curl', 'glute-bridge', 'reverse-hyperextension', 'farmers-carry'], rationale: 'الرفعة الميتة تحميل ثنائي الطرف مركّز — الأكسسوار يعزّز نفس السلسلة الخلفية (أوتار/أرداف/أسفل الظهر) بعمل أحادي الطرف وتوازني (Single-Leg RDL) وانقباض لامركزي بحت (Nordic Curl، Band Lying Leg Curl) لم يعمل عليهما الرفع القياسي، بالإضافة لقبضة الرفعة نفسها بحمل ثابت (Farmer\'s Carry)' },
   push:    { targetsAr: 'الكتف والترايسبس من زاوية عزل واستقرار دوراني', suggestedIds: ['db-z-press', 'skull-crusher', 'tricep-pushdown', 'ytwl', 'bent-over-lateral-raise'], rationale: 'الدفع فوق الرأس يحمّل الدالية الأمامية والترايسبس بحركة مركّبة — الأكسسوار يعزّز نفس منطقة الكتف/الترايسبس بعزل صريح (Z-Press يزيل دفع الأرجل، Skull Crusher يعزل الرأس الطويل) ويضيف الدالية الخلفية ومثبتات الكتف الدورانية (YTWL) التي لا تعمل في الضغط الأمامي البحت — لضمان تغطية كامل مجموعة الكتف لا نصفها الأمامي فقط' },
   pull:    { targetsAr: 'الظهر العريض والبايسبس والقبضة من زاوية وزن الجسم وعزل', suggestedIds: ['strict-ring-rows', 'supinated-grip-row', 'dead-hangs', 'face-pull', 'strict-pull-up-negatives'], rationale: 'السحب الانفجاري/الأفقي بالبار يحمّل الظهر العريض بسرعة — الأكسسوار يعزّز نفس عضلات السحب (لاتس/بايسبس/قبضة) بوزن جسم صريح وإيقاع بطيء (Ring Rows، Negatives) وعزل قبضة ثابت (Dead Hangs)، ويضيف الكتف الخلفي والمعينات (Face Pull) المكمّلة للاتس ضمن نفس "الجزء الخلفي" لا جزء دفع معاكس' },
   olympic: { targetsAr: 'نفس أنماط الحركة الأولمبية (خطف/نظيفة) بتقنية معزولة أبطأ', suggestedIds: ['snatch-balance', 'muscle-snatch', 'tall-snatch', 'overhead-squat', 'front-squat'], rationale: 'الأولمبي انفجاري وسريع بطبيعته — الأكسسوار يعزّز نفس المسار الحركي والعضلات (استقبال الخطف، انفجار الكتفين، ثبات القرفصاء تحت البار) بوتيرة أبطأ وتقنية معزولة (Snatch Balance، Muscle Snatch، Pause) بدل تمارين من مجموعة عضلية مختلفة تماماً' },
