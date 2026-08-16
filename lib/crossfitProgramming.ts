@@ -211,6 +211,15 @@ export function getCalisthenicsExercises(): CFExercise[] {
   );
 }
 
+// ═══ مكتبات مشتقّة تلقائياً من EXERCISES حسب الفئة — لواجهة الاختيار اليدوي في لوحة التحكم فقط
+// (ليست مستخدَمة في توليد الذكاء الاصطناعي، الذي يعتمد القوائم المُقترحة الأضيق أعلاه/أدناه لكل نمط).
+// اشتقاقها من الفئة تلقائياً يمنع تكرار مشكلة الأكسسوار (حيث خفيت عشرات التمارين عن التعديل اليدوي
+// لأن الواجهة كانت تسحب من قائمة اقتراحات الذكاء الاصطناعي المصغّرة بدل مكتبة القسم الكاملة) —
+// أي تمرين جديد يُضاف بالفئة الصحيحة يظهر تلقائياً هنا دون الحاجة لتحديث قائمة يدوياً كل مرة.
+export const WARMUP_LIBRARY_IDS: string[] = EXERCISES.filter(e => e.category === 'gymnastics' || e.category === 'cardio').map(e => e.id);
+export const METCON_LIBRARY_IDS: string[] = EXERCISES.filter(e => e.category !== 'mobility').map(e => e.id);
+export const COOLDOWN_LIBRARY_IDS: string[] = EXERCISES.filter(e => e.category === 'mobility').map(e => e.id);
+
 // ═══ أنماط الحركة الأساسية وتوافق الأكسسوار/التهدئة ═══
 
 export type MovementPattern = 'squat' | 'hinge' | 'push' | 'pull' | 'olympic';

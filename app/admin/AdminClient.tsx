@@ -3,22 +3,21 @@ import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import {
-  BENCHMARK_OPTIONS, EXERCISES, getCalisthenicsExercises, MovementPattern,
-  WARMUP_ACTIVATION_MAP, PATTERN_METCON_MAP, PATTERN_COOLDOWN_MAP, BARBELL_STRENGTH_IDS,
-  ACCESSORY_LIBRARY_IDS,
+  BENCHMARK_OPTIONS, EXERCISES, getCalisthenicsExercises,
+  BARBELL_STRENGTH_IDS, ACCESSORY_LIBRARY_IDS, WARMUP_LIBRARY_IDS, METCON_LIBRARY_IDS, COOLDOWN_LIBRARY_IDS,
 } from '@/lib/crossfitProgramming';
 
-const ALL_PATTERNS: MovementPattern[] = ['squat', 'hinge', 'push', 'pull', 'olympic'];
-
-// القائمة الدقيقة المسموحة لكل قسم — مُشتقّة من نفس خرائط النمط الحقيقية التي يعتمدها التوليد
-// الآلي بالذكاء الاصطناعي (اتحاد كل الأنماط الخمسة لكل خريطة)، لا تخمين حسب تصنيف عام واسع —
-// هذا يضمن أن المحرر اليدوي لا يمنع المدرب من أي تمرين يستخدمه النظام فعلاً لهذا القسم
+// القائمة المسموحة لكل قسم عند التعديل اليدوي — مكتبة القسم الكاملة حسب الفئة (راجع تعليق
+// WARMUP_LIBRARY_IDS/METCON_LIBRARY_IDS/COOLDOWN_LIBRARY_IDS/ACCESSORY_LIBRARY_IDS في
+// lib/crossfitProgramming.ts)، لا قائمة اقتراحات الذكاء الاصطناعي المصغّرة لكل نمط — تلك القوائم
+// المصغّرة كانت تُستخدم هنا خطأً فتُخفي عشرات التمارين الفعلية عن المدرب عند التعديل اليدوي.
+// القوة تبقى استثناءً مقصوداً: محصورة بالبار حصراً بتصميم النظام، لا فجوة هنا.
 const SECTION_ALLOWED_IDS: Record<string, string[]> = {
-  warmup:    Array.from(new Set(ALL_PATTERNS.flatMap(p => WARMUP_ACTIVATION_MAP[p].specificIds))),
+  warmup:    WARMUP_LIBRARY_IDS,
   strength:  BARBELL_STRENGTH_IDS,
-  metcon:    Array.from(new Set(ALL_PATTERNS.flatMap(p => PATTERN_METCON_MAP[p].suggestedIds))),
+  metcon:    METCON_LIBRARY_IDS,
   accessory: ACCESSORY_LIBRARY_IDS,
-  cooldown:  Array.from(new Set(ALL_PATTERNS.flatMap(p => PATTERN_COOLDOWN_MAP[p].stretches.map(s => s.id)))),
+  cooldown:  COOLDOWN_LIBRARY_IDS,
 };
 
 // يقرأ استجابة توليد الخطط الأسبوعية بأمان — كان الكود السابق يستدعي res.json() مباشرة، فإن
