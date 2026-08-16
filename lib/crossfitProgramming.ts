@@ -145,6 +145,7 @@ export const EXERCISES: CFExercise[] = [
   { id: 'suitcase-carry',         nameEn: 'Suitcase Carry',           nameAr: 'حمل الحقيبة (جانب واحد)',       category: 'wod'        },
   { id: 'plate-pinch',            nameEn: 'Plate Pinch',              nameAr: 'قرص الصفيحة بالأصابع',          category: 'wod'        },
   { id: 'wrist-curls',            nameEn: 'Wrist Curls',              nameAr: 'ثني الرسغ',                     category: 'wod'        },
+  { id: 'reverse-wrist-curls',    nameEn: 'Reverse Wrist Curls',      nameAr: 'مد الرسغ العكسي',               category: 'wod'        },
   { id: 'overhead-squat-pause',   nameEn: 'Overhead Squat (Pause)',   nameAr: 'قرفصاء فوق الرأس مع توقف',      category: 'olympic'    },
   { id: 'pause-front-squat',      nameEn: 'Pause Front Squat',        nameAr: 'قرفصاء أمامية مع توقف',         category: 'olympic'    },
   { id: 'ring-dip-support-hold',  nameEn: 'Ring Dip Support Hold',    nameAr: 'ثبات دعم الحلقات',              category: 'gymnastics' },
@@ -257,7 +258,7 @@ export const EXERCISE_FOCUS_CLASS: Record<string, MovementFocusClass> = {
   // بقية بنود دليل الأكسسوار — راجع تعليق قسمها في EXERCISES أعلاه
   'arch-body-hold': 'diffuse', 'plank-shoulder-taps': 'diffuse', 'windshield-wiper': 'diffuse', 'deadbug': 'diffuse',
   'cuban-rotation': 'concentrated', 'scapular-pushup': 'diffuse', 'lateral-band-walk': 'diffuse',
-  'suitcase-carry': 'concentrated', 'plate-pinch': 'concentrated', 'wrist-curls': 'concentrated',
+  'suitcase-carry': 'concentrated', 'plate-pinch': 'concentrated', 'wrist-curls': 'concentrated', 'reverse-wrist-curls': 'concentrated',
   'overhead-squat-pause': 'concentrated', 'pause-front-squat': 'concentrated',
   'ring-dip-support-hold': 'diffuse', 'false-grip-hangs': 'diffuse', 'skin-the-cat': 'diffuse',
   'kettlebell-halo': 'diffuse',
@@ -310,7 +311,7 @@ export const EXERCISE_MUSCLE_GROUP: Record<string, MuscleFocusGroup> = {
   // بقية بنود دليل الأكسسوار — راجع تعليق قسمها في EXERCISES أعلاه
   'arch-body-hold':'core','plank-shoulder-taps':'core','windshield-wiper':'core','deadbug':'core',
   'cuban-rotation':'overhead-push','scapular-pushup':'overhead-push','lateral-band-walk':'warmup-activation',
-  'suitcase-carry':'grip','plate-pinch':'grip','wrist-curls':'arms-isolation',
+  'suitcase-carry':'grip','plate-pinch':'grip','wrist-curls':'arms-isolation','reverse-wrist-curls':'arms-isolation',
   'overhead-squat-pause':'squat','pause-front-squat':'squat',
   'ring-dip-support-hold':'overhead-push','false-grip-hangs':'grip','skin-the-cat':'back-pull',
   'kettlebell-halo':'warmup-activation',
