@@ -125,7 +125,9 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
         const weight = ex.weight ? ` (${ex.weight})`  : '';
         const sets   = ex.sets   ? ` × ${ex.sets} مج` : '';
         lines.push(`  ${i + 1}. ${name}${sets}${reps}${weight}`);
-        if (nameEn) lines.push(`     ▶️ ${ytLink(nameEn, 'crossfit')}`);
+        // فيديو حقيقي مُنسَّق من مكتبة التمارين إن وُجد — بدل رابط بحث عام دائماً حتى لو توفّر فيديو محدد فعلي
+        const ytUrl = ex.exercise?.youtube || (nameEn ? ytLink(nameEn, 'crossfit') : '');
+        if (ytUrl) lines.push(`     ▶️ ${ytUrl}`);
       });
     }
     lines.push('');

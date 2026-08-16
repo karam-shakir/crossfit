@@ -1035,7 +1035,9 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                             <div className="space-y-2">
                               {secItems.map((ex: any, i: number) => {
                                 const nameEn = ex.exercise?.nameEn || ex.exerciseId || '—';
-                                const ytUrl = YOUTUBE_LINKS[ex.exerciseId] ||
+                                // فيديو حقيقي من مكتبة التمارين أولاً (ex.exercise.youtube، يُضاف عند القراءة عبر
+                                // enrichWodSections) — كان يُتجاهَل تماماً هنا فيظهر رابط بحث عام دائماً حتى مع وجود فيديو محدد فعلي
+                                const ytUrl = ex.exercise?.youtube || YOUTUBE_LINKS[ex.exerciseId] ||
                                   `https://www.youtube.com/results?search_query=${encodeURIComponent((nameEn) + ' crossfit tutorial')}`;
                                 return (
                                   <div key={i} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${style.bg} border border-white/5`}>
