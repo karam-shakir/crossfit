@@ -189,6 +189,18 @@ export const EXERCISES: CFExercise[] = [
   { id: 'standing-straddle-stretch',    nameEn: 'Standing Straddle Stretch',    nameAr: 'الإطالة الواقفة العريضة (Standing Straddle Stretch)',        category: 'mobility' },
   { id: 'downward-dog-stretch',         nameEn: 'Downward Dog',                 nameAr: 'الكلب الهابط لإطالة الساق (Downward Dog)',                   category: 'mobility' },
   { id: 'ankle-dorsiflexion-stretch',   nameEn: 'Ankle Dorsiflexion Stretch',   nameAr: 'إطالة ظهر القدم مرفوعة (Elevated Ankle Dorsiflexion Stretch)', category: 'mobility' },
+
+  // إطالات إضافية راجعها المدرب مقابل قائمة إطالات قياسية في CrossFit ووجدها غائبة كلياً
+  { id: 'dynamic-butterfly-stretch', nameEn: 'Dynamic Butterfly Stretch', nameAr: 'تمدد الفراشة الديناميكي',        category: 'mobility' },
+  { id: 'zombie-kicks-stretch',      nameEn: 'Zombie Kicks',              nameAr: 'ركلات الزومبي (لمس أصابع القدم)', category: 'mobility' },
+  { id: 'frog-stretch',              nameEn: 'Frog Stretch',              nameAr: 'تمدد الضفدع',                    category: 'mobility' },
+  { id: '90-90-stretch',             nameEn: '90/90 Stretch',             nameAr: 'تمدد 90/90',                     category: 'mobility' },
+  { id: 'banded-hamstring-stretch',  nameEn: 'Banded Hamstring Stretch',  nameAr: 'تمدد أوتار الركبة بالشريط',       category: 'mobility' },
+  { id: 'wall-calf-stretch',         nameEn: 'Wall Calf Stretch',         nameAr: 'تمدد السمانة على الحائط',        category: 'mobility' },
+  { id: 'towel-achilles-stretch',    nameEn: 'Towel Achilles Stretch',    nameAr: 'تمدد وتر أخيل بالمنشفة',         category: 'mobility' },
+  { id: 'sphinx-seal-stretch',       nameEn: 'Sphinx / Seal Stretch',     nameAr: 'تمدد أبو الهول / الفقمة',        category: 'mobility' },
+  { id: 'pnf-hamstring-stretch',     nameEn: 'PNF Hamstring (Contract-Relax)', nameAr: 'تمدد PNF لأوتار الركبة',    category: 'mobility' },
+  { id: 'partner-pnf-hip-stretch',   nameEn: 'Partner PNF Hip Stretch',   nameAr: 'تمدد PNF للورك بالشريك',         category: 'mobility' },
 ];
 
 export function getCalisthenicsExercises(): CFExercise[] {
