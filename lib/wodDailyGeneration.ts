@@ -279,7 +279,7 @@ ${getRxFocusGuidance(rxFocus)}
 
 **تفاصيل التمرين المطلوب:**
 - الصعوبة: ${difficulty}
-- طابع الجلسة: ${sessionType === 'heavy' ? '🔴 يوم ثقيل — قوة compound ثقيلة 80-90% 1RM + ميتكون قصير 8-12 دق (نظام Phosphagen/Glycolytic)' : sessionType === 'skill' ? '🎯 يوم تقنية — Olympic Lifting أو Gymnastics skill + ميتكون خفيف' : sessionType === 'cardio' ? '🫀 يوم تحمل — ميتكون طويل 20+ دقيقة (نظام Oxidative)، أوزان خفيفة، معدل قلب مرتفع مستدام' : sessionType === 'deload' ? '🔄 يوم تفريغ — 60-70% شدة، تقنية، لا إجهاد' : '⚖️ متوازن — CrossFit كلاسيكي قوة + ميتكون'}
+- طابع الجلسة: ${sessionType === 'heavy' ? '🔴 يوم ثقيل — قوة compound ثقيلة 80-90% 1RM (مدة/حمل الميتكون: التزم حرفياً بنوع تحفيز اليوم أدناه، لا برقم منفصل هنا)' : sessionType === 'skill' ? '🎯 يوم تقنية — Olympic Lifting أو Gymnastics skill + ميتكون خفيف' : sessionType === 'cardio' ? '🫀 يوم تحمل — التزم بنوع تحفيز اليوم أدناه لمدة/حمل الميتكون، لا برقم منفصل هنا' : sessionType === 'deload' ? '🔄 يوم تفريغ — 60-70% شدة، تقنية، لا إجهاد' : '⚖️ متوازن — CrossFit كلاسيكي قوة + ميتكون'}
 ${focus ? `- التركيز العضلي: ${focus}` : ''}
 ${!isBenchmarkDay ? `- نمط القوة ${patternIsForced ? 'المطلوب من المدرب' : 'المقترح آلياً بناءً على تحليل الأسبوع'}: **${effectivePattern.toUpperCase()}** ${patternIsForced ? '' : '(الأكثر إهمالاً هذا الأسبوع)'}` : ''}
 ${metconFormat ? `- صيغة الميتكون المطلوبة: ${metconFormat}` : ''}
