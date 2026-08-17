@@ -1,4 +1,19 @@
-import type { Exercise, Wod, WodBlock, WodExercise } from './db';
+import type { Exercise, Wod, WodBlock, WodExercise, WodLevelSpec } from './db';
+
+// المستويات الأربعة الوحيدة التي تعرضها الواجهة — رُصد فعلياً (2026-08-25) أن الذكاء الاصطناعي
+// (تحديداً GPT) قد يُرجع مفتاح مستوى وهمياً إضافياً (مثال: "engineer") لم يُطلَب منه إطلاقاً،
+// وكانت طبقة التحقق السابقة تمرر حقل levels كما وصل حرفياً بلا أي تصفية للمفاتيح
+const VALID_LEVEL_KEYS = ['beginner', 'intermediate', 'advanced', 'elite'] as const;
+
+/** يُبقي فقط المستويات الأربعة الصحيحة من حقل levels (يحذف أي مفتاح إضافي وهمي)، ويرجع null إن لم يبقَ شيء */
+export function sanitizeLevels(levels: any): Record<string, WodLevelSpec> | null {
+  if (!levels || typeof levels !== 'object') return null;
+  const out: Record<string, WodLevelSpec> = {};
+  for (const key of VALID_LEVEL_KEYS) {
+    if (levels[key]) out[key] = levels[key];
+  }
+  return Object.keys(out).length > 0 ? out : null;
+}
 
 // ═══════════════════════════════════════════════════════════════
 // تطبيع أقسام الـ WOD (إحماء/قوة/ميتكون/أكسسوار/تهدئة) — طبقة توافق مركزية

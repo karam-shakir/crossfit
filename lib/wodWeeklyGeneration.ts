@@ -12,7 +12,7 @@ import {
   metconStimulusMixGuidance, metconRepLoadGuidance, metconTimeCapGuidance, detectMetconStimulusImbalance,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
-import { flattenMovements } from '@/lib/wodBlocks';
+import { flattenMovements, sanitizeLevels } from '@/lib/wodBlocks';
 
 const DAY_NAMES: Record<number, string> = {
   0: 'الأحد', 1: 'الاثنين', 2: 'الثلاثاء', 3: 'الأربعاء',
@@ -476,7 +476,7 @@ export async function processWeeklyWodResult(rawText: string, ctx: WeeklyWodCont
     time: item.time || '',
     notes: item.notes || '',
     executionNote: item.executionNote || '',
-    levels: item.levels || null,
+    levels: sanitizeLevels(item.levels),
   });
   const validateSection = (blocks: any[]) =>
     (blocks || [])

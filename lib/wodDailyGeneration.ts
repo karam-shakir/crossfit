@@ -23,7 +23,7 @@ import {
   metconStimulusMixGuidance, metconRepLoadGuidance, metconTimeCapGuidance, detectMetconStimulusImbalance,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
-import { flattenMovements } from '@/lib/wodBlocks';
+import { flattenMovements, sanitizeLevels } from '@/lib/wodBlocks';
 import { todaySA } from '@/lib/timezone';
 
 const PATTERN_KEYS: MovementPattern[] = ['squat', 'hinge', 'push', 'pull', 'olympic'];
@@ -488,7 +488,7 @@ export function processDailyWodResult(rawText: string, ctx: DailyWodContext) {
     time: item.time || '',
     notes: item.notes || '',
     executionNote: item.executionNote || '',
-    levels: item.levels || null,
+    levels: sanitizeLevels(item.levels),
   });
 
   const validateSection = (blocks: any[]) =>
