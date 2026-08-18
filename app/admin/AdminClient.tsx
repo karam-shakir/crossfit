@@ -109,6 +109,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
   const [aiGeneratingProvider, setAiGeneratingProvider] = useState<'claude' | 'gpt'>('claude'); // أي مزوّد قيد التوليد/آخر مزوّد استُخدم — للعرض فقط
   const [aiError, setAiError] = useState('');
   const [aiTheme, setAiTheme] = useState('');
+  const [aiBlacklistWarnings, setAiBlacklistWarnings] = useState<string[]>([]); // تنبيهات محظورات دمج الحركات (قواعد ١-٣) بعد آخر توليد — للمراجعة فقط، لا تمنع الحفظ
   const [showAiPanel, setShowAiPanel] = useState(false);
   const [aiDifficulty, setAiDifficulty] = useState('متوسط');
   const [aiFocus, setAiFocus] = useState('');
@@ -468,9 +469,11 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
       setWod({ ...data, duration: data.duration || '', rounds: data.rounds || '' });
       if (data.aiTheme) setAiTheme(data.aiTheme);
       else setAiTheme('');
+      setAiBlacklistWarnings([]);
     } else {
       setWod(emptyWod(date));
       setAiTheme('');
+      setAiBlacklistWarnings([]);
     }
     setWodLoading(false);
   }
@@ -553,6 +556,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
     setAiGeneratingProvider(provider);
     setAiError('');
     setAiTheme('');
+    setAiBlacklistWarnings([]);
     try {
       const res = await fetch(provider === 'gpt' ? '/api/wod/generate-gpt' : '/api/wod/generate', {
         method: 'POST',
@@ -585,6 +589,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
         rounds: generated.rounds ? String(generated.rounds) : '',
       });
       if (data.theme) setAiTheme(data.theme);
+      setAiBlacklistWarnings(Array.isArray(data.blacklistWarnings) ? data.blacklistWarnings : []);
       setWodGeneratedCyclePhaseLabel(data.cyclePhaseLabel || '');
       setWodGeneratedPartnerLabel(data.isPartnerWod ? (data.partnerFormatLabel || 'بارتنر') : '');
       setAiGeneratedMode(wodMode);
@@ -1268,6 +1273,20 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
                       {wodGeneratedPartnerLabel && (
                         <div className="text-[11px] text-pink-300 mt-1">🤝 صيغة البارتنر: {wodGeneratedPartnerLabel}</div>
                       )}
+                    </div>
+                  </div>
+                )}
+                {/* تنبيهات محظورات دمج الحركات — رصد فقط، تظهر الآن هنا بدل الاختباء في سجلات السيرفر */}
+                {aiBlacklistWarnings.length > 0 && !showAiPanel && (
+                  <div className="rounded-xl p-3 flex items-start gap-2 bg-amber-900/20 border border-amber-700/30">
+                    <span className="mt-0.5 flex-shrink-0 text-amber-400">⚠️</span>
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold mb-1 text-amber-400">تنبيهات مراجعة (لا تمنع الحفظ)</div>
+                      <ul className="space-y-0.5">
+                        {aiBlacklistWarnings.map((w, i) => (
+                          <li key={i} className="text-xs text-amber-200/90">{w}</li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
                 )}

@@ -550,5 +550,6 @@ export function processDailyWodResult(rawText: string, ctx: DailyWodContext) {
     cyclePhaseLabel: ctx.wodMode === 'crossfit' ? CYCLE_PHASE_LABELS_AR[ctx.cyclePhase] : null,
     isPartnerWod: ctx.isPartnerDay,
     partnerFormatLabel: ctx.isPartnerDay && ctx.partnerFormat ? PARTNER_FORMAT_LABELS_AR[ctx.partnerFormat] : null,
+    blacklistWarnings,
   };
 }

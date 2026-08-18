@@ -91,17 +91,29 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
   const [copied, setCopied] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState<LevelKey | undefined>(undefined);
   const [exportingLang, setExportingLang] = useState<ShareCardLang | null>(null);
+  const [enExportWod, setEnExportWod] = useState<any>(null); // نسخة مُترجَمة بالكامل للإنجليزية — تُبنى عند الضغط على زر التصدير الإنجليزي فقط
   const exportCardRef = useRef<HTMLDivElement>(null);
   const today = todaySA();
 
   // يُصدِّر بطاقة التمرين كصورة PNG جاهزة للمشاركة على وسائل التواصل — يُخفي البطاقة خارج الشاشة
-  // أثناء الالتقاط بدل حذفها من الـ DOM (html-to-image يحتاج العنصر مرسوماً فعلياً ليلتقطه)
+  // أثناء الالتقاط بدل حذفها من الـ DOM (html-to-image يحتاج العنصر مرسوماً فعلياً ليلتقطه).
+  // في وضع الإنجليزية: يترجم كل النصوص العربية أولاً عبر /api/wod/translate-en قبل الالتقاط،
+  // ليخرج التصدير إنجليزياً بالكامل (العنوان والثيم والملاحظات وملاحظات كل حركة) لا العناوين فقط
   async function exportImage(lang: ShareCardLang) {
     setExportingLang(lang);
-    await new Promise(r => setTimeout(r, 60)); // فسحة إطار واحد لإعادة رسم البطاقة باللغة الجديدة قبل الالتقاط
-    const node = exportCardRef.current;
-    if (!node) { setExportingLang(null); return; }
     try {
+      if (lang === 'en') {
+        const res = await fetch('/api/wod/translate-en', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date: wod.date }),
+        });
+        if (!res.ok) throw new Error('فشلت الترجمة');
+        setEnExportWod(await res.json());
+      }
+      await new Promise(r => setTimeout(r, 60)); // فسحة إطار واحد لإعادة رسم البطاقة باللغة الجديدة قبل الالتقاط
+      const node = exportCardRef.current;
+      if (!node) { setExportingLang(null); return; }
       const dataUrl = await Promise.race([
         toPng(node, { pixelRatio: 2, cacheBust: true, skipFonts: true }),
         new Promise<never>((_, reject) => setTimeout(() => reject(new Error('انتهت مهلة التصدير')), 15000)),
@@ -142,21 +154,27 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
       { k: 'cooldown',  icon: '🧘', label: 'التهدئة' },
     ];
     for (const sec of sections) {
-      const items = flatMovements(wod[sec.k]).filter((e: any) => e.exerciseId);
-      if (!items.length) continue;
+      const blocks = (wod[sec.k] || []).filter((b: any) => (b.movements || []).some((m: any) => m.exerciseId));
+      if (!blocks.length) continue;
       lines.push('');
       lines.push(`${sec.icon} ${sec.label}:`);
-      items.forEach((ex: any, i: number) => {
-        const name   = ex.exercise?.nameEn || ex.exerciseId;
-        const nameEn = ex.exercise?.nameEn || ex.exerciseId || '';
-        const reps   = ex.reps   ? ` — ${ex.reps}`   : '';
-        const weight = ex.weight ? ` (${ex.weight})`  : '';
-        const sets   = ex.sets   ? ` × ${ex.sets} مج` : '';
-        lines.push(`  ${i + 1}. ${name}${sets}${reps}${weight}`);
-        // فيديو حقيقي مُنسَّق من مكتبة التمارين إن وُجد — بدل رابط بحث عام دائماً حتى لو توفّر فيديو محدد فعلي
-        const ytUrl = ex.exercise?.youtube || (nameEn ? ytLink(nameEn, 'crossfit') : '');
-        if (ytUrl) lines.push(`     ▶️ ${ytUrl}`);
-      });
+      let i = 0;
+      for (const block of blocks) {
+        if (block.format) lines.push(`  [${block.format}]`);
+        for (const ex of (block.movements || [])) {
+          if (!ex.exerciseId) continue;
+          i++;
+          const name   = ex.exercise?.nameEn || ex.exerciseId;
+          const nameEn = ex.exercise?.nameEn || ex.exerciseId || '';
+          const reps   = ex.reps   ? ` — ${ex.reps}`   : '';
+          const weight = ex.weight ? ` (${ex.weight})`  : '';
+          const sets   = ex.sets   ? ` × ${ex.sets} مج` : '';
+          lines.push(`  ${i}. ${name}${sets}${reps}${weight}`);
+          // فيديو حقيقي مُنسَّق من مكتبة التمارين إن وُجد — بدل رابط بحث عام دائماً حتى لو توفّر فيديو محدد فعلي
+          const ytUrl = ex.exercise?.youtube || (nameEn ? ytLink(nameEn, 'crossfit') : '');
+          if (ytUrl) lines.push(`     ▶️ ${ytUrl}`);
+        }
+      }
     }
     lines.push('');
     lines.push('💪 مجموعة المطانيخ CrossFit');
@@ -214,7 +232,7 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
           {/* بطاقة مخفية خارج الشاشة — تُلتقَط كصورة PNG عند التصدير، لا تظهر للمستخدم إطلاقاً */}
           <div style={{ position: 'fixed', top: 0, insetInlineStart: -99999, pointerEvents: 'none' }}>
             <div ref={exportCardRef}>
-              <WodShareCard wod={wod} lang={exportingLang || 'ar'} />
+              <WodShareCard wod={exportingLang === 'en' && enExportWod ? enExportWod : wod} lang={exportingLang || 'ar'} />
             </div>
           </div>
           {wod.aiTheme && <div className="bg-purple-50 border border-purple-200 rounded-xl p-3 text-sm text-purple-800 leading-relaxed">🤖 {wod.aiTheme}</div>}
