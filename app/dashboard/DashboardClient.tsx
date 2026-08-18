@@ -785,7 +785,8 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
         for (const ex of (block.movements || [])) {
           i++;
           const name = ex.exercise?.nameEn || ex.exerciseId || ex.exercise?.nameAr || '';
-          const reps   = ex.reps   ? ` — ${ex.reps}`   : '';
+          const qty    = [ex.reps, ex.distance, ex.time].filter(Boolean).join(' / ');
+          const reps   = qty ? ` — ${qty}` : '';
           const weight = ex.weight ? ` (${ex.weight})`  : '';
           const note   = ex.notes  ? ` · ${ex.notes}`   : '';
           lines.push(`  ${i}. ${name}${reps}${weight}${note}`);

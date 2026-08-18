@@ -28,6 +28,17 @@ import { todaySA } from '@/lib/timezone';
 
 const PATTERN_KEYS: MovementPattern[] = ['squat', 'hinge', 'push', 'pull', 'olympic'];
 
+// النموذج يملأ "type" (AMRAP/للوقت/تدريب) وصيغة بلوك الميتكون (format، مثل "FOR TIME") بشكل منفصل
+// بلا ربط بينهما، فقد يكتب type="AMRAP" بينما صيغة الميتكون الفعلية "FOR TIME" — تناقض يُربك
+// وتيرة العضو (رُصد فعلياً 2026-08-20). يشتق النوع الصحيح من صيغة الميتكون الفعلية حين تكون واضحة.
+function deriveTypeFromMetconFormat(format: string): string | null {
+  const f = (format || '').toUpperCase();
+  if (f.includes('AMRAP')) return 'AMRAP';
+  if (f.includes('FOR TIME')) return 'للوقت';
+  if (f.includes('EMOM') || f.includes('EVERY')) return 'تدريب';
+  return null;
+}
+
 export interface DailyWodContext {
   prompt: string;
   date: string;
@@ -520,11 +531,21 @@ export function processDailyWodResult(rawText: string, ctx: DailyWodContext) {
     if (blacklistWarnings.length) console.warn(`[generate/wod ${ctx.date}]`, blacklistWarnings.join(' | '));
   }
 
+  // ═══ تحقق type يطابق صيغة الميتكون الفعلية — تصحيح تلقائي مثل قاعدتي ١ و٣ (بيانات موضوعية،
+  // لا قرار حركي ذاتي، فلا خطر في تصحيحه تلقائياً بعكس قاعدة ٢/عدم توازن المحفزات) ═══
+  let resolvedType = generated.type || 'للوقت';
+  const metconFormatForType = metconBlocks.find((b: any) => b.format)?.format || '';
+  const derivedType = deriveTypeFromMetconFormat(metconFormatForType);
+  if (derivedType && derivedType !== resolvedType) {
+    blacklistWarnings.push(`تصحيح تلقائي: نوع الجلسة كان "${resolvedType}" بينما صيغة الميتكون الفعلية "${metconFormatForType}" ⇒ صُحِّح إلى "${derivedType}"`);
+    resolvedType = derivedType;
+  }
+
   const wodData = {
     date: ctx.date,
     title:   generated.title   || (ctx.wodMode === 'calisthenics' ? 'تمرين Calisthenics' : 'تمرين يومي'),
     titleEn: generated.titleEn || '',
-    type: generated.type || 'للوقت',
+    type: resolvedType,
     isCalisthenics: ctx.wodMode === 'calisthenics',
     duration: generated.duration ?? 20,
     rounds: generated.rounds ?? null,

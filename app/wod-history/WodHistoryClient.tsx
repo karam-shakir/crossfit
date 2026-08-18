@@ -166,7 +166,8 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
           i++;
           const name   = ex.exercise?.nameEn || ex.exerciseId;
           const nameEn = ex.exercise?.nameEn || ex.exerciseId || '';
-          const reps   = ex.reps   ? ` — ${ex.reps}`   : '';
+          const qty    = [ex.reps, ex.distance, ex.time].filter(Boolean).join(' / ');
+          const reps   = qty ? ` — ${qty}` : '';
           const weight = ex.weight ? ` (${ex.weight})`  : '';
           const sets   = ex.sets   ? ` × ${ex.sets} مج` : '';
           lines.push(`  ${i}. ${name}${sets}${reps}${weight}`);
