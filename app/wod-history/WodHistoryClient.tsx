@@ -102,13 +102,17 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
     const node = exportCardRef.current;
     if (!node) { setExportingLang(null); return; }
     try {
-      const dataUrl = await toPng(node, { pixelRatio: 2, cacheBust: true });
+      const dataUrl = await Promise.race([
+        toPng(node, { pixelRatio: 2, cacheBust: true, skipFonts: true }),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('انتهت مهلة التصدير')), 15000)),
+      ]);
       const a = document.createElement('a');
       a.href = dataUrl;
       a.download = `matanikeh-wod-${wod.date}-${lang}.png`;
       a.click();
     } catch (e) {
       console.error('[exportImage] فشل تصدير الصورة', e);
+      alert('تعذّر تصدير الصورة، حاول مرة أخرى');
     } finally {
       setExportingLang(null);
     }
