@@ -1,9 +1,11 @@
 'use client';
 import { todaySA } from '@/lib/timezone';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Navbar from '@/components/Navbar';
 import WodBlockList from '@/components/WodBlockList';
 import { formatMeta } from '@/components/WodCalendar';
+import WodShareCard, { ShareCardLang } from '@/components/WodShareCard';
+import { toPng } from 'html-to-image';
 
 const flatMovements = (blocks: any[]) => (blocks || []).flatMap((b: any) => b.movements || []);
 
@@ -88,7 +90,29 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [copied, setCopied] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState<LevelKey | undefined>(undefined);
+  const [exportingLang, setExportingLang] = useState<ShareCardLang | null>(null);
+  const exportCardRef = useRef<HTMLDivElement>(null);
   const today = todaySA();
+
+  // يُصدِّر بطاقة التمرين كصورة PNG جاهزة للمشاركة على وسائل التواصل — يُخفي البطاقة خارج الشاشة
+  // أثناء الالتقاط بدل حذفها من الـ DOM (html-to-image يحتاج العنصر مرسوماً فعلياً ليلتقطه)
+  async function exportImage(lang: ShareCardLang) {
+    setExportingLang(lang);
+    await new Promise(r => setTimeout(r, 60)); // فسحة إطار واحد لإعادة رسم البطاقة باللغة الجديدة قبل الالتقاط
+    const node = exportCardRef.current;
+    if (!node) { setExportingLang(null); return; }
+    try {
+      const dataUrl = await toPng(node, { pixelRatio: 2, cacheBust: true });
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `matanikeh-wod-${wod.date}-${lang}.png`;
+      a.click();
+    } catch (e) {
+      console.error('[exportImage] فشل تصدير الصورة', e);
+    } finally {
+      setExportingLang(null);
+    }
+  }
   function hasMultiLevel(s: string) { return (s.includes('|') || s.includes('مبتدئ')) && s.includes('متوسط'); }
   const hasLevels = [...flatMovements(wod.strength || []), ...flatMovements(wod.metcon || [])].some((e: any) =>
     e.levels ||
@@ -173,6 +197,22 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
             onCopy={copyText} copied={copied}
             isAdmin={isAdmin} editHref={`/admin?date=${wod.date}`} onDelete={deleteWod}
           />
+          <div className="flex gap-2">
+            <button onClick={() => exportImage('ar')} disabled={!!exportingLang}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-60 text-white text-sm font-bold transition-colors">
+              {exportingLang === 'ar' ? '⏳ جارٍ التصدير...' : '🖼️ صورة عربي'}
+            </button>
+            <button onClick={() => exportImage('en')} disabled={!!exportingLang}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-60 text-white text-sm font-bold transition-colors">
+              {exportingLang === 'en' ? '⏳ Exporting...' : '🖼️ Image English'}
+            </button>
+          </div>
+          {/* بطاقة مخفية خارج الشاشة — تُلتقَط كصورة PNG عند التصدير، لا تظهر للمستخدم إطلاقاً */}
+          <div style={{ position: 'fixed', top: 0, insetInlineStart: -99999, pointerEvents: 'none' }}>
+            <div ref={exportCardRef}>
+              <WodShareCard wod={wod} lang={exportingLang || 'ar'} />
+            </div>
+          </div>
           {wod.aiTheme && <div className="bg-purple-50 border border-purple-200 rounded-xl p-3 text-sm text-purple-800 leading-relaxed">🤖 {wod.aiTheme}</div>}
           {wod.notes   && <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800 leading-relaxed">📝 {wod.notes}</div>}
 

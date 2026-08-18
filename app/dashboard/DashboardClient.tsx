@@ -1,9 +1,11 @@
 ﻿'use client';
 import { todaySA } from '@/lib/timezone';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Navbar from '@/components/Navbar';
 import WodBlockList from '@/components/WodBlockList';
 import WodCalendar, { formatMeta } from '@/components/WodCalendar';
+import WodShareCard, { ShareCardLang } from '@/components/WodShareCard';
+import { toPng } from 'html-to-image';
 
 const YOUTUBE_LINKS: Record<string, string> = {
   'back-squat':       'https://www.youtube.com/results?search_query=back+squat+crossfit+tutorial',
@@ -646,6 +648,29 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
     { key: 'elite'        as const, label: 'نخبة',  active: 'bg-red-600 text-white',     idle: 'bg-white text-red-700 border border-red-300'      },
   ];
   const [copied, setCopied] = useState(false);
+  const [exportingLang, setExportingLang] = useState<ShareCardLang | null>(null);
+  const exportCardRef = useRef<HTMLDivElement>(null);
+
+  // يُصدِّر بطاقة تمرين اليوم كصورة PNG جاهزة للمشاركة على وسائل التواصل — يُخفي البطاقة خارج
+  // الشاشة أثناء الالتقاط بدل حذفها من الـ DOM (html-to-image يحتاج العنصر مرسوماً فعلياً ليلتقطه)
+  async function exportWodImage(lang: ShareCardLang) {
+    if (!wod) return;
+    setExportingLang(lang);
+    await new Promise(r => setTimeout(r, 60));
+    const node = exportCardRef.current;
+    if (!node) { setExportingLang(null); return; }
+    try {
+      const dataUrl = await toPng(node, { pixelRatio: 2, cacheBust: true });
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `matanikeh-wod-${wod.date}-${lang}.png`;
+      a.click();
+    } catch (e) {
+      console.error('[exportWodImage] فشل تصدير الصورة', e);
+    } finally {
+      setExportingLang(null);
+    }
+  }
   const [sportTab, setSportTab] = useState<'crossfit' | 'hyrox' | 'kettlebell' | 'calisthenics'>('crossfit');
   const [weeklyActivity, setWeeklyActivity] = useState<{ day: string; count: number; isToday: boolean }[]>([]);
 
@@ -997,6 +1022,23 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                       className="px-4 py-2.5 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold transition-colors min-w-[90px]">
                       {copied ? '✅ Copied!' : '📋 Copy'}
                     </button>
+                  </div>
+
+                  {/* أزرار تصدير التمرين كصورة */}
+                  <div className="flex gap-2">
+                    <button onClick={() => exportWodImage('ar')} disabled={!!exportingLang}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-60 text-white text-sm font-bold transition-colors">
+                      {exportingLang === 'ar' ? '⏳ جارٍ التصدير...' : '🖼️ صورة عربي'}
+                    </button>
+                    <button onClick={() => exportWodImage('en')} disabled={!!exportingLang}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-60 text-white text-sm font-bold transition-colors">
+                      {exportingLang === 'en' ? '⏳ Exporting...' : '🖼️ Image English'}
+                    </button>
+                  </div>
+                  <div style={{ position: 'fixed', top: 0, insetInlineStart: -99999, pointerEvents: 'none' }}>
+                    <div ref={exportCardRef}>
+                      <WodShareCard wod={wod} lang={exportingLang || 'ar'} />
+                    </div>
                   </div>
 
                   {/* العنوان */}
