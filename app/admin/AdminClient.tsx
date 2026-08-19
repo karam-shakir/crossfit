@@ -2,6 +2,7 @@
 import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
+import ExerciseLibraryModal from '@/components/ExerciseLibraryModal';
 import {
   BENCHMARK_OPTIONS, EXERCISES, getCalisthenicsExercises,
   BARBELL_STRENGTH_IDS, ACCESSORY_LIBRARY_IDS, WARMUP_LIBRARY_IDS, METCON_LIBRARY_IDS, COOLDOWN_LIBRARY_IDS,
@@ -62,6 +63,7 @@ function emptyExercise() {
 
 export default function AdminClient({ member, exercises, isFullAdmin = true }: { member: any; exercises: any[]; isFullAdmin?: boolean }) {
   const [tab, setTab] = useState<AdminTab>('wod');
+  const [showExerciseLibrary, setShowExerciseLibrary] = useState(false);
   const [wod, setWod] = useState<any>(emptyWod(todaySA()));
   const [wodLoading, setWodLoading] = useState(false);
   const [wodSaved, setWodSaved] = useState(false);
@@ -482,6 +484,22 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
     loadWod(wod.date);
   }, []);
 
+  // تمارين مضافة عبر لوحة التحكم — تُجلب من طرف العميل بمعزل عن الـ prop المُحمَّل من السيرفر عند فتح
+  // الصفحة، كي تظهر فوراً في القائمة المنسدلة اليدوية بلا حاجة لإعادة تحميل الصفحة كاملة بعد الإضافة
+  const [customExercisesForPicker, setCustomExercisesForPicker] = useState<any[]>([]);
+  async function refreshCustomExercises() {
+    try {
+      const r = await fetch('/api/exercises');
+      if (r.ok) setCustomExercisesForPicker(await r.json());
+    } catch {}
+  }
+  useEffect(() => { refreshCustomExercises(); }, []);
+  useEffect(() => { if (!showExerciseLibrary) refreshCustomExercises(); }, [showExerciseLibrary]);
+  const allExercisesMerged = (() => {
+    const ids = new Set(exercises.map((e: any) => e.id));
+    return [...exercises, ...customExercisesForPicker.filter((e: any) => !ids.has(e.id))];
+  })();
+
   async function saveWod() {
     setWodLoading(true);
     await fetch('/api/wod', {
@@ -853,6 +871,10 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
             <button onClick={() => setTab('weekly')}
               className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'weekly' ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
               📅 خطة CrossFit
+            </button>
+            <button onClick={() => setShowExerciseLibrary(true)}
+              className="py-2 rounded-xl text-sm font-semibold transition-colors bg-gray-800 text-gray-400 hover:text-white">
+              🧩 مكتبة التمارين
             </button>
             {isFullAdmin && (
               <>
@@ -1373,7 +1395,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
 
                       <div className="space-y-3">
                         {block.movements.map((ex: any, i: number) => {
-                          const exInfo = exercises.find((e: any) => e.id === ex.exerciseId);
+                          const exInfo = allExercisesMerged.find((e: any) => e.id === ex.exerciseId);
                           return (
                             <div key={i} className="bg-gray-900 rounded-xl border border-gray-800 p-3 space-y-3">
                               <div className="flex items-center gap-2">
@@ -1383,12 +1405,15 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
                                   className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500">
                                   <option value="">اختر التمرين</option>
                                   {(() => {
-                                    const allowedIds = SECTION_ALLOWED_IDS[s.key] || [];
+                                    const customIdsForSection = customExercisesForPicker
+                                      .filter((e: any) => (e.sections || []).includes(s.key))
+                                      .map((e: any) => e.id);
+                                    const allowedIds = [...(SECTION_ALLOWED_IDS[s.key] || []), ...customIdsForSection];
                                     // نُبقي التمرين المُختار حالياً ظاهراً حتى لو كان خارج القائمة (بيانات محفوظة سابقاً)
-                                    // — لكن الخيارات الجديدة تقتصر على قائمة هذا القسم فقط
-                                    const options = exercises.filter((e: any) => allowedIds.includes(e.id) || e.id === ex.exerciseId);
+                                    // — لكن الخيارات الجديدة تقتصر على قائمة هذا القسم فقط (مكتبة الكود + تمارين المدرب المضافة له)
+                                    const options = allExercisesMerged.filter((e: any) => allowedIds.includes(e.id) || e.id === ex.exerciseId);
                                     return options.map((e: any) => (
-                                      <option key={e.id} value={e.id}>{e.nameAr} ({e.nameEn})</option>
+                                      <option key={e.id} value={e.id}>{e.nameAr} ({e.nameEn}){e.isCustom ? ' 🧩' : ''}</option>
                                     ));
                                   })()}
                                 </select>
@@ -3841,6 +3866,10 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
             </button>
           </div>
         </div>
+      )}
+
+      {showExerciseLibrary && (
+        <ExerciseLibraryModal onClose={() => setShowExerciseLibrary(false)} />
       )}
     </div>
   );

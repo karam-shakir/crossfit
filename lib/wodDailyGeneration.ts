@@ -10,7 +10,7 @@
 // عن أي نموذج يُستخدم، بما يضمن تمريناً قابلاً للمقارنة العادلة بين المزوّدين بنفس الإعدادات.
 // ═══════════════════════════════════════════════════════════════
 
-import { getWods, getLatestWodCycleMeta } from '@/lib/db';
+import { getWods, getLatestWodCycleMeta, getExercises, Exercise } from '@/lib/db';
 import {
   EXERCISES, getCalisthenicsExercises, MovementPattern, CyclePhase, PartnerFormat, PATTERN_LABELS_AR,
   suggestPattern, accessoryGuidanceFor, cooldownGuidanceFor, strengthGuidanceFor, warmupGuidanceFor, metconGuidanceFor, BARBELL_STRENGTH_IDS,
@@ -49,6 +49,7 @@ export interface DailyWodContext {
   cyclePhase: CyclePhase;
   isPartnerDay: boolean;
   partnerFormat: PartnerFormat | null;
+  aiEligibleCustomExercises: Exercise[]; // تمارين أضافها المدرب عبر لوحة التحكم ورقّاها للذكاء الاصطناعي (aiEligible: true)
 }
 
 /** يجمع سياق الأسبوع الماضي ودورة التدريج ونمط اليوم/نوع التحفيز، ويبني نص البرومت الكامل — لا يتصل بأي مزوّد ذكاء اصطناعي */
@@ -72,7 +73,16 @@ export async function buildDailyWodContext(body: any): Promise<DailyWodContext> 
 
   const CALISTHENICS_EXERCISES = getCalisthenicsExercises();
 
-  const exerciseList = EXERCISES.map(e => `- ${e.id} (${e.nameEn}) [${e.category}]`).join('\n');
+  // تمارين أضافها المدرب عبر لوحة التحكم ورقّاها صراحةً ليختارها الذكاء الاصطناعي أيضاً — تُدرَج في قائمة
+  // التمارين المتاحة بنفس الصيغة، مع توضيح الأقسام المقصودة لها كي يعرف النموذج متى يستخدمها
+  const allExercisesFromDb = await getExercises();
+  const aiEligibleCustomExercises = allExercisesFromDb.filter(e => e.isCustom && e.aiEligible);
+  const customExerciseListText = aiEligibleCustomExercises
+    .map(e => `- ${e.id} (${e.nameEn}) [تمرين مضاف من المدرب — مناسب لأقسام: ${(e.sections || []).join('، ') || 'غير محدد'}]`)
+    .join('\n');
+
+  const exerciseList = EXERCISES.map(e => `- ${e.id} (${e.nameEn}) [${e.category}]`).join('\n')
+    + (customExerciseListText ? `\n${customExerciseListText}` : '');
   const calisExerciseList = CALISTHENICS_EXERCISES.map(e => `- ${e.id} (${e.nameEn}) [${e.category}]`).join('\n');
 
   const allWods = await getWods();
@@ -482,6 +492,7 @@ ${isPartnerDay ? `- 🤝 يوم بارتنر: العنوان (title وtitleEn) �
     cyclePhase,
     isPartnerDay,
     partnerFormat,
+    aiEligibleCustomExercises,
   };
 }
 
@@ -489,7 +500,17 @@ ${isPartnerDay ? `- 🤝 يوم بارتنر: العنوان (title وtitleEn) �
  * قاعدة ٢ رصد فقط)، ويبني جسم استجابة API الجاهز للإرجاع — لا يتصل بأي مزوّد ذكاء اصطناعي */
 export function processDailyWodResult(rawText: string, ctx: DailyWodContext) {
   const generated = parseAiJson(rawText);
-  const validIds = new Set(EXERCISES.map(e => e.id));
+  const customExercises = ctx.aiEligibleCustomExercises || [];
+  const validIds = new Set([...EXERCISES.map(e => e.id), ...customExercises.map(e => e.id)]);
+  // تصنيف التمارين المضافة عبر لوحة التحكم — يُدمَج فوق خرائط المكتبة الأساسية في محظورات دمج الحركات أدناه
+  const customFocusClass: Record<string, any> = {};
+  const customMuscleGroup: Record<string, any> = {};
+  const customMetconCategory: Record<string, any> = {};
+  for (const e of customExercises) {
+    if (e.focusClass) customFocusClass[e.id] = e.focusClass;
+    if (e.muscleGroup) customMuscleGroup[e.id] = e.muscleGroup;
+    if (e.metconStimulusCategory) customMetconCategory[e.id] = e.metconStimulusCategory;
+  }
 
   const validateMovement = (item: any) => ({
     exerciseId: item.exerciseId,
@@ -516,7 +537,7 @@ export function processDailyWodResult(rawText: string, ctx: DailyWodContext) {
   let metconBlocks = validateSection(generated.metcon);
   const blacklistWarnings: string[] = [];
   if (ctx.wodMode === 'crossfit' && !ctx.isBenchmarkDay) {
-    const rule1 = stripRule1Violations(strengthBlocks);
+    const rule1 = stripRule1Violations(strengthBlocks, customFocusClass, customMuscleGroup);
     strengthBlocks = rule1.blocks;
     const rule3 = stripRule3Violations(metconBlocks);
     metconBlocks = rule3.blocks;
@@ -524,9 +545,11 @@ export function processDailyWodResult(rawText: string, ctx: DailyWodContext) {
     blacklistWarnings.push(...detectRule2HeavyOverlap(
       strengthBlocks.flatMap(b => b.movements.map((m: any) => m.exerciseId)),
       metconBlocks.flatMap(b => b.movements.map((m: any) => m.exerciseId)),
+      customFocusClass, customMuscleGroup,
     ));
     blacklistWarnings.push(...detectMetconStimulusImbalance(
       metconBlocks.flatMap(b => b.movements.map((m: any) => m.exerciseId)),
+      customMetconCategory,
     ));
     if (blacklistWarnings.length) console.warn(`[generate/wod ${ctx.date}]`, blacklistWarnings.join(' | '));
   }

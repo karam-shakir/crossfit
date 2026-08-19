@@ -354,16 +354,23 @@ export const RULE3_BANNED_METCON_PAIRS: [string, string][] = [
 
 type ProgBlock = { format: string; scoreType: string; movements: any[] };
 
-/** يزيل انتهاكات القاعدة ١ (أكثر من تمرين "مركّز" واحد من نفس مجموعة الحركة في بلوكات القوة) — يُبقي أول تمرين ويحذف الباقي */
-export function stripRule1Violations(blocks: ProgBlock[]): { blocks: ProgBlock[]; warnings: string[] } {
+/** يزيل انتهاكات القاعدة ١ (أكثر من تمرين "مركّز" واحد من نفس مجموعة الحركة في بلوكات القوة) — يُبقي أول تمرين ويحذف الباقي.
+ * extraFocusClass/extraMuscleGroup: تصنيف تمارين مضافة عبر لوحة التحكم (مؤهَّلة للذكاء الاصطناعي) — تُدمَج فوق المكتبة الأساسية دون تعديلها */
+export function stripRule1Violations(
+  blocks: ProgBlock[],
+  extraFocusClass: Record<string, MovementFocusClass> = {},
+  extraMuscleGroup: Record<string, MuscleFocusGroup> = {},
+): { blocks: ProgBlock[]; warnings: string[] } {
+  const focusClass = { ...EXERCISE_FOCUS_CLASS, ...extraFocusClass };
+  const muscleGroup = { ...EXERCISE_MUSCLE_GROUP, ...extraMuscleGroup };
   const seenGroups = new Set<MuscleFocusGroup>();
   const warnings: string[] = [];
   const newBlocks = blocks
     .map(block => ({
       ...block,
       movements: block.movements.filter((m: any) => {
-        if (EXERCISE_FOCUS_CLASS[m.exerciseId] !== 'concentrated') return true;
-        const group = EXERCISE_MUSCLE_GROUP[m.exerciseId];
+        if (focusClass[m.exerciseId] !== 'concentrated') return true;
+        const group = muscleGroup[m.exerciseId];
         if (!group) return true;
         if (seenGroups.has(group)) {
           warnings.push(`قاعدة ١ (محظورات دمج الحركات): أُزيل "${m.exerciseId}" من القوة — تكرار تمرين مركّز من مجموعة "${group}"`);
@@ -398,18 +405,25 @@ export function stripRule3Violations(blocks: ProgBlock[]): { blocks: ProgBlock[]
 /** قاعدة ٢ (رصد فقط، لا حذف تلقائي) — يكتشف تكديساً محتملاً بين تمرين قوة "مركّز" وتمرين ميتكون "مركّز" من نفس المجموعة،
  * ليُسجَّل في السجلات للمراجعة. لا يحذف تلقائياً لأن حذف حركة ميتكون بلا بديل مناسب قد يُفرغ الميتكون من محتواه —
  * البديل الآمن هو الإرشاد النصي في البرومت (movementBlacklistGuidance) الذي يوجّه النموذج لاختيار بديل مناسب مسبقاً */
-export function detectRule2HeavyOverlap(strengthMovementIds: string[], metconMovementIds: string[]): string[] {
+export function detectRule2HeavyOverlap(
+  strengthMovementIds: string[],
+  metconMovementIds: string[],
+  extraFocusClass: Record<string, MovementFocusClass> = {},
+  extraMuscleGroup: Record<string, MuscleFocusGroup> = {},
+): string[] {
+  const focusClass = { ...EXERCISE_FOCUS_CLASS, ...extraFocusClass };
+  const muscleGroup = { ...EXERCISE_MUSCLE_GROUP, ...extraMuscleGroup };
   const heavyGroups = new Set(
     strengthMovementIds
-      .filter(id => EXERCISE_FOCUS_CLASS[id] === 'concentrated')
-      .map(id => EXERCISE_MUSCLE_GROUP[id])
+      .filter(id => focusClass[id] === 'concentrated')
+      .map(id => muscleGroup[id])
       .filter(Boolean)
   );
   if (!heavyGroups.size) return [];
   const warnings: string[] = [];
   for (const id of metconMovementIds) {
-    if (EXERCISE_FOCUS_CLASS[id] !== 'concentrated') continue;
-    const group = EXERCISE_MUSCLE_GROUP[id];
+    if (focusClass[id] !== 'concentrated') continue;
+    const group = muscleGroup[id];
     if (group && heavyGroups.has(group)) {
       warnings.push(`قاعدة ٢ (محظورات دمج الحركات): تنبيه فقط — "${id}" في الميتكون من نفس مجموعة تمرين القوة المركّز (${group})`);
     }
@@ -593,9 +607,13 @@ export function metconStimulusMixGuidance(): string {
 
 /** رصد فقط (بلا حذف تلقائي — النسب المئوية للتكرارات تعتمد على حقل reps النصي الحر الذي لا يمكن تفسيره برمجياً بثقة كافية):
  * يكتشف إن كانت كل حركات الميتكون من فئة محفز واحدة فقط (خرق واضح لقاعدة "فئتان أو ثلاث") */
-export function detectMetconStimulusImbalance(metconMovementIds: string[]): string[] {
+export function detectMetconStimulusImbalance(
+  metconMovementIds: string[],
+  extraMetconCategory: Record<string, MetconStimulusCategory> = {},
+): string[] {
+  const metconCategory = { ...METCON_STIMULUS_CATEGORY, ...extraMetconCategory };
   const categories = Array.from(new Set(
-    metconMovementIds.map(id => METCON_STIMULUS_CATEGORY[id]).filter((c): c is MetconStimulusCategory => !!c)
+    metconMovementIds.map(id => metconCategory[id]).filter((c): c is MetconStimulusCategory => !!c)
   ));
   if (categories.length === 1) {
     const only = categories[0];

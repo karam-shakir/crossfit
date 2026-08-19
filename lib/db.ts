@@ -1,5 +1,5 @@
 import { getDb } from './mongodb';
-import { unstable_cache } from 'next/cache';
+import { unstable_cache, revalidateTag } from 'next/cache';
 import type { MovementPattern, PartnerFormat, StimulusType } from './crossfitProgramming';
 
 // ===================== INTERFACES =====================
@@ -24,6 +24,15 @@ export interface Exercise {
   gif: string;
   youtube: string;
   muscles: string;
+  // حقول تمرين مضاف عبر لوحة التحكم (لا من مكتبة الكود الأساسية EXERCISES في crossfitProgramming.ts)
+  isCustom?: boolean;
+  sections?: string[];      // warmup/strength/metcon/accessory/cooldown — أي قوائم تعديل يدوي يظهر فيها
+  aiEligible?: boolean;     // true = الذكاء الاصطناعي قد يختاره أيضاً (يتطلب focusClass وmuscleGroup مضبوطة أولاً)
+  focusClass?: 'concentrated' | 'variable' | 'diffuse';
+  muscleGroup?: string;
+  metconStimulusCategory?: 'push' | 'pull' | 'hip-explode' | 'mono';
+  createdBy?: string;
+  createdAt?: string;
 }
 
 export interface WodLevelSpec {
@@ -193,13 +202,35 @@ export const getExercises = unstable_cache(
     return stripAll<Exercise>(docs);
   },
   ['exercises-v2'],
-  { revalidate: 3600 }
+  { revalidate: 3600, tags: ['exercises-v2'] }
 );
 
 export async function getExerciseById(id: string): Promise<Exercise | undefined> {
   const db = await getDb();
   const doc = await db.collection('exercises').findOne({ id });
   return doc ? strip_id<Exercise>(doc) : undefined;
+}
+
+// تمارين مضافة عبر لوحة التحكم (isCustom: true) — إضافة/تعديل/حذف تُبطل كاش getExercises فوراً
+// (بعكس سكربتات seed-*.ts القديمة التي كانت تكتب على MongoDB بمعزل تام عن كاش unstable_cache
+// وتترك لوحة التحكم تعرض بيانات قديمة حتى انتهاء الـ TTL — نفس المشكلة الموثّقة أعلاه بالضبط)
+export async function createExercise(ex: Exercise): Promise<void> {
+  const db = await getDb();
+  await db.collection('exercises').insertOne(ex as any);
+  revalidateTag('exercises-v2');
+}
+
+export async function updateExercise(id: string, fields: Partial<Exercise>): Promise<void> {
+  const db = await getDb();
+  await db.collection('exercises').updateOne({ id }, { $set: fields });
+  revalidateTag('exercises-v2');
+}
+
+// يمنع حذف تمارين المكتبة الأساسية بالخطأ — تلك ليست في هذه المجموعة أصلاً بحقل isCustom، فالفلتر أمان إضافي فقط
+export async function deleteCustomExercise(id: string): Promise<void> {
+  const db = await getDb();
+  await db.collection('exercises').deleteOne({ id, isCustom: true });
+  revalidateTag('exercises-v2');
 }
 
 // ===================== WODS =====================
