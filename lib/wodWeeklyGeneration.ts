@@ -1,5 +1,5 @@
 import { todaySA } from '@/lib/timezone';
-import { getWods, getLatestWodCycleMeta, upsertWodCycleMeta } from '@/lib/db';
+import { getWods, getLatestWodCycleMeta, upsertWodCycleMeta, getExercises, Exercise } from '@/lib/db';
 import {
   EXERCISES, MovementPattern, PATTERN_LABELS_AR, CyclePhase, PartnerFormat,
   buildPatternSequence, accessoryGuidanceFor, cooldownGuidanceFor, strengthGuidanceFor, warmupGuidanceFor, metconGuidanceFor, BARBELL_STRENGTH_IDS,
@@ -37,6 +37,7 @@ export interface WeeklyWodContext {
   isBenchmarkWeek: boolean;
   benchmarkDate: string;
   hyroxMode: boolean;
+  aiEligibleCustomExercises: Exercise[]; // تمارين أضافها المدرب عبر لوحة التحكم ورقّاها للذكاء الاصطناعي (aiEligible: true)
 }
 
 export async function buildWeeklyWodContext(body: any): Promise<WeeklyWodContext> {
@@ -131,7 +132,15 @@ export async function buildWeeklyWodContext(body: any): Promise<WeeklyWodContext
   const { phase: cyclePhase, cycleIndex: newCycleIndex, autoDeloadTriggered } =
     computeNextCyclePhase(latestCycleMeta?.cycleIndex ?? null, forcePhase);
 
-  const exerciseList = EXERCISES.map(e => `${e.id} | ${e.nameEn} | ${e.category}`).join('\n');
+  // تمارين أضافها المدرب عبر لوحة التحكم ورقّاها صراحةً ليختارها الذكاء الاصطناعي أيضاً — نفس آلية التوليد اليومي
+  const allExercisesFromDb = await getExercises();
+  const aiEligibleCustomExercises = allExercisesFromDb.filter(e => e.isCustom && e.aiEligible);
+  const customExerciseListText = aiEligibleCustomExercises
+    .map(e => `${e.id} | ${e.nameEn} | تمرين مضاف من المدرب — مناسب لأقسام: ${(e.sections || []).join('، ') || 'غير محدد'}`)
+    .join('\n');
+
+  const exerciseList = EXERCISES.map(e => `${e.id} | ${e.nameEn} | ${e.category}`).join('\n')
+    + (customExerciseListText ? `\n${customExerciseListText}` : '');
 
   const estimatedRestDays = restDaysCount >= 0 ? restDaysCount : Math.max(days >= 6 ? 2 : 1, Math.round(days * 0.25));
   const estimatedNonCrossfitDays = (weekMode === 'mixed' ? calisthenicsDays : 0) + (hyroxMode ? 1 : 0);
@@ -461,13 +470,24 @@ ${latestCycleMeta?.progressionNote ? `\n🗒️ توصيتك أنت (المدر�
   return {
     prompt, startDate, dates, patternSequence, stimulusSequence, cyclePhase, newCycleIndex,
     weekIntensity, autoDeloadTriggered, isBenchmarkWeek, benchmarkDate, hyroxMode,
+    aiEligibleCustomExercises,
   };
 }
 
 export async function processWeeklyWodResult(rawText: string, ctx: WeeklyWodContext) {
   const result = parseAiJson(rawText, 'wods');
 
-  const validIds = new Set(EXERCISES.map(e => e.id));
+  const customExercises = ctx.aiEligibleCustomExercises || [];
+  const validIds = new Set([...EXERCISES.map(e => e.id), ...customExercises.map(e => e.id)]);
+  // تصنيف التمارين المضافة عبر لوحة التحكم — يُدمَج فوق خرائط المكتبة الأساسية في محظورات دمج الحركات أدناه
+  const customFocusClass: Record<string, any> = {};
+  const customMuscleGroup: Record<string, any> = {};
+  const customMetconCategory: Record<string, any> = {};
+  for (const e of customExercises) {
+    if (e.focusClass) customFocusClass[e.id] = e.focusClass;
+    if (e.muscleGroup) customMuscleGroup[e.id] = e.muscleGroup;
+    if (e.metconStimulusCategory) customMetconCategory[e.id] = e.metconStimulusCategory;
+  }
   const validateMovement = (item: any) => ({
     exerciseId: item.exerciseId,
     reps: item.reps || '',
@@ -499,7 +519,7 @@ export async function processWeeklyWodResult(rawText: string, ctx: WeeklyWodCont
       let dayStrength = validateSection(day.strength);
       let dayMetcon = validateSection(day.metcon);
       if (!skip) {
-        const rule1 = stripRule1Violations(dayStrength);
+        const rule1 = stripRule1Violations(dayStrength, customFocusClass, customMuscleGroup);
         dayStrength = rule1.blocks;
         const rule3 = stripRule3Violations(dayMetcon);
         dayMetcon = rule3.blocks;
@@ -508,8 +528,12 @@ export async function processWeeklyWodResult(rawText: string, ctx: WeeklyWodCont
           ...detectRule2HeavyOverlap(
             dayStrength.flatMap(b => b.movements.map((m: any) => m.exerciseId)),
             dayMetcon.flatMap(b => b.movements.map((m: any) => m.exerciseId)),
+            customFocusClass, customMuscleGroup,
           ),
-          ...detectMetconStimulusImbalance(dayMetcon.flatMap(b => b.movements.map((m: any) => m.exerciseId))),
+          ...detectMetconStimulusImbalance(
+            dayMetcon.flatMap(b => b.movements.map((m: any) => m.exerciseId)),
+            customMetconCategory,
+          ),
         ];
         if (warnings.length) console.warn(`[generate-week ${day.date}]`, warnings.join(' | '));
       }
