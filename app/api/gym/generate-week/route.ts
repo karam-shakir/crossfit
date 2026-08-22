@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSession } from '@/lib/auth';
-import { getGymProfile, getGymSessions, getMemberById, upsertGymSession, deleteGymSessionsByMember, getLatestGymWeekMeta, upsertGymWeekMeta, getGymExerciseLogs } from '@/lib/db';
+import { getGymProfile, getGymSessions, getMemberById, upsertGymSession, deleteGymSessionsByMember, getLatestGymWeekMeta, upsertGymWeekMeta, getGymExerciseLogs, getGymCatalog, GymCatalogExercise } from '@/lib/db';
 import { todaySA } from '@/lib/timezone';
 import { parseAiJson } from '@/lib/aiJson';
 import { CyclePhase, computeNextCyclePhase, CYCLE_PHASE_LABELS_AR, CYCLE_PHASE_INFO, getRpeGuidance, estimateOneRepMax } from '@/lib/periodization';
@@ -25,6 +25,32 @@ function buildDates(fromDate: string, count: number) {
     result.push({ date: d.toISOString().split('T')[0], dayName: DAY_NAMES[d.getDay()] || '' });
   }
   return result;
+}
+
+// كتالوج أجهزة/تمارين الجيم — كان قبل هذا نصاً ثابتاً هنا في الكود ("أجهزة Technogym")، الآن يُبنى من
+// lib/db.ts (GymCatalogExercise) القابلة للتعديل من لوحة التحكم بلا نشر كود جديد. راجع lib/db.ts للتفاصيل
+const CATEGORY_LABELS_AR: Record<string, string> = {
+  legs: '🦵 الساق والورك',
+  'free-weight': '🏆 القوة الحرة (الأوزان الحرة)',
+  chest: '🏠 الصدر',
+  back: '🔙 الظهر',
+  shoulders: '🎯 الكتفين',
+  arms: '💪 الذراعين',
+  core: '🔥 البطن والجذع',
+  cardio: '🏃 الكارديو',
+};
+const CATEGORY_ORDER = ['legs', 'free-weight', 'chest', 'back', 'shoulders', 'arms', 'core', 'cardio'];
+
+function buildCatalogText(catalog: GymCatalogExercise[]): string {
+  return CATEGORY_ORDER
+    .map(cat => {
+      const items = catalog.filter(e => e.category === cat);
+      if (!items.length) return '';
+      const lines = items.map(e => `${e.id} | ${e.nameEn} | ${e.muscleGroup}`).join('\n');
+      return `${CATEGORY_LABELS_AR[cat]}:\n${lines}`;
+    })
+    .filter(Boolean)
+    .join('\n\n');
 }
 
 function getSplitPlan(days: number): string {
@@ -153,6 +179,8 @@ export async function POST(req: NextRequest) {
   const startDate = fromDate || todaySA();
   const member = await getMemberById(memberId);
   const profile = await getGymProfile(memberId);
+  const gymCatalog = await getGymCatalog();
+  const catalogText = buildCatalogText(gymCatalog);
 
   // دمج بروفايل العضو مع تعديلات المدرب (override يأخذ الأولوية)
   const effective = {
@@ -296,11 +324,11 @@ ${previousMeta ? `
   const levelAr = { beginner: 'مبتدئ', intermediate: 'متوسط', advanced: 'متقدم', elite: 'محترف' }[effective.level as string] || 'متوسط';
   const bmi = effective.weight && effective.height ? (effective.weight / ((effective.height / 100) ** 2)).toFixed(1) : null;
 
-  const prompt = `أنت خبير برمجة تدريبية معتمد (CSCS, NSCA) ومتخصص في أجهزة Technogym وتدريب الصالات الرياضية بمستوى احترافي عالٍ. مهمتك تصميم برنامج تدريبي أسبوعي متكامل ومخصص بالكامل لهذا المتدرب.
+  const prompt = `أنت خبير برمجة تدريبية معتمد (CSCS, NSCA) ومتخصص في تدريب صالات الجيم بمستوى احترافي عالٍ — البرنامج مبني على أجهزة ومعدات قياسية متوفرة في أي صالة تجارية عادية، لا يفترض علامة تجارية معينة. مهمتك تصميم برنامج تدريبي أسبوعي متكامل ومخصص بالكامل لهذا المتدرب.
 
 ╔══════════════════════════════════════════════╗
 ║       صالة مجموعة المطانيخ — قسم الجيم      ║
-║              أجهزة Technogym الكاملة         ║
+║         يصلح لأي صالة جيم قياسية             ║
 ╚══════════════════════════════════════════════╝
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -347,63 +375,10 @@ ${dates.map(d => `• ${d.date} — ${d.dayName}`).join('\n')}
 وزّع ${effective.daysPerWeek} أيام تمرين و${restDays} أيام راحة على هذه الأيام بذكاء (مثلاً: لا تضع يومي تمرين ثقيل متتاليين بدون راحة)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🏋️ قائمة أجهزة وتمارين Technogym الكاملة
+🏋️ قائمة أجهزة وتمارين الجيم المتوفرة (معدّات صالة قياسية)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🦵 الساق والورك:
-leg-press | Leg Press Machine | الرباعية والمؤخرة
-leg-extension | Leg Extension | الرباعية (أمام الفخذ)
-leg-curl | Lying Leg Curl | بايسبس الفخذ (خلف الفخذ)
-hack-squat | Hack Squat Machine | الساق الكاملة - محور الرباعية
-hip-thrust | Hip Thrust Machine | المؤخرة (Glutes)
-calf-raise | Seated/Standing Calf Raise | الساق السفلى (Calves)
-hip-abduction | Hip Abduction Machine | الورك الخارجي (Glutes Med)
-hip-adduction | Hip Adduction Machine | الداخلي الفخذ
-back-extension | Back Extension Machine | أسفل الظهر والمؤخرة
-smith-squat | Smith Machine Squat | الساق الكاملة
-
-🏆 القوة الحرة (Barbell):
-barbell-squat | Back Squat | الساق الكاملة - ملك التمارين
-barbell-deadlift | Conventional Deadlift | الخلفية الكاملة + أسفل الظهر
-barbell-bench | Flat Bench Press | الصدر + الترايسبس + الأمامي الكتف
-barbell-row | Bent Over Barbell Row | الظهر الكامل
-barbell-ohp | Overhead Press (OHP) | الكتفين الكاملة
-
-🏠 الصدر:
-chest-press | Chest Press Machine | الصدر الكامل
-pec-deck | Pec Deck / Butterfly | الصدر الداخلي والعلوي
-cable-fly | Cable Crossover Fly | الصدر السفلي/الداخلي
-smith-bench | Smith Machine Bench | الصدر + تنويع الزاوية
-dumbbell-fly | Dumbbell Chest Fly | الصدر (إطالة كاملة)
-
-🔙 الظهر:
-lat-pulldown | Lat Pulldown (Wide Grip) | الظهر العلوي العريض
-seated-row | Seated Cable Row (Close Grip) | الظهر الأوسط والسمك
-cable-row | Cable Row (Wide Grip) | الظهر الأوسط والكتف الخلفي
-dumbbell-row | Single Arm Dumbbell Row | الظهر الجانبي
-
-🎯 الكتفين:
-shoulder-press | Shoulder Press Machine | الكتفين الكاملة
-cable-lateral | Cable Lateral Raise | الكتف الجانبي (Medial Delt)
-rear-delt | Rear Delt Machine / Pec Deck Reverse | الكتف الخلفي (Posterior Delt)
-dumbbell-lateral | Dumbbell Lateral Raise | الكتف الجانبي
-
-💪 الذراعين:
-bicep-machine | Bicep Curl Machine (Preacher) | البايسبس (ذروة العضلة)
-tricep-pushdown | Tricep Rope Pushdown | الترايسبس (الرأس الجانبي)
-tricep-overhead | Overhead Cable Tricep Extension | الترايسبس (الرأس الطويل)
-dumbbell-curl | Dumbbell Alternating Curl | البايسبس + Brachialis
-dumbbell-extension | Dumbbell Overhead Tricep Ext. | الترايسبس (كامل)
-
-🔥 البطن والجذع:
-ab-crunch | Ab Crunch Machine | البطن العلوي
-cable-crunch | Cable Crunch | البطن الكامل (أفضل تحميل)
-
-🏃 الكارديو:
-treadmill | Treadmill | قلب وأوعية — HIIT أو Steady-state
-bike | Stationary Bike | قلب — أقل ضغطاً على المفاصل
-elliptical | Elliptical Cross-trainer | كارديو كامل الجسم
-rower | Rowing Machine | كارديو + ظهر + ذراعين
+${catalogText}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⚖️ جدول الأوزان المرجعية (مُدرَّج حسب مرحلة الدورة أعلاه)

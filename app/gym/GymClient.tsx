@@ -28,34 +28,36 @@ const SPLIT_THEME: Record<string, { accent: string; badge: string; icon: string 
   Rest:       { accent: 'bg-slate-300',    badge: 'bg-slate-100 text-slate-500 border border-slate-200',      icon: '😴' },
 };
 
+// روابط شرح لكل جهاز معروف بمكتبة الأساس — بلا أي علامة تجارية، تصلح لأي صالة. لأي تمرين مضاف عبر
+// لوحة التحكم لاحقاً وغير موجود هنا، انظر دالة ytFallback أدناه (بحث عام باسم التمرين الإنجليزي)
 const MACHINE_YOUTUBE: Record<string, string> = {
-  'leg-press':        'https://www.youtube.com/results?search_query=technogym+leg+press+how+to+use+proper+form',
-  'leg-extension':    'https://www.youtube.com/results?search_query=technogym+leg+extension+machine+how+to+use',
-  'leg-curl':         'https://www.youtube.com/results?search_query=technogym+leg+curl+machine+how+to+use',
-  'hack-squat':       'https://www.youtube.com/results?search_query=hack+squat+machine+proper+form+technogym',
+  'leg-press':        'https://www.youtube.com/results?search_query=leg+press+machine+how+to+use+proper+form',
+  'leg-extension':    'https://www.youtube.com/results?search_query=leg+extension+machine+how+to+use',
+  'leg-curl':         'https://www.youtube.com/results?search_query=leg+curl+machine+how+to+use',
+  'hack-squat':       'https://www.youtube.com/results?search_query=hack+squat+machine+proper+form',
   'hip-thrust':       'https://www.youtube.com/results?search_query=hip+thrust+machine+glute+how+to+use',
-  'calf-raise':       'https://www.youtube.com/results?search_query=calf+raise+machine+how+to+use+technogym',
-  'lat-pulldown':     'https://www.youtube.com/results?search_query=technogym+lat+pulldown+how+to+use+proper+form',
-  'seated-row':       'https://www.youtube.com/results?search_query=seated+cable+row+machine+proper+form+technogym',
+  'calf-raise':       'https://www.youtube.com/results?search_query=calf+raise+machine+how+to+use',
+  'lat-pulldown':     'https://www.youtube.com/results?search_query=lat+pulldown+how+to+use+proper+form',
+  'seated-row':       'https://www.youtube.com/results?search_query=seated+cable+row+machine+proper+form',
   'cable-row':        'https://www.youtube.com/results?search_query=cable+row+machine+back+how+to+use',
-  'chest-press':      'https://www.youtube.com/results?search_query=technogym+chest+press+machine+how+to+use',
-  'pec-deck':         'https://www.youtube.com/results?search_query=pec+deck+machine+chest+fly+how+to+use+technogym',
+  'chest-press':      'https://www.youtube.com/results?search_query=chest+press+machine+how+to+use',
+  'pec-deck':         'https://www.youtube.com/results?search_query=pec+deck+machine+chest+fly+how+to+use',
   'cable-fly':        'https://www.youtube.com/results?search_query=cable+crossover+fly+chest+how+to+use',
-  'shoulder-press':   'https://www.youtube.com/results?search_query=technogym+shoulder+press+machine+how+to+use',
+  'shoulder-press':   'https://www.youtube.com/results?search_query=shoulder+press+machine+how+to+use',
   'cable-lateral':    'https://www.youtube.com/results?search_query=cable+lateral+raise+shoulder+how+to+use',
-  'rear-delt':        'https://www.youtube.com/results?search_query=rear+delt+machine+reverse+fly+how+to+use+technogym',
-  'bicep-machine':    'https://www.youtube.com/results?search_query=technogym+bicep+curl+machine+how+to+use',
+  'rear-delt':        'https://www.youtube.com/results?search_query=rear+delt+machine+reverse+fly+how+to+use',
+  'bicep-machine':    'https://www.youtube.com/results?search_query=bicep+curl+machine+how+to+use',
   'tricep-pushdown':  'https://www.youtube.com/results?search_query=cable+tricep+pushdown+rope+how+to+use+proper+form',
   'tricep-overhead':  'https://www.youtube.com/results?search_query=overhead+cable+tricep+extension+how+to+use',
-  'ab-crunch':        'https://www.youtube.com/results?search_query=ab+crunch+machine+how+to+use+technogym',
+  'ab-crunch':        'https://www.youtube.com/results?search_query=ab+crunch+machine+how+to+use',
   'cable-crunch':     'https://www.youtube.com/results?search_query=cable+crunch+abs+how+to+use+proper+form',
   'back-extension':   'https://www.youtube.com/results?search_query=back+extension+machine+lower+back+how+to+use',
-  'hip-abduction':    'https://www.youtube.com/results?search_query=hip+abduction+machine+outer+thigh+how+to+use+technogym',
-  'hip-adduction':    'https://www.youtube.com/results?search_query=hip+adduction+machine+inner+thigh+how+to+use+technogym',
-  'treadmill':        'https://www.youtube.com/results?search_query=technogym+treadmill+how+to+use+settings',
-  'bike':             'https://www.youtube.com/results?search_query=technogym+stationary+bike+how+to+use',
-  'elliptical':       'https://www.youtube.com/results?search_query=technogym+elliptical+crosstrainer+how+to+use',
-  'rower':            'https://www.youtube.com/results?search_query=technogym+rowing+machine+proper+form+technique',
+  'hip-abduction':    'https://www.youtube.com/results?search_query=hip+abduction+machine+outer+thigh+how+to+use',
+  'hip-adduction':    'https://www.youtube.com/results?search_query=hip+adduction+machine+inner+thigh+how+to+use',
+  'treadmill':        'https://www.youtube.com/results?search_query=treadmill+how+to+use+settings',
+  'bike':             'https://www.youtube.com/results?search_query=stationary+bike+how+to+use',
+  'elliptical':       'https://www.youtube.com/results?search_query=elliptical+crosstrainer+how+to+use',
+  'rower':            'https://www.youtube.com/results?search_query=rowing+machine+proper+form+technique',
   'barbell-squat':    'https://www.youtube.com/results?search_query=barbell+back+squat+proper+form+tutorial',
   'barbell-deadlift': 'https://www.youtube.com/results?search_query=conventional+deadlift+proper+form+tutorial',
   'barbell-bench':    'https://www.youtube.com/results?search_query=barbell+bench+press+proper+form+tutorial',
@@ -69,6 +71,10 @@ const MACHINE_YOUTUBE: Record<string, string> = {
   'dumbbell-fly':     'https://www.youtube.com/results?search_query=dumbbell+chest+fly+proper+form+tutorial',
   'dumbbell-row':     'https://www.youtube.com/results?search_query=single+arm+dumbbell+row+proper+form+tutorial',
 };
+
+function ytFallback(nameEn: string): string {
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(nameEn + ' gym exercise how to use proper form')}`;
+}
 
 const GOAL_LABEL: Record<string, string> = {
   weight_loss: 'خسارة الوزن 🔥', muscle_gain: 'بناء العضلة 💪',
@@ -203,13 +209,11 @@ function ExerciseCard({
                   📈 تطوري
                 </button>
               )}
-              {MACHINE_YOUTUBE[ex.machineId] && (
-                <a href={MACHINE_YOUTUBE[ex.machineId]} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all">
-                  <YoutubeIcon />
-                  <span>شرح</span>
-                </a>
-              )}
+              <a href={MACHINE_YOUTUBE[ex.machineId] || ytFallback(ex.nameEn)} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all">
+                <YoutubeIcon />
+                <span>شرح</span>
+              </a>
             </div>
           </div>
           <div className="flex items-center gap-1.5 mt-2 flex-wrap">
@@ -580,7 +584,7 @@ export default function GymClient({ member, profile, sessions }: { member: any; 
             <div className="text-7xl">🏋️</div>
             <h2 className="text-2xl font-extrabold text-white">ابدأ رحلتك في الجيم</h2>
             <p className="text-gray-400 text-base leading-relaxed">
-              عبّئ بروفايلك التدريبي وسيقوم المدرب بتصميم جدول أسبوعي مخصص لك على أجهزة Technogym
+              عبّئ بروفايلك التدريبي وسيقوم المدرب بتصميم جدول أسبوعي مخصص لك بأجهزة الجيم المتوفرة في أي صالة
             </p>
             <Link href="/gym/profile"
               className="inline-block bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-8 py-4 rounded-2xl transition-colors text-base shadow-lg shadow-indigo-900/40">

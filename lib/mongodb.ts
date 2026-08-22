@@ -57,6 +57,7 @@ async function ensureIndexes(db: Db): Promise<void> {
     db.collection('logbook').createIndex({ createdAt: -1 }).catch(() => {}),
 
     db.collection('exercises').createIndex({ id: 1 }, { unique: true }).catch(() => {}),
+    db.collection('gymCatalog').createIndex({ id: 1 }, { unique: true }).catch(() => {}),
   ]);
 }
 

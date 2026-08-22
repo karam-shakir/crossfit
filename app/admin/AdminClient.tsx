@@ -3,6 +3,7 @@ import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import ExerciseLibraryModal from '@/components/ExerciseLibraryModal';
+import GymCatalogModal from '@/components/GymCatalogModal';
 import {
   BENCHMARK_OPTIONS, EXERCISES, getCalisthenicsExercises,
   BARBELL_STRENGTH_IDS, ACCESSORY_LIBRARY_IDS, WARMUP_LIBRARY_IDS, METCON_LIBRARY_IDS, COOLDOWN_LIBRARY_IDS,
@@ -64,6 +65,7 @@ function emptyExercise() {
 export default function AdminClient({ member, exercises, isFullAdmin = true }: { member: any; exercises: any[]; isFullAdmin?: boolean }) {
   const [tab, setTab] = useState<AdminTab>('wod');
   const [showExerciseLibrary, setShowExerciseLibrary] = useState(false);
+  const [showGymCatalog, setShowGymCatalog] = useState(false);
   const [wod, setWod] = useState<any>(emptyWod(todaySA()));
   const [wodLoading, setWodLoading] = useState(false);
   const [wodSaved, setWodSaved] = useState(false);
@@ -197,7 +199,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
     }
   }
 
-  // ===== Gym Technogym =====
+  // ===== Gym =====
   const [gymMembers, setGymMembers] = useState<any[]>([]);
   const [gymSelectedMember, setGymSelectedMember] = useState('');
   const [gymFromDate, setGymFromDate] = useState(todaySA());
@@ -884,7 +886,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
                 </button>
                 <button onClick={() => setTab('gym')}
                   className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'gym' ? 'bg-violet-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
-                  🏛️ جيم Technogym
+                  🏛️ الجيم
                 </button>
                 <button onClick={() => setTab('running')}
                   className={`py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'running' ? 'bg-cyan-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
@@ -2715,14 +2717,20 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
               )}
             </div>
           )}
-          {/* ===== Gym Technogym ===== */}
+          {/* ===== Gym ===== */}
           {tab === 'gym' && (
             <div className="space-y-4">
 
               {/* Header */}
-              <div className="bg-gradient-to-br from-violet-900/50 to-indigo-900/40 rounded-2xl border border-violet-700/40 p-4">
-                <h2 className="font-extrabold text-white text-base">🏛️ توليد جدول Technogym</h2>
-                <p className="text-xs text-violet-300 mt-0.5">اختر العضو وخصّص الإعدادات كمدرب قبل التوليد</p>
+              <div className="bg-gradient-to-br from-violet-900/50 to-indigo-900/40 rounded-2xl border border-violet-700/40 p-4 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="font-extrabold text-white text-base">🏛️ توليد جدول الجيم</h2>
+                  <p className="text-xs text-violet-300 mt-0.5">اختر العضو وخصّص الإعدادات كمدرب قبل التوليد</p>
+                </div>
+                <button onClick={() => setShowGymCatalog(true)}
+                  className="flex-shrink-0 px-3 py-2 rounded-xl bg-violet-800/60 hover:bg-violet-700 text-white text-xs font-bold transition-colors">
+                  🏋️ مكتبة تمارين الجيم
+                </button>
               </div>
 
               {/* Step 1 — Member + Date */}
@@ -3870,6 +3878,10 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
 
       {showExerciseLibrary && (
         <ExerciseLibraryModal onClose={() => setShowExerciseLibrary(false)} />
+      )}
+
+      {showGymCatalog && (
+        <GymCatalogModal onClose={() => setShowGymCatalog(false)} />
       )}
     </div>
   );

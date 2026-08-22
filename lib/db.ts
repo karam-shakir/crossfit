@@ -233,6 +233,50 @@ export async function deleteCustomExercise(id: string): Promise<void> {
   revalidateTag('exercises-v2');
 }
 
+// ===================== GYM CATALOG =====================
+// كتالوج أجهزة/تمارين الجيم — كان قبل هذا نصاً ثابتاً داخل app/api/gym/generate-week/route.ts
+// (قائمة "أجهزة Technogym") لا يمكن تعديله إلا بتغيير كود ونشر جديد. الآن قاعدة بيانات قابلة للتعديل
+// من لوحة التحكم مباشرة، بلا أي افتراض علامة تجارية — أي جهاز/تمرين معدّات صالة عامة قياسية.
+// بعكس مكتبة تمارين الكروسفت لا يوجد هنا نظام "محظورات دمج" يحتاج تصنيفاً دقيقاً قبل الاستخدام،
+// فكل تمرين مُضاف يدخل قائمة توليد الذكاء الاصطناعي فوراً بلا مرحلة "ترقية" منفصلة
+export interface GymCatalogExercise {
+  id: string;          // كان يُسمّى machineId في الأماكن الأخرى من الكود (GymExercise/GymExerciseLog) — نفس المعنى
+  nameEn: string;
+  nameAr?: string;
+  muscleGroup: string; // وصف عربي حر، مثال: "الرباعية والمؤخرة"
+  category: string;    // مفتاح تجميع للعرض في البرومبت، مثال: legs/free-weight/chest/back/shoulders/arms/core/cardio
+  createdBy?: string;
+  createdAt?: string;
+}
+
+export const getGymCatalog = unstable_cache(
+  async (): Promise<GymCatalogExercise[]> => {
+    const db = await getDb();
+    const docs = await db.collection('gymCatalog').find({}).toArray();
+    return stripAll<GymCatalogExercise>(docs);
+  },
+  ['gym-catalog-v1'],
+  { revalidate: 3600, tags: ['gym-catalog-v1'] }
+);
+
+export async function createGymCatalogExercise(ex: GymCatalogExercise): Promise<void> {
+  const db = await getDb();
+  await db.collection('gymCatalog').insertOne(ex as any);
+  revalidateTag('gym-catalog-v1');
+}
+
+export async function updateGymCatalogExercise(id: string, fields: Partial<GymCatalogExercise>): Promise<void> {
+  const db = await getDb();
+  await db.collection('gymCatalog').updateOne({ id }, { $set: fields });
+  revalidateTag('gym-catalog-v1');
+}
+
+export async function deleteGymCatalogExercise(id: string): Promise<void> {
+  const db = await getDb();
+  await db.collection('gymCatalog').deleteOne({ id });
+  revalidateTag('gym-catalog-v1');
+}
+
 // ===================== WODS =====================
 
 export async function getWods(limit?: number): Promise<Wod[]> {
