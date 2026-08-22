@@ -27,13 +27,20 @@ export async function POST(req: NextRequest) {
   if (!nameEn) return NextResponse.json({ error: 'الاسم بالإنجليزي مطلوب' }, { status: 400 });
   if (!VALID_CATEGORIES.includes(category)) return NextResponse.json({ error: 'فئة غير صالحة' }, { status: 400 });
 
-  const baseId = slugify(nameEn);
-  if (!baseId) return NextResponse.json({ error: 'تعذّر توليد معرّف من الاسم الإنجليزي' }, { status: 400 });
-
+  // id صريح اختياري — يُستخدم فقط لسكربتات ترحيل بيانات تحتاج الحفاظ على machineId قديم متطابق مع
+  // سجلات تاريخية محفوظة (GymExerciseLog/GymSession)؛ نموذج لوحة التحكم العادي لا يرسل هذا الحقل أبداً
   const existingIds = new Set((await getGymCatalog()).map(e => e.id));
-  let id = baseId;
-  let n = 2;
-  while (existingIds.has(id)) { id = `${baseId}-${n}`; n++; }
+  let id: string;
+  if (typeof body.id === 'string' && /^[a-z0-9-]+$/.test(body.id)) {
+    if (existingIds.has(body.id)) return NextResponse.json({ error: 'هذا المعرّف مستخدم بالفعل' }, { status: 400 });
+    id = body.id;
+  } else {
+    const baseId = slugify(nameEn);
+    if (!baseId) return NextResponse.json({ error: 'تعذّر توليد معرّف من الاسم الإنجليزي' }, { status: 400 });
+    id = baseId;
+    let n = 2;
+    while (existingIds.has(id)) { id = `${baseId}-${n}`; n++; }
+  }
 
   const exercise: GymCatalogExercise = {
     id, nameEn, nameAr, category, muscleGroup,
