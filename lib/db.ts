@@ -245,6 +245,7 @@ export interface GymCatalogExercise {
   nameAr?: string;
   muscleGroup: string; // وصف عربي حر، مثال: "الرباعية والمؤخرة"
   category: string;    // مفتاح تجميع للعرض في البرومبت، مثال: legs/free-weight/chest/back/shoulders/arms/core/cardio
+  youtube?: string;    // رابط شرح — المصدر الوحيد للحقيقة لواجهة العضو (app/gym/GymClient.tsx)، بدل خريطة ثابتة بالكود منفصلة عن الكتالوج
   createdBy?: string;
   createdAt?: string;
 }

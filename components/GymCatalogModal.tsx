@@ -13,7 +13,7 @@ const CATEGORIES = [
 ];
 
 function emptyForm() {
-  return { nameAr: '', nameEn: '', category: 'legs', muscleGroup: '' };
+  return { nameAr: '', nameEn: '', category: 'legs', muscleGroup: '', youtube: '' };
 }
 
 export default function GymCatalogModal({ onClose }: { onClose: () => void }) {
@@ -58,7 +58,7 @@ export default function GymCatalogModal({ onClose }: { onClose: () => void }) {
 
   function startEdit(ex: any) {
     setEditId(ex.id);
-    setEditForm({ nameAr: ex.nameAr || '', nameEn: ex.nameEn, category: ex.category, muscleGroup: ex.muscleGroup || '' });
+    setEditForm({ nameAr: ex.nameAr || '', nameEn: ex.nameEn, category: ex.category, muscleGroup: ex.muscleGroup || '', youtube: ex.youtube || '' });
   }
 
   async function saveEdit(id: string) {
@@ -113,6 +113,8 @@ export default function GymCatalogModal({ onClose }: { onClose: () => void }) {
               </select>
               <input value={form.muscleGroup} onChange={e => setForm(f => ({ ...f, muscleGroup: e.target.value }))}
                 placeholder="العضلة المستهدفة (مثال: الرباعية والمؤخرة)" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500" />
+              <input value={form.youtube} onChange={e => setForm(f => ({ ...f, youtube: e.target.value }))}
+                placeholder="رابط شرح يوتيوب (اختياري — بحث عام تلقائي إن تُرك فارغاً)" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500" dir="ltr" />
               {error && <div className="text-xs text-red-400">{error}</div>}
               <div className="flex gap-2">
                 <button onClick={addExercise} disabled={saving}
@@ -152,6 +154,8 @@ export default function GymCatalogModal({ onClose }: { onClose: () => void }) {
                           </select>
                           <input value={editForm.muscleGroup} onChange={e => setEditForm(f => ({ ...f, muscleGroup: e.target.value }))}
                             className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1.5 text-white text-xs" placeholder="العضلة المستهدفة" />
+                          <input value={editForm.youtube} onChange={e => setEditForm(f => ({ ...f, youtube: e.target.value }))}
+                            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1.5 text-white text-xs" dir="ltr" placeholder="رابط شرح يوتيوب" />
                           <div className="flex gap-2">
                             <button onClick={() => saveEdit(ex.id)} disabled={saving}
                               className="flex-1 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold transition-colors">
@@ -170,6 +174,11 @@ export default function GymCatalogModal({ onClose }: { onClose: () => void }) {
                               {ex.nameAr || ex.nameEn} <span className="text-gray-500 font-normal">({ex.nameEn})</span>
                             </div>
                             {ex.muscleGroup && <div className="text-[11px] text-gray-500 mt-0.5">💪 {ex.muscleGroup}</div>}
+                            {ex.youtube ? (
+                              <a href={ex.youtube} target="_blank" rel="noopener noreferrer" className="text-[11px] text-red-400 hover:text-red-300 mt-0.5 inline-block">🎬 رابط الشرح</a>
+                            ) : (
+                              <div className="text-[11px] text-amber-500 mt-0.5">⚠️ لا يوجد رابط شرح مخصص</div>
+                            )}
                           </div>
                           <div className="flex gap-1 flex-shrink-0">
                             <button onClick={() => startEdit(ex)}

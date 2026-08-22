@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   if (!session || session.role !== 'admin') return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
-  const { nameAr = '', nameEn, category, muscleGroup = '' } = body;
+  const { nameAr = '', nameEn, category, muscleGroup = '', youtube = '' } = body;
 
   if (!nameEn) return NextResponse.json({ error: 'الاسم بالإنجليزي مطلوب' }, { status: 400 });
   if (!VALID_CATEGORIES.includes(category)) return NextResponse.json({ error: 'فئة غير صالحة' }, { status: 400 });
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
   }
 
   const exercise: GymCatalogExercise = {
-    id, nameEn, nameAr, category, muscleGroup,
+    id, nameEn, nameAr, category, muscleGroup, youtube,
     createdBy: session.id, createdAt: new Date().toISOString(),
   };
   await createGymCatalogExercise(exercise);
@@ -62,6 +62,7 @@ export async function PATCH(req: NextRequest) {
   if (body.nameAr !== undefined) fields.nameAr = body.nameAr;
   if (body.nameEn !== undefined) fields.nameEn = body.nameEn;
   if (body.muscleGroup !== undefined) fields.muscleGroup = body.muscleGroup;
+  if (body.youtube !== undefined) fields.youtube = body.youtube;
   if (body.category !== undefined && VALID_CATEGORIES.includes(body.category)) fields.category = body.category;
 
   await updateGymCatalogExercise(id, fields);

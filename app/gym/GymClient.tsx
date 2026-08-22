@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useContext, createContext } from 'react';
 import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
@@ -76,6 +76,10 @@ function ytFallback(nameEn: string): string {
   return `https://www.youtube.com/results?search_query=${encodeURIComponent(nameEn + ' gym exercise how to use proper form')}`;
 }
 
+// روابط شرح من كتالوج الجيم (لوحة التحكم) — مصدر الحقيقة الأساسي، يتفوّق على الخريطة الثابتة MACHINE_YOUTUBE
+// أعلاه لأي جهاز يملك رابطاً مخصصاً محفوظاً؛ يُملأ عبر GymClient ويُقرأ من ExerciseCard بلا تمرير props عبر SessionCard
+const GymCatalogYoutubeContext = createContext<Record<string, string>>({});
+
 const GOAL_LABEL: Record<string, string> = {
   weight_loss: 'خسارة الوزن 🔥', muscle_gain: 'بناء العضلة 💪',
   strength: 'القوة 🏋️', general_fitness: 'لياقة عامة ⚡', body_recomp: 'إعادة تشكيل 🎯',
@@ -148,6 +152,7 @@ function ExerciseCard({
   const [manualReps, setManualReps] = useState('');
   const [saving, setSaving] = useState(false);
   const [showTrend, setShowTrend] = useState(false);
+  const catalogYoutube = useContext(GymCatalogYoutubeContext);
 
   async function submitLog(comparison: 'same' | 'less' | 'more', actualWeight?: string, actualReps?: string) {
     setSaving(true);
@@ -209,7 +214,7 @@ function ExerciseCard({
                   📈 تطوري
                 </button>
               )}
-              <a href={MACHINE_YOUTUBE[ex.machineId] || ytFallback(ex.nameEn)} target="_blank" rel="noopener noreferrer"
+              <a href={catalogYoutube[ex.machineId] || MACHINE_YOUTUBE[ex.machineId] || ytFallback(ex.nameEn)} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all">
                 <YoutubeIcon />
                 <span>شرح</span>
@@ -568,6 +573,16 @@ export default function GymClient({ member, profile, sessions }: { member: any; 
   useEffect(() => {
     fetch('/api/gym/exercise-log').then(r => r.json()).then(d => setLogs(Array.isArray(d) ? d : [])).catch(() => {});
   }, []);
+
+  // روابط الشرح المخصصة من كتالوج الجيم — راجع GymCatalogYoutubeContext أعلاه
+  const [catalogYoutube, setCatalogYoutube] = useState<Record<string, string>>({});
+  useEffect(() => {
+    fetch('/api/gym/catalog').then(r => r.json()).then((list: any[]) => {
+      const map: Record<string, string> = {};
+      (Array.isArray(list) ? list : []).forEach(e => { if (e.youtube) map[e.id] = e.youtube; });
+      setCatalogYoutube(map);
+    }).catch(() => {});
+  }, []);
   function handleLogged(log: any) {
     setLogs(prev => [log, ...prev.filter(l => !(l.date === log.date && l.machineId === log.machineId))]);
   }
@@ -597,6 +612,7 @@ export default function GymClient({ member, profile, sessions }: { member: any; 
   }
 
   return (
+    <GymCatalogYoutubeContext.Provider value={catalogYoutube}>
     <div className="min-h-dvh flex w-full bg-gray-950">
       <Navbar member={member} />
       <main className="flex-1 lg:mr-56 pb-28 lg:pb-8">
@@ -690,5 +706,6 @@ export default function GymClient({ member, profile, sessions }: { member: any; 
         </div>
       </main>
     </div>
+    </GymCatalogYoutubeContext.Provider>
   );
 }
