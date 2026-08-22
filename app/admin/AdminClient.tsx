@@ -207,6 +207,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
   const [gymDeleting, setGymDeleting] = useState(false);
   const [gymDeleteMsg, setGymDeleteMsg] = useState('');
   const [gymLoading, setGymLoading] = useState(false);
+  const [gymGeneratingProvider, setGymGeneratingProvider] = useState<'claude' | 'gpt'>('claude');
   const [gymPlan, setGymPlan] = useState<any>(null);
   const [gymError, setGymError] = useState('');
   const [gymSaved, setGymSaved] = useState(false);
@@ -386,11 +387,12 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
     setForceInput('');
   }
 
-  async function generateGymPlan() {
+  async function generateGymPlan(provider: 'claude' | 'gpt' = 'claude') {
     if (!gymSelectedMember) return;
+    setGymGeneratingProvider(provider);
     setGymLoading(true); setGymPlan(null); setGymError(''); setGymSaved(false);
     try {
-      const res = await fetch('/api/gym/generate-week', {
+      const res = await fetch(provider === 'gpt' ? '/api/gym/generate-week-gpt' : '/api/gym/generate-week', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ memberId: gymSelectedMember, fromDate: gymFromDate, override: gymOverride, cyclePhaseOverride: gymCyclePhaseOverride }),
@@ -2986,13 +2988,21 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
               {/* Generate Button */}
               {gymSelectedMember && gymOverride && (
                 <div className="space-y-2">
-                  <button onClick={generateGymPlan} disabled={gymLoading}
+                  <button onClick={() => generateGymPlan('claude')} disabled={gymLoading}
                     className="w-full py-4 rounded-2xl text-white font-extrabold text-base transition-all shadow-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed shadow-violet-900/30">
-                    {gymLoading ? (
+                    {gymLoading && gymGeneratingProvider === 'claude' ? (
                       <span className="flex items-center justify-center gap-2">
                         <span className="animate-spin">⏳</span> جاري التوليد بـ Claude AI...
                       </span>
-                    ) : '🤖 توليد الجدول الأسبوعي'}
+                    ) : '🤖 توليد الجدول الأسبوعي بـ Claude'}
+                  </button>
+                  <button onClick={() => generateGymPlan('gpt')} disabled={gymLoading}
+                    className="w-full py-3 rounded-2xl text-white font-extrabold text-sm transition-all shadow-lg bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-600 hover:to-teal-600 disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed shadow-emerald-900/30">
+                    {gymLoading && gymGeneratingProvider === 'gpt' ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="animate-spin">⏳</span> جاري التوليد بـ GPT...
+                      </span>
+                    ) : '✨ توليد الجدول الأسبوعي بـ GPT'}
                   </button>
                   {gymLoading && (
                     <p className="text-xs text-gray-500 text-center">قد يستغرق 30-60 ثانية حسب عدد الأيام</p>
