@@ -203,6 +203,9 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
   const [gymMembers, setGymMembers] = useState<any[]>([]);
   const [gymSelectedMember, setGymSelectedMember] = useState('');
   const [gymFromDate, setGymFromDate] = useState(todaySA());
+  const [gymDeleteToDate, setGymDeleteToDate] = useState('');
+  const [gymDeleting, setGymDeleting] = useState(false);
+  const [gymDeleteMsg, setGymDeleteMsg] = useState('');
   const [gymLoading, setGymLoading] = useState(false);
   const [gymPlan, setGymPlan] = useState<any>(null);
   const [gymError, setGymError] = useState('');
@@ -400,6 +403,20 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
       setGymError(e.message);
     } finally {
       setGymLoading(false);
+    }
+  }
+
+  async function deleteGymRange(memberId: string, fromDate: string, toDate: string) {
+    if (!confirm(`حذف جلسات جيم هذا العضو من ${fromDate} إلى ${toDate} نهائياً؟`)) return;
+    setGymDeleting(true);
+    try {
+      await fetch(`/api/gym/sessions?memberId=${memberId}&fromDate=${fromDate}&toDate=${toDate}`, { method: 'DELETE' });
+      setGymDeleteMsg('✅ تم الحذف');
+      setTimeout(() => setGymDeleteMsg(''), 3000);
+    } catch {
+      setGymDeleteMsg('❌ فشل الحذف');
+    } finally {
+      setGymDeleting(false);
     }
   }
 
@@ -2990,6 +3007,25 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
                       <span>✅</span><span>تم التوليد والحفظ للعضو بنجاح</span>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* حذف جلسات جيم لنطاق تاريخ — لتصحيح توليد خاطئ أو مسح جدول تجريبي قبل تسليم جدول حقيقي */}
+              {gymSelectedMember && (
+                <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4 space-y-2.5">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">🗑 حذف جلسات (نطاق تاريخ)</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="date" value={gymFromDate} onChange={e => setGymFromDate(e.target.value)}
+                      className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" placeholder="من" />
+                    <input type="date" value={gymDeleteToDate} onChange={e => setGymDeleteToDate(e.target.value)}
+                      className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" placeholder="إلى" />
+                  </div>
+                  <button onClick={() => deleteGymRange(gymSelectedMember, gymFromDate, gymDeleteToDate || gymFromDate)}
+                    disabled={gymDeleting || !gymFromDate}
+                    className="w-full py-2 rounded-xl bg-red-900/40 hover:bg-red-700 disabled:opacity-50 text-red-200 hover:text-white text-sm font-bold transition-colors">
+                    {gymDeleting ? '⏳ جارٍ الحذف...' : '🗑 حذف جلسات هذا العضو ضمن النطاق'}
+                  </button>
+                  {gymDeleteMsg && <p className="text-xs text-center text-gray-400">{gymDeleteMsg}</p>}
                 </div>
               )}
 
