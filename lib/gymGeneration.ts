@@ -575,6 +575,19 @@ ${!isDeloadWeek && exceedingMachines.length ? `✅ طبّق تعليمات ال�
   return { prompt, memberId, startDate, dates, cyclePhase, newCycleIndex, autoDeloadTriggered, estimatedOneRM, maxTokens, catalog: gymCatalog };
 }
 
+// أحياناً (لوحظ من Claude تحديداً عند تمارين الكارديو ضمن exercises كإليبتيكال/دراجة) يُرجع النموذج
+// حقل reps نصياً مثل "10 دقائق" بدل رقم/نطاق رقمي — يكسر افتراض أن reps دائماً رقمي (خصوصاً قاعدة
+// "12-20 دائماً" الصارمة في بروتوكول كبار السن). نستخرج الرقم فقط ونتجاهل وحدة القياس النصية.
+const REPS_NUMERIC_RE = /^\d+(?:\.\d+)?(?:-\d+(?:\.\d+)?)?$/;
+function normalizeReps(reps: unknown): unknown {
+  if (typeof reps !== 'string') return reps;
+  const trimmed = reps.trim();
+  if (REPS_NUMERIC_RE.test(trimmed)) return trimmed;
+  const m = trimmed.match(/(\d+(?:\.\d+)?)(?:\s*-\s*(\d+(?:\.\d+)?))?/);
+  if (!m) return reps;
+  return m[2] ? `${m[1]}-${m[2]}` : m[1];
+}
+
 /** يحلّل استجابة JSON الخام من أي مزوّد، يحفظ الجلسات وملخص الأسبوع، ويبني جسم استجابة API الجاهز للإرجاع.
  * يتحقق أيضاً من أن كل machineId ورد فعلياً من الكتالوج — بعكس قسم الكروسفت، الجيم كان يحفظ أي machineId
  * يقترحه النموذج مباشرة بلا أي تحقق (البرومبت يطلب الالتزام بالكتالوج، لكن لا ضمان برمجي). لو "هلوس"
@@ -594,6 +607,13 @@ export async function processGymWeekResult(rawText: string, ctx: GymWeekContext)
       const msg = `⚠️ ${s.date}: حُذفت ${invalidIds.length} من ${before} تمارين بمعرّفات غير موجودة في الكتالوج (${invalidIds.join('، ')})`;
       warnings.push(msg);
       console.warn(`[gym/generate-week ${ctx.memberId}]`, msg);
+    }
+
+    for (const e of s.exercises) {
+      if (!e?.levels) continue;
+      for (const lvl of Object.values(e.levels) as any[]) {
+        if (lvl) lvl.reps = normalizeReps(lvl.reps);
+      }
     }
   }
 
