@@ -3165,6 +3165,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
                       {[
                         { label: runProfile.goal, bg: 'bg-cyan-900/50 text-cyan-300 border-cyan-700/40' },
                         { label: runProfile.level, bg: 'bg-blue-900/50 text-blue-300 border-blue-700/40' },
+                        runProfile.age ? { label: runProfile.age + ' سنة', bg: 'bg-gray-700/60 text-gray-300 border-gray-600/40' } : null,
                         { label: runProfile.daysPerWeek + ' أيام', bg: 'bg-green-900/50 text-green-300 border-green-700/40' },
                         runProfile.currentWeeklyKm ? { label: runProfile.currentWeeklyKm + ' كم/أسبوع', bg: 'bg-gray-700/60 text-gray-300 border-gray-600/40' } : null,
                         runProfile.best5kTime ? { label: '5كم: ' + runProfile.best5kTime, bg: 'bg-orange-900/50 text-orange-300 border-orange-700/40' } : null,
@@ -3262,6 +3263,22 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
                           ))}
                         </div>
                       </div>
+
+                      {/* تنبيه — عمر متقدم مسجَّل بالبروفايل مع هدف غير مخصص لكبار السن. البروفايل هو مصدر
+                          العمر الوحيد هنا (لا يوجد حقل عمر منفصل يعدّله المدرب)، فالتنبيه مرتبط بقيمته مباشرة */}
+                      {runProfile?.age >= 60 && runOverride.goal !== 'senior_walk_run' && (
+                        <div className="bg-amber-900/20 border border-amber-700/40 rounded-xl p-3 flex items-start gap-2">
+                          <span className="text-lg flex-shrink-0">🚶</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-amber-300">العضو بعمر {runProfile.age} سنة — برنامج كبار السن أنسب؟</p>
+                            <p className="text-[11px] text-amber-200/80 mt-0.5 leading-relaxed">بلا سباقات أو إيقاعات، تدرّج آمن مُتابَع أسبوعياً، وإرشادات سلامة صحية مخصصة.</p>
+                            <button onClick={() => setRunOverride((p: any) => ({ ...p, goal: 'senior_walk_run' }))}
+                              className="mt-1.5 text-[11px] font-bold bg-amber-700 hover:bg-amber-600 text-white px-2.5 py-1 rounded-lg transition-colors">
+                              التبديل لبرنامج كبار السن
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       {/* فرض مرحلة الدورة (أهداف السباق) أو مرحلة المشي/الجري (كبار السن) */}
                       {runOverride.goal === 'senior_walk_run' ? (

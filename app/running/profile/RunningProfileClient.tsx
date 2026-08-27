@@ -258,6 +258,26 @@ export default function RunningProfileClient({ member, initialProfile }: { membe
             </div>
           </div>
 
+          {/* تنبيه تلقائي — عمر متقدم مع هدف غير مخصص لكبار السن. لا يفرض التبديل، فقط يعرض الخيار الأنسب
+              للسلامة بوضوح بدل الاعتماد كلياً على أن يتذكر العضو/المدرب اختيار الهدف الصحيح يدوياً */}
+          {Number(age) >= 60 && goal !== 'senior_walk_run' && (
+            <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 shadow-sm">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl flex-shrink-0">🚶</span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-amber-800 text-sm">هل برنامج "مشي وجري لكبار السن" أنسب لك؟</div>
+                  <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+                    بعمر {age} سنة، هذا البرنامج المخصص أكثر أماناً — بلا سباقات أو إيقاعات سريعة، بتدرّج بطيء (مشي→جري) يُتابَع أسبوعياً، وإرشادات سلامة صحية مخصصة (علامات تحذيرية، اختبار التحدث بدل مستهدفات النبض). يمكنك تجاهل هذا التنبيه ومتابعة هدفك الحالي إن كنت متأكداً من ملاءمته لحالتك.
+                  </p>
+                  <button onClick={() => setGoal('senior_walk_run')}
+                    className="mt-2.5 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg transition-colors">
+                    التبديل لبرنامج كبار السن
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* الإصابات والقيود */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3 shadow-sm">
             <h2 className="font-bold text-slate-800 text-base flex items-center gap-2">
