@@ -49,6 +49,24 @@ const GOALS = [
     color: 'border-teal-500 bg-teal-900/20',
     active: 'ring-2 ring-teal-500',
   },
+  {
+    value: 'senior_fitness',
+    label: 'لياقة وقوة آمنة لكبار السن',
+    icon: '🧓',
+    desc: 'محافظة على القوة والاستقلالية بأمان تام — لا أرقام قياسية',
+    detail: 'أجهزة مسنودة فقط • 12-20 تكرار خفيف • راحة يوم كامل بين الجلسات',
+    color: 'border-amber-500 bg-amber-900/20',
+    active: 'ring-2 ring-amber-500',
+  },
+];
+
+// مستويات مختلفة تماماً لبرنامج كبار السن — لا علاقة لها بسنوات التدريب أو الأوزان،
+// بل بمستوى النشاط البدني الحالي الذي يحدد نقطة انطلاق آمنة (نفس فكرة SENIOR_LEVELS في قسم الجري)
+const SENIOR_LEVELS = [
+  { value: 'beginner',     label: 'خامل حالياً',      icon: '🟢', desc: 'لا أمارس رياضة منتظمة',           detail: 'نبدأ بأخف الأوزان وأبسط الحركات',  color: 'border-green-500 bg-green-900/20 text-green-300' },
+  { value: 'intermediate', label: 'نشيط خفيف',        icon: '🔵', desc: 'أمشي أو أتحرك بانتظام',           detail: 'نبدأ بأجهزة أساسية بحمل خفيف جداً', color: 'border-blue-500 bg-blue-900/20 text-blue-300' },
+  { value: 'advanced',     label: 'يتمرن بانتظام',    icon: '🟠', desc: 'أمارس نشاطاً بدنياً منتظماً',      detail: 'نبدأ بحمل خفيف-متوسط',              color: 'border-orange-500 bg-orange-900/20 text-orange-300' },
+  { value: 'elite',        label: 'معتاد على المقاومة', icon: '🔴', desc: 'جرّبت تمارين المقاومة من قبل',    detail: 'نبدأ من نقطة أعلى قليلاً — يبقى خفيفاً دوماً', color: 'border-red-500 bg-red-900/20 text-red-300' },
 ];
 
 const LEVELS = [
@@ -214,7 +232,7 @@ export default function GymProfileClient({ member, initialProfile }: { member: a
               <span>📊</span> مستواك الحالي
             </h2>
             <div className="space-y-2">
-              {LEVELS.map(l => (
+              {(goal === 'senior_fitness' ? SENIOR_LEVELS : LEVELS).map(l => (
                 <button key={l.value} onClick={() => setLevel(l.value)}
                   className={`w-full flex items-start gap-4 p-4 rounded-xl border text-right transition-all ${level === l.value ? `${l.color} ring-2 ring-offset-0` : 'border-gray-700 bg-gray-800/40 text-gray-500 hover:border-gray-600'}`}>
                   <span className="text-2xl flex-shrink-0">{l.icon}</span>
@@ -242,6 +260,11 @@ export default function GymProfileClient({ member, initialProfile }: { member: a
                 </button>
               ))}
             </div>
+            {goal === 'senior_fitness' && (
+              <p className="text-xs text-amber-500 bg-amber-900/20 border border-amber-800/40 rounded-lg px-3 py-2">
+                ⚠️ لأسباب السلامة، برنامج كبار السن لن يتجاوز 3 أيام نشطة أسبوعياً مع راحة كاملة بين كل جلستين — بغض النظر عن اختيارك هنا
+              </p>
+            )}
             {DAYS_INFO[daysPerWeek] && (
               <div className="bg-indigo-950/40 border border-indigo-800/40 rounded-xl p-3">
                 <div className="font-bold text-indigo-300 text-sm">{DAYS_INFO[daysPerWeek].split}</div>
@@ -317,6 +340,25 @@ export default function GymProfileClient({ member, initialProfile }: { member: a
               </div>
             )}
           </div>
+
+          {/* تنبيه تلقائي — عمر متقدم مع هدف غير مخصص لكبار السن (نفس فكرة التنبيه في بروفايل الجري) */}
+          {Number(age) >= 60 && goal !== 'senior_fitness' && (
+            <div className="bg-amber-900/20 border border-amber-700/40 rounded-2xl p-4">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl flex-shrink-0">🧓</span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-amber-400 text-sm">هل برنامج "لياقة وقوة آمنة لكبار السن" أنسب لك؟</div>
+                  <p className="text-xs text-amber-200/80 mt-1 leading-relaxed">
+                    بعمر {age} سنة، هذا البرنامج أكثر أماناً — أجهزة مسنودة فقط بدل الأوزان الحرة القائمة، تكرارات خفيفة (12-20)، وراحة يوم كامل بين الجلسات. يمكنك تجاهل هذا التنبيه ومتابعة هدفك الحالي إن كنت متأكداً من ملاءمته لحالتك.
+                  </p>
+                  <button onClick={() => setGoal('senior_fitness')}
+                    className="mt-2.5 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg transition-colors">
+                    التبديل لبرنامج كبار السن
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* الإصابات والقيود */}
           <div className="bg-gray-900 rounded-2xl border border-gray-800 p-5 space-y-3">

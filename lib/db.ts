@@ -619,7 +619,7 @@ export async function deleteKettlebellSession(id: string): Promise<void> {
 export interface GymProfile {
   id: string;
   memberId: string;
-  goal: 'weight_loss' | 'muscle_gain' | 'strength' | 'general_fitness' | 'body_recomp';
+  goal: 'weight_loss' | 'muscle_gain' | 'strength' | 'general_fitness' | 'body_recomp' | 'senior_fitness';
   level: 'beginner' | 'intermediate' | 'advanced' | 'elite';
   age?: number;
   weight?: number;

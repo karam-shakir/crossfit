@@ -2911,6 +2911,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
                             { v: 'strength',       l: '🏋️ بناء القوة',          sub: 'Compound ثقيل 3-6 rep' },
                             { v: 'body_recomp',    l: '🎯 إعادة تشكيل الجسم',   sub: 'قوة + كارديو متوازن' },
                             { v: 'general_fitness',l: '⚡ لياقة عامة',           sub: 'تنويع شامل' },
+                            { v: 'senior_fitness', l: '🧓 لياقة كبار السن',      sub: 'أجهزة مسنودة — بلا أرقام قياسية' },
                           ].map(g => (
                             <button key={g.v} onClick={() => setGymOverride((p: any) => ({ ...p, goal: g.v }))}
                               className={`flex items-center gap-3 px-3 py-2 rounded-xl border text-right text-sm transition-all ${gymOverride.goal === g.v ? 'border-violet-500 bg-violet-900/30 text-white' : 'border-gray-700 bg-gray-800/50 text-gray-400 hover:border-gray-600'}`}>
@@ -2921,6 +2922,21 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
                           ))}
                         </div>
                       </div>
+
+                      {/* تنبيه — عمر متقدم مسجَّل بالبروفايل مع هدف غير مخصص لكبار السن */}
+                      {gymProfile?.age >= 60 && gymOverride.goal !== 'senior_fitness' && (
+                        <div className="bg-amber-900/20 border border-amber-700/40 rounded-xl p-3 flex items-start gap-2">
+                          <span className="text-lg flex-shrink-0">🧓</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-amber-300">العضو بعمر {gymProfile.age} سنة — برنامج كبار السن أنسب؟</p>
+                            <p className="text-[11px] text-amber-200/80 mt-0.5 leading-relaxed">أجهزة مسنودة فقط، تكرارات خفيفة، راحة يوم كامل بين الجلسات.</p>
+                            <button onClick={() => setGymOverride((p: any) => ({ ...p, goal: 'senior_fitness' }))}
+                              className="mt-1.5 text-[11px] font-bold bg-amber-700 hover:bg-amber-600 text-white px-2.5 py-1 rounded-lg transition-colors">
+                              التبديل لبرنامج كبار السن
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       {/* المستوى */}
                       <div>
