@@ -23,7 +23,7 @@ import {
   metconStimulusMixGuidance, metconRepLoadGuidance, metconTimeCapGuidance, detectMetconStimulusImbalance,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
-import { flattenMovements, sanitizeLevels } from '@/lib/wodBlocks';
+import { flattenMovements, sanitizeLevels, detectIncompleteSections } from '@/lib/wodBlocks';
 import { todaySA } from '@/lib/timezone';
 
 const PATTERN_KEYS: MovementPattern[] = ['squat', 'hinge', 'push', 'pull', 'olympic'];
@@ -585,6 +585,16 @@ export function processDailyWodResult(rawText: string, ctx: DailyWodContext) {
     accessory: ctx.isBenchmarkDay ? [] : validateSection(generated.accessory || []),
     cooldown: validateSection(generated.cooldown),
   };
+
+  // ═══ فحص اكتمال الأقسام — راجع تعليق detectIncompleteSections في lib/wodBlocks.ts ═══
+  if (ctx.wodMode === 'crossfit') {
+    const missingSections = detectIncompleteSections(wodData, ctx.isBenchmarkDay);
+    if (missingSections.length) {
+      const msg = `⚠️ فحص الاكتمال: قسم/أقسام فارغة تماماً — ${missingSections.join('، ')} — راجع قبل الحفظ، قد يكون خللاً في التوليد`;
+      blacklistWarnings.push(msg);
+      console.warn(`[generate/wod ${ctx.date}]`, msg);
+    }
+  }
 
   return {
     wod: wodData,

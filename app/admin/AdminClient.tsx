@@ -8,6 +8,7 @@ import {
   BENCHMARK_OPTIONS, EXERCISES, getCalisthenicsExercises,
   BARBELL_STRENGTH_IDS, ACCESSORY_LIBRARY_IDS, WARMUP_LIBRARY_IDS, METCON_LIBRARY_IDS, COOLDOWN_LIBRARY_IDS,
 } from '@/lib/crossfitProgramming';
+import { detectIncompleteSections } from '@/lib/wodBlocks';
 
 // القائمة المسموحة لكل قسم عند التعديل اليدوي — مكتبة القسم الكاملة حسب الفئة (راجع تعليق
 // WARMUP_LIBRARY_IDS/METCON_LIBRARY_IDS/COOLDOWN_LIBRARY_IDS/ACCESSORY_LIBRARY_IDS في
@@ -522,6 +523,15 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
   })();
 
   async function saveWod() {
+    // بوابة تأكيد أخيرة قبل الحفظ — تفحص الحالة الحالية فعلياً (لا تحذيراً قديماً من وقت التوليد،
+    // فقد يكون المدرب عدّل الحركات يدوياً بينهما). يتحقق فقط من الإحماء/الميتكون/التهدئة (لا يجب أن
+    // تكون فارغة أبداً أياً كان نوع اليوم)، لا القوة/الأكسسوار (فارغان بالتصميم في أيام البنشمارك)
+    if (!wod.isCalisthenics) {
+      const missingCore = detectIncompleteSections(wod, true);
+      if (missingCore.length && !confirm(`⚠️ الأقسام التالية فارغة تماماً: ${missingCore.join('، ')}\n\nهذا غير متوقع لأي يوم — قد يكون خللاً في التوليد. هل تريد الحفظ رغم ذلك؟`)) {
+        return;
+      }
+    }
     setWodLoading(true);
     await fetch('/api/wod', {
       method: 'POST',
@@ -678,6 +688,20 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
 
   async function saveWeeklyPlan() {
     if (!weeklyPlan) return;
+
+    // بوابة تأكيد أخيرة — نفس فحص saveWod لكن مجمّعاً عبر أيام الأسبوع كلها بتأكيد واحد بدل نافذة
+    // منفصلة لكل يوم. يتجاوز أيام الراحة/الكاليسثنكس (بنية مختلفة أو لا محتوى متوقع أصلاً)
+    const incompleteDays = (weeklyPlan.wods || [])
+      .filter((w: any) => !w.isRest && !w.isCalisthenics)
+      .map((w: any) => ({ date: w.date, missing: detectIncompleteSections(w, true) }))
+      .filter((d: any) => d.missing.length);
+    if (incompleteDays.length) {
+      const lines = incompleteDays.map((d: any) => `  • ${d.date}: ${d.missing.join('، ')}`).join('\n');
+      if (!confirm(`⚠️ أقسام فارغة تماماً في أيام غير متوقعة:\n${lines}\n\nقد يكون خللاً في التوليد. هل تريد الحفظ رغم ذلك؟`)) {
+        return;
+      }
+    }
+
     setSavingPlan(true);
     try {
       const label = `خطة ${weeklyDays} أيام من ${weeklyFromDate}`;

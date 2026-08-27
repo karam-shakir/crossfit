@@ -74,3 +74,24 @@ export function enrichWodSections(wod: Partial<Wod>, exercises: Exercise[]): Nor
     cooldown: sections.cooldown.map(enrichBlock),
   };
 }
+
+// ═══ فحص اكتمال الأقسام — دالة مشتركة (سيرفر وعميل) بلا أي استيراد يقتصر على أحدهما، فتُستخدم
+// كلاً من: (١) وقت التوليد لإضافة تحذير مرئي ضمن نفس بانر محظورات دمج الحركات الموجود أصلاً،
+// و(٢) وقت الحفظ في لوحة التحكم كبوابة تأكيد أخيرة — تعيد الفحص على الحالة الحالية فعلياً وقت
+// الضغط على "حفظ" (لا على تحذير قديم من وقت التوليد) لأن المدرب قد يكون عدّل الحركات يدوياً بينهما.
+// السبب: رُصد فعلياً (2026-08-27) تمرين وصل للأعضاء بالقوة والأكسسوار والتهدئة فارغة تماماً بصمت.
+export function detectIncompleteSections(
+  sections: { warmup: unknown; strength: unknown; metcon: unknown; accessory: unknown; cooldown: unknown },
+  isBenchmarkDay = false,
+): string[] {
+  const missing: string[] = [];
+  if (!flattenMovements(sections.warmup).length) missing.push('الإحماء');
+  if (!flattenMovements(sections.metcon).length) missing.push('الميتكون');
+  if (!flattenMovements(sections.cooldown).length) missing.push('التهدئة');
+  // القوة والأكسسوار فارغان بالتصميم في يوم بنشمارك — ليسا نقصاً هناك
+  if (!isBenchmarkDay) {
+    if (!flattenMovements(sections.strength).length) missing.push('القوة');
+    if (!flattenMovements(sections.accessory).length) missing.push('الأكسسوار');
+  }
+  return missing;
+}

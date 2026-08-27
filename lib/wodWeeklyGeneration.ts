@@ -12,7 +12,7 @@ import {
   metconStimulusMixGuidance, metconRepLoadGuidance, metconTimeCapGuidance, detectMetconStimulusImbalance,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
-import { flattenMovements, sanitizeLevels } from '@/lib/wodBlocks';
+import { flattenMovements, sanitizeLevels, detectIncompleteSections } from '@/lib/wodBlocks';
 
 const DAY_NAMES: Record<number, string> = {
   0: 'الأحد', 1: 'الاثنين', 2: 'الثلاثاء', 3: 'الأربعاء',
@@ -546,6 +546,16 @@ export async function processWeeklyWodResult(rawText: string, ctx: WeeklyWodCont
         accessory: validateSection(day.accessory),
         cooldown: validateSection(day.cooldown),
       };
+
+      // فحص اكتمال الأقسام — راجع تعليق detectIncompleteSections في lib/wodBlocks.ts. لا يُطبَّق على
+      // أيام الراحة/الكاليسثنكس/Hyrox (بنية مختلفة تماماً أو لا محتوى متوقع أصلاً)
+      if (!day.isRest && !day.isCalisthenics && !isHyroxDayHere) {
+        const missingSections = detectIncompleteSections(withValidatedSections, isBenchmarkDayHere);
+        if (missingSections.length) {
+          console.warn(`[generate-week ${day.date}] ⚠️ فحص الاكتمال: قسم/أقسام فارغة تماماً — ${missingSections.join('، ')}`);
+        }
+      }
+
       if (skip) return { ...withValidatedSections, isPartnerWod: false, partnerFormat: undefined };
       const pattern = ctx.patternSequence[patternIdx] ?? ctx.patternSequence[ctx.patternSequence.length - 1];
       const stimulusType: StimulusType = ctx.stimulusSequence[patternIdx] ?? ctx.stimulusSequence[ctx.stimulusSequence.length - 1];
