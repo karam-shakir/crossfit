@@ -181,6 +181,7 @@ export interface GymWeekContext {
   autoDeloadTriggered: boolean;
   estimatedOneRM: Record<string, number>;
   maxTokens: number;
+  catalog: GymCatalogExercise[];
 }
 
 /** يجمع بروفايل العضو وسجله وكتالوج الجيم، ويبني نص البرومت الكامل — لا يتصل بأي مزوّد ذكاء اصطناعي */
@@ -530,12 +531,30 @@ ${!isDeloadWeek && exceedingMachines.length ? `✅ طبّق تعليمات ال�
 
   const maxTokens = Math.min(32000, Math.max(18000, effective.daysPerWeek * 3500));
 
-  return { prompt, memberId, startDate, dates, cyclePhase, newCycleIndex, autoDeloadTriggered, estimatedOneRM, maxTokens };
+  return { prompt, memberId, startDate, dates, cyclePhase, newCycleIndex, autoDeloadTriggered, estimatedOneRM, maxTokens, catalog: gymCatalog };
 }
 
-/** يحلّل استجابة JSON الخام من أي مزوّد، يحفظ الجلسات وملخص الأسبوع، ويبني جسم استجابة API الجاهز للإرجاع */
+/** يحلّل استجابة JSON الخام من أي مزوّد، يحفظ الجلسات وملخص الأسبوع، ويبني جسم استجابة API الجاهز للإرجاع.
+ * يتحقق أيضاً من أن كل machineId ورد فعلياً من الكتالوج — بعكس قسم الكروسفت، الجيم كان يحفظ أي machineId
+ * يقترحه النموذج مباشرة بلا أي تحقق (البرومبت يطلب الالتزام بالكتالوج، لكن لا ضمان برمجي). لو "هلوس"
+ * النموذج معرّفاً غير موجود، كان يُحفظ ويكسر عرض رابط الفيديو والبيانات المرتبطة به بصمت — الآن يُحذف
+ * ويُسجَّل تحذيراً بدل ذلك، بنفس منطق validIds المستخدم في lib/wodDailyGeneration.ts */
 export async function processGymWeekResult(rawText: string, ctx: GymWeekContext) {
   const result = parseAiJson(rawText, 'sessions');
+
+  const validIds = new Set(ctx.catalog.map(e => e.id));
+  const warnings: string[] = [];
+  for (const s of result.sessions || []) {
+    if (!Array.isArray(s.exercises)) continue;
+    const before = s.exercises.length;
+    const invalidIds = s.exercises.filter((e: any) => !e || !validIds.has(e.machineId)).map((e: any) => e?.machineId || '؟');
+    s.exercises = s.exercises.filter((e: any) => e && validIds.has(e.machineId));
+    if (invalidIds.length) {
+      const msg = `⚠️ ${s.date}: حُذفت ${invalidIds.length} من ${before} تمارين بمعرّفات غير موجودة في الكتالوج (${invalidIds.join('، ')})`;
+      warnings.push(msg);
+      console.warn(`[gym/generate-week ${ctx.memberId}]`, msg);
+    }
+  }
 
   const toDate = ctx.dates[ctx.dates.length - 1].date;
   await deleteGymSessionsByMember(ctx.memberId, ctx.startDate, toDate);
@@ -567,5 +586,6 @@ export async function processGymWeekResult(rawText: string, ctx: GymWeekContext)
     cyclePhaseLabel: CYCLE_PHASE_LABELS_AR[ctx.cyclePhase],
     autoDeloadTriggered: ctx.autoDeloadTriggered,
     estimatedOneRM: ctx.estimatedOneRM,
+    warnings,
   };
 }

@@ -210,6 +210,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
   const [gymLoading, setGymLoading] = useState(false);
   const [gymGeneratingProvider, setGymGeneratingProvider] = useState<'claude' | 'gpt'>('claude');
   const [gymPlan, setGymPlan] = useState<any>(null);
+  const [gymWarnings, setGymWarnings] = useState<string[]>([]); // معرّفات أجهزة غير موجودة بالكتالوج حُذفت من مخرجات التوليد — راجع lib/gymGeneration.ts
   const [gymError, setGymError] = useState('');
   const [gymSaved, setGymSaved] = useState(false);
   const [gymProfile, setGymProfile] = useState<any>(null);
@@ -391,7 +392,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
   async function generateGymPlan(provider: 'claude' | 'gpt' = 'claude') {
     if (!gymSelectedMember) return;
     setGymGeneratingProvider(provider);
-    setGymLoading(true); setGymPlan(null); setGymError(''); setGymSaved(false);
+    setGymLoading(true); setGymPlan(null); setGymError(''); setGymSaved(false); setGymWarnings([]);
     try {
       const res = await fetch(provider === 'gpt' ? '/api/gym/generate-week-gpt' : '/api/gym/generate-week', {
         method: 'POST',
@@ -400,6 +401,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
       });
       const data = await parseGenerateResponse(res);
       setGymPlan(data);
+      setGymWarnings(Array.isArray(data.warnings) ? data.warnings : []);
       setGymSaved(true);
       refreshGymCycleStatus();
     } catch (e: any) {
@@ -3039,6 +3041,19 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
                   {gymSaved && !gymError && (
                     <div className="bg-green-900/20 border border-green-700/40 rounded-xl px-3 py-2.5 text-sm text-green-400 flex items-center gap-2">
                       <span>✅</span><span>تم التوليد والحفظ للعضو بنجاح</span>
+                    </div>
+                  )}
+                  {gymWarnings.length > 0 && (
+                    <div className="bg-amber-900/20 border border-amber-700/40 rounded-xl p-3 flex items-start gap-2">
+                      <span className="mt-0.5 flex-shrink-0 text-amber-400">⚠️</span>
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold mb-1 text-amber-400">تنبيهات تحقق الكتالوج (لا تمنع الحفظ)</div>
+                        <ul className="space-y-0.5">
+                          {gymWarnings.map((w, i) => (
+                            <li key={i} className="text-xs text-amber-200/90">{w}</li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   )}
                 </div>
