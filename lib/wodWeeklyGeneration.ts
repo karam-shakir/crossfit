@@ -12,7 +12,7 @@ import {
   metconStimulusMixGuidance, metconRepLoadGuidance, metconTimeCapGuidance, detectMetconStimulusImbalance,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
-import { flattenMovements, sanitizeLevels, detectIncompleteSections } from '@/lib/wodBlocks';
+import { flattenMovements, sanitizeLevels, detectIncompleteSections, deriveTypeFromMetconFormat } from '@/lib/wodBlocks';
 
 const DAY_NAMES: Record<number, string> = {
   0: 'الأحد', 1: 'الاثنين', 2: 'الثلاثاء', 3: 'الأربعاء',
@@ -507,6 +507,11 @@ export async function processWeeklyWodResult(rawText: string, ctx: WeeklyWodCont
       }))
       .filter((block: any) => block.movements.length > 0);
 
+  // تنبيهات مجمّعة عبر كل أيام الأسبوع (محظورات دمج الحركات + تصحيح type + فحص الاكتمال) — كانت
+  // تُطبع بـ console.warn فقط بلا أي رؤية للمدرب (بعكس التوليد اليومي الذي يعرضها في بانر مرئي)،
+  // نفس الثغرة المذكورة في تحسينات الكروسفت المقترحة (بند "تمديد إصلاحين للتوليد الأسبوعي")
+  const weekWarnings: string[] = [];
+
   const HYROX_RE = /hyrox/i;
   const VALID_PARTNER_FORMATS: PartnerFormat[] = ['you_go_i_go', 'synchro', 'shared_reps', 'relay_carry'];
   let patternIdx = 0;
@@ -535,11 +540,28 @@ export async function processWeeklyWodResult(rawText: string, ctx: WeeklyWodCont
             customMetconCategory,
           ),
         ];
-        if (warnings.length) console.warn(`[generate-week ${day.date}]`, warnings.join(' | '));
+        if (warnings.length) {
+          console.warn(`[generate-week ${day.date}]`, warnings.join(' | '));
+          weekWarnings.push(...warnings.map(w => `${day.date}: ${w}`));
+        }
+      }
+
+      // تصحيح تلقائي لتناقض type/صيغة الميتكون — نفس منطق التوليد اليومي (deriveTypeFromMetconFormat
+      // في lib/wodBlocks.ts، مشتركة الآن بين المسارين). يُستبعد يوم الكاليسثنكس لأن نوعه "تدريب" مفروض
+      // صراحة بقاعدة البرمجة أعلاه بغض النظر عن صيغة الميتكون الفعلية (دائرة/circuit لا تعني AMRAP/FOR TIME)
+      let resolvedType = day.type || 'للوقت';
+      if (!day.isCalisthenics) {
+        const metconFormatForType = dayMetcon.find((b: any) => b.format)?.format || '';
+        const derivedType = deriveTypeFromMetconFormat(metconFormatForType);
+        if (derivedType && derivedType !== resolvedType) {
+          weekWarnings.push(`${day.date}: تصحيح تلقائي: نوع الجلسة كان "${resolvedType}" بينما صيغة الميتكون الفعلية "${metconFormatForType}" ⇒ صُحِّح إلى "${derivedType}"`);
+          resolvedType = derivedType;
+        }
       }
 
       const withValidatedSections = {
         ...day,
+        type: resolvedType,
         warmup: validateSection(day.warmup),
         strength: dayStrength,
         metcon: dayMetcon,
@@ -552,7 +574,9 @@ export async function processWeeklyWodResult(rawText: string, ctx: WeeklyWodCont
       if (!day.isRest && !day.isCalisthenics && !isHyroxDayHere) {
         const missingSections = detectIncompleteSections(withValidatedSections, isBenchmarkDayHere);
         if (missingSections.length) {
-          console.warn(`[generate-week ${day.date}] ⚠️ فحص الاكتمال: قسم/أقسام فارغة تماماً — ${missingSections.join('، ')}`);
+          const msg = `⚠️ فحص الاكتمال: قسم/أقسام فارغة تماماً — ${missingSections.join('، ')}`;
+          console.warn(`[generate-week ${day.date}]`, msg);
+          weekWarnings.push(`${day.date}: ${msg}`);
         }
       }
 
@@ -586,5 +610,6 @@ export async function processWeeklyWodResult(rawText: string, ctx: WeeklyWodCont
     cyclePhaseLabel: CYCLE_PHASE_LABELS_AR[ctx.cyclePhase],
     autoDeloadTriggered: ctx.autoDeloadTriggered,
     weekIntensity: ctx.weekIntensity,
+    weekWarnings,
   };
 }

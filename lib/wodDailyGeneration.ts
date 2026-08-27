@@ -23,21 +23,10 @@ import {
   metconStimulusMixGuidance, metconRepLoadGuidance, metconTimeCapGuidance, detectMetconStimulusImbalance,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
-import { flattenMovements, sanitizeLevels, detectIncompleteSections } from '@/lib/wodBlocks';
+import { flattenMovements, sanitizeLevels, detectIncompleteSections, deriveTypeFromMetconFormat } from '@/lib/wodBlocks';
 import { todaySA } from '@/lib/timezone';
 
 const PATTERN_KEYS: MovementPattern[] = ['squat', 'hinge', 'push', 'pull', 'olympic'];
-
-// النموذج يملأ "type" (AMRAP/للوقت/تدريب) وصيغة بلوك الميتكون (format، مثل "FOR TIME") بشكل منفصل
-// بلا ربط بينهما، فقد يكتب type="AMRAP" بينما صيغة الميتكون الفعلية "FOR TIME" — تناقض يُربك
-// وتيرة العضو (رُصد فعلياً 2026-08-20). يشتق النوع الصحيح من صيغة الميتكون الفعلية حين تكون واضحة.
-function deriveTypeFromMetconFormat(format: string): string | null {
-  const f = (format || '').toUpperCase();
-  if (f.includes('AMRAP')) return 'AMRAP';
-  if (f.includes('FOR TIME')) return 'للوقت';
-  if (f.includes('EMOM') || f.includes('EVERY')) return 'تدريب';
-  return null;
-}
 
 export interface DailyWodContext {
   prompt: string;

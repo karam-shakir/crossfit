@@ -75,6 +75,18 @@ export function enrichWodSections(wod: Partial<Wod>, exercises: Exercise[]): Nor
   };
 }
 
+// النموذج يملأ "type" (AMRAP/للوقت/تدريب) وصيغة بلوك الميتكون (format، مثل "FOR TIME") بشكل منفصل
+// بلا ربط بينهما، فقد يكتب type="AMRAP" بينما صيغة الميتكون الفعلية "FOR TIME" — تناقض يُربك
+// وتيرة العضو (رُصد فعلياً 2026-08-20). يشتق النوع الصحيح من صيغة الميتكون الفعلية حين تكون واضحة.
+// مشتركة بين التوليد اليومي والأسبوعي (كانت محصورة في اليومي فقط قبل هذا الاستخراج).
+export function deriveTypeFromMetconFormat(format: string): string | null {
+  const f = (format || '').toUpperCase();
+  if (f.includes('AMRAP')) return 'AMRAP';
+  if (f.includes('FOR TIME')) return 'للوقت';
+  if (f.includes('EMOM') || f.includes('EVERY')) return 'تدريب';
+  return null;
+}
+
 // ═══ فحص اكتمال الأقسام — دالة مشتركة (سيرفر وعميل) بلا أي استيراد يقتصر على أحدهما، فتُستخدم
 // كلاً من: (١) وقت التوليد لإضافة تحذير مرئي ضمن نفس بانر محظورات دمج الحركات الموجود أصلاً،
 // و(٢) وقت الحفظ في لوحة التحكم كبوابة تأكيد أخيرة — تعيد الفحص على الحالة الحالية فعلياً وقت

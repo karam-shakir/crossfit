@@ -81,6 +81,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
   const [weeklyProvider, setWeeklyProvider] = useState<'claude' | 'gpt'>('claude'); // أي مزوّد قيد التوليد/آخر مزوّد استُخدم — للعرض فقط
   const [weeklyPlan, setWeeklyPlan] = useState<any>(null);
   const [weeklyError, setWeeklyError] = useState('');
+  const [weeklyWarnings, setWeeklyWarnings] = useState<string[]>([]); // تنبيهات محظورات دمج الحركات + تصحيح type + فحص الاكتمال، مجمّعة عبر أيام الأسبوع — راجع lib/wodWeeklyGeneration.ts
   const [weeklyFromDate, setWeeklyFromDate] = useState(todaySA());
   const [weeklyDays, setWeeklyDays] = useState(7);
   const [weekMode, setWeekMode] = useState<'crossfit' | 'mixed'>('crossfit');
@@ -659,6 +660,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
     setWeeklyLoading(true);
     setWeeklyError('');
     setWeeklyPlan(null);
+    setWeeklyWarnings([]);
     setPlanSaved(false);
     setViewingSaved(null);
     try {
@@ -680,6 +682,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
       });
       const data = await parseGenerateResponse(res);
       setWeeklyPlan(data);
+      setWeeklyWarnings(Array.isArray(data.weekWarnings) ? data.weekWarnings : []);
       refreshWodCycleStatus(); // الأسبوع الجديد قد يكون غيّر مرحلة الدورة — حدّث الشريط التوضيحي
     } catch (e: any) {
       setWeeklyError(e.message);
@@ -1980,6 +1983,19 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
                     <div className="bg-emerald-900/20 border border-emerald-700/30 rounded-2xl p-4">
                       <h3 className="font-semibold text-emerald-300 mb-2">🗒️ خطة الأسبوع القادم</h3>
                       <p className="text-sm text-gray-300">{weeklyPlan.progressionNote}</p>
+                    </div>
+                  )}
+                  {weeklyWarnings.length > 0 && (
+                    <div className="bg-amber-900/20 border border-amber-700/40 rounded-xl p-3 flex items-start gap-2">
+                      <span className="mt-0.5 flex-shrink-0 text-amber-400">⚠️</span>
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold mb-1 text-amber-400">تنبيهات مراجعة عبر أيام الأسبوع (لا تمنع الحفظ)</div>
+                        <ul className="space-y-0.5">
+                          {weeklyWarnings.map((w, i) => (
+                            <li key={i} className="text-xs text-amber-200/90">{w}</li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   )}
 
