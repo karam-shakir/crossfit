@@ -11,6 +11,9 @@ export const metadata: Metadata = {
     title:            'المطانيخ',
     startupImage:     [],
   },
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
 };
 
 export const viewport: Viewport = {
