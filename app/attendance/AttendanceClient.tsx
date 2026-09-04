@@ -3,6 +3,7 @@ import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
+import { Calendar, CheckCircle2, Loader2, Hand, PartyPopper, BarChart3, Flame } from 'lucide-react';
 
 // تحميل كسول لمكتبة recharts (~100kB) — لا تُحمَّل إلا عند عرض هذا القسم فعلياً
 const AttendanceMonthChart = dynamic(() => import('@/components/charts/AttendanceMonthChart'), {
@@ -47,7 +48,7 @@ export default function AttendanceClient({ member }: { member: any }) {
         setMsg(data.error || 'حدث خطأ');
       } else {
         setRecords(prev => [...prev, today]);
-        setMsg('✅ تم تسجيل حضورك اليوم!');
+        setMsg('تم تسجيل حضورك اليوم!');
       }
     } catch {
       setMsg('حدث خطأ في الاتصال');
@@ -98,24 +99,32 @@ export default function AttendanceClient({ member }: { member: any }) {
       <main className="flex-1 min-w-0 lg:mr-56 pb-safe-nav lg:pb-0 overflow-x-hidden">
         <div className="max-w-2xl mx-auto px-4 pt-safe pb-6 space-y-6">
 
-          <h1 className="text-xl font-bold text-white">📅 سجل الحضور</h1>
+          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-orange-500" /> سجل الحضور
+          </h1>
 
           {/* زر تسجيل الحضور */}
           <div className="bg-gray-900 rounded-2xl border border-gray-800 p-5 text-center space-y-3">
-            <p className="text-gray-400 text-sm">
-              {checkedInToday ? '✅ سجّلت حضورك اليوم' : `اليوم: ${new Date().toLocaleDateString('ar-SA', { weekday: 'long', month: 'long', day: 'numeric' })}`}
+            <p className="text-gray-400 text-sm flex items-center justify-center gap-1">
+              {checkedInToday ? (
+                <><CheckCircle2 className="w-4 h-4 text-green-500" /> سجّلت حضورك اليوم</>
+              ) : `اليوم: ${new Date().toLocaleDateString('ar-SA', { weekday: 'long', month: 'long', day: 'numeric' })}`}
             </p>
             {!checkedInToday ? (
               <button
                 onClick={checkIn}
                 disabled={checking || loading}
-                className="w-full bg-orange-500 hover:bg-orange-400 disabled:bg-orange-800 text-white font-bold py-4 rounded-xl text-lg transition-colors"
+                className="w-full bg-orange-500 hover:bg-orange-400 disabled:bg-orange-800 text-white font-bold py-4 rounded-xl text-lg transition-colors flex items-center justify-center gap-2"
               >
-                {checking ? '⏳ جاري التسجيل...' : '✋ سجّل حضوري الآن'}
+                {checking ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> جاري التسجيل...</>
+                ) : (
+                  <><Hand className="w-4 h-4" /> سجّل حضوري الآن</>
+                )}
               </button>
             ) : (
-              <div className="bg-green-900/40 border border-green-700 rounded-xl py-4 text-green-400 font-bold text-lg">
-                🎉 أحسنت! حضورك مسجّل اليوم
+              <div className="bg-green-900/40 border border-green-700 rounded-xl py-4 text-green-400 font-bold text-lg flex items-center justify-center gap-2">
+                <PartyPopper className="w-4 h-4" /> أحسنت! حضورك مسجّل اليوم
               </div>
             )}
             {msg && !checkedInToday && (
@@ -129,7 +138,9 @@ export default function AttendanceClient({ member }: { member: any }) {
           {/* رسم بياني — آخر 6 أشهر */}
           {!loading && records.length > 0 && (
             <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
-              <h2 className="text-sm font-semibold text-gray-300 mb-4">📊 الحضور — آخر 6 أشهر</h2>
+              <h2 className="text-sm font-semibold text-gray-300 mb-4 flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-gray-400" /> الحضور — آخر 6 أشهر
+              </h2>
               <AttendanceMonthChart data={last6Months} maxCount={maxCount} />
               <div className="flex justify-between text-xs text-gray-600 mt-1 px-1">
                 <span>أقل شهر: {Math.min(...last6Months.map(m => m.count))} يوم</span>
@@ -145,7 +156,9 @@ export default function AttendanceClient({ member }: { member: any }) {
               <div className="text-xs text-gray-400 mt-1">هذا الشهر</div>
             </div>
             <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800">
-              <div className="text-2xl font-bold text-red-400">🔥 {streak}</div>
+              <div className="text-2xl font-bold text-red-400 flex items-center justify-center gap-1">
+                <Flame className="w-4 h-4 text-orange-500" /> {streak}
+              </div>
               <div className="text-xs text-gray-400 mt-1">أيام متتالية</div>
             </div>
             <div className="bg-gray-900 rounded-xl p-3 text-center border border-gray-800">
@@ -180,7 +193,7 @@ export default function AttendanceClient({ member }: { member: any }) {
                       : isFuture ? 'text-gray-700'
                       : 'text-gray-500'
                     }`}>
-                      {isAttended ? '✓' : day}
+                      {isAttended ? <CheckCircle2 className="w-4 h-4" /> : day}
                     </div>
                   );
                 })}

@@ -2,41 +2,47 @@
 import { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import { useRouter } from 'next/navigation';
+import {
+  Dumbbell, PersonStanding, Building2, RefreshCw, Flame, User, Mars, Venus,
+  CheckCircle2, Target, BarChart3, Zap, Minus, ArrowLeft, CircleDot,
+  Footprints, Flag, Armchair, Anchor, Circle, WavesHorizontal, Box, House,
+  Calendar, FlaskConical, Wrench, Ruler, AlertTriangle, Loader2, Save, Hand,
+} from 'lucide-react';
 
 const GOALS = [
-  { value: 'strength',    label: 'قوة بوزن الجسم',  icon: '💪', desc: 'تدرجات صعبة وقوة مطلقة',            detail: 'تكرارات منخفضة 3-6 • راحة طويلة • تدرجات متقدمة' },
-  { value: 'skills',      label: 'مهارات',           icon: '🤸', desc: 'وقوف على اليدين، ماسل أب، رافعات',  detail: 'Skill Work أول كل جلسة + قوة داعمة' },
-  { value: 'muscle_gain', label: 'بناء عضلي',        icon: '🏗️', desc: 'تضخيم بوزن الجسم',                  detail: '8-15 تكرار • Tempo بطيء • حجم عالٍ' },
-  { value: 'endurance',   label: 'تحمل عضلي',        icon: '🔄', desc: 'تكرارات عالية ولياقة',              detail: 'Circuits + EMOM + AMRAP • راحة قصيرة' },
-  { value: 'fat_burn',    label: 'حرق الدهون',       icon: '🔥', desc: 'خسارة وزن بتمارين مكثفة',           detail: 'HIIT بوزن الجسم + دوائر متكاملة' },
+  { value: 'strength',    label: 'قوة بوزن الجسم',  icon: Dumbbell,       desc: 'تدرجات صعبة وقوة مطلقة',            detail: 'تكرارات منخفضة 3-6 • راحة طويلة • تدرجات متقدمة' },
+  { value: 'skills',      label: 'مهارات',           icon: PersonStanding, desc: 'وقوف على اليدين، ماسل أب، رافعات',  detail: 'Skill Work أول كل جلسة + قوة داعمة' },
+  { value: 'muscle_gain', label: 'بناء عضلي',        icon: Building2,      desc: 'تضخيم بوزن الجسم',                  detail: '8-15 تكرار • Tempo بطيء • حجم عالٍ' },
+  { value: 'endurance',   label: 'تحمل عضلي',        icon: RefreshCw,      desc: 'تكرارات عالية ولياقة',              detail: 'Circuits + EMOM + AMRAP • راحة قصيرة' },
+  { value: 'fat_burn',    label: 'حرق الدهون',       icon: Flame,          desc: 'خسارة وزن بتمارين مكثفة',           detail: 'HIIT بوزن الجسم + دوائر متكاملة' },
 ];
 
 const LEVELS = [
-  { value: 'beginner',     label: 'مبتدئ', icon: '🟢', desc: 'أقل من 10 ضغط أو 0-2 عقلة',   detail: 'تعلم الحركات الأساسية بتدرجات مساعدة' },
-  { value: 'intermediate', label: 'متوسط', icon: '🔵', desc: '15+ ضغط، 5+ عقلة',             detail: 'التدرجات القياسية وبداية المهارات' },
-  { value: 'advanced',     label: 'متقدم', icon: '🟠', desc: '30+ ضغط، 12+ عقلة، ديبس قوي',  detail: 'تدرجات صعبة: Archer، L-sit، بداية الرافعات' },
-  { value: 'elite',        label: 'نخبة',  icon: '🔴', desc: 'مهارات متمكنة ورافعات',        detail: 'Planche/Lever work وبرمجة نخبوية' },
+  { value: 'beginner',     label: 'مبتدئ', dot: 'bg-green-500',  desc: 'أقل من 10 ضغط أو 0-2 عقلة',   detail: 'تعلم الحركات الأساسية بتدرجات مساعدة' },
+  { value: 'intermediate', label: 'متوسط', dot: 'bg-blue-500',   desc: '15+ ضغط، 5+ عقلة',             detail: 'التدرجات القياسية وبداية المهارات' },
+  { value: 'advanced',     label: 'متقدم', dot: 'bg-orange-500', desc: '30+ ضغط، 12+ عقلة، ديبس قوي',  detail: 'تدرجات صعبة: Archer، L-sit، بداية الرافعات' },
+  { value: 'elite',        label: 'نخبة',  dot: 'bg-red-500',    desc: 'مهارات متمكنة ورافعات',        detail: 'Planche/Lever work وبرمجة نخبوية' },
 ];
 
 const SKILLS = [
-  { label: 'Handstand',    ar: 'وقوف على اليدين', icon: '🤸' },
-  { label: 'Muscle-up',    ar: 'ماسل أب',          icon: '💥' },
-  { label: 'Front Lever',  ar: 'فرونت ليفر',       icon: '➖' },
-  { label: 'Back Lever',   ar: 'باك ليفر',         icon: '🔙' },
-  { label: 'Planche',      ar: 'بلانش',            icon: '🛸' },
-  { label: 'Pistol Squat', ar: 'سكوات مسدس',       icon: '🦵' },
-  { label: 'Human Flag',   ar: 'علم بشري',         icon: '🚩' },
-  { label: 'L-sit',        ar: 'جلسة L',           icon: '🪑' },
-  { label: 'Dragon Flag',  ar: 'علم التنين',       icon: '🐉' },
+  { label: 'Handstand',    ar: 'وقوف على اليدين', icon: PersonStanding },
+  { label: 'Muscle-up',    ar: 'ماسل أب',          icon: Zap },
+  { label: 'Front Lever',  ar: 'فرونت ليفر',       icon: Minus },
+  { label: 'Back Lever',   ar: 'باك ليفر',         icon: ArrowLeft },
+  { label: 'Planche',      ar: 'بلانش',            icon: CircleDot },
+  { label: 'Pistol Squat', ar: 'سكوات مسدس',       icon: Footprints },
+  { label: 'Human Flag',   ar: 'علم بشري',         icon: Flag },
+  { label: 'L-sit',        ar: 'جلسة L',           icon: Armchair },
+  { label: 'Dragon Flag',  ar: 'علم التنين',       icon: Flame },
 ];
 
 const EQUIPMENT = [
-  { label: 'بار عقلة',       icon: '🏗️' },
-  { label: 'متوازي/باراليتس', icon: '🤾' },
-  { label: 'حلقات',           icon: '⭕' },
-  { label: 'أربطة مقاومة',    icon: '🎗️' },
-  { label: 'جدار',            icon: '🧱' },
-  { label: 'لا شيء (أرض فقط)', icon: '🏠' },
+  { label: 'بار عقلة',       icon: Anchor },
+  { label: 'متوازي/باراليتس', icon: Dumbbell },
+  { label: 'حلقات',           icon: Circle },
+  { label: 'أربطة مقاومة',    icon: WavesHorizontal },
+  { label: 'جدار',            icon: Box },
+  { label: 'لا شيء (أرض فقط)', icon: House },
 ];
 
 const DAYS_INFO: Record<number, { split: string; desc: string }> = {
@@ -94,8 +100,8 @@ export default function CalisthenicsProfileClient({ member, initialProfile }: { 
           {/* Header */}
           <div className="bg-emerald-600 rounded-2xl p-5 shadow-lg shadow-emerald-200">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center text-3xl flex-shrink-0">
-                🤸
+              <div className="w-14 h-14 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center flex-shrink-0">
+                <PersonStanding className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h1 className="text-xl font-extrabold text-white">بروفايل الكاليسثنكس</h1>
@@ -108,14 +114,14 @@ export default function CalisthenicsProfileClient({ member, initialProfile }: { 
 
           {/* الجنس */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3 shadow-sm">
-            <h2 className="font-bold text-slate-800 text-base flex items-center gap-2"><span>👤</span> الجنس</h2>
+            <h2 className="font-bold text-slate-800 text-base flex items-center gap-2"><User className="w-5 h-5" /> الجنس</h2>
             <div className="grid grid-cols-2 gap-3">
-              {[{ value: 'male', label: 'ذكر', icon: '♂️' }, { value: 'female', label: 'أنثى', icon: '♀️' }].map(g => (
+              {[{ value: 'male', label: 'ذكر', icon: Mars }, { value: 'female', label: 'أنثى', icon: Venus }].map(g => (
                 <button key={g.value} onClick={() => setGender(g.value as any)}
                   className={`flex items-center gap-3 p-4 rounded-xl border text-right transition-all ${gender === g.value ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
-                  <span className="text-2xl">{g.icon}</span>
+                  <g.icon className="w-6 h-6" />
                   <span className="font-bold text-base">{g.label}</span>
-                  {gender === g.value && <span className="mr-auto text-emerald-600 text-lg">✓</span>}
+                  {gender === g.value && <CheckCircle2 className="mr-auto w-5 h-5 text-emerald-600" />}
                 </button>
               ))}
             </div>
@@ -123,18 +129,18 @@ export default function CalisthenicsProfileClient({ member, initialProfile }: { 
 
           {/* الهدف */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3 shadow-sm">
-            <h2 className="font-bold text-slate-800 text-base flex items-center gap-2"><span>🎯</span> هدفك من التدريب</h2>
+            <h2 className="font-bold text-slate-800 text-base flex items-center gap-2"><Target className="w-5 h-5" /> هدفك من التدريب</h2>
             <div className="space-y-2">
               {GOALS.map(g => (
                 <button key={g.value} onClick={() => setGoal(g.value)}
                   className={`w-full flex items-start gap-3 p-4 rounded-xl border text-right transition-all ${goal === g.value ? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-300' : 'border-slate-200 bg-slate-50 hover:border-slate-300'}`}>
-                  <span className="text-2xl flex-shrink-0 mt-0.5">{g.icon}</span>
+                  <g.icon className="w-6 h-6 flex-shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
                     <div className={`font-bold text-base ${goal === g.value ? 'text-emerald-800' : 'text-slate-700'}`}>{g.label}</div>
                     <div className="text-sm text-slate-500 mt-0.5">{g.desc}</div>
                     {goal === g.value && <div className="text-xs text-emerald-700 mt-1.5 bg-emerald-100 rounded-lg px-2 py-1">{g.detail}</div>}
                   </div>
-                  {goal === g.value && <span className="text-emerald-600 text-xl flex-shrink-0">✓</span>}
+                  {goal === g.value && <CheckCircle2 className="text-emerald-600 w-5 h-5 flex-shrink-0" />}
                 </button>
               ))}
             </div>
@@ -142,18 +148,18 @@ export default function CalisthenicsProfileClient({ member, initialProfile }: { 
 
           {/* المستوى */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3 shadow-sm">
-            <h2 className="font-bold text-slate-800 text-base flex items-center gap-2"><span>📊</span> مستواك الحالي</h2>
+            <h2 className="font-bold text-slate-800 text-base flex items-center gap-2"><BarChart3 className="w-5 h-5" /> مستواك الحالي</h2>
             <div className="space-y-2">
               {LEVELS.map(l => (
                 <button key={l.value} onClick={() => setLevel(l.value)}
                   className={`w-full flex items-start gap-3 p-4 rounded-xl border text-right transition-all ${level === l.value ? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-300' : 'border-slate-200 bg-slate-50 hover:border-slate-300'}`}>
-                  <span className="text-2xl flex-shrink-0">{l.icon}</span>
+                  <span className={`mt-1.5 inline-block w-3 h-3 rounded-full flex-shrink-0 ${l.dot}`} />
                   <div className="flex-1 min-w-0">
                     <div className={`font-bold text-base ${level === l.value ? 'text-emerald-800' : 'text-slate-700'}`}>{l.label}</div>
                     <div className="text-sm text-slate-500 mt-0.5">{l.desc}</div>
                     {level === l.value && <div className="text-xs text-emerald-700 mt-1.5">{l.detail}</div>}
                   </div>
-                  {level === l.value && <span className="text-emerald-600 text-xl flex-shrink-0">✓</span>}
+                  {level === l.value && <CheckCircle2 className="text-emerald-600 w-5 h-5 flex-shrink-0" />}
                 </button>
               ))}
             </div>
@@ -162,19 +168,19 @@ export default function CalisthenicsProfileClient({ member, initialProfile }: { 
           {/* القدرات الحالية */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 shadow-sm">
             <h2 className="font-bold text-slate-800 text-base flex items-center gap-2">
-              <span>🧪</span> اختبر نفسك — أرقامك الحالية
+              <FlaskConical className="w-5 h-5" /> اختبر نفسك — أرقامك الحالية
               <span className="text-xs text-slate-400 font-normal">(أهم بيانات لمعايرة البرنامج)</span>
             </h2>
             <p className="text-xs text-slate-500 leading-relaxed bg-slate-50 rounded-xl px-3 py-2">اختبر أقصى تكرارات متواصلة بتقنية صحيحة لكل تمرين — إن لم تستطع أداء عقلة أو ديبس اكتب 0</p>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: '🙌 أقصى ضغط', value: maxPushups, set: setMaxPushups, placeholder: '15', unit: 'تكرار' },
-                { label: '🏗️ أقصى عقلة', value: maxPullups, set: setMaxPullups, placeholder: '3', unit: 'تكرار' },
-                { label: '💺 أقصى ديبس', value: maxDips, set: setMaxDips, placeholder: '5', unit: 'تكرار' },
-                { label: '🧱 أقصى بلانك', value: plankSeconds, set: setPlankSeconds, placeholder: '45', unit: 'ثانية' },
+                { label: 'أقصى ضغط', icon: Hand, value: maxPushups, set: setMaxPushups, placeholder: '15', unit: 'تكرار' },
+                { label: 'أقصى عقلة', icon: Anchor, value: maxPullups, set: setMaxPullups, placeholder: '3', unit: 'تكرار' },
+                { label: 'أقصى ديبس', icon: Armchair, value: maxDips, set: setMaxDips, placeholder: '5', unit: 'تكرار' },
+                { label: 'أقصى بلانك', icon: Box, value: plankSeconds, set: setPlankSeconds, placeholder: '45', unit: 'ثانية' },
               ].map(f => (
                 <div key={f.label} className="space-y-1.5">
-                  <label className="text-sm text-slate-500 font-medium">{f.label}</label>
+                  <label className="text-sm text-slate-500 font-medium flex items-center gap-1"><f.icon className="w-4 h-4" />{f.label}</label>
                   <div className="relative">
                     <input type="number" value={f.value} onChange={e => f.set(e.target.value)} placeholder={f.placeholder}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-slate-800 text-base font-semibold focus:outline-none focus:border-emerald-500" />
@@ -187,7 +193,7 @@ export default function CalisthenicsProfileClient({ member, initialProfile }: { 
 
           {/* أيام التدريب */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3 shadow-sm">
-            <h2 className="font-bold text-slate-800 text-base flex items-center gap-2"><span>📅</span> أيام التدريب أسبوعياً</h2>
+            <h2 className="font-bold text-slate-800 text-base flex items-center gap-2"><Calendar className="w-5 h-5" /> أيام التدريب أسبوعياً</h2>
             <div className="grid grid-cols-4 gap-2">
               {[3, 4, 5, 6].map(n => (
                 <button key={n} onClick={() => setDaysPerWeek(n)}
@@ -207,7 +213,7 @@ export default function CalisthenicsProfileClient({ member, initialProfile }: { 
           {/* المهارات المستهدفة */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3 shadow-sm">
             <div className="flex items-center justify-between">
-              <h2 className="font-bold text-slate-800 text-base flex items-center gap-2"><span>🤸</span> مهارات تريد إتقانها</h2>
+              <h2 className="font-bold text-slate-800 text-base flex items-center gap-2"><PersonStanding className="w-5 h-5" /> مهارات تريد إتقانها</h2>
               {skillGoals.length > 0 && (
                 <span className="text-xs bg-violet-100 text-violet-700 border border-violet-200 px-2 py-1 rounded-lg">{skillGoals.length}/3</span>
               )}
@@ -217,7 +223,7 @@ export default function CalisthenicsProfileClient({ member, initialProfile }: { 
               {SKILLS.map(s => (
                 <button key={s.label} onClick={() => toggleSkill(s.label)}
                   className={`flex flex-col items-center gap-1 px-2 py-3 rounded-xl border text-center transition-all ${skillGoals.includes(s.label) ? 'border-violet-500 bg-violet-50 text-violet-800' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
-                  <span className="text-xl">{s.icon}</span>
+                  <s.icon className="w-5 h-5" />
                   <span className="text-[11px] font-bold leading-tight">{s.ar}</span>
                   <span className="text-[9px] text-slate-400" dir="ltr">{s.label}</span>
                 </button>
@@ -227,15 +233,15 @@ export default function CalisthenicsProfileClient({ member, initialProfile }: { 
 
           {/* المعدات */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3 shadow-sm">
-            <h2 className="font-bold text-slate-800 text-base flex items-center gap-2"><span>🛠️</span> المعدات المتاحة لديك</h2>
+            <h2 className="font-bold text-slate-800 text-base flex items-center gap-2"><Wrench className="w-5 h-5" /> المعدات المتاحة لديك</h2>
             <p className="text-xs text-slate-500">سيقتصر البرنامج على تمارين ممكنة بمعداتك فقط</p>
             <div className="grid grid-cols-2 gap-2">
               {EQUIPMENT.map(e => (
                 <button key={e.label} onClick={() => toggleEquipment(e.label)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-right text-sm font-semibold transition-all ${equipment.includes(e.label) ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
-                  <span className="text-lg">{e.icon}</span>
+                  <e.icon className="w-5 h-5" />
                   <span>{e.label}</span>
-                  {equipment.includes(e.label) && <span className="mr-auto text-emerald-600">✓</span>}
+                  {equipment.includes(e.label) && <CheckCircle2 className="mr-auto w-4 h-4 text-emerald-600" />}
                 </button>
               ))}
             </div>
@@ -243,7 +249,7 @@ export default function CalisthenicsProfileClient({ member, initialProfile }: { 
 
           {/* البيانات الجسدية */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 shadow-sm">
-            <h2 className="font-bold text-slate-800 text-base flex items-center gap-2"><span>📏</span> بياناتك الجسدية</h2>
+            <h2 className="font-bold text-slate-800 text-base flex items-center gap-2"><Ruler className="w-5 h-5" /> بياناتك الجسدية</h2>
             <div className="grid grid-cols-3 gap-3">
               {[
                 { label: 'العمر', value: age, set: setAge, placeholder: '25', unit: 'سنة' },
@@ -265,7 +271,7 @@ export default function CalisthenicsProfileClient({ member, initialProfile }: { 
           {/* الإصابات والقيود */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3 shadow-sm">
             <h2 className="font-bold text-slate-800 text-base flex items-center gap-2">
-              <span>⚠️</span> إصابات أو قيود
+              <AlertTriangle className="w-5 h-5 text-amber-500" /> إصابات أو قيود
               <span className="text-xs text-slate-400 font-normal">(مهم جداً للسلامة)</span>
             </h2>
             <textarea value={limitations} onChange={e => setLimitations(e.target.value)}
@@ -277,8 +283,8 @@ export default function CalisthenicsProfileClient({ member, initialProfile }: { 
 
           {/* Save */}
           <button onClick={save} disabled={saving}
-            className="w-full py-5 rounded-2xl font-extrabold text-lg transition-all shadow-lg disabled:opacity-60 bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200">
-            {saved ? '✅ تم الحفظ! جاري التوجيه للبرنامج...' : saving ? '⏳ جاري الحفظ...' : '💾 حفظ البروفايل'}
+            className="w-full py-5 rounded-2xl font-extrabold text-lg transition-all shadow-lg disabled:opacity-60 bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200 inline-flex items-center justify-center gap-2">
+            {saved ? <><CheckCircle2 className="w-5 h-5" /> تم الحفظ! جاري التوجيه للبرنامج...</> : saving ? <><Loader2 className="w-5 h-5 animate-spin" /> جاري الحفظ...</> : <><Save className="w-5 h-5" /> حفظ البروفايل</>}
           </button>
 
         </div>

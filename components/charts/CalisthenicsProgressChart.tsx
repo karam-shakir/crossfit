@@ -16,12 +16,12 @@ export default function CalisthenicsProgressChart({
         <Tooltip content={({ active, payload, label }) => active && payload?.length ? (
           <div className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs shadow-lg">
             <div className="text-slate-500">{label}</div>
-            <div className="text-violet-700 font-bold text-sm">{payload[0]?.value} {unitLabel}</div>
+            <div className="text-orange-700 font-bold text-sm">{payload[0]?.value} {unitLabel}</div>
             <div className="text-slate-400 mt-0.5">{(payload[0]?.payload as any)?.variation}</div>
           </div>
         ) : null} />
-        <Line type="monotone" dataKey="value" stroke="#7c3aed" strokeWidth={2.5}
-          dot={{ fill: '#7c3aed', r: 4, strokeWidth: 2, stroke: '#fff' }}
+        <Line type="monotone" dataKey="value" stroke="#f97316" strokeWidth={2.5}
+          dot={{ fill: '#f97316', r: 4, strokeWidth: 2, stroke: '#fff' }}
           activeDot={{ r: 6 }} />
       </LineChart>
     </ResponsiveContainer>

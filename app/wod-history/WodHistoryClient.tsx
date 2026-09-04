@@ -6,6 +6,12 @@ import WodBlockList from '@/components/WodBlockList';
 import { formatMeta } from '@/components/WodCalendar';
 import WodShareCard, { ShareCardLang } from '@/components/WodShareCard';
 import { toPng } from 'html-to-image';
+import {
+  Flame, Medal, TrendingUp, Calendar, CheckCircle2, Loader2, Dumbbell, Wind, Sun, Sparkles,
+  Copy, Trash2, RefreshCw, Pencil, Share2, Image as ImageIcon, Zap, Clock,
+  Play, Flag, PersonStanding, Salad, MessageSquare, Scale, Target, Lightbulb, ArrowDown,
+  ArrowUp, Compass, Search, Inbox, BookOpen, Weight, Hash,
+} from 'lucide-react';
 
 const flatMovements = (blocks: any[]) => (blocks || []).flatMap((b: any) => b.movements || []);
 
@@ -25,7 +31,10 @@ const WOD_TYPE_COLORS: Record<string, string> = {
 };
 
 const HYROX_TYPE_LABELS: Record<string, string> = {
-  full: 'كامل 🏁', simulation: 'محاكاة 🎯', strength: 'قوة 💪', running: 'جري 🏃',
+  full: 'كامل', simulation: 'محاكاة', strength: 'قوة', running: 'جري',
+};
+const HYROX_TYPE_ICONS: Record<string, typeof Flag> = {
+  full: Flag, simulation: Target, strength: Dumbbell, running: Zap,
 };
 
 const KB_EVENT_LABELS: Record<string, string> = {
@@ -33,7 +42,10 @@ const KB_EVENT_LABELS: Record<string, string> = {
 };
 
 const CALIS_TYPE_LABELS: Record<string, string> = {
-  strength: 'قوة 💪', skills: 'مهارات 🤸', endurance: 'تحمل 🔄', mixed: 'مختلط ⚡', hiit: 'HIIT 🔥',
+  strength: 'قوة', skills: 'مهارات', endurance: 'تحمل', mixed: 'مختلط', hiit: 'HIIT',
+};
+const CALIS_TYPE_ICONS: Record<string, typeof Dumbbell> = {
+  strength: Dumbbell, skills: PersonStanding, endurance: RefreshCw, mixed: Zap, hiit: Flame,
 };
 
 function formatDate(date: string) {
@@ -57,19 +69,23 @@ function ShareActions({
     <div className="flex gap-2">
       <button onClick={onShare}
         className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 text-white text-sm font-bold transition-colors">
-        📲 واتساب
+        <Share2 className="w-4 h-4" /> واتساب
       </button>
       <button onClick={onCopy}
-        className="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-sm font-bold transition-colors">
-        {copied ? '✅' : '📋'} نسخ
+        className="px-3.5 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-bold transition-colors flex items-center gap-1.5">
+        {copied ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />} نسخ
       </button>
       {isAdmin && (
         <>
           {editHref && (
-            <a href={editHref} className="px-3.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-colors">✏️</a>
+            <a href={editHref} className="px-3.5 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-bold transition-colors flex items-center justify-center">
+              <Pencil className="w-5 h-5" />
+            </a>
           )}
           {onDelete && (
-            <button onClick={onDelete} className="px-3.5 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 text-sm font-bold transition-colors">🗑</button>
+            <button onClick={onDelete} className="px-3.5 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 text-sm font-bold transition-colors flex items-center justify-center">
+              <Trash2 className="w-5 h-5" />
+            </button>
           )}
         </>
       )}
@@ -203,7 +219,7 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
             <span className={`text-xs px-2 py-0.5 rounded-full border font-bold ${WOD_TYPE_COLORS[wod.type] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
               {meta.icon} {wod.type}
             </span>
-            {wod.duration && <span className="text-xs text-slate-500 font-semibold">⏱{wod.duration}د</span>}
+            {wod.duration && <span className="text-xs text-slate-500 font-semibold flex items-center gap-0.5"><Clock className="w-3.5 h-3.5" />{wod.duration}د</span>}
             <span className="text-slate-400">{isOpen ? '▲' : '▼'}</span>
           </div>
           <div className="text-right min-w-0">
@@ -222,12 +238,12 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
           />
           <div className="flex gap-2">
             <button onClick={() => exportImage('ar')} disabled={!!exportingLang}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-60 text-white text-sm font-bold transition-colors">
-              {exportingLang === 'ar' ? '⏳ جارٍ التصدير...' : '🖼️ صورة عربي'}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 disabled:opacity-60 text-gray-300 text-sm font-bold transition-colors">
+              {exportingLang === 'ar' ? <><Loader2 className="w-4 h-4 animate-spin" /> جارٍ التصدير...</> : <><ImageIcon className="w-4 h-4" /> صورة عربي</>}
             </button>
             <button onClick={() => exportImage('en')} disabled={!!exportingLang}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-60 text-white text-sm font-bold transition-colors">
-              {exportingLang === 'en' ? '⏳ Exporting...' : '🖼️ Image English'}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 disabled:opacity-60 text-gray-300 text-sm font-bold transition-colors">
+              {exportingLang === 'en' ? <><Loader2 className="w-4 h-4 animate-spin" /> Exporting...</> : <><ImageIcon className="w-4 h-4" /> Image English</>}
             </button>
           </div>
           {/* بطاقة مخفية خارج الشاشة — تُلتقَط كصورة PNG عند التصدير، لا تظهر للمستخدم إطلاقاً */}
@@ -236,13 +252,21 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
               <WodShareCard wod={exportingLang === 'en' && enExportWod ? enExportWod : wod} lang={exportingLang || 'ar'} />
             </div>
           </div>
-          {wod.aiTheme && <div className="bg-purple-50 border border-purple-200 rounded-xl p-3 text-sm text-purple-800 leading-relaxed">🤖 {wod.aiTheme}</div>}
-          {wod.notes   && <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800 leading-relaxed">📝 {wod.notes}</div>}
+          {wod.aiTheme && (
+            <div className="bg-gray-800/60 border-r-4 border-orange-500 rounded-xl p-3 text-sm text-gray-200 leading-relaxed flex items-start gap-2">
+              <Sparkles className="w-4 h-4 text-orange-400 flex-shrink-0 mt-0.5" /> {wod.aiTheme}
+            </div>
+          )}
+          {wod.notes && (
+            <div className="bg-gray-800/60 border-r-4 border-amber-500 rounded-xl p-3 text-sm text-gray-200 leading-relaxed flex items-start gap-2">
+              <Pencil className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" /> {wod.notes}
+            </div>
+          )}
 
           {/* Level selector — يظهر فقط عند وجود بيانات مستويات */}
           {hasLevels && (
             <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200">
-              <div className="text-sm font-bold text-slate-700 mb-2 text-right">⚡ اختر مستواك — سيتغير التمرين كاملاً</div>
+              <div className="text-sm font-bold text-slate-700 mb-2 text-right flex items-center justify-end gap-1.5"><Zap className="w-4 h-4" /> اختر مستواك — سيتغير التمرين كاملاً</div>
               <div className="flex gap-2">
                 {LEVEL_TABS_WOD.map(t => (
                   <button
@@ -257,8 +281,8 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
                 ))}
               </div>
               {selectedLevel && wod.targetTimes?.[selectedLevel] && (
-                <div className="mt-2 text-sm text-slate-600 text-right">
-                  ⏱ وقتك المرجعي: <span className="font-bold text-slate-800">{wod.targetTimes[selectedLevel]}</span>
+                <div className="mt-2 text-sm text-slate-600 text-right flex items-center justify-end gap-1.5">
+                  <Clock className="w-4 h-4" /> وقتك المرجعي: <span className="font-bold text-slate-800">{wod.targetTimes[selectedLevel]}</span>
                 </div>
               )}
             </div>
@@ -267,13 +291,14 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
           {/* Target times (if no levels data) */}
           {!hasLevels && wod.targetTimes && (
             <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-              <h4 className="text-sm font-bold text-slate-600 mb-2">⏱ أوقات الأداء المرجعية</h4>
+              <h4 className="text-sm font-bold text-slate-600 mb-2 flex items-center gap-1.5"><Clock className="w-4 h-4" /> أوقات الأداء المرجعية</h4>
               <div className="grid grid-cols-2 gap-2">
                 {Object.entries(wod.targetTimes).map(([k, v]: [string, any]) => {
-                  const labels: Record<string,string> = {elite:'نخبة 🥇',advanced:'متقدم 🥈',intermediate:'متوسط 🥉',beginner:'مبتدئ'};
+                  const labels: Record<string,{ ar: string; medal?: boolean }> = {elite:{ar:'نخبة',medal:true},advanced:{ar:'متقدم',medal:true},intermediate:{ar:'متوسط',medal:true},beginner:{ar:'مبتدئ'}};
+                  const l = labels[k] || { ar: k };
                   return (
                     <div key={k} className="bg-white rounded-lg px-3 py-2 text-right border border-slate-200">
-                      <div className="text-xs text-slate-500">{labels[k]||k}</div>
+                      <div className="text-xs text-slate-500 flex items-center justify-end gap-1">{l.medal && <Medal className="w-3.5 h-3.5 text-amber-400" />} {l.ar}</div>
                       <div className="text-sm font-bold text-slate-800">{v}</div>
                     </div>
                   );
@@ -285,19 +310,19 @@ function WodCard({ wod, isAdmin, onDelete, defaultOpen = false }: { wod: any; is
           {(['warmup','strength','metcon','accessory','cooldown'] as const).map(sec => {
             const blocks = (wod as any)[sec];
             if (!blocks?.length) return null;
-            const secMeta: Record<string, {label:string;icon:string;color:string;bg:string}> = {
-              warmup:    {label:'الإحماء',    icon:'🔆',color:'text-amber-700',  bg:'bg-amber-50 border-amber-200'},
-              strength:  {label:'القوة',      icon:'🏋️',color:'text-blue-700',   bg:'bg-blue-50 border-blue-200'},
-              metcon:    {label:'الـ WOD',    icon:'🔥',color:'text-orange-700', bg:'bg-orange-50 border-orange-200'},
-              accessory: {label:'الأكسسوار', icon:'💪',color:'text-purple-700', bg:'bg-purple-50 border-purple-200'},
-              cooldown:  {label:'التهدئة',    icon:'🧘',color:'text-teal-700',   bg:'bg-teal-50 border-teal-200'},
+            const secMeta: Record<string, {label:string;Icon:typeof Sun;color:string;bg:string}> = {
+              warmup:    {label:'الإحماء',    Icon:Sun,      color:'text-amber-700',  bg:'bg-amber-50 border-amber-200'},
+              strength:  {label:'القوة',      Icon:Dumbbell, color:'text-blue-700',   bg:'bg-blue-50 border-blue-200'},
+              metcon:    {label:'الـ WOD',    Icon:Flame,    color:'text-orange-700', bg:'bg-orange-50 border-orange-200'},
+              accessory: {label:'الأكسسوار', Icon:Dumbbell, color:'text-slate-700',  bg:'bg-slate-100 border-slate-200'},
+              cooldown:  {label:'التهدئة',    Icon:Wind,     color:'text-slate-700',  bg:'bg-slate-100 border-slate-200'},
             };
-            const {label,icon,color,bg} = secMeta[sec];
+            const {label,Icon,color,bg} = secMeta[sec];
             const showLevel = (sec === 'strength' || sec === 'metcon' || sec === 'accessory') ? selectedLevel : undefined;
             return (
               <div key={sec}>
                 <div className={`flex items-center gap-2 rounded-xl px-3 py-2 mb-2 border ${bg}`}>
-                  <span className="text-lg">{icon}</span>
+                  <Icon className={`w-5 h-5 ${color}`} />
                   <h3 className={`font-bold text-base ${color}`}>{label}</h3>
                 </div>
                 <WodBlockList blocks={blocks} selectedLevel={showLevel} />
@@ -367,10 +392,10 @@ function HyroxCard({ rec }: { rec: any }) {
           <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
             {isToday  && <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full font-bold">اليوم</span>}
             {isFuture && <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full font-bold">قادم</span>}
-            <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${colors.badge}`}>
-              {HYROX_TYPE_LABELS[rec.sessionType] || rec.sessionType}
+            <span className={`text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${colors.badge}`}>
+              {(() => { const TIcon = HYROX_TYPE_ICONS[rec.sessionType]; return TIcon && <TIcon className="w-3 h-3" />; })()} {HYROX_TYPE_LABELS[rec.sessionType] || rec.sessionType}
             </span>
-            {s.totalDuration && <span className="text-xs text-slate-500 font-semibold">⏱{s.totalDuration}د</span>}
+            {s.totalDuration && <span className="text-xs text-slate-500 font-semibold flex items-center gap-0.5"><Clock className="w-3.5 h-3.5" />{s.totalDuration}د</span>}
             <span className="text-slate-400">{open ? '▲' : '▼'}</span>
           </div>
           <div className="text-right min-w-0">
@@ -384,17 +409,17 @@ function HyroxCard({ rec }: { rec: any }) {
         <div className="border-t border-slate-200 p-4 space-y-3">
           <ShareActions onShare={() => window.open(`https://wa.me/?text=${encodeURIComponent(buildText())}`, '_blank')} onCopy={copyText} copied={copied} />
 
-          {s.coachNote && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-800 leading-relaxed">💬 {s.coachNote}</div>}
+          {s.coachNote && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-800 leading-relaxed flex items-start gap-2"><MessageSquare className="w-4 h-4 flex-shrink-0 mt-0.5" /> {s.coachNote}</div>}
 
           {/* Warmup */}
           {s.warmup?.exercises?.length > 0 && (
             <div>
-              <h3 className="font-bold text-[15px] text-amber-700 mb-2">🔆 الإحماء — {s.warmup.duration}</h3>
+              <h3 className="font-bold text-[15px] text-amber-700 mb-2 flex items-center gap-1.5"><Sun className="w-4 h-4" /> الإحماء — {s.warmup.duration}</h3>
               <div className="space-y-1.5">
                 {s.warmup.exercises.map((ex: any, i: number) => (
                   <div key={i} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5">
                     <a href={ytLink(ex.nameEn, 'hyrox')} target="_blank" rel="noopener noreferrer"
-                      className="text-sm text-red-600 hover:text-red-700 font-semibold flex items-center gap-1">▶ يوتيوب</a>
+                      className="text-sm text-red-600 hover:text-red-700 font-semibold flex items-center gap-1"><Play className="w-3.5 h-3.5" /> يوتيوب</a>
                     <div className="text-right">
                       <span className="text-[15px] text-slate-800 font-medium">{ex.name}</span>
                       <span className="text-sm text-slate-500 mr-2">{ex.duration || ex.reps || ''}</span>
@@ -408,24 +433,24 @@ function HyroxCard({ rec }: { rec: any }) {
           {/* Stations */}
           {s.stations?.length > 0 && (
             <div>
-              <h3 className="font-bold text-[15px] text-red-700 mb-2">🏁 المحطات</h3>
+              <h3 className="font-bold text-[15px] text-red-700 mb-2 flex items-center gap-1.5"><Flag className="w-4 h-4" /> المحطات</h3>
               <div className="space-y-2">
                 {s.stations.map((st: any, i: number) => (
                   <div key={i} className="bg-slate-50 rounded-xl p-3 border border-slate-200">
                     <div className="flex items-center justify-between mb-1.5">
                       <a href={ytLink(st.nameEn || st.name, 'hyrox')} target="_blank" rel="noopener noreferrer"
-                        className="text-sm text-red-600 hover:text-red-700 font-semibold flex items-center gap-1">▶ يوتيوب</a>
-                      <div className="text-right">
-                        <span className="text-sm text-slate-500">#{st.number} • 🏃 {st.runBefore}</span>
+                        className="text-sm text-red-600 hover:text-red-700 font-semibold flex items-center gap-1"><Play className="w-3.5 h-3.5" /> يوتيوب</a>
+                      <div className="text-right flex items-center gap-1 justify-end">
+                        <span className="text-sm text-slate-500 flex items-center gap-1">#{st.number} • <Play className="w-3 h-3" /> {st.runBefore}</span>
                         <span className="font-bold text-slate-800 text-[15px] mr-2">{st.name}</span>
                       </div>
                     </div>
                     <div className="flex gap-3 text-sm text-slate-600 justify-end flex-wrap font-medium">
-                      <span>🎯 {st.target}</span>
-                      {st.weight && <span>⚖️ {st.weight}</span>}
-                      {st.targetTime && <span>⏱ {st.targetTime}</span>}
+                      <span className="flex items-center gap-1"><Target className="w-3.5 h-3.5" /> {st.target}</span>
+                      {st.weight && <span className="flex items-center gap-1"><Scale className="w-3.5 h-3.5" /> {st.weight}</span>}
+                      {st.targetTime && <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {st.targetTime}</span>}
                     </div>
-                    {st.tips && <p className="text-sm text-amber-700 mt-1.5 text-right bg-amber-50 rounded-lg px-2.5 py-1.5">💡 {st.tips}</p>}
+                    {st.tips && <p className="text-sm text-amber-700 mt-1.5 text-right bg-amber-50 rounded-lg px-2.5 py-1.5 flex items-start gap-1.5"><Lightbulb className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" /> {st.tips}</p>}
                   </div>
                 ))}
               </div>
@@ -435,11 +460,12 @@ function HyroxCard({ rec }: { rec: any }) {
           {/* Target times */}
           {s.targetTimes && (
             <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-              <h4 className="text-sm font-bold text-slate-600 mb-2">⏱ أوقات الأداء المرجعية</h4>
+              <h4 className="text-sm font-bold text-slate-600 mb-2 flex items-center gap-1.5"><Clock className="w-4 h-4" /> أوقات الأداء المرجعية</h4>
               <div className="grid grid-cols-2 gap-1.5">
                 {Object.entries(s.targetTimes).map(([k, v]: [string, any]) => {
-                  const labels: Record<string,string> = {elite:'نخبة 🥇',advanced:'متقدم 🥈',intermediate:'متوسط 🥉',beginner:'مبتدئ'};
-                  return <div key={k} className="text-sm text-slate-700 text-right font-medium">{labels[k]||k}: {v}</div>;
+                  const labels: Record<string,{ ar: string; medal?: boolean }> = {elite:{ar:'نخبة',medal:true},advanced:{ar:'متقدم',medal:true},intermediate:{ar:'متوسط',medal:true},beginner:{ar:'مبتدئ'}};
+                  const l = labels[k] || { ar: k };
+                  return <div key={k} className="text-sm text-slate-700 text-right font-medium flex items-center justify-end gap-1">{l.medal && <Medal className="w-3.5 h-3.5 text-amber-400" />} {l.ar}: {v}</div>;
                 })}
               </div>
             </div>
@@ -448,7 +474,7 @@ function HyroxCard({ rec }: { rec: any }) {
           {/* Cooldown */}
           {s.cooldown?.exercises?.length > 0 && (
             <div>
-              <h3 className="font-bold text-[15px] text-teal-700 mb-2">🧘 التهدئة — {s.cooldown.duration}</h3>
+              <h3 className="font-bold text-[15px] text-slate-700 mb-2 flex items-center gap-1.5"><Wind className="w-4 h-4" /> التهدئة — {s.cooldown.duration}</h3>
               <div className="space-y-1.5">
                 {s.cooldown.exercises.map((ex: any, i: number) => (
                   <div key={i} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5">
@@ -463,7 +489,7 @@ function HyroxCard({ rec }: { rec: any }) {
           {/* Nutrition */}
           {(s.nutritionBefore || s.nutritionAfter) && (
             <div className="bg-green-50 border border-green-200 rounded-xl p-3 space-y-1.5">
-              <h4 className="text-sm font-bold text-green-700 mb-1">🥗 التغذية</h4>
+              <h4 className="text-sm font-bold text-green-700 mb-1 flex items-center gap-1.5"><Salad className="w-4 h-4" /> التغذية</h4>
               {s.nutritionBefore && <p className="text-sm text-slate-700"><span className="text-green-700 font-bold">قبل: </span>{s.nutritionBefore}</p>}
               {s.nutritionAfter  && <p className="text-sm text-slate-700"><span className="text-green-700 font-bold">بعد: </span>{s.nutritionAfter}</p>}
             </div>
@@ -471,8 +497,8 @@ function HyroxCard({ rec }: { rec: any }) {
 
           {/* Next session recommendation */}
           {s.nextSessionRecommendation && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-800 leading-relaxed">
-              🔜 {s.nextSessionRecommendation}
+            <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 text-sm text-orange-800 leading-relaxed flex items-start gap-2">
+              <Compass className="w-4 h-4 flex-shrink-0 mt-0.5" /> {s.nextSessionRecommendation}
             </div>
           )}
         </div>
@@ -565,13 +591,13 @@ function KettlebellCard({ rec }: { rec: any }) {
         <div className="border-t border-slate-200 p-4 space-y-3">
           <ShareActions onShare={() => window.open(`https://wa.me/?text=${encodeURIComponent(buildText())}`, '_blank')} onCopy={copyText} copied={copied} />
 
-          {s.coachNote && <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800 leading-relaxed">💬 {s.coachNote}</div>}
-          {s.breathingPattern && <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-700">🌬️ {s.breathingPattern}</div>}
+          {s.coachNote && <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800 leading-relaxed flex items-start gap-2"><MessageSquare className="w-4 h-4 flex-shrink-0 mt-0.5" /> {s.coachNote}</div>}
+          {s.breathingPattern && <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-700 flex items-start gap-2"><Wind className="w-4 h-4 flex-shrink-0 mt-0.5" /> {s.breathingPattern}</div>}
 
           {/* Warmup */}
           {s.warmup?.movements?.length > 0 && (
             <div>
-              <h3 className="font-bold text-[15px] text-amber-700 mb-2">🔆 الإحماء — {s.warmup.duration}</h3>
+              <h3 className="font-bold text-[15px] text-amber-700 mb-2 flex items-center gap-1.5"><Sun className="w-4 h-4" /> الإحماء — {s.warmup.duration}</h3>
               <div className="space-y-1.5">
                 {s.warmup.movements.map((m: any, i: number) => (
                   typeof m === 'string'
@@ -588,23 +614,23 @@ function KettlebellCard({ rec }: { rec: any }) {
           {/* Main Work */}
           {s.mainWork?.length > 0 && (
             <div>
-              <h3 className="font-bold text-[15px] text-amber-700 mb-2">🔔 العمل الرئيسي</h3>
+              <h3 className="font-bold text-[15px] text-amber-700 mb-2 flex items-center gap-1.5"><Dumbbell className="w-4 h-4" /> العمل الرئيسي</h3>
               <div className="space-y-2">
                 {s.mainWork.map((ex: any, i: number) => (
                   <div key={i} className="bg-slate-50 rounded-xl p-3 border border-amber-200">
                     <div className="flex items-center justify-between mb-1.5">
                       <a href={ytLink(ex.exercise || ex.exerciseAr, 'kettlebell')} target="_blank" rel="noopener noreferrer"
-                        className="text-sm text-red-600 hover:text-red-700 font-semibold flex items-center gap-1">▶ يوتيوب</a>
+                        className="text-sm text-red-600 hover:text-red-700 font-semibold flex items-center gap-1"><Play className="w-3.5 h-3.5" /> يوتيوب</a>
                       <div className="font-bold text-slate-800 text-[15px]">{ex.exerciseAr || ex.exercise}</div>
                     </div>
                     <div className="flex gap-3 text-sm text-slate-600 justify-end flex-wrap font-medium">
                       {ex.sets && <span>{ex.sets} مجموعة</span>}
                       {ex.reps && <span>{ex.reps}</span>}
-                      {ex.weight && <span>⚖️ {ex.weight}</span>}
-                      {ex.targetRPM && <span>🔄 {ex.targetRPM} RPM</span>}
+                      {ex.weight && <span className="flex items-center gap-1"><Scale className="w-3.5 h-3.5" /> {ex.weight}</span>}
+                      {ex.targetRPM && <span className="flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5" /> {ex.targetRPM} RPM</span>}
                       {ex.restBetweenSets && <span>راحة {ex.restBetweenSets}</span>}
                     </div>
-                    {ex.technique && <p className="text-sm text-amber-700 mt-1.5 text-right bg-amber-50 rounded-lg px-2.5 py-1.5">💡 {ex.technique}</p>}
+                    {ex.technique && <p className="text-sm text-amber-700 mt-1.5 text-right bg-amber-50 rounded-lg px-2.5 py-1.5 flex items-start gap-1.5"><Lightbulb className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" /> {ex.technique}</p>}
                   </div>
                 ))}
               </div>
@@ -613,7 +639,7 @@ function KettlebellCard({ rec }: { rec: any }) {
 
           {s.techniqueNotes?.length > 0 && (
             <div className="bg-slate-50 rounded-xl p-3 space-y-1 border border-slate-200">
-              <h4 className="text-sm font-bold text-slate-600 mb-1">💡 ملاحظات تقنية</h4>
+              <h4 className="text-sm font-bold text-slate-600 mb-1 flex items-center gap-1.5"><Lightbulb className="w-4 h-4" /> ملاحظات تقنية</h4>
               {s.techniqueNotes.map((n: string, i: number) => (
                 <p key={i} className="text-sm text-slate-700">• {n}</p>
               ))}
@@ -623,12 +649,12 @@ function KettlebellCard({ rec }: { rec: any }) {
           {/* Cooldown */}
           {s.cooldown?.length > 0 && (
             <div>
-              <h3 className="font-bold text-[15px] text-teal-700 mb-2">🧘 التهدئة</h3>
+              <h3 className="font-bold text-[15px] text-slate-700 mb-2 flex items-center gap-1.5"><Wind className="w-4 h-4" /> التهدئة</h3>
               <div className="space-y-1.5">
                 {s.cooldown.map((ex: any, i: number) => (
                   <div key={i} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5">
                     <span className="text-sm text-slate-500">{ex.duration}</span>
-                    <div className="text-right"><span className="text-[15px] text-slate-800 font-medium">{ex.name}</span>{ex.focus && <span className="text-sm text-teal-700 mr-2">({ex.focus})</span>}</div>
+                    <div className="text-right"><span className="text-[15px] text-slate-800 font-medium">{ex.name}</span>{ex.focus && <span className="text-sm text-slate-500 mr-2">({ex.focus})</span>}</div>
                   </div>
                 ))}
               </div>
@@ -636,8 +662,8 @@ function KettlebellCard({ rec }: { rec: any }) {
           )}
 
           {s.progressionNote && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-800 leading-relaxed">
-              📈 {s.progressionNote}
+            <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 text-sm text-orange-800 leading-relaxed flex items-start gap-2">
+              <TrendingUp className="w-4 h-4 flex-shrink-0 mt-0.5" /> {s.progressionNote}
             </div>
           )}
         </div>
@@ -650,7 +676,7 @@ const CAL_LEVEL_TABS: { key: LevelKey; label: string; active: string; idle: stri
   { key: 'beginner',     label: 'مبتدئ', active: 'bg-green-600 text-white',  idle: 'bg-green-50 text-green-700 border border-green-300'  },
   { key: 'intermediate', label: 'متوسط', active: 'bg-blue-600 text-white',   idle: 'bg-blue-50 text-blue-700 border border-blue-300'    },
   { key: 'advanced',     label: 'متقدم', active: 'bg-orange-500 text-white',  idle: 'bg-orange-50 text-orange-700 border border-orange-300' },
-  { key: 'elite',        label: 'نخبة',  active: 'bg-purple-600 text-white',  idle: 'bg-purple-50 text-purple-700 border border-purple-300' },
+  { key: 'elite',        label: 'نخبة',  active: 'bg-amber-500 text-white',  idle: 'bg-amber-50 text-amber-700 border border-amber-300' },
 ];
 
 // ── Calisthenics Session Card ────────────────────────────────────────────────
@@ -741,10 +767,10 @@ function CalisthenicsCard({ rec }: { rec: any }) {
           <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
             {isToday  && <span className="text-xs bg-emerald-500 text-white px-2 py-0.5 rounded-full font-bold">اليوم</span>}
             {isFuture && <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full font-bold">قادم</span>}
-            <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${colors.badge}`}>
-              {CALIS_TYPE_LABELS[rec.sessionType] || rec.sessionType}
+            <span className={`text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${colors.badge}`}>
+              {(() => { const TIcon = CALIS_TYPE_ICONS[rec.sessionType]; return TIcon && <TIcon className="w-3 h-3" />; })()} {CALIS_TYPE_LABELS[rec.sessionType] || rec.sessionType}
             </span>
-            {s.totalDuration && <span className="text-xs text-slate-500 font-semibold">⏱{s.totalDuration}د</span>}
+            {s.totalDuration && <span className="text-xs text-slate-500 font-semibold flex items-center gap-0.5"><Clock className="w-3.5 h-3.5" />{s.totalDuration}د</span>}
             <span className="text-slate-400">{open ? '▲' : '▼'}</span>
           </div>
           <div className="text-right min-w-0">
@@ -758,7 +784,7 @@ function CalisthenicsCard({ rec }: { rec: any }) {
         <div className="border-t border-slate-200 p-4 space-y-3">
           <ShareActions onShare={() => window.open(`https://wa.me/?text=${encodeURIComponent(buildText())}`, '_blank')} onCopy={copyText} copied={copied} />
 
-          {s.coachNote && <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-800 leading-relaxed">💬 {s.coachNote}</div>}
+          {s.coachNote && <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-800 leading-relaxed flex items-start gap-2"><MessageSquare className="w-4 h-4 flex-shrink-0 mt-0.5" /> {s.coachNote}</div>}
 
           {/* Level Tabs */}
           {hasLevels && (
@@ -779,12 +805,12 @@ function CalisthenicsCard({ rec }: { rec: any }) {
           {/* Warmup */}
           {s.warmup?.exercises?.length > 0 && (
             <div>
-              <h3 className="font-bold text-[15px] text-amber-700 mb-2">🔆 الإحماء — {s.warmup.duration} د</h3>
+              <h3 className="font-bold text-[15px] text-amber-700 mb-2 flex items-center gap-1.5"><Sun className="w-4 h-4" /> الإحماء — {s.warmup.duration} د</h3>
               <div className="space-y-1.5">
                 {s.warmup.exercises.map((ex: any, i: number) => (
                   <div key={i} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5">
                     <a href={ytLink(ex.nameEn, 'calisthenics')} target="_blank" rel="noopener noreferrer"
-                      className="text-sm text-red-600 hover:text-red-700 font-semibold">▶ يوتيوب</a>
+                      className="text-sm text-red-600 hover:text-red-700 font-semibold flex items-center gap-1"><Play className="w-3.5 h-3.5" /> يوتيوب</a>
                     <div className="text-right">
                       <span className="text-[15px] text-slate-800 font-medium">{ex.name}</span>
                       <span className="text-sm text-slate-500 mr-2">{ex.sets}×{ex.reps}</span>
@@ -798,23 +824,23 @@ function CalisthenicsCard({ rec }: { rec: any }) {
           {/* Skill Work */}
           {s.skillWork?.exercises?.length > 0 && (
             <div>
-              <h3 className="font-bold text-[15px] text-purple-700 mb-2">🤸 {s.skillWork.title || 'عمل المهارة'} — {s.skillWork.duration} د</h3>
+              <h3 className="font-bold text-[15px] text-blue-700 mb-2 flex items-center gap-1.5"><PersonStanding className="w-4 h-4" /> {s.skillWork.title || 'عمل المهارة'} — {s.skillWork.duration} د</h3>
               <div className="space-y-2">
                 {s.skillWork.exercises.map((ex: any, i: number) => {
                   const lvl = selectedLevel && ex.levels ? ex.levels[selectedLevel] : null;
                   return (
-                    <div key={i} className="bg-slate-50 rounded-xl p-3 border border-purple-200">
+                    <div key={i} className="bg-slate-50 rounded-xl p-3 border border-blue-200">
                       <div className="flex items-center justify-between mb-1.5">
                         <a href={ytLink(ex.nameEn, 'calisthenics')} target="_blank" rel="noopener noreferrer"
-                          className="text-sm text-red-600 hover:text-red-700 font-semibold">▶ يوتيوب</a>
+                          className="text-sm text-red-600 hover:text-red-700 font-semibold flex items-center gap-1"><Play className="w-3.5 h-3.5" /> يوتيوب</a>
                         <div className="font-bold text-slate-800 text-[15px]">{ex.name}</div>
                       </div>
                       {lvl ? (
                         <div className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-2.5 py-1.5 text-right font-medium">{typeof lvl === 'string' ? lvl : (lvl.reps || lvl.scaling || '')}{lvl.cue ? ` — ${lvl.cue}` : ''}</div>
                       ) : (
                         <>
-                          {ex.regression && <p className="text-sm text-blue-700 text-right font-medium">⬇️ {ex.regression}</p>}
-                          {ex.progression && <p className="text-sm text-green-700 text-right font-medium">⬆️ {ex.progression}</p>}
+                          {ex.regression && <p className="text-sm text-blue-700 text-right font-medium flex items-center justify-end gap-1"><ArrowDown className="w-3.5 h-3.5" /> {ex.regression}</p>}
+                          {ex.progression && <p className="text-sm text-green-700 text-right font-medium flex items-center justify-end gap-1"><ArrowUp className="w-3.5 h-3.5" /> {ex.progression}</p>}
                         </>
                       )}
                     </div>
@@ -827,7 +853,7 @@ function CalisthenicsCard({ rec }: { rec: any }) {
           {/* Main Work — يدعم البنية الجديدة (object) والقديمة (array) */}
           {s.mainWork && (Array.isArray(s.mainWork) ? s.mainWork.length > 0 : s.mainWork.exercises?.length > 0) && (
             <div>
-              <h3 className="font-bold text-[15px] text-emerald-700 mb-2">💪 {Array.isArray(s.mainWork) ? 'العمل الرئيسي' : (s.mainWork.title || 'العمل الرئيسي')} {!Array.isArray(s.mainWork) && s.mainWork.duration ? `— ${s.mainWork.duration} د` : ''}</h3>
+              <h3 className="font-bold text-[15px] text-emerald-700 mb-2 flex items-center gap-1.5"><Dumbbell className="w-4 h-4" /> {Array.isArray(s.mainWork) ? 'العمل الرئيسي' : (s.mainWork.title || 'العمل الرئيسي')} {!Array.isArray(s.mainWork) && s.mainWork.duration ? `— ${s.mainWork.duration} د` : ''}</h3>
               <div className="space-y-2">
                 {(Array.isArray(s.mainWork) ? s.mainWork : s.mainWork.exercises).map((ex: any, i: number) => {
                   const lvl = selectedLevel && ex.levels ? ex.levels[selectedLevel] : null;
@@ -835,14 +861,14 @@ function CalisthenicsCard({ rec }: { rec: any }) {
                     <div key={i} className="bg-slate-50 rounded-xl p-3 border border-emerald-200">
                       <div className="flex items-center justify-between mb-1.5">
                         <a href={ytLink(ex.nameEn, 'calisthenics')} target="_blank" rel="noopener noreferrer"
-                          className="text-sm text-red-600 hover:text-red-700 font-semibold">▶ يوتيوب</a>
+                          className="text-sm text-red-600 hover:text-red-700 font-semibold flex items-center gap-1"><Play className="w-3.5 h-3.5" /> يوتيوب</a>
                         <div className="font-bold text-slate-800 text-[15px]">{ex.name}</div>
                       </div>
                       {lvl ? (
                         <div className="bg-white rounded-lg px-3 py-2 space-y-1 text-right border border-slate-200">
-                          {lvl.weight && <div className="text-sm text-slate-600">⚖️ <span className="font-bold text-slate-800">{lvl.weight}</span></div>}
-                          {(lvl.reps || lvl.scaling) && <div className="text-sm text-slate-600">🔢 <span className="font-bold text-slate-800">{lvl.reps || lvl.scaling}</span></div>}
-                          {lvl.cue && <div className="text-sm text-emerald-700 font-medium">💬 {lvl.cue}</div>}
+                          {lvl.weight && <div className="text-sm text-slate-600 flex items-center justify-end gap-1"><Scale className="w-3.5 h-3.5" /> <span className="font-bold text-slate-800">{lvl.weight}</span></div>}
+                          {(lvl.reps || lvl.scaling) && <div className="text-sm text-slate-600 flex items-center justify-end gap-1"><Hash className="w-3.5 h-3.5" /> <span className="font-bold text-slate-800">{lvl.reps || lvl.scaling}</span></div>}
+                          {lvl.cue && <div className="text-sm text-emerald-700 font-medium flex items-center justify-end gap-1"><MessageSquare className="w-3.5 h-3.5" /> {lvl.cue}</div>}
                         </div>
                       ) : (
                         <>
@@ -851,8 +877,8 @@ function CalisthenicsCard({ rec }: { rec: any }) {
                             {ex.reps && <span>{ex.reps}</span>}
                             {ex.rest && <span>راحة {ex.rest}</span>}
                           </div>
-                          {ex.regression && <p className="text-sm text-blue-700 text-right mt-1 font-medium">⬇️ {ex.regression}</p>}
-                          {ex.progression && <p className="text-sm text-green-700 text-right mt-1 font-medium">⬆️ {ex.progression}</p>}
+                          {ex.regression && <p className="text-sm text-blue-700 text-right mt-1 font-medium flex items-center justify-end gap-1"><ArrowDown className="w-3.5 h-3.5" /> {ex.regression}</p>}
+                          {ex.progression && <p className="text-sm text-green-700 text-right mt-1 font-medium flex items-center justify-end gap-1"><ArrowUp className="w-3.5 h-3.5" /> {ex.progression}</p>}
                         </>
                       )}
                     </div>
@@ -865,12 +891,12 @@ function CalisthenicsCard({ rec }: { rec: any }) {
           {/* Metcon */}
           {s.metcon?.exercises?.length > 0 && (
             <div>
-              <h3 className="font-bold text-[15px] text-orange-700 mb-2">🔥 {s.metcon.format} — {s.metcon.duration} د</h3>
+              <h3 className="font-bold text-[15px] text-orange-700 mb-2 flex items-center gap-1.5"><Flame className="w-4 h-4" /> {s.metcon.format} — {s.metcon.duration} د</h3>
               <div className="space-y-1.5">
                 {s.metcon.exercises.map((ex: any, i: number) => (
                   <div key={i} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5">
                     <a href={ytLink(ex.nameEn, 'calisthenics')} target="_blank" rel="noopener noreferrer"
-                      className="text-sm text-red-600 hover:text-red-700 font-semibold">▶ يوتيوب</a>
+                      className="text-sm text-red-600 hover:text-red-700 font-semibold flex items-center gap-1"><Play className="w-3.5 h-3.5" /> يوتيوب</a>
                     <div className="text-right">
                       <span className="text-[15px] text-slate-800 font-medium">{ex.name}</span>
                       <span className="text-sm text-slate-500 mr-2">{ex.reps}</span>
@@ -884,12 +910,12 @@ function CalisthenicsCard({ rec }: { rec: any }) {
           {/* Cooldown */}
           {s.cooldown?.stretches?.length > 0 && (
             <div>
-              <h3 className="font-bold text-[15px] text-teal-700 mb-2">🧘 التهدئة — {s.cooldown.duration} د</h3>
+              <h3 className="font-bold text-[15px] text-slate-700 mb-2 flex items-center gap-1.5"><Wind className="w-4 h-4" /> التهدئة — {s.cooldown.duration} د</h3>
               <div className="space-y-1.5">
                 {s.cooldown.stretches.map((st: any, i: number) => (
                   <div key={i} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5">
                     <span className="text-sm text-slate-500">{st.duration}</span>
-                    <div className="text-right"><span className="text-[15px] text-slate-800 font-medium">{st.name}</span>{st.focus && <span className="text-sm text-teal-700 mr-2">({st.focus})</span>}</div>
+                    <div className="text-right"><span className="text-[15px] text-slate-800 font-medium">{st.name}</span>{st.focus && <span className="text-sm text-slate-500 mr-2">({st.focus})</span>}</div>
                   </div>
                 ))}
               </div>
@@ -898,13 +924,13 @@ function CalisthenicsCard({ rec }: { rec: any }) {
 
           {/* Nutrition + Progression */}
           {s.nutritionTips && (
-            <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-slate-700 leading-relaxed">
-              🥗 <span className="text-green-700 font-bold">تغذية: </span>{s.nutritionTips}
+            <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-slate-700 leading-relaxed flex items-start gap-2">
+              <Salad className="w-4 h-4 flex-shrink-0 mt-0.5 text-green-700" /> <span><span className="text-green-700 font-bold">تغذية: </span>{s.nutritionTips}</span>
             </div>
           )}
           {s.progressionPath && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-800 leading-relaxed">
-              📈 {s.progressionPath}
+            <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 text-sm text-orange-800 leading-relaxed flex items-start gap-2">
+              <TrendingUp className="w-4 h-4 flex-shrink-0 mt-0.5" /> {s.progressionPath}
             </div>
           )}
         </div>
@@ -1008,12 +1034,12 @@ function UnifiedCalendar({
 type MainTab = 'crossfit' | 'calisthenics' | 'hyrox' | 'kettlebell' | 'calendar';
 type CrossfitSubTab = 'upcoming' | 'past';
 
-const MAIN_TABS: { id: MainTab; label: string; sublabel: string; active: string }[] = [
-  { id: 'crossfit',     label: '🏋️',  sublabel: 'CrossFit',     active: 'bg-orange-500' },
-  { id: 'calisthenics', label: '🤸',  sublabel: 'Calisthenics', active: 'bg-emerald-600' },
-  { id: 'hyrox',        label: '🏁',  sublabel: 'Hyrox',        active: 'bg-red-600' },
-  { id: 'kettlebell',   label: '🔔',  sublabel: 'Kettlebell',   active: 'bg-amber-600' },
-  { id: 'calendar',     label: '🗓️',  sublabel: 'تقويم',        active: 'bg-purple-600' },
+const MAIN_TABS: { id: MainTab; icon: typeof Dumbbell; sublabel: string }[] = [
+  { id: 'crossfit',     icon: Dumbbell,       sublabel: 'CrossFit' },
+  { id: 'calisthenics', icon: PersonStanding, sublabel: 'Calisthenics' },
+  { id: 'hyrox',        icon: Flag,           sublabel: 'Hyrox' },
+  { id: 'kettlebell',   icon: Weight,         sublabel: 'Kettlebell' },
+  { id: 'calendar',     icon: Calendar,       sublabel: 'تقويم' },
 ];
 
 export default function WodHistoryClient({
@@ -1065,7 +1091,7 @@ export default function WodHistoryClient({
           {/* Header */}
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-extrabold text-slate-800 flex items-center gap-2">
-              <span>📚</span> سجل التمارين
+              <BookOpen className="w-5 h-5" /> سجل التمارين
             </h1>
             <span className="text-sm font-bold text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-full">{totalCount} جلسة</span>
           </div>
@@ -1074,8 +1100,8 @@ export default function WodHistoryClient({
           <div className="grid grid-cols-5 gap-1 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
             {MAIN_TABS.map(t => (
               <button key={t.id} onClick={() => { setMainTab(t.id); setSearch(''); }}
-                className={`flex flex-col items-center py-2.5 rounded-xl text-xs font-bold transition-colors ${mainTab === t.id ? t.active + ' text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
-                <span className="text-lg">{t.label}</span>
+                className={`flex flex-col items-center py-2.5 rounded-xl text-xs font-bold transition-colors ${mainTab === t.id ? 'bg-orange-500 text-white shadow-sm' : 'text-gray-400 hover:text-slate-600'}`}>
+                <t.icon className="w-5 h-5" />
                 <span className="text-[10px] mt-0.5 hidden sm:block">{t.sublabel}</span>
               </button>
             ))}
@@ -1094,10 +1120,13 @@ export default function WodHistoryClient({
 
           {/* Search */}
           {mainTab !== 'calendar' && (
-            <input value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="🔍 ابحث بالتاريخ أو العنوان..."
-              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-[15px] placeholder:text-slate-400 focus:outline-none focus:border-blue-400 shadow-sm"
-            />
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute top-1/2 -translate-y-1/2 end-4 pointer-events-none" />
+              <input value={search} onChange={e => setSearch(e.target.value)}
+                placeholder="ابحث بالتاريخ أو العنوان..."
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 pe-10 py-3 text-slate-800 text-[15px] placeholder:text-slate-400 focus:outline-none focus:border-blue-400 shadow-sm"
+              />
+            </div>
           )}
 
           {/* ── CrossFit ── */}
@@ -1105,22 +1134,22 @@ export default function WodHistoryClient({
             <div className="space-y-4">
               <div className="flex gap-2 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
                 <button onClick={() => { setCfTab('upcoming'); setSearch(''); }}
-                  className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors ${cfTab === 'upcoming' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-                  📅 القادمة ({cfUpcoming.length})
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-1.5 ${cfTab === 'upcoming' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                  <Calendar className="w-4 h-4" /> القادمة ({cfUpcoming.length})
                 </button>
                 <button onClick={() => { setCfTab('past'); setSearch(''); }}
-                  className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors ${cfTab === 'past' ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-                  📚 السابقة ({cfPast.length})
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-1.5 ${cfTab === 'past' ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                  <BookOpen className="w-4 h-4" /> السابقة ({cfPast.length})
                 </button>
               </div>
               {cfTab === 'upcoming' && cfUpcoming.length === 0 && (
                 <div className="text-center py-12 space-y-2">
-                  <div className="text-4xl">📭</div>
+                  <Inbox className="w-6 h-6 mx-auto text-slate-300" />
                   <p className="text-slate-500 font-medium">لا تمارين مجدولة — استخدم الإدارة ← خطة CrossFit</p>
                 </div>
               )}
               {cfTab === 'past' && cfPast.length === 0 && (
-                <div className="text-center py-12"><div className="text-4xl mb-2">📭</div><p className="text-slate-500 font-medium">لا تمارين سابقة</p></div>
+                <div className="text-center py-12"><Inbox className="w-6 h-6 mx-auto text-slate-300 mb-2" /><p className="text-slate-500 font-medium">لا تمارين سابقة</p></div>
               )}
               <div className="space-y-3">
                 {filterWods(cfTab === 'upcoming' ? cfUpcoming : cfPast).map((wod, i) => (
@@ -1184,17 +1213,17 @@ function SportSection({
     <div className="space-y-4">
       <div className="flex gap-2 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
         <button onClick={() => setSub('upcoming')}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors ${sub === 'upcoming' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-          📅 القادمة ({upcoming.length})
+          className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-1.5 ${sub === 'upcoming' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+          <Calendar className="w-4 h-4" /> القادمة ({upcoming.length})
         </button>
         <button onClick={() => setSub('past')}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors ${sub === 'past' ? 'bg-slate-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-          📚 السابقة ({past.length})
+          className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-1.5 ${sub === 'past' ? 'bg-slate-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+          <BookOpen className="w-4 h-4" /> السابقة ({past.length})
         </button>
       </div>
       {list.length === 0 ? (
         <div className="text-center py-12 space-y-2">
-          <div className="text-4xl">📭</div>
+          <Inbox className="w-6 h-6 mx-auto text-slate-300" />
           <p className="text-slate-500 text-sm font-medium">{sub === 'upcoming' ? emptyMsg : 'لا جلسات سابقة'}</p>
         </div>
       ) : (

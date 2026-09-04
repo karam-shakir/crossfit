@@ -6,6 +6,12 @@ import WodBlockList from '@/components/WodBlockList';
 import WodCalendar, { formatMeta } from '@/components/WodCalendar';
 import WodShareCard, { ShareCardLang } from '@/components/WodShareCard';
 import { toPng } from 'html-to-image';
+import {
+  Flame, Trophy, Medal, BarChart3, TrendingUp, Calendar as CalendarIcon, CalendarCheck,
+  CheckCircle2, Loader2, Dumbbell, Footprints, ClipboardList, Sparkles, Flag, Weight,
+  PersonStanding, Handshake, Timer, Lightbulb, Globe, Zap, Link2, Share2, MessageCircle,
+  Target, Scale, Image as ImageIcon, Sun, Wind, Moon, RefreshCw, TrendingDown, Send,
+} from 'lucide-react';
 
 const YOUTUBE_LINKS: Record<string, string> = {
   'back-squat':       'https://www.youtube.com/results?search_query=back+squat+crossfit+tutorial',
@@ -98,11 +104,11 @@ function HyroxTodayCard({ sessions }: { sessions: any[] }) {
   }
 
   const tabs = [
-    s.warmup?.exercises?.length   && { key: 'warmup',   label: '🔆 إحماء' },
-    s.stations?.length            && { key: 'stations', label: '🏁 محطات' },
-    s.targetTimes                 && { key: 'times',    label: '⏱ أوقات'  },
-    true                          && { key: 'all',      label: '🌐 الكل'   },
-  ].filter(Boolean) as { key: string; label: string }[];
+    s.warmup?.exercises?.length   && { key: 'warmup',   label: 'إحماء',  icon: Sun   },
+    s.stations?.length            && { key: 'stations', label: 'محطات',  icon: Flag  },
+    s.targetTimes                 && { key: 'times',    label: 'أوقات',  icon: Timer },
+    true                          && { key: 'all',      label: 'الكل',   icon: Globe },
+  ].filter(Boolean) as { key: string; label: string; icon: any }[];
 
   return (
     <div className={`bg-gray-900 rounded-2xl border overflow-hidden ${open ? 'border-red-600/50' : 'border-gray-800'}`}>
@@ -110,7 +116,7 @@ function HyroxTodayCard({ sessions }: { sessions: any[] }) {
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 flex-shrink-0">
             <span className="text-xs bg-red-900/40 text-red-300 px-2 py-0.5 rounded-full">{rec.sessionType || 'simulation'}</span>
-            {s.totalDuration && <span className="text-xs text-gray-500">⏱{s.totalDuration}د</span>}
+            {s.totalDuration && <span className="text-xs text-gray-500 inline-flex items-center gap-0.5"><Timer className="w-3.5 h-3.5"/>{s.totalDuration}د</span>}
             <span className="text-gray-600 text-xs">{open ? '▲' : '▼'}</span>
           </div>
           <div className="flex items-center gap-2 min-w-0">
@@ -118,7 +124,7 @@ function HyroxTodayCard({ sessions }: { sessions: any[] }) {
               <div className="text-xs text-gray-400">Hyrox اليوم</div>
               <div className="text-sm font-semibold text-white truncate">{s.title || 'جلسة Hyrox'}</div>
             </div>
-            <span className="text-2xl flex-shrink-0">🏁</span>
+            <Flag className="w-6 h-6 flex-shrink-0 text-red-500"/>
           </div>
         </div>
       </button>
@@ -129,22 +135,22 @@ function HyroxTodayCard({ sessions }: { sessions: any[] }) {
           <div className="flex gap-2">
             <button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(buildText())}`, '_blank')}
               className="tap-scale flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-green-700 hover:bg-green-600 text-white text-sm font-semibold transition-colors">
-              📲 واتساب
+              <Share2 className="w-4 h-4"/>واتساب
             </button>
             <button onClick={copyText}
-              className="tap-scale px-4 py-2.5 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold transition-colors min-w-[72px]">
-              {copied ? '✅' : '📋'} نسخ
+              className="tap-scale flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold transition-colors min-w-[72px]">
+              {copied ? <CheckCircle2 className="w-4 h-4 text-green-400"/> : <ClipboardList className="w-4 h-4"/>}نسخ
             </button>
           </div>
 
-          {s.coachNote && <div className="bg-red-900/20 border border-red-700/30 rounded-xl p-3 text-xs text-red-300">💬 {s.coachNote}</div>}
+          {s.coachNote && <div className="bg-red-900/20 border border-red-700/30 rounded-xl p-3 text-xs text-red-300 flex items-start gap-1.5"><MessageCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5"/><span>{s.coachNote}</span></div>}
 
           {/* Section tabs */}
           <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
             {tabs.map(t => (
               <button key={t.key} onClick={() => setTab(t.key)}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${tab === t.key ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
-                {t.label}
+                className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${tab === t.key ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
+                <t.icon className="w-3.5 h-3.5"/>{t.label}
               </button>
             ))}
           </div>
@@ -152,7 +158,7 @@ function HyroxTodayCard({ sessions }: { sessions: any[] }) {
           {/* Warmup */}
           {(tab === 'warmup' || tab === 'all') && s.warmup?.exercises?.length > 0 && (
             <div>
-              {tab === 'all' && <h4 className="text-xs font-semibold text-yellow-400 mb-2">🔆 الإحماء — {s.warmup.duration}</h4>}
+              {tab === 'all' && <h4 className="text-xs font-semibold text-yellow-400 mb-2 flex items-center gap-1"><Sun className="w-3.5 h-3.5"/>الإحماء — {s.warmup.duration}</h4>}
               <div className="space-y-1.5">
                 {s.warmup.exercises.map((ex: any, i: number) => (
                   <div key={i} className="flex items-center justify-between bg-gray-800/60 rounded-xl px-3 py-2.5">
@@ -171,23 +177,23 @@ function HyroxTodayCard({ sessions }: { sessions: any[] }) {
           {/* Stations */}
           {(tab === 'stations' || tab === 'all') && s.stations?.length > 0 && (
             <div>
-              {tab === 'all' && <h4 className="text-xs font-semibold text-red-400 mb-2">🏁 المحطات</h4>}
+              {tab === 'all' && <h4 className="text-xs font-semibold text-red-400 mb-2 flex items-center gap-1"><Flag className="w-3.5 h-3.5"/>المحطات</h4>}
               <div className="space-y-2">
                 {s.stations.map((st: any, i: number) => (
                   <div key={i} className="bg-gray-800/60 rounded-xl p-3 border border-gray-700">
                     <div className="flex items-center justify-between mb-1.5">
                       <YtBtn nameEn={st.nameEn || st.name} sport="hyrox" />
                       <div className="text-right">
-                        <span className="text-xs text-gray-500">#{st.number} 🏃 {st.runBefore} ←</span>
+                        <span className="text-xs text-gray-500 inline-flex items-center gap-1">#{st.number} <Footprints className="w-3.5 h-3.5"/>{st.runBefore} ←</span>
                         <span className="font-semibold text-white text-sm mr-1">{st.name}</span>
                       </div>
                     </div>
                     <div className="flex gap-3 text-xs text-gray-400 justify-end flex-wrap">
-                      <span>🎯 {st.target}</span>
-                      {st.weight     && <span>⚖️ {st.weight}</span>}
-                      {st.targetTime && <span>⏱ {st.targetTime}</span>}
+                      <span className="inline-flex items-center gap-1"><Target className="w-3.5 h-3.5"/>{st.target}</span>
+                      {st.weight     && <span className="inline-flex items-center gap-1"><Scale className="w-3.5 h-3.5"/>{st.weight}</span>}
+                      {st.targetTime && <span className="inline-flex items-center gap-1"><Timer className="w-3.5 h-3.5"/>{st.targetTime}</span>}
                     </div>
-                    {st.tips && <p className="text-xs text-yellow-300 mt-1.5 text-right">💡 {st.tips}</p>}
+                    {st.tips && <p className="text-xs text-yellow-300 mt-1.5 flex items-start gap-1"><Lightbulb className="w-3.5 h-3.5 flex-shrink-0 mt-0.5"/><span>{st.tips}</span></p>}
                   </div>
                 ))}
               </div>
@@ -197,13 +203,13 @@ function HyroxTodayCard({ sessions }: { sessions: any[] }) {
           {/* Target times */}
           {(tab === 'times' || tab === 'all') && s.targetTimes && (
             <div>
-              {tab === 'all' && <h4 className="text-xs font-semibold text-gray-400 mb-2">⏱ أوقات الأداء المرجعية</h4>}
+              {tab === 'all' && <h4 className="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-1"><Timer className="w-3.5 h-3.5"/>أوقات الأداء المرجعية</h4>}
               <div className="grid grid-cols-2 gap-2">
                 {Object.entries(s.targetTimes).map(([k, v]: [string, any]) => {
-                  const labels: Record<string,string> = {elite:'نخبة 🥇',advanced:'متقدم 🥈',intermediate:'متوسط 🥉',beginner:'مبتدئ'};
+                  const labels: Record<string,string> = {elite:'نخبة',advanced:'متقدم',intermediate:'متوسط',beginner:'مبتدئ'};
                   return (
                     <div key={k} className="bg-gray-800/60 rounded-lg px-3 py-2 text-right">
-                      <div className="text-xs text-gray-400">{labels[k]||k}</div>
+                      <div className="text-xs text-gray-400 flex items-center justify-end gap-1">{labels[k]||k}{(k === 'elite' || k === 'advanced' || k === 'intermediate') && <Medal className="w-3.5 h-3.5 text-amber-400"/>}</div>
                       <div className="text-sm font-semibold text-white">{v}</div>
                     </div>
                   );
@@ -270,11 +276,11 @@ function KettlebellTodayCard({ sessions }: { sessions: any[] }) {
   }
 
   const tabs = [
-    s.warmup?.movements?.length   && { key: 'warmup', label: '🔆 إحماء'    },
-    s.mainWork?.length            && { key: 'main',   label: '🔔 التمرين'   },
-    s.techniqueNotes?.length      && { key: 'notes',  label: '💡 تقنية'     },
-    true                          && { key: 'all',    label: '🌐 الكل'      },
-  ].filter(Boolean) as { key: string; label: string }[];
+    s.warmup?.movements?.length   && { key: 'warmup', label: 'إحماء',  icon: Sun       },
+    s.mainWork?.length            && { key: 'main',   label: 'التمرين', icon: Weight   },
+    s.techniqueNotes?.length      && { key: 'notes',  label: 'تقنية',   icon: Lightbulb },
+    true                          && { key: 'all',    label: 'الكل',    icon: Globe     },
+  ].filter(Boolean) as { key: string; label: string; icon: any }[];
 
   return (
     <div className={`bg-gray-900 rounded-2xl border overflow-hidden ${open ? 'border-yellow-600/50' : 'border-gray-800'}`}>
@@ -290,7 +296,7 @@ function KettlebellTodayCard({ sessions }: { sessions: any[] }) {
               <div className="text-xs text-gray-400">Kettlebell اليوم</div>
               <div className="text-sm font-semibold text-white truncate">{s.title || 'جلسة Kettlebell'}</div>
             </div>
-            <span className="text-2xl flex-shrink-0">🔔</span>
+            <Weight className="w-6 h-6 flex-shrink-0 text-yellow-500"/>
           </div>
         </div>
       </button>
@@ -301,23 +307,23 @@ function KettlebellTodayCard({ sessions }: { sessions: any[] }) {
           <div className="flex gap-2">
             <button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(buildText())}`, '_blank')}
               className="tap-scale flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-green-700 hover:bg-green-600 text-white text-sm font-semibold transition-colors">
-              📲 واتساب
+              <Share2 className="w-4 h-4"/>واتساب
             </button>
             <button onClick={copyText}
-              className="tap-scale px-4 py-2.5 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold transition-colors min-w-[72px]">
-              {copied ? '✅' : '📋'} نسخ
+              className="tap-scale flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold transition-colors min-w-[72px]">
+              {copied ? <CheckCircle2 className="w-4 h-4 text-green-400"/> : <ClipboardList className="w-4 h-4"/>}نسخ
             </button>
           </div>
 
-          {s.coachNote && <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-xl p-3 text-xs text-yellow-300">💬 {s.coachNote}</div>}
-          {s.breathingPattern && <div className="bg-gray-800/50 rounded-xl p-3 text-xs text-gray-300">🌬️ {s.breathingPattern}</div>}
+          {s.coachNote && <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-xl p-3 text-xs text-yellow-300 flex items-start gap-1.5"><MessageCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5"/><span>{s.coachNote}</span></div>}
+          {s.breathingPattern && <div className="bg-gray-800/50 rounded-xl p-3 text-xs text-gray-300 flex items-start gap-1.5"><Wind className="w-3.5 h-3.5 flex-shrink-0 mt-0.5"/><span>{s.breathingPattern}</span></div>}
 
           {/* Section tabs */}
           <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
             {tabs.map(t => (
               <button key={t.key} onClick={() => setTab(t.key)}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${tab === t.key ? 'bg-yellow-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
-                {t.label}
+                className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${tab === t.key ? 'bg-yellow-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
+                <t.icon className="w-3.5 h-3.5"/>{t.label}
               </button>
             ))}
           </div>
@@ -325,7 +331,7 @@ function KettlebellTodayCard({ sessions }: { sessions: any[] }) {
           {/* Warmup */}
           {(tab === 'warmup' || tab === 'all') && s.warmup?.movements?.length > 0 && (
             <div>
-              {tab === 'all' && <h4 className="text-xs font-semibold text-yellow-400 mb-2">🔆 الإحماء — {s.warmup.duration}</h4>}
+              {tab === 'all' && <h4 className="text-xs font-semibold text-yellow-400 mb-2 flex items-center gap-1"><Sun className="w-3.5 h-3.5"/>الإحماء — {s.warmup.duration}</h4>}
               <div className="space-y-1.5">
                 {s.warmup.movements.map((m: any, i: number) => (
                   typeof m === 'string'
@@ -342,12 +348,12 @@ function KettlebellTodayCard({ sessions }: { sessions: any[] }) {
           {/* Cooldown */}
           {(tab === 'all') && s.cooldown?.length > 0 && (
             <div>
-              <h4 className="text-xs font-semibold text-teal-400 mb-2">🧘 التهدئة</h4>
+              <h4 className="text-xs font-semibold text-blue-400 mb-2 flex items-center gap-1"><Wind className="w-3.5 h-3.5"/>التهدئة</h4>
               <div className="space-y-1.5">
                 {s.cooldown.map((ex: any, i: number) => (
                   <div key={i} className="flex items-center justify-between bg-gray-800/40 rounded-xl px-3 py-2">
                     <span className="text-xs text-gray-400">{ex.duration}</span>
-                    <div className="text-right"><span className="text-sm text-white">{ex.name}</span>{ex.focus && <span className="text-xs text-teal-400 mr-2">({ex.focus})</span>}</div>
+                    <div className="text-right"><span className="text-sm text-white">{ex.name}</span>{ex.focus && <span className="text-xs text-blue-400 mr-2">({ex.focus})</span>}</div>
                   </div>
                 ))}
               </div>
@@ -357,7 +363,7 @@ function KettlebellTodayCard({ sessions }: { sessions: any[] }) {
           {/* Main Work */}
           {(tab === 'main' || tab === 'all') && s.mainWork?.length > 0 && (
             <div>
-              {tab === 'all' && <h4 className="text-xs font-semibold text-yellow-400 mb-2">🔔 العمل الرئيسي</h4>}
+              {tab === 'all' && <h4 className="text-xs font-semibold text-yellow-400 mb-2 flex items-center gap-1"><Weight className="w-3.5 h-3.5"/>العمل الرئيسي</h4>}
               <div className="space-y-2">
                 {s.mainWork.map((ex: any, i: number) => (
                   <div key={i} className="bg-gray-800/60 rounded-xl p-3 border border-yellow-900/30">
@@ -368,11 +374,11 @@ function KettlebellTodayCard({ sessions }: { sessions: any[] }) {
                     <div className="flex gap-3 text-xs text-gray-400 justify-end flex-wrap">
                       {ex.sets      && <span>{ex.sets} مجموعة</span>}
                       {ex.reps      && <span>{ex.reps} تكرار</span>}
-                      {ex.weight    && <span>⚖️ {ex.weight}</span>}
-                      {ex.targetRPM && <span>🔄 {ex.targetRPM} RPM</span>}
+                      {ex.weight    && <span className="inline-flex items-center gap-1"><Scale className="w-3.5 h-3.5"/>{ex.weight}</span>}
+                      {ex.targetRPM && <span className="inline-flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5"/>{ex.targetRPM} RPM</span>}
                       {ex.restBetweenSets && <span>راحة {ex.restBetweenSets}</span>}
                     </div>
-                    {ex.technique && <p className="text-xs text-yellow-300 mt-1.5 text-right">💡 {ex.technique}</p>}
+                    {ex.technique && <p className="text-xs text-yellow-300 mt-1.5 flex items-start gap-1"><Lightbulb className="w-3.5 h-3.5 flex-shrink-0 mt-0.5"/><span>{ex.technique}</span></p>}
                   </div>
                 ))}
               </div>
@@ -382,7 +388,7 @@ function KettlebellTodayCard({ sessions }: { sessions: any[] }) {
           {/* Technique Notes */}
           {(tab === 'notes' || tab === 'all') && s.techniqueNotes?.length > 0 && (
             <div>
-              {tab === 'all' && <h4 className="text-xs font-semibold text-gray-400 mb-2">💡 ملاحظات تقنية</h4>}
+              {tab === 'all' && <h4 className="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-1"><Lightbulb className="w-3.5 h-3.5"/>ملاحظات تقنية</h4>}
               <div className="bg-gray-800/40 rounded-xl p-3 space-y-1.5">
                 {s.techniqueNotes.map((n: string, i: number) => (
                   <p key={i} className="text-xs text-gray-300">• {n}</p>
@@ -392,8 +398,8 @@ function KettlebellTodayCard({ sessions }: { sessions: any[] }) {
           )}
 
           {s.progressionNote && tab === 'all' && (
-            <div className="bg-blue-900/20 border border-blue-700/30 rounded-xl p-3 text-xs text-blue-300">
-              📈 {s.progressionNote}
+            <div className="bg-blue-900/20 border border-blue-700/30 rounded-xl p-3 text-xs text-blue-300 flex items-start gap-1.5">
+              <TrendingUp className="w-3.5 h-3.5 flex-shrink-0 mt-0.5"/><span>{s.progressionNote}</span>
             </div>
           )}
         </div>
@@ -472,12 +478,12 @@ function CalisthenicsTodayCard({ sessions }: { sessions: any[] }) {
   }
 
   const tabs = [
-    s.warmup?.exercises?.length      && { key: 'warmup',  label: '🔆 إحماء'    },
-    s.skillWork?.exercises?.length   && { key: 'skill',   label: '🤸 مهارات'   },
-    s.mainWork?.exercises?.length    && { key: 'main',    label: '💪 التمرين'   },
-    s.metcon?.exercises?.length      && { key: 'metcon',  label: '🔥 WOD'       },
-    true                             && { key: 'all',     label: '🌐 الكل'      },
-  ].filter(Boolean) as { key: string; label: string }[];
+    s.warmup?.exercises?.length      && { key: 'warmup',  label: 'إحماء',   icon: Sun            },
+    s.skillWork?.exercises?.length   && { key: 'skill',   label: 'مهارات',  icon: PersonStanding },
+    s.mainWork?.exercises?.length    && { key: 'main',    label: 'التمرين', icon: Dumbbell       },
+    s.metcon?.exercises?.length      && { key: 'metcon',  label: 'WOD',     icon: Flame          },
+    true                             && { key: 'all',     label: 'الكل',    icon: Globe          },
+  ].filter(Boolean) as { key: string; label: string; icon: any }[];
 
   return (
     <div className={`bg-gray-900 rounded-2xl border overflow-hidden ${open ? 'border-emerald-600/50' : 'border-gray-800'}`}>
@@ -485,7 +491,7 @@ function CalisthenicsTodayCard({ sessions }: { sessions: any[] }) {
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 flex-shrink-0">
             <span className="text-xs bg-emerald-900/40 text-emerald-300 px-2 py-0.5 rounded-full">{rec.sessionType || 'strength'}</span>
-            {s.totalDuration && <span className="text-xs text-gray-500">⏱{s.totalDuration}د</span>}
+            {s.totalDuration && <span className="text-xs text-gray-500 inline-flex items-center gap-0.5"><Timer className="w-3.5 h-3.5"/>{s.totalDuration}د</span>}
             <span className="text-gray-600 text-xs">{open ? '▲' : '▼'}</span>
           </div>
           <div className="flex items-center gap-2 min-w-0">
@@ -493,7 +499,7 @@ function CalisthenicsTodayCard({ sessions }: { sessions: any[] }) {
               <div className="text-xs text-gray-400">Calisthenics اليوم</div>
               <div className="text-sm font-semibold text-white truncate">{s.title || 'جلسة Calisthenics'}</div>
             </div>
-            <span className="text-2xl flex-shrink-0">🤸</span>
+            <PersonStanding className="w-6 h-6 flex-shrink-0 text-emerald-500"/>
           </div>
         </div>
       </button>
@@ -504,22 +510,22 @@ function CalisthenicsTodayCard({ sessions }: { sessions: any[] }) {
           <div className="flex gap-2">
             <button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(buildText())}`, '_blank')}
               className="tap-scale flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-green-700 hover:bg-green-600 text-white text-sm font-semibold transition-colors">
-              📲 واتساب
+              <Share2 className="w-4 h-4"/>واتساب
             </button>
             <button onClick={copyText}
-              className="tap-scale px-4 py-2.5 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold transition-colors min-w-[72px]">
-              {copied ? '✅' : '📋'} نسخ
+              className="tap-scale flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold transition-colors min-w-[72px]">
+              {copied ? <CheckCircle2 className="w-4 h-4 text-green-400"/> : <ClipboardList className="w-4 h-4"/>}نسخ
             </button>
           </div>
 
-          {s.coachNote && <div className="bg-emerald-900/20 border border-emerald-700/30 rounded-xl p-3 text-xs text-emerald-300">💬 {s.coachNote}</div>}
+          {s.coachNote && <div className="bg-emerald-900/20 border border-emerald-700/30 rounded-xl p-3 text-xs text-emerald-300 flex items-start gap-1.5"><MessageCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5"/><span>{s.coachNote}</span></div>}
 
           {/* Section tabs */}
           <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
             {tabs.map(t => (
               <button key={t.key} onClick={() => setTab(t.key)}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${tab === t.key ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
-                {t.label}
+                className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${tab === t.key ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
+                <t.icon className="w-3.5 h-3.5"/>{t.label}
               </button>
             ))}
           </div>
@@ -527,7 +533,7 @@ function CalisthenicsTodayCard({ sessions }: { sessions: any[] }) {
           {/* Warmup */}
           {(tab === 'warmup' || tab === 'all') && s.warmup?.exercises?.length > 0 && (
             <div>
-              {tab === 'all' && <h4 className="text-xs font-semibold text-yellow-400 mb-2">🔆 الإحماء — {s.warmup.duration} د</h4>}
+              {tab === 'all' && <h4 className="text-xs font-semibold text-yellow-400 mb-2 flex items-center gap-1"><Sun className="w-3.5 h-3.5"/>الإحماء — {s.warmup.duration} د</h4>}
               <div className="space-y-1.5">
                 {s.warmup.exercises.map((ex: any, i: number) => (
                   <div key={i} className="flex items-center justify-between bg-gray-800/60 rounded-xl px-3 py-2.5">
@@ -545,16 +551,16 @@ function CalisthenicsTodayCard({ sessions }: { sessions: any[] }) {
           {/* Skill Work */}
           {(tab === 'skill' || tab === 'all') && s.skillWork?.exercises?.length > 0 && (
             <div>
-              {tab === 'all' && <h4 className="text-xs font-semibold text-purple-400 mb-2">🤸 {s.skillWork.title || 'مهارات'} — {s.skillWork.duration} د</h4>}
+              {tab === 'all' && <h4 className="text-xs font-semibold text-amber-400 mb-2 flex items-center gap-1"><PersonStanding className="w-3.5 h-3.5"/>{s.skillWork.title || 'مهارات'} — {s.skillWork.duration} د</h4>}
               <div className="space-y-2">
                 {s.skillWork.exercises.map((ex: any, i: number) => (
-                  <div key={i} className="bg-gray-800/60 rounded-xl p-3 border border-purple-900/30">
+                  <div key={i} className="bg-gray-800/60 rounded-xl p-3 border border-amber-900/30">
                     <div className="flex items-center justify-between mb-1">
                       <YtBtn nameEn={ex.nameEn || ex.name} sport="calisthenics" />
                       <div className="font-semibold text-white text-sm">{ex.name}</div>
                     </div>
-                    {ex.regression  && <p className="text-xs text-blue-300 text-right">⬇️ مبسّط: {ex.regression}</p>}
-                    {ex.progression && <p className="text-xs text-green-300 text-right">⬆️ متقدم: {ex.progression}</p>}
+                    {ex.regression  && <p className="text-xs text-blue-300 flex items-center justify-end gap-1"><TrendingDown className="w-3.5 h-3.5"/>مبسّط: {ex.regression}</p>}
+                    {ex.progression && <p className="text-xs text-green-300 flex items-center justify-end gap-1"><TrendingUp className="w-3.5 h-3.5"/>متقدم: {ex.progression}</p>}
                   </div>
                 ))}
               </div>
@@ -564,7 +570,7 @@ function CalisthenicsTodayCard({ sessions }: { sessions: any[] }) {
           {/* Main Work — يدعم البنية الجديدة (object) والقديمة (array) */}
           {(tab === 'main' || tab === 'all') && s.mainWork && (Array.isArray(s.mainWork) ? s.mainWork.length > 0 : s.mainWork.exercises?.length > 0) && (
             <div>
-              {tab === 'all' && <h4 className="text-xs font-semibold text-emerald-400 mb-2">💪 {Array.isArray(s.mainWork) ? 'العمل الرئيسي' : (s.mainWork.title || 'العمل الرئيسي')} {!Array.isArray(s.mainWork) && s.mainWork.duration ? `— ${s.mainWork.duration} د` : ''}</h4>}
+              {tab === 'all' && <h4 className="text-xs font-semibold text-emerald-400 mb-2 flex items-center gap-1"><Dumbbell className="w-3.5 h-3.5"/>{Array.isArray(s.mainWork) ? 'العمل الرئيسي' : (s.mainWork.title || 'العمل الرئيسي')} {!Array.isArray(s.mainWork) && s.mainWork.duration ? `— ${s.mainWork.duration} د` : ''}</h4>}
               <div className="space-y-2">
                 {(Array.isArray(s.mainWork) ? s.mainWork : s.mainWork.exercises).map((ex: any, i: number) => (
                   <div key={i} className="bg-gray-800/60 rounded-xl p-3 border border-emerald-900/30">
@@ -577,8 +583,8 @@ function CalisthenicsTodayCard({ sessions }: { sessions: any[] }) {
                       {ex.reps && <span>{ex.reps}</span>}
                       {ex.rest && <span>راحة {ex.rest}</span>}
                     </div>
-                    {ex.regression  && <p className="text-xs text-blue-300 text-right mt-1">⬇️ {ex.regression}</p>}
-                    {ex.progression && <p className="text-xs text-green-300 text-right mt-1">⬆️ {ex.progression}</p>}
+                    {ex.regression  && <p className="text-xs text-blue-300 flex items-center justify-end gap-1 mt-1"><TrendingDown className="w-3.5 h-3.5"/>{ex.regression}</p>}
+                    {ex.progression && <p className="text-xs text-green-300 flex items-center justify-end gap-1 mt-1"><TrendingUp className="w-3.5 h-3.5"/>{ex.progression}</p>}
                   </div>
                 ))}
               </div>
@@ -588,7 +594,7 @@ function CalisthenicsTodayCard({ sessions }: { sessions: any[] }) {
           {/* Metcon */}
           {(tab === 'metcon' || tab === 'all') && s.metcon?.exercises?.length > 0 && (
             <div>
-              {tab === 'all' && <h4 className="text-xs font-semibold text-orange-400 mb-2">🔥 {s.metcon.format} — {s.metcon.duration} د</h4>}
+              {tab === 'all' && <h4 className="text-xs font-semibold text-orange-400 mb-2 flex items-center gap-1"><Flame className="w-3.5 h-3.5"/>{s.metcon.format} — {s.metcon.duration} د</h4>}
               <div className="space-y-1.5">
                 {s.metcon.exercises.map((ex: any, i: number) => (
                   <div key={i} className="flex items-center justify-between bg-gray-800/60 rounded-xl px-3 py-2.5">
@@ -606,12 +612,12 @@ function CalisthenicsTodayCard({ sessions }: { sessions: any[] }) {
           {/* Cooldown */}
           {tab === 'all' && s.cooldown?.stretches?.length > 0 && (
             <div>
-              <h4 className="text-xs font-semibold text-teal-400 mb-2">🧘 التهدئة — {s.cooldown.duration} د</h4>
+              <h4 className="text-xs font-semibold text-blue-400 mb-2 flex items-center gap-1"><Wind className="w-3.5 h-3.5"/>التهدئة — {s.cooldown.duration} د</h4>
               <div className="space-y-1.5">
                 {s.cooldown.stretches.map((st: any, i: number) => (
                   <div key={i} className="flex items-center justify-between bg-gray-800/40 rounded-xl px-3 py-2">
                     <span className="text-xs text-gray-400">{st.duration}</span>
-                    <div className="text-right"><span className="text-sm text-white">{st.name}</span>{st.focus && <span className="text-xs text-teal-400 mr-2">({st.focus})</span>}</div>
+                    <div className="text-right"><span className="text-sm text-white">{st.name}</span>{st.focus && <span className="text-xs text-blue-400 mr-2">({st.focus})</span>}</div>
                   </div>
                 ))}
               </div>
@@ -619,8 +625,8 @@ function CalisthenicsTodayCard({ sessions }: { sessions: any[] }) {
           )}
 
           {s.progressionNote && tab === 'all' && (
-            <div className="bg-blue-900/20 border border-blue-700/30 rounded-xl p-3 text-xs text-blue-300">
-              📈 {s.progressionNote}
+            <div className="bg-blue-900/20 border border-blue-700/30 rounded-xl p-3 text-xs text-blue-300 flex items-start gap-1.5">
+              <TrendingUp className="w-3.5 h-3.5 flex-shrink-0 mt-0.5"/><span>{s.progressionNote}</span>
             </div>
           )}
         </div>
@@ -754,11 +760,11 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
   }
 
   const sections = [
-    { key: 'warmup',    label: 'الإحماء 🔆',    labelEn: 'Warm-Up',   blocks: wod?.warmup    || [] },
-    { key: 'strength',  label: 'القوة 🏋️',      labelEn: 'Strength',  blocks: wod?.strength  || [] },
-    { key: 'metcon',    label: 'الـ WOD 🔥',    labelEn: 'WOD',       blocks: wod?.metcon    || [] },
-    { key: 'accessory', label: 'الأكسسوار 💪',  labelEn: 'Accessory', blocks: wod?.accessory || [] },
-    { key: 'cooldown',  label: 'الإطالات 🧘',   labelEn: 'Stretches', blocks: wod?.cooldown  || [] },
+    { key: 'warmup',    label: 'الإحماء',    icon: Sun,            labelEn: 'Warm-Up',   blocks: wod?.warmup    || [] },
+    { key: 'strength',  label: 'القوة',      icon: Dumbbell,       labelEn: 'Strength',  blocks: wod?.strength  || [] },
+    { key: 'metcon',    label: 'الـ WOD',    icon: Flame,          labelEn: 'WOD',       blocks: wod?.metcon    || [] },
+    { key: 'accessory', label: 'الأكسسوار',  icon: Dumbbell,       labelEn: 'Accessory', blocks: wod?.accessory || [] },
+    { key: 'cooldown',  label: 'الإطالات',   icon: Wind,           labelEn: 'Stretches', blocks: wod?.cooldown  || [] },
   ].filter(s => s.blocks.length > 0);
 
   const flatMovements = (blocks: any[]) => (blocks || []).flatMap((b: any) => b.movements || []);
@@ -815,29 +821,33 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
       <main className="flex-1 min-w-0 lg:mr-56 pb-safe-nav lg:pb-0 overflow-x-hidden">
         <div className="w-full max-w-2xl mx-auto px-4 pt-safe pb-6 space-y-4">
 
-          {/* Header */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0 flex-1">
+          {/* Header — الاسم يأخذ سطره الكامل ليتمكن من الالتفاف بدل التصادم مع زر التسجيل على الشاشات الضيقة */}
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between gap-3">
               <div className="text-[11px] text-gray-500">{dateStr}</div>
-              <h1 className="text-lg font-bold text-white truncate">أهلاً {member.nameAr} {member.avatar}</h1>
+              <button onClick={checkIn} disabled={checkedIn || checkLoading}
+                className={`tap-scale flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                  checkedIn ? 'bg-green-900/60 text-green-400 border border-green-800' : 'bg-orange-500 hover:bg-orange-400 text-white'
+                }`}>
+                {checkedIn
+                  ? <><CheckCircle2 className="w-4 h-4"/>حضرت</>
+                  : checkLoading
+                  ? <><Loader2 className="w-4 h-4 animate-spin"/>...</>
+                  : <><CalendarCheck className="w-4 h-4"/>سجّل</>}
+              </button>
             </div>
-            <button onClick={checkIn} disabled={checkedIn || checkLoading}
-              className={`tap-scale flex-shrink-0 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
-                checkedIn ? 'bg-green-900/60 text-green-400 border border-green-800' : 'bg-orange-500 hover:bg-orange-400 text-white'
-              }`}>
-              {checkedIn ? '✅ حضرت' : checkLoading ? '...' : '📅 سجّل'}
-            </button>
+            <h1 className="text-lg font-bold text-white leading-snug break-words">أهلاً {member.nameAr} {member.avatar}</h1>
           </div>
 
           {/* Stats — شريط إحصائيات بشكل app */}
           <div className="grid grid-cols-3 gap-2">
             {[
-              { val: stats.monthSessions, label: 'هذا الشهر', color: 'text-orange-400', icon: '🔥' },
-              { val: stats.totalPRs,      label: 'رقم شخصي',  color: 'text-yellow-400', icon: '🏆' },
-              { val: stats.totalSessions, label: 'إجمالي',     color: 'text-blue-400',   icon: '📊' },
+              { val: stats.monthSessions, label: 'هذا الشهر', color: 'text-orange-400', icon: Flame    },
+              { val: stats.totalPRs,      label: 'رقم شخصي',  color: 'text-amber-400',  icon: Trophy   },
+              { val: stats.totalSessions, label: 'إجمالي',     color: 'text-blue-400',   icon: BarChart3 },
             ].map((s, i) => (
               <div key={i} className="bg-gray-900 rounded-2xl p-3 text-center border border-gray-800/80">
-                <div className="text-base mb-0.5">{s.icon}</div>
+                <div className="flex items-center justify-center mb-0.5"><s.icon className={`w-4 h-4 ${s.color}`}/></div>
                 <div className={`text-xl font-bold ${s.color}`}>{s.val}</div>
                 <div className="text-[10px] text-gray-500 mt-0.5">{s.label}</div>
               </div>
@@ -848,7 +858,7 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
           {weeklyActivity.length > 0 && (
             <div className="bg-gray-900 rounded-2xl border border-gray-800/80 p-3">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-gray-400">📈 نشاط آخر 7 أيام</span>
+                <span className="text-xs font-semibold text-gray-400 flex items-center gap-1"><TrendingUp className="w-3.5 h-3.5 text-orange-500"/>نشاط آخر 7 أيام</span>
                 <span className="text-xs text-orange-400 font-bold">
                   {weeklyActivity.filter(d => d.count > 0).length} / 7 أيام
                 </span>
@@ -872,26 +882,26 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
           {(wod || todayHyrox.length > 0 || todayKettlebell.length > 0 || todayCalisthenics.length > 0) && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-gray-400">📅 تمارين اليوم</h2>
+                <h2 className="text-sm font-semibold text-gray-400 flex items-center gap-1.5"><CalendarIcon className="w-4 h-4"/>تمارين اليوم</h2>
                 <button onClick={() => setShowCalendar(true)}
                   className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-400 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-colors shadow-sm">
-                  📅 تقويم التمارين
+                  <CalendarIcon className="w-3.5 h-3.5"/>تقويم التمارين
                 </button>
               </div>
 
               {/* Sport tabs */}
               <div className="grid grid-cols-4 gap-1 bg-gray-900 p-1 rounded-2xl border border-gray-800 w-full">
                 {([
-                  { id: 'crossfit',     emoji: '🏋️', label: 'CF',    color: 'bg-orange-500',  has: !!wod },
-                  { id: 'hyrox',        emoji: '🏁', label: 'Hyrox', color: 'bg-red-600',     has: todayHyrox.length > 0 },
-                  { id: 'kettlebell',   emoji: '🔔', label: 'KB',    color: 'bg-yellow-500',  has: todayKettlebell.length > 0 },
-                  { id: 'calisthenics', emoji: '🤸', label: 'Calis', color: 'bg-emerald-600', has: todayCalisthenics.length > 0 },
+                  { id: 'crossfit',     icon: Dumbbell,       label: 'CF',    color: 'bg-orange-500',  has: !!wod },
+                  { id: 'hyrox',        icon: Flag,           label: 'Hyrox', color: 'bg-red-600',     has: todayHyrox.length > 0 },
+                  { id: 'kettlebell',   icon: Weight,         label: 'KB',    color: 'bg-yellow-500',  has: todayKettlebell.length > 0 },
+                  { id: 'calisthenics', icon: PersonStanding, label: 'Calis', color: 'bg-emerald-600', has: todayCalisthenics.length > 0 },
                 ] as const).map(t => (
                   <button key={t.id} onClick={() => setSportTab(t.id)}
                     className={`tap-scale relative flex flex-col items-center justify-center py-2.5 px-1 rounded-xl overflow-hidden transition-all ${
                       sportTab === t.id ? t.color + ' text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'
                     }`}>
-                    <span className="text-xl leading-none">{t.emoji}</span>
+                    <t.icon className="w-5 h-5"/>
                     <span className="mt-0.5 text-[9px] font-semibold truncate w-full text-center leading-none">{t.label}</span>
                     <span className={`absolute top-1 right-1 w-1.5 h-1.5 rounded-full ${t.has ? (sportTab === t.id ? 'bg-white/70' : 'bg-green-400') : 'bg-gray-700'}`} />
                   </button>
@@ -901,7 +911,7 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
               {/* CrossFit tab — no separate WOD block below */}
               {sportTab === 'crossfit' && !wod && (
                 <div className="bg-gray-900 rounded-2xl p-8 text-center border border-gray-800">
-                  <div className="text-4xl mb-3">😴</div>
+                  <Moon className="w-6 h-6 mx-auto mb-3 text-gray-500"/>
                   <div className="text-gray-400 font-semibold">لا يوجد تمرين CrossFit لهذا اليوم</div>
                 </div>
               )}
@@ -911,7 +921,7 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                 todayHyrox.length > 0
                   ? <HyroxTodayCard sessions={todayHyrox} />
                   : <div className="bg-gray-900 rounded-2xl p-8 text-center border border-gray-800">
-                      <div className="text-4xl mb-3">🏁</div>
+                      <Flag className="w-6 h-6 mx-auto mb-3 text-red-500"/>
                       <div className="text-gray-400">لا يوجد جلسة Hyrox لهذا اليوم</div>
                     </div>
               )}
@@ -921,7 +931,7 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                 todayKettlebell.length > 0
                   ? <KettlebellTodayCard sessions={todayKettlebell} />
                   : <div className="bg-gray-900 rounded-2xl p-8 text-center border border-gray-800">
-                      <div className="text-4xl mb-3">🔔</div>
+                      <Weight className="w-6 h-6 mx-auto mb-3 text-yellow-500"/>
                       <div className="text-gray-400">لا يوجد جلسة Kettlebell لهذا اليوم</div>
                     </div>
               )}
@@ -931,7 +941,7 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                 todayCalisthenics.length > 0
                   ? <CalisthenicsTodayCard sessions={todayCalisthenics} />
                   : <div className="bg-gray-900 rounded-2xl p-8 text-center border border-gray-800">
-                      <div className="text-4xl mb-3">🤸</div>
+                      <PersonStanding className="w-6 h-6 mx-auto mb-3 text-emerald-500"/>
                       <div className="text-gray-400">لا يوجد جلسة Calisthenics لهذا اليوم</div>
                     </div>
               )}
@@ -941,8 +951,10 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
           {/* WOD — CrossFit (يظهر فقط عند تبويب CrossFit) */}
           {wod && sportTab === 'crossfit' ? (
             <div className="space-y-4">
-              <div className={`rounded-2xl p-4 shadow-lg ${wod.isPartnerWod ? 'bg-pink-600 shadow-pink-200' : 'bg-orange-600 shadow-orange-200'}`}>
-                <h2 className="text-xl font-extrabold text-white mb-2">{wod.isPartnerWod ? '🤝 تمرين اليوم — بارتنر' : '🔥 تمرين اليوم'}</h2>
+              <div className={`rounded-2xl p-4 shadow-lg ${wod.isPartnerWod ? 'bg-amber-600 shadow-amber-200' : 'bg-orange-600 shadow-orange-200'}`}>
+                <h2 className="text-xl font-extrabold text-white mb-2 flex items-center gap-2">
+                  {wod.isPartnerWod ? <><Handshake className="w-5 h-5"/>تمرين اليوم — بارتنر</> : <><Flame className="w-5 h-5"/>تمرين اليوم</>}
+                </h2>
                 <div className="text-white font-bold text-lg leading-snug mb-3">{wod.titleEn || wod.title}</div>
 
                 {/* شارات واضحة: نوع التمرين + الوقت/التايم كاب + الجولات */}
@@ -951,22 +963,22 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                     {formatMeta(wod.type).icon} {wod.type}
                   </span>
                   {wod.duration && formatMeta(wod.type).timeLabel && (
-                    <span className="bg-white/20 text-white text-sm font-semibold px-3 py-1.5 rounded-full">
-                      ⏱ {formatMeta(wod.type).timeLabel}: {wod.duration} دقيقة
+                    <span className="bg-white/20 text-white text-sm font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                      <Timer className="w-4 h-4"/>{formatMeta(wod.type).timeLabel}: {wod.duration} دقيقة
                     </span>
                   )}
                   {wod.rounds && (
-                    <span className="bg-white/20 text-white text-sm font-semibold px-3 py-1.5 rounded-full">
-                      🔄 الجولات: {wod.rounds}
+                    <span className="bg-white/20 text-white text-sm font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                      <RefreshCw className="w-4 h-4"/>الجولات: {wod.rounds}
                     </span>
                   )}
                 </div>
 
                 {wod.notes && (
-                  <div className="mt-3 text-sm text-white bg-white/15 rounded-xl px-3 py-2.5 leading-relaxed">💡 {wod.notes}</div>
+                  <div className="mt-3 text-sm text-white bg-white/15 rounded-xl px-3 py-2.5 leading-relaxed flex items-start gap-2"><Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5"/><span>{wod.notes}</span></div>
                 )}
                 {wod.aiTheme && (
-                  <div className="mt-2 text-sm rounded-xl px-3 py-2.5 leading-relaxed" style={{ color: 'rgba(255,255,255,0.9)', backgroundColor: 'rgba(255,255,255,0.1)' }}>🤖 {wod.aiTheme}</div>
+                  <div className="mt-2 text-sm rounded-xl px-3 py-2.5 leading-relaxed flex items-start gap-2" style={{ color: 'rgba(255,255,255,0.9)', backgroundColor: 'rgba(255,255,255,0.1)' }}><Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5"/><span>{wod.aiTheme}</span></div>
                 )}
               </div>
 
@@ -974,18 +986,18 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                 <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
                   {sections.map(s => (
                     <button key={s.key} onClick={() => setActiveSection(s.key)}
-                      className={`flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                      className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
                         activeSection === s.key ? 'bg-orange-500 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'
                       }`}>
-                      {s.label}
+                      <s.icon className="w-4 h-4"/>{s.label}
                     </button>
                   ))}
                   {/* تبويب الكل - English */}
                   <button onClick={() => setActiveSection('all')}
-                    className={`flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
                       activeSection === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'
                     }`}>
-                    🌐 الكل
+                    <Globe className="w-4 h-4"/>الكل
                   </button>
                 </div>
               )}
@@ -997,7 +1009,7 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                 (e.notes  && (e.notes.includes('|') ||e.notes.includes('مبتدئ'))  && e.notes.includes('متوسط'))
               ) && (
                 <div className="bg-slate-100 rounded-2xl p-3 border border-slate-200">
-                  <div className="text-sm font-bold text-slate-600 mb-2 text-right">⚡ اختر مستواك</div>
+                  <div className="text-sm font-bold text-slate-600 mb-2 flex items-center justify-end gap-1"><Zap className="w-4 h-4"/>اختر مستواك</div>
                   <div className="flex gap-2">
                     {DASH_LEVEL_TABS.map(t => (
                       <button key={t.key}
@@ -1008,8 +1020,8 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                     ))}
                   </div>
                   {selectedLevel && wod.targetTimes?.[selectedLevel] && (
-                    <div className="mt-2 text-sm text-slate-600 text-right">
-                      ⏱ وقتك: <span className="font-bold text-slate-800">{wod.targetTimes[selectedLevel]}</span>
+                    <div className="mt-2 text-sm text-slate-600 flex items-center justify-end gap-1">
+                      <Timer className="w-4 h-4"/>وقتك: <span className="font-bold text-slate-800">{wod.targetTimes[selectedLevel]}</span>
                     </div>
                   )}
                 </div>
@@ -1017,7 +1029,7 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
 
               {sections.map(s => (
                 <div key={s.key} className={activeSection === s.key ? 'space-y-3' : 'hidden'}>
-                  <h3 className="text-sm font-semibold text-slate-500">{s.label}</h3>
+                  <h3 className="text-sm font-semibold text-slate-500 flex items-center gap-1.5"><s.icon className="w-4 h-4"/>{s.label}</h3>
                   <WodBlockList blocks={s.blocks} selectedLevel={(s.key === 'strength' || s.key === 'metcon') ? selectedLevel : undefined} />
                 </div>
               ))}
@@ -1036,8 +1048,8 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                       Share on WhatsApp
                     </button>
                     <button onClick={copyEnglish}
-                      className="px-4 py-2.5 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold transition-colors min-w-[90px]">
-                      {copied ? '✅ Copied!' : '📋 Copy'}
+                      className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold transition-colors min-w-[90px]">
+                      {copied ? <><CheckCircle2 className="w-4 h-4 text-green-400"/>Copied!</> : <><ClipboardList className="w-4 h-4"/>Copy</>}
                     </button>
                   </div>
 
@@ -1045,11 +1057,11 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                   <div className="flex gap-2">
                     <button onClick={() => exportWodImage('ar')} disabled={!!exportingLang}
                       className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-60 text-white text-sm font-bold transition-colors">
-                      {exportingLang === 'ar' ? '⏳ جارٍ التصدير...' : '🖼️ صورة عربي'}
+                      {exportingLang === 'ar' ? <><Loader2 className="w-4 h-4 animate-spin"/>جارٍ التصدير...</> : <><ImageIcon className="w-4 h-4"/>صورة عربي</>}
                     </button>
                     <button onClick={() => exportWodImage('en')} disabled={!!exportingLang}
                       className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-60 text-white text-sm font-bold transition-colors">
-                      {exportingLang === 'en' ? '⏳ Exporting...' : '🖼️ Image English'}
+                      {exportingLang === 'en' ? <><Loader2 className="w-4 h-4 animate-spin"/>Exporting...</> : <><ImageIcon className="w-4 h-4"/>Image English</>}
                     </button>
                   </div>
                   <div style={{ position: 'fixed', top: 0, insetInlineStart: -99999, pointerEvents: 'none' }}>
@@ -1064,30 +1076,30 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                       <div className="font-bold text-white text-base">{wod.titleEn || wod.title}</div>
                       <div className="flex flex-wrap gap-2 mt-1">
                         {wod.type     && <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full">{wod.type}</span>}
-                        {wod.duration && <span className="text-xs text-gray-400">⏱ {wod.duration} min</span>}
-                        {wod.rounds   && <span className="text-xs text-gray-400">🔄 {wod.rounds} rounds</span>}
+                        {wod.duration && <span className="text-xs text-gray-400 inline-flex items-center gap-1"><Timer className="w-3.5 h-3.5"/>{wod.duration} min</span>}
+                        {wod.rounds   && <span className="text-xs text-gray-400 inline-flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5"/>{wod.rounds} rounds</span>}
                       </div>
                       {wod.aiTheme && (
-                        <div className="mt-2 text-xs text-blue-300">🔗 {wod.aiTheme}</div>
+                        <div className="mt-2 text-xs text-blue-300 flex items-start gap-1"><Link2 className="w-3.5 h-3.5 flex-shrink-0 mt-0.5"/><span>{wod.aiTheme}</span></div>
                       )}
                     </div>
 
                     {/* المقاطع بالإنجليزية */}
                     <div className="p-4 space-y-5">
                       {sections.map(sec => {
-                        const SECTION_STYLE: Record<string, { icon: string; color: string; bg: string }> = {
-                          warmup:    { icon: '🔆', color: 'text-yellow-400', bg: 'bg-yellow-900/10'  },
-                          strength:  { icon: '🏋️', color: 'text-blue-400',   bg: 'bg-blue-900/10'    },
-                          metcon:    { icon: '🔥', color: 'text-orange-400', bg: 'bg-orange-900/10'  },
-                          accessory: { icon: '💪', color: 'text-purple-400', bg: 'bg-purple-900/10'  },
-                          cooldown:  { icon: '🧘', color: 'text-teal-400',   bg: 'bg-teal-900/10'    },
+                        const SECTION_STYLE: Record<string, { icon: any; color: string; bg: string }> = {
+                          warmup:    { icon: Sun,       color: 'text-yellow-400', bg: 'bg-yellow-900/10'  },
+                          strength:  { icon: Dumbbell,  color: 'text-blue-400',   bg: 'bg-blue-900/10'    },
+                          metcon:    { icon: Flame,     color: 'text-orange-400', bg: 'bg-orange-900/10'  },
+                          accessory: { icon: Dumbbell,  color: 'text-amber-400',  bg: 'bg-amber-900/10'   },
+                          cooldown:  { icon: Wind,      color: 'text-blue-300',   bg: 'bg-blue-900/10'    },
                         };
-                        const style = SECTION_STYLE[sec.key] || { icon: '▸', color: 'text-gray-400', bg: 'bg-gray-800/30' };
+                        const style = SECTION_STYLE[sec.key] || { icon: Target, color: 'text-gray-400', bg: 'bg-gray-800/30' };
                         const secItems = flatMovements(sec.blocks);
                         return (
                           <div key={sec.key}>
                             <h4 className={`font-bold text-sm mb-2 flex items-center gap-2 ${style.color}`}>
-                              <span>{style.icon}</span>
+                              <style.icon className="w-4 h-4"/>
                               <span>{sec.labelEn.toUpperCase()}</span>
                               <span className="text-gray-600 font-normal text-xs">({secItems.length} exercises)</span>
                             </h4>
@@ -1138,8 +1150,8 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
 
                     {wod.notes && (
                       <div className="px-4 pb-4">
-                        <div className="bg-yellow-900/10 border border-yellow-800/30 rounded-xl p-3 text-xs text-yellow-300">
-                          📝 {wod.notes}
+                        <div className="bg-yellow-900/10 border border-yellow-800/30 rounded-xl p-3 text-xs text-yellow-300 flex items-start gap-1.5">
+                          <ClipboardList className="w-3.5 h-3.5 flex-shrink-0 mt-0.5"/><span>{wod.notes}</span>
                         </div>
                       </div>
                     )}
@@ -1147,14 +1159,14 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                 </div>
               )}
 
-              {/* 💬 Comments / Results Section */}
+              {/* Comments / Results Section */}
               <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
                 <button
                   className="w-full p-4 flex items-center justify-between text-right"
                   onClick={() => setShowComments(p => !p)}>
                   <span className="text-gray-500">{showComments ? '▲' : '▼'}</span>
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-white">💬 نتائج الأعضاء</span>
+                    <span className="font-semibold text-white flex items-center gap-1.5"><MessageCircle className="w-4 h-4"/>نتائج الأعضاء</span>
                     {comments.length > 0 && (
                       <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">{comments.length}</span>
                     )}
@@ -1192,15 +1204,15 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                           className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500"
                           placeholder="اكتب تعليقك أو نتيجتك هنا..." />
                         <button onClick={postComment} disabled={posting || (!commentText.trim() && !commentResult)}
-                          className="px-4 py-2 bg-orange-500 hover:bg-orange-400 disabled:bg-gray-700 text-white rounded-xl text-sm font-semibold transition-colors">
-                          {posting ? '...' : '📤'}
+                          className="px-4 py-2 bg-orange-500 hover:bg-orange-400 disabled:bg-gray-700 text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center">
+                          {posting ? '...' : <Send className="w-4 h-4"/>}
                         </button>
                       </div>
                     </div>
 
                     {/* Comments list */}
                     {comments.length === 0 ? (
-                      <p className="text-center text-gray-500 text-sm py-4">لا توجد تعليقات بعد — كن الأول! 💪</p>
+                      <p className="text-center text-gray-500 text-sm py-4 flex items-center justify-center gap-1.5">لا توجد تعليقات بعد — كن الأول! <Dumbbell className="w-4 h-4"/></p>
                     ) : (
                       <div className="space-y-3">
                         {comments.map(c => (
@@ -1217,8 +1229,8 @@ export default function DashboardClient({ member, wod, todayHyrox = [], todayKet
                                     </span>
                                   )}
                                   {c.rxd && (
-                                    <span className="text-xs bg-green-900/50 text-green-300 px-2 py-0.5 rounded-full border border-green-700/30">
-                                      RX'd ✅
+                                    <span className="text-xs bg-green-900/50 text-green-300 px-2 py-0.5 rounded-full border border-green-700/30 inline-flex items-center gap-1">
+                                      RX'd <CheckCircle2 className="w-3.5 h-3.5"/>
                                     </span>
                                   )}
                                 </div>

@@ -1,10 +1,11 @@
 ﻿'use client';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
+import { Target, CheckCircle2, PersonStanding, Dumbbell } from 'lucide-react';
 
-const CATEGORY_LABELS: Record<string, string> = {
-  gymnastics: '🤸 جمناستيك',
-  olympic: '🏋️ رفع أثقال أولمبي',
+const CATEGORY_LABELS: Record<string, { label: string; icon: typeof PersonStanding }> = {
+  gymnastics: { label: 'جمناستيك', icon: PersonStanding },
+  olympic: { label: 'رفع أثقال أولمبي', icon: Dumbbell },
 };
 
 const LEVEL_COLORS = [
@@ -69,9 +70,9 @@ export default function SkillsClient({ member }: { member: any }) {
         <div className="max-w-2xl mx-auto px-4 pt-safe pb-6 space-y-5">
 
           {/* Header */}
-          <div className="bg-gradient-to-l from-teal-900/40 to-cyan-900/40 rounded-2xl border border-teal-700/30 p-5">
+          <div className="bg-gradient-to-l from-orange-900/40 to-amber-900/40 rounded-2xl border border-orange-700/30 p-5">
             <h1 className="text-xl font-bold text-white flex items-center gap-2">
-              <span>🎯</span> متتبع المهارات
+              <Target className="w-5 h-5 text-orange-400" /> متتبع المهارات
             </h1>
             <p className="text-sm text-gray-400 mt-1">سجّل مستواك في كل مهارة وتابع تطورك</p>
           </div>
@@ -88,20 +89,26 @@ export default function SkillsClient({ member }: { member: any }) {
             </div>
             <div className="bg-green-900/20 rounded-xl border border-green-700/30 p-3 text-center">
               <div className="text-2xl font-bold text-green-400">{mastered}</div>
-              <div className="text-xs text-gray-500">مُتقنة ✅</div>
+              <div className="text-xs text-gray-500 flex items-center justify-center gap-1">
+                مُتقنة <CheckCircle2 className="w-4 h-4 text-green-500" />
+              </div>
             </div>
           </div>
 
           {/* Category Tabs */}
           <div className="flex gap-2">
-            {categories.map(cat => (
-              <button key={cat} onClick={() => setActiveCategory(cat)}
-                className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${
-                  activeCategory === cat ? 'bg-teal-600 text-white' : 'bg-gray-800 text-gray-400'
-                }`}>
-                {CATEGORY_LABELS[cat] || cat}
-              </button>
-            ))}
+            {categories.map(cat => {
+              const meta = CATEGORY_LABELS[cat];
+              const Icon = meta?.icon;
+              return (
+                <button key={cat} onClick={() => setActiveCategory(cat)}
+                  className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 ${
+                    activeCategory === cat ? 'bg-orange-500 text-white' : 'bg-gray-800 text-gray-400'
+                  }`}>
+                  {Icon && <Icon className="w-4 h-4" />} {meta?.label || cat}
+                </button>
+              );
+            })}
           </div>
 
           {/* Skills List */}
@@ -138,7 +145,7 @@ export default function SkillsClient({ member }: { member: any }) {
                           <div className="text-right">
                             <div className="flex items-center gap-2">
                               {isExpanded ? '▲' : '▼'}
-                              {currentLevel === skill.levels.length - 1 && <span className="text-green-400">✅</span>}
+                              {currentLevel === skill.levels.length - 1 && <CheckCircle2 className="w-4 h-4 text-green-400" />}
                             </div>
                           </div>
                         </div>
@@ -146,7 +153,7 @@ export default function SkillsClient({ member }: { member: any }) {
                           <div className="font-semibold text-white">{skill.nameAr}</div>
                           <div className="text-xs text-gray-500">{skill.nameEn}</div>
                           {currentLevel >= 0 && (
-                            <div className="text-xs text-teal-400 mt-0.5">{skill.levels[currentLevel]}</div>
+                            <div className="text-xs text-orange-400 mt-0.5">{skill.levels[currentLevel]}</div>
                           )}
                         </div>
                       </div>
@@ -168,7 +175,7 @@ export default function SkillsClient({ member }: { member: any }) {
                             <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
                               currentLevel >= idx ? LEVEL_COLORS[Math.min(idx, 4)] : 'bg-gray-700 text-gray-500'
                             }`}>
-                              {currentLevel >= idx ? '✓' : idx}
+                              {currentLevel >= idx ? <CheckCircle2 className="w-4 h-4" /> : idx}
                             </div>
                             <span className="text-sm">{lvl}</span>
                             {currentLevel === idx && saving !== skill.id && (

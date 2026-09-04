@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
+import { Trophy, Medal, Calendar, BarChart3, Flame, CheckCircle2 } from 'lucide-react';
 
 // تحميل كسول لمكتبة recharts (~100kB) — لا تُحمَّل إلا عند عرض هذا القسم فعلياً
 const LeaderboardBarChart = dynamic(() => import('@/components/charts/LeaderboardBarChart'), {
@@ -9,7 +10,7 @@ const LeaderboardBarChart = dynamic(() => import('@/components/charts/Leaderboar
   loading: () => <div className="h-[180px] bg-gray-800/40 rounded-xl animate-pulse" />,
 });
 
-const MEDALS = ['🥇', '🥈', '🥉'];
+const MEDAL_COLORS = ['text-amber-400', 'text-gray-300', 'text-amber-700'];
 
 export default function LeaderboardClient({ member, currentUserId }: { member: any; currentUserId: string }) {
   const [data, setData] = useState<any[]>([]);
@@ -29,10 +30,10 @@ export default function LeaderboardClient({ member, currentUserId }: { member: a
   });
 
   const tabs = [
-    { key: 'month', label: 'هذا الشهر', icon: '📅' },
-    { key: 'total', label: 'الكل', icon: '📊' },
-    { key: 'prs', label: 'الأرقام', icon: '🏆' },
-    { key: 'streak', label: 'الاستمرارية', icon: '🔥' },
+    { key: 'month', label: 'هذا الشهر', icon: Calendar },
+    { key: 'total', label: 'الكل', icon: BarChart3 },
+    { key: 'prs', label: 'الأرقام', icon: Trophy },
+    { key: 'streak', label: 'الاستمرارية', icon: Flame },
   ];
 
   function getValue(item: any) {
@@ -63,7 +64,9 @@ export default function LeaderboardClient({ member, currentUserId }: { member: a
       <main className="flex-1 min-w-0 lg:mr-56 pb-safe-nav lg:pb-0 overflow-x-hidden">
         <div className="max-w-2xl mx-auto px-4 pt-safe pb-6 space-y-6">
 
-          <h1 className="text-xl font-bold text-white">🥇 لوحة الترتيب</h1>
+          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-amber-400" /> لوحة الترتيب
+          </h1>
 
           {/* Tabs */}
           <div className="flex gap-2 overflow-x-auto scrollbar-hide">
@@ -72,7 +75,7 @@ export default function LeaderboardClient({ member, currentUserId }: { member: a
                 className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
                   tab === t.key ? 'bg-orange-500 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'
                 }`}>
-                <span>{t.icon}</span>
+                <t.icon className="w-4 h-4" />
                 <span>{t.label}</span>
               </button>
             ))}
@@ -81,8 +84,9 @@ export default function LeaderboardClient({ member, currentUserId }: { member: a
           {/* رسم بياني مقارنة الأعضاء */}
           {!loading && chartData.length > 0 && (
             <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
-              <h2 className="text-sm font-semibold text-gray-300 mb-3">
-                {tabs.find(t => t.key === tab)?.icon} مقارنة {tabs.find(t => t.key === tab)?.label}
+              <h2 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
+                {(() => { const TabIcon = tabs.find(t => t.key === tab)?.icon; return TabIcon ? <TabIcon className="w-4 h-4" /> : null; })()}
+                مقارنة {tabs.find(t => t.key === tab)?.label}
               </h2>
               <LeaderboardBarChart chartData={chartData} tab={tab} />
             </div>
@@ -99,9 +103,9 @@ export default function LeaderboardClient({ member, currentUserId }: { member: a
                       ? 'bg-orange-900/30 border-orange-700'
                       : 'bg-gray-900 border-gray-800'
                   }`}>
-                  <div className="w-8 text-center flex-shrink-0">
+                  <div className="w-8 text-center flex-shrink-0 flex items-center justify-center">
                     {idx < 3 ? (
-                      <span className="text-2xl">{MEDALS[idx]}</span>
+                      <Medal className={`w-6 h-6 ${MEDAL_COLORS[idx]}`} />
                     ) : (
                       <span className="text-gray-500 font-bold text-sm">#{idx + 1}</span>
                     )}
@@ -113,8 +117,8 @@ export default function LeaderboardClient({ member, currentUserId }: { member: a
                       {item.id === currentUserId && <span className="text-xs text-orange-400">(أنت)</span>}
                     </div>
                     <div className="text-xs text-gray-400 flex gap-3 mt-0.5">
-                      <span>🔥 {item.streak} يوم</span>
-                      <span>✅ {item.rxdCount} Rx'd</span>
+                      <span className="inline-flex items-center gap-1"><Flame className="w-4 h-4 text-orange-500" /> {item.streak} يوم</span>
+                      <span className="inline-flex items-center gap-1"><CheckCircle2 className="w-4 h-4 text-green-500" /> {item.rxdCount} Rx'd</span>
                     </div>
                   </div>
                   <div className="text-left flex-shrink-0">

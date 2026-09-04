@@ -2,26 +2,34 @@
 import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
+import {
+  Trash2, Sparkles, FolderOpen, RefreshCw, Settings, AlertTriangle, Loader2, Sun, Dumbbell,
+  Hand, ClipboardList, Wind, Calendar, Pin, CheckCircle2, Share2, Target, Lightbulb,
+  MessageSquare, TrendingUp, Trophy, Zap, Flame, Save, Clock, Copy,
+} from 'lucide-react';
 
 const LEVEL_TABS = [
   { key: 'beginner'     as const, label: 'مبتدئ', active: 'bg-green-600 text-white',  idle: 'bg-gray-800 text-green-400 border border-green-700'  },
   { key: 'intermediate' as const, label: 'متوسط', active: 'bg-blue-600 text-white',   idle: 'bg-gray-800 text-blue-400 border border-blue-700'    },
   { key: 'advanced'     as const, label: 'متقدم', active: 'bg-orange-500 text-white',  idle: 'bg-gray-800 text-orange-400 border border-orange-700' },
-  { key: 'elite'        as const, label: 'نخبة',  active: 'bg-purple-600 text-white',  idle: 'bg-gray-800 text-purple-400 border border-purple-700' },
+  { key: 'elite'        as const, label: 'نخبة',  active: 'bg-amber-500 text-white',  idle: 'bg-gray-800 text-amber-400 border border-amber-700' },
 ];
 type LevelKey = 'beginner' | 'intermediate' | 'advanced' | 'elite';
 
 const EVENT_TYPES = [
-  { value: 'biathlon',     label: 'Biathlon 🏆',     desc: 'Jerk + Snatch — ثنائي الأحداث' },
-  { value: 'long_cycle',   label: 'Long Cycle 🔄',   desc: 'Clean & Jerk — الدورة الطويلة' },
-  { value: 'snatch',       label: 'Snatch ⚡',        desc: 'الانتزاع — حدث واحد' },
-  { value: 'strength',     label: 'قوة 💪',           desc: 'تطوير القوة الأساسية' },
-  { value: 'conditioning', label: 'تكييف 🔥',         desc: 'تحمل وتكييف عضلي' },
+  { value: 'biathlon',     label: 'Biathlon',    icon: Trophy,     desc: 'Jerk + Snatch — ثنائي الأحداث' },
+  { value: 'long_cycle',   label: 'Long Cycle',  icon: RefreshCw,  desc: 'Clean & Jerk — الدورة الطويلة' },
+  { value: 'snatch',       label: 'Snatch',      icon: Zap,        desc: 'الانتزاع — حدث واحد' },
+  { value: 'strength',     label: 'قوة',         icon: Dumbbell,   desc: 'تطوير القوة الأساسية' },
+  { value: 'conditioning', label: 'تكييف',       icon: Flame,      desc: 'تحمل وتكييف عضلي' },
 ];
 const FOCUS_OPTIONS = ['التحمل', 'القوة', 'التقنية', 'السرعة', 'الراحة النشطة'];
 const EVENT_LABELS: Record<string, string> = {
-  biathlon: 'Biathlon 🏆', long_cycle: 'Long Cycle 🔄',
-  snatch: 'Snatch ⚡', strength: 'قوة 💪', conditioning: 'تكييف 🔥',
+  biathlon: 'Biathlon', long_cycle: 'Long Cycle',
+  snatch: 'Snatch', strength: 'قوة', conditioning: 'تكييف',
+};
+const EVENT_ICONS: Record<string, typeof Trophy> = {
+  biathlon: Trophy, long_cycle: RefreshCw, snatch: Zap, strength: Dumbbell, conditioning: Flame,
 };
 
 function buildShareText(s: any, meta: { date: string; eventType: string; focus: string }): string {
@@ -59,6 +67,7 @@ function buildShareText(s: any, meta: { date: string; eventType: string; focus: 
 }
 
 function HistoryCard({ rec, onView, onDelete }: { rec: any; onView: () => void; onDelete: () => void }) {
+  const EventIcon = EVENT_ICONS[rec.eventType];
   return (
     <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
       <div className="flex items-start justify-between gap-2">
@@ -66,16 +75,16 @@ function HistoryCard({ rec, onView, onDelete }: { rec: any; onView: () => void; 
           <div className="font-semibold text-white text-sm truncate">{rec.sessionData?.title || 'جلسة Kettlebell'}</div>
           <div className="flex flex-wrap items-center gap-1.5 mt-1">
             <span className="text-xs text-gray-500">{rec.date}</span>
-            <span className="text-xs bg-yellow-900/30 text-yellow-300 border border-yellow-700/30 px-2 py-0.5 rounded-full">
-              {EVENT_LABELS[rec.eventType] || rec.eventType}
+            <span className="text-xs bg-yellow-900/30 text-yellow-300 border border-yellow-700/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+              {EventIcon && <EventIcon className="w-3 h-3" />} {EVENT_LABELS[rec.eventType] || rec.eventType}
             </span>
             <span className="text-xs bg-amber-900/30 text-amber-300 border border-amber-700/30 px-2 py-0.5 rounded-full">{rec.difficulty}</span>
-            {rec.sessionData?.totalDuration && <span className="text-xs text-gray-500">⏱ {rec.sessionData.totalDuration}</span>}
+            {rec.sessionData?.totalDuration && <span className="text-xs text-gray-500 flex items-center gap-1"><Clock className="w-3 h-3" /> {rec.sessionData.totalDuration}</span>}
           </div>
         </div>
         <div className="flex gap-1.5 flex-shrink-0">
           <button onClick={onView} className="text-xs text-yellow-400 hover:text-yellow-300 bg-yellow-900/20 border border-yellow-700/30 px-3 py-1.5 rounded-lg transition-colors">عرض</button>
-          <button onClick={onDelete} className="text-xs text-gray-500 hover:text-red-400 bg-gray-800 px-2 py-1.5 rounded-lg transition-colors">🗑</button>
+          <button onClick={onDelete} className="text-xs text-gray-500 hover:text-red-400 bg-gray-800 px-2 py-1.5 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
         </div>
       </div>
     </div>
@@ -165,7 +174,7 @@ export default function KettlebellClient({ member }: { member: any }) {
           {/* Header */}
           <div className="bg-gradient-to-l from-yellow-900/40 to-amber-900/40 rounded-2xl border border-yellow-700/30 p-5">
             <div className="flex items-center gap-3 mb-2">
-              <span className="text-4xl">🏋️</span>
+              <Dumbbell className="w-9 h-9 text-yellow-400" />
               <div>
                 <h1 className="text-xl font-bold text-white">Kettlebell Athletics</h1>
                 <p className="text-sm text-yellow-300">رياضة الجيرك — القوة التنافسية</p>
@@ -177,12 +186,12 @@ export default function KettlebellClient({ member }: { member: any }) {
           {/* Tabs */}
           <div className="flex rounded-xl overflow-hidden border border-gray-700">
             {isAdmin && (
-              <button onClick={() => setActiveTab('generate')} className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${activeTab === 'generate' ? 'bg-yellow-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
-                🤖 توليد جلسة
+              <button onClick={() => setActiveTab('generate')} className={`flex-1 py-2.5 text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 ${activeTab === 'generate' ? 'bg-yellow-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
+                <Sparkles className="w-4 h-4" /> توليد جلسة
               </button>
             )}
             <button onClick={() => setActiveTab('history')} className={`flex-1 py-2.5 text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 ${activeTab === 'history' ? 'bg-yellow-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
-              📂 سجل الجلسات
+              <FolderOpen className="w-4 h-4" /> سجل الجلسات
               {history.length > 0 && <span className="bg-yellow-500 text-white text-xs px-1.5 py-0.5 rounded-full">{history.length}</span>}
             </button>
           </div>
@@ -192,14 +201,14 @@ export default function KettlebellClient({ member }: { member: any }) {
             <>
               {(showSettings || !session) && (
                 <div className="bg-gray-900 rounded-2xl border border-gray-800 p-5 space-y-4">
-                  <h2 className="font-semibold text-white flex items-center gap-2"><span>⚙️</span> إعدادات الجلسة</h2>
+                  <h2 className="font-semibold text-white flex items-center gap-2"><Settings className="w-5 h-5" /> إعدادات الجلسة</h2>
                   <div>
                     <label className="text-xs text-gray-400 mb-2 block">نوع الحدث</label>
                     <div className="grid grid-cols-2 gap-2">
                       {EVENT_TYPES.map(t => (
                         <button key={t.value} onClick={() => setEventType(t.value)}
                           className={`p-3 rounded-xl border text-right transition-all ${eventType === t.value ? 'border-yellow-500 bg-yellow-900/20 text-white' : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'}`}>
-                          <div className="font-semibold text-sm">{t.label}</div>
+                          <div className="font-semibold text-sm flex items-center gap-1.5"><t.icon className="w-4 h-4" /> {t.label}</div>
                           <div className="text-xs mt-0.5 opacity-70">{t.desc}</div>
                         </button>
                       ))}
@@ -217,12 +226,12 @@ export default function KettlebellClient({ member }: { member: any }) {
                       <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
                     </div>
                   </div>
-                  {error && <div className="bg-red-900/30 border border-red-700/50 rounded-xl p-3 text-red-400 text-xs">⚠️ {error}</div>}
+                  {error && <div className="bg-red-900/30 border border-red-700/50 rounded-xl p-3 text-red-400 text-xs flex items-center gap-1.5"><AlertTriangle className="w-4 h-4" /> {error}</div>}
                   <button onClick={generate} disabled={generating}
                     className="w-full py-3 rounded-xl bg-gradient-to-l from-yellow-600 to-amber-600 hover:from-yellow-500 hover:to-amber-500 disabled:from-gray-700 disabled:to-gray-700 text-white font-semibold transition-all flex items-center justify-center gap-2">
-                    {generating ? <><span className="animate-spin">⚙️</span> يتم توليد الجلسة بالذكاء الاصطناعي...</> : <><span>🤖</span> توليد جلسة Kettlebell Athletics</>}
+                    {generating ? <><Loader2 className="w-4 h-4 animate-spin" /> يتم توليد الجلسة بالذكاء الاصطناعي...</> : <><Sparkles className="w-4 h-4" /> توليد جلسة Kettlebell Athletics</>}
                   </button>
-                  {generating && <p className="text-center text-xs text-yellow-400 animate-pulse">🏋️ يحلل الذكاء الاصطناعي مبادئ IUKL ويضع برنامجك التنافسي...</p>}
+                  {generating && <p className="text-center text-xs text-yellow-400 animate-pulse flex items-center justify-center gap-1.5"><Dumbbell className="w-4 h-4" /> يحلل الذكاء الاصطناعي مبادئ IUKL ويضع برنامجك التنافسي...</p>}
                 </div>
               )}
 
@@ -247,33 +256,33 @@ export default function KettlebellClient({ member }: { member: any }) {
                   <div className="flex gap-2">
                     <button onClick={saveSession} disabled={saving || saved}
                       className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 ${saved ? 'bg-green-700/40 border border-green-600/40 text-green-300' : 'bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white'}`}>
-                      {saved ? '✅ محفوظة' : saving ? '⏳...' : '💾 حفظ'}
+                      {saved ? <><CheckCircle2 className="w-4 h-4" /> محفوظة</> : saving ? <><Loader2 className="w-4 h-4 animate-spin" />...</> : <><Save className="w-4 h-4" /> حفظ</>}
                     </button>
                     <button onClick={shareWhatsApp} className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-[#25D366]/20 hover:bg-[#25D366]/30 border border-[#25D366]/40 text-[#25D366] transition-colors flex items-center justify-center gap-1.5">
                       {WA_ICON} واتساب
                     </button>
                     <button onClick={copyText}
                       className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 ${copied ? 'bg-blue-700/40 border border-blue-600/40 text-blue-300' : 'bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white'}`}>
-                      {copied ? '✅ تم النسخ' : '📋 نسخ'}
+                      {copied ? <><CheckCircle2 className="w-4 h-4" /> تم النسخ</> : <><Copy className="w-4 h-4" /> نسخ</>}
                     </button>
-                    <button onClick={() => { setShowSettings(true); setSaved(false); }} className="px-3 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-400 hover:text-white text-xs transition-colors">🔄</button>
+                    <button onClick={() => { setShowSettings(true); setSaved(false); }} className="px-3 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-400 hover:text-white text-xs transition-colors"><RefreshCw className="w-4 h-4" /></button>
                   </div>
 
                   {/* Session Header */}
                   <div className="bg-gradient-to-l from-yellow-900/30 to-amber-900/30 rounded-2xl border border-yellow-700/30 p-4">
                     <h2 className="text-lg font-bold text-white">{session.title}</h2>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <span className="text-xs bg-yellow-900/50 border border-yellow-700/40 text-yellow-300 px-2 py-0.5 rounded-full">⏱ {session.totalDuration}</span>
+                      <span className="text-xs bg-yellow-900/50 border border-yellow-700/40 text-yellow-300 px-2 py-0.5 rounded-full flex items-center gap-1"><Clock className="w-3 h-3" /> {session.totalDuration}</span>
                       <span className="text-xs bg-amber-900/50 border border-amber-700/40 text-amber-300 px-2 py-0.5 rounded-full">{session.eventType}</span>
                       {sessionMeta && <span className="text-xs text-gray-500">{sessionMeta.date}</span>}
                     </div>
-                    {session.coachNote && <div className="mt-3 bg-black/20 rounded-xl p-3"><p className="text-xs text-gray-300">💬 {session.coachNote}</p></div>}
+                    {session.coachNote && <div className="mt-3 bg-black/20 rounded-xl p-3"><p className="text-xs text-gray-300 flex items-start gap-1.5"><MessageSquare className="w-4 h-4 flex-shrink-0" /> {session.coachNote}</p></div>}
                   </div>
 
                   {/* Breathing */}
                   {session.breathingPattern && (
                     <div className="bg-blue-900/20 border border-blue-700/30 rounded-xl p-3">
-                      <div className="text-xs text-blue-400 font-semibold mb-1">🫁 نمط التنفس الصحيح</div>
+                      <div className="text-xs text-blue-400 font-semibold mb-1 flex items-center gap-1.5"><Wind className="w-4 h-4" /> نمط التنفس الصحيح</div>
                       <p className="text-xs text-gray-300">{session.breathingPattern}</p>
                     </div>
                   )}
@@ -281,7 +290,7 @@ export default function KettlebellClient({ member }: { member: any }) {
                   {/* Warmup */}
                   {session.warmup && (
                     <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
-                      <h3 className="font-semibold text-yellow-400 mb-3 flex items-center gap-2"><span>🔆</span> الإحماء — {session.warmup.duration}</h3>
+                      <h3 className="font-semibold text-yellow-400 mb-3 flex items-center gap-2"><Sun className="w-5 h-5" /> الإحماء — {session.warmup.duration}</h3>
                       <div className="space-y-2">
                         {session.warmup.movements?.map((ex: any, i: number) => (
                           <div key={i} className="bg-gray-800/50 rounded-xl p-3">
@@ -299,7 +308,7 @@ export default function KettlebellClient({ member }: { member: any }) {
                   {/* Main Work */}
                   {session.mainWork && (
                     <div className="space-y-3">
-                      <h3 className="font-semibold text-white flex items-center gap-2"><span>💪</span> العمل الرئيسي</h3>
+                      <h3 className="font-semibold text-white flex items-center gap-2"><Dumbbell className="w-5 h-5" /> العمل الرئيسي</h3>
                       {session.mainWork.map((block: any, i: number) => {
                         const lvl = selectedLevel && block.levels ? block.levels[selectedLevel] : null;
                         return (
@@ -317,7 +326,7 @@ export default function KettlebellClient({ member }: { member: any }) {
                                 {lvl.totalLifts && <div className="flex justify-between text-xs"><span className="text-gray-400">إجمالي الرفعات</span><span className="text-white font-semibold">{lvl.totalLifts}</span></div>}
                                 {lvl.sets       && <div className="flex justify-between text-xs"><span className="text-gray-400">المجموعات</span><span className="text-white font-semibold">{lvl.sets}</span></div>}
                                 {lvl.rest       && <div className="flex justify-between text-xs"><span className="text-gray-400">الراحة</span><span className="text-white font-semibold">{lvl.rest}</span></div>}
-                                {lvl.cue        && <div className="text-xs text-yellow-300 bg-yellow-900/20 rounded-lg px-2 py-1 mt-1">💬 {lvl.cue}</div>}
+                                {lvl.cue        && <div className="text-xs text-yellow-300 bg-yellow-900/20 rounded-lg px-2 py-1 mt-1 flex items-center gap-1.5"><MessageSquare className="w-3.5 h-3.5 flex-shrink-0" /> {lvl.cue}</div>}
                               </div>
                             ) : (
                               <div className="grid grid-cols-3 gap-2">
@@ -326,8 +335,8 @@ export default function KettlebellClient({ member }: { member: any }) {
                                 <div className="bg-gray-800 rounded-xl p-2 text-center"><div className="text-xs text-gray-500">الراحة</div><div className="text-sm text-white font-semibold">{block.restBetweenSets}</div></div>
                               </div>
                             )}
-                            {block.targetRPM && !lvl && <div className="mt-2 bg-orange-900/20 rounded-xl p-2 text-center"><span className="text-xs text-orange-400">🎯 الهدف: {block.targetRPM}</span></div>}
-                            {block.technique && <div className="mt-2 text-xs text-yellow-400 bg-yellow-900/10 rounded-lg p-2">💡 {block.technique}</div>}
+                            {block.targetRPM && !lvl && <div className="mt-2 bg-orange-900/20 rounded-xl p-2 text-center"><span className="text-xs text-orange-400 flex items-center justify-center gap-1"><Target className="w-3.5 h-3.5" /> الهدف: {block.targetRPM}</span></div>}
+                            {block.technique && <div className="mt-2 text-xs text-yellow-400 bg-yellow-900/10 rounded-lg p-2 flex items-start gap-1.5"><Lightbulb className="w-3.5 h-3.5 flex-shrink-0" /> {block.technique}</div>}
                           </div>
                         );
                       })}
@@ -337,7 +346,7 @@ export default function KettlebellClient({ member }: { member: any }) {
                   {/* Grip Work */}
                   {session.gripwork && (
                     <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
-                      <h3 className="font-semibold text-orange-400 mb-2 flex items-center gap-2"><span>✋</span> تقوية القبضة</h3>
+                      <h3 className="font-semibold text-orange-400 mb-2 flex items-center gap-2"><Hand className="w-5 h-5" /> تقوية القبضة</h3>
                       <p className="text-xs text-gray-400 mb-3">{session.gripwork.note}</p>
                       <div className="space-y-2">
                         {session.gripwork.exercises?.map((ex: any, i: number) => (
@@ -353,10 +362,10 @@ export default function KettlebellClient({ member }: { member: any }) {
                   {/* Technique Notes */}
                   {session.techniqueNotes?.length > 0 && (
                     <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
-                      <h3 className="font-semibold text-purple-400 mb-3 flex items-center gap-2"><span>📋</span> نقاط تقنية مهمة</h3>
+                      <h3 className="font-semibold text-gray-400 mb-3 flex items-center gap-2"><ClipboardList className="w-5 h-5" /> نقاط تقنية مهمة</h3>
                       <div className="space-y-2">
                         {session.techniqueNotes.map((note: string, i: number) => (
-                          <div key={i} className="flex items-start gap-2 text-sm text-gray-300"><span className="text-purple-400 mt-0.5">•</span><span>{note}</span></div>
+                          <div key={i} className="flex items-start gap-2 text-sm text-gray-300"><span className="text-gray-500 mt-0.5">•</span><span>{note}</span></div>
                         ))}
                       </div>
                     </div>
@@ -365,7 +374,7 @@ export default function KettlebellClient({ member }: { member: any }) {
                   {/* Cooldown */}
                   {session.cooldown && (
                     <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
-                      <h3 className="font-semibold text-blue-400 mb-3 flex items-center gap-2"><span>🧘</span> التهدئة</h3>
+                      <h3 className="font-semibold text-blue-400 mb-3 flex items-center gap-2"><Wind className="w-5 h-5" /> التهدئة</h3>
                       <div className="space-y-2">
                         {(Array.isArray(session.cooldown) ? session.cooldown : session.cooldown.exercises || []).map((ex: any, i: number) => (
                           <div key={i} className="flex items-center gap-3 text-sm text-gray-300">
@@ -381,33 +390,33 @@ export default function KettlebellClient({ member }: { member: any }) {
                   {/* Weekly Placement */}
                   {session.weeklyPlan && (
                     <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-2xl p-4 space-y-3">
-                      <h3 className="font-semibold text-yellow-400 flex items-center gap-2"><span>📅</span> التوصية الأسبوعية</h3>
+                      <h3 className="font-semibold text-yellow-400 flex items-center gap-2"><Calendar className="w-5 h-5" /> التوصية الأسبوعية</h3>
                       <div className="space-y-2 text-sm">
-                        <div className="flex items-start gap-2"><span className="text-yellow-400 mt-0.5">📌</span><div><span className="text-gray-400 text-xs">عدد الجلسات: </span><span className="text-white">{session.weeklyPlan.sessionsPerWeek}</span></div></div>
-                        <div className="flex items-start gap-2"><span className="text-green-400 mt-0.5">✅</span><div><span className="text-gray-400 text-xs">متى تُدرجها: </span><span className="text-white text-xs">{session.weeklyPlan.placement}</span></div></div>
-                        <div className="flex items-start gap-2"><span className="text-red-400 mt-0.5">⚠️</span><div><span className="text-gray-400 text-xs">تجنب قبلها: </span><span className="text-white text-xs">{session.weeklyPlan.avoidAfter}</span></div></div>
+                        <div className="flex items-start gap-2"><Pin className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" /><div><span className="text-gray-400 text-xs">عدد الجلسات: </span><span className="text-white">{session.weeklyPlan.sessionsPerWeek}</span></div></div>
+                        <div className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" /><div><span className="text-gray-400 text-xs">متى تُدرجها: </span><span className="text-white text-xs">{session.weeklyPlan.placement}</span></div></div>
+                        <div className="flex items-start gap-2"><AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" /><div><span className="text-gray-400 text-xs">تجنب قبلها: </span><span className="text-white text-xs">{session.weeklyPlan.avoidAfter}</span></div></div>
                       </div>
                     </div>
                   )}
 
                   {/* Progression */}
                   {session.progressionNote && (
-                    <div className="bg-purple-900/20 border border-purple-700/30 rounded-2xl p-4">
-                      <h3 className="font-semibold text-purple-400 mb-2 flex items-center gap-2"><span>📈</span> كيف تتطور</h3>
+                    <div className="bg-orange-900/20 border border-orange-700/30 rounded-2xl p-4">
+                      <h3 className="font-semibold text-orange-400 mb-2 flex items-center gap-2"><TrendingUp className="w-5 h-5" /> كيف تتطور</h3>
                       <p className="text-sm text-gray-300">{session.progressionNote}</p>
                     </div>
                   )}
 
                   {/* Share bar bottom */}
                   <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4 space-y-3">
-                    <h3 className="font-semibold text-white text-sm flex items-center gap-2"><span>📤</span> مشاركة الجلسة</h3>
+                    <h3 className="font-semibold text-white text-sm flex items-center gap-2"><Share2 className="w-4 h-4" /> مشاركة الجلسة</h3>
                     <div className="flex gap-2">
                       <button onClick={shareWhatsApp} className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-[#25D366]/20 hover:bg-[#25D366]/30 border border-[#25D366]/40 text-[#25D366] transition-colors flex items-center justify-center gap-2">
                         {WA_ICON} مشاركة عبر واتساب
                       </button>
                       <button onClick={copyText}
                         className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${copied ? 'bg-blue-700/40 border border-blue-600/40 text-blue-300' : 'bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white'}`}>
-                        {copied ? '✅ تم النسخ!' : '📋 نسخ النص'}
+                        {copied ? <><CheckCircle2 className="w-4 h-4" /> تم النسخ!</> : <><Copy className="w-4 h-4" /> نسخ النص</>}
                       </button>
                     </div>
                   </div>
@@ -424,7 +433,7 @@ export default function KettlebellClient({ member }: { member: any }) {
                 <div className="text-center text-gray-500 py-10 text-sm">جاري التحميل...</div>
               ) : history.length === 0 ? (
                 <div className="text-center py-12 space-y-3">
-                  <div className="text-5xl">🏋️</div>
+                  <Dumbbell className="w-12 h-12 text-gray-700 mx-auto" />
                   <p className="text-gray-500 text-sm">لا توجد جلسات محفوظة بعد</p>
                   {isAdmin ? (
                     <button onClick={() => setActiveTab('generate')} className="text-sm text-yellow-400 hover:text-yellow-300 underline">ابدأ بتوليد جلسة الآن</button>
@@ -435,8 +444,8 @@ export default function KettlebellClient({ member }: { member: any }) {
               ) : (
                 <>
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-white text-sm">📂 الجلسات المحفوظة ({history.length})</h3>
-                    <button onClick={loadHistory} className="text-xs text-gray-500 hover:text-white transition-colors">🔄 تحديث</button>
+                    <h3 className="font-semibold text-white text-sm flex items-center gap-1.5"><FolderOpen className="w-4 h-4" /> الجلسات المحفوظة ({history.length})</h3>
+                    <button onClick={loadHistory} className="text-xs text-gray-500 hover:text-white transition-colors flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5" /> تحديث</button>
                   </div>
                   {history.map(rec => (
                     <HistoryCard key={rec.id} rec={rec} onView={() => viewRecord(rec)} onDelete={() => deleteRecord(rec.id)} />

@@ -2,12 +2,16 @@
 import { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import { useRouter } from 'next/navigation';
+import {
+  Dumbbell, Flame, Weight, Target, Zap, Shield, User, Mars, Venus,
+  CheckCircle2, BarChart3, Calendar, AlertTriangle, Ruler, Loader2, Save,
+} from 'lucide-react';
 
 const GOALS = [
   {
     value: 'muscle_gain',
     label: 'بناء العضلة',
-    icon: '💪',
+    icon: Dumbbell,
     desc: 'زيادة الكتلة العضلية والحجم',
     detail: 'أحمال ثقيلة • 8-12 تكرار • بروتين عالٍ',
     color: 'border-blue-500 bg-blue-900/20',
@@ -16,7 +20,7 @@ const GOALS = [
   {
     value: 'weight_loss',
     label: 'خسارة الوزن',
-    icon: '🔥',
+    icon: Flame,
     desc: 'حرق الدهون والتخسيس',
     detail: 'كارديو + قوة • 12-20 تكرار • راحة قصيرة',
     color: 'border-orange-500 bg-orange-900/20',
@@ -25,7 +29,7 @@ const GOALS = [
   {
     value: 'strength',
     label: 'بناء القوة',
-    icon: '🏋️',
+    icon: Weight,
     desc: 'رفع أثقال — الأرقام القياسية',
     detail: 'Compound ثقيل • 3-6 تكرار • راحة طويلة',
     color: 'border-red-500 bg-red-900/20',
@@ -34,7 +38,7 @@ const GOALS = [
   {
     value: 'body_recomp',
     label: 'إعادة تشكيل الجسم',
-    icon: '🎯',
+    icon: Target,
     desc: 'بناء عضل + حرق دهون معاً',
     detail: 'توازن بين القوة والكارديو',
     color: 'border-purple-500 bg-purple-900/20',
@@ -43,7 +47,7 @@ const GOALS = [
   {
     value: 'general_fitness',
     label: 'لياقة عامة',
-    icon: '⚡',
+    icon: Zap,
     desc: 'صحة عامة وتنويع شامل',
     detail: 'تمارين متنوعة • قلب وعضلات',
     color: 'border-teal-500 bg-teal-900/20',
@@ -52,7 +56,7 @@ const GOALS = [
   {
     value: 'senior_fitness',
     label: 'لياقة وقوة آمنة لكبار السن',
-    icon: '🧓',
+    icon: Shield,
     desc: 'محافظة على القوة والاستقلالية بأمان تام — لا أرقام قياسية',
     detail: 'أجهزة مسنودة فقط • 12-20 تكرار خفيف • راحة يوم كامل بين الجلسات',
     color: 'border-amber-500 bg-amber-900/20',
@@ -63,17 +67,17 @@ const GOALS = [
 // مستويات مختلفة تماماً لبرنامج كبار السن — لا علاقة لها بسنوات التدريب أو الأوزان،
 // بل بمستوى النشاط البدني الحالي الذي يحدد نقطة انطلاق آمنة (نفس فكرة SENIOR_LEVELS في قسم الجري)
 const SENIOR_LEVELS = [
-  { value: 'beginner',     label: 'خامل حالياً',      icon: '🟢', desc: 'لا أمارس رياضة منتظمة',           detail: 'نبدأ بأخف الأوزان وأبسط الحركات',  color: 'border-green-500 bg-green-900/20 text-green-300' },
-  { value: 'intermediate', label: 'نشيط خفيف',        icon: '🔵', desc: 'أمشي أو أتحرك بانتظام',           detail: 'نبدأ بأجهزة أساسية بحمل خفيف جداً', color: 'border-blue-500 bg-blue-900/20 text-blue-300' },
-  { value: 'advanced',     label: 'يتمرن بانتظام',    icon: '🟠', desc: 'أمارس نشاطاً بدنياً منتظماً',      detail: 'نبدأ بحمل خفيف-متوسط',              color: 'border-orange-500 bg-orange-900/20 text-orange-300' },
-  { value: 'elite',        label: 'معتاد على المقاومة', icon: '🔴', desc: 'جرّبت تمارين المقاومة من قبل',    detail: 'نبدأ من نقطة أعلى قليلاً — يبقى خفيفاً دوماً', color: 'border-red-500 bg-red-900/20 text-red-300' },
+  { value: 'beginner',     label: 'خامل حالياً',      dot: 'bg-green-500',  desc: 'لا أمارس رياضة منتظمة',           detail: 'نبدأ بأخف الأوزان وأبسط الحركات',  color: 'border-green-500 bg-green-900/20 text-green-300' },
+  { value: 'intermediate', label: 'نشيط خفيف',        dot: 'bg-blue-500',   desc: 'أمشي أو أتحرك بانتظام',           detail: 'نبدأ بأجهزة أساسية بحمل خفيف جداً', color: 'border-blue-500 bg-blue-900/20 text-blue-300' },
+  { value: 'advanced',     label: 'يتمرن بانتظام',    dot: 'bg-orange-500', desc: 'أمارس نشاطاً بدنياً منتظماً',      detail: 'نبدأ بحمل خفيف-متوسط',              color: 'border-orange-500 bg-orange-900/20 text-orange-300' },
+  { value: 'elite',        label: 'معتاد على المقاومة', dot: 'bg-red-500',  desc: 'جرّبت تمارين المقاومة من قبل',    detail: 'نبدأ من نقطة أعلى قليلاً — يبقى خفيفاً دوماً', color: 'border-red-500 bg-red-900/20 text-red-300' },
 ];
 
 const LEVELS = [
   {
     value: 'beginner',
     label: 'مبتدئ',
-    icon: '🟢',
+    dot: 'bg-green-500',
     desc: 'أقل من سنة تدريب',
     detail: 'تعلّم الحركات الأساسية، أوزان خفيفة، التركيز على التقنية',
     color: 'border-green-500 bg-green-900/20 text-green-300',
@@ -81,7 +85,7 @@ const LEVELS = [
   {
     value: 'intermediate',
     label: 'متوسط',
-    icon: '🔵',
+    dot: 'bg-blue-500',
     desc: '1-3 سنوات تدريب منتظم',
     detail: 'تقنية جيدة، قادر على الأوزان الحرة، يعرف Split مناسب',
     color: 'border-blue-500 bg-blue-900/20 text-blue-300',
@@ -89,7 +93,7 @@ const LEVELS = [
   {
     value: 'advanced',
     label: 'متقدم',
-    icon: '🟠',
+    dot: 'bg-orange-500',
     desc: '3-5 سنوات تدريب',
     detail: 'أوزان عالية، يستخدم Drop Sets و Supersets، يفهم Progressive Overload',
     color: 'border-orange-500 bg-orange-900/20 text-orange-300',
@@ -97,7 +101,7 @@ const LEVELS = [
   {
     value: 'elite',
     label: 'محترف',
-    icon: '🔴',
+    dot: 'bg-red-500',
     desc: '+5 سنوات تدريب جدي',
     detail: 'قريب من أقصى إمكاناته، يحتاج برمجة متقدمة ودورات',
     color: 'border-red-500 bg-red-900/20 text-red-300',
@@ -105,14 +109,14 @@ const LEVELS = [
 ];
 
 const FOCUS_AREAS = [
-  { label: 'الصدر',         icon: '🫁' },
-  { label: 'الظهر',         icon: '🔙' },
-  { label: 'الأرجل',        icon: '🦵' },
-  { label: 'الأكتاف',       icon: '🎽' },
-  { label: 'الذراعين',      icon: '💪' },
-  { label: 'البطن والجذع',  icon: '🔥' },
-  { label: 'المؤخرة',       icon: '🍑' },
-  { label: 'الساق السفلى',  icon: '🦶' },
+  { label: 'الصدر' },
+  { label: 'الظهر' },
+  { label: 'الأرجل' },
+  { label: 'الأكتاف' },
+  { label: 'الذراعين' },
+  { label: 'البطن والجذع' },
+  { label: 'المؤخرة' },
+  { label: 'الساق السفلى' },
 ];
 
 const DAYS_INFO: Record<number, { split: string; desc: string }> = {
@@ -165,14 +169,14 @@ export default function GymProfileClient({ member, initialProfile }: { member: a
         <div className="max-w-xl mx-auto px-4 pt-5 space-y-4">
 
           {/* Header */}
-          <div className="bg-gradient-to-br from-indigo-900/50 to-purple-900/40 rounded-2xl border border-indigo-700/40 p-5">
+          <div className="bg-gray-900 border border-gray-800 border-r-4 border-r-orange-500 rounded-2xl p-5">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-3xl flex-shrink-0">
-                🏋️
+              <div className="w-14 h-14 rounded-2xl bg-orange-500/15 border border-orange-500/30 flex items-center justify-center flex-shrink-0">
+                <Dumbbell className="w-6 h-6 text-orange-500" />
               </div>
               <div>
                 <h1 className="text-xl font-extrabold text-white">البروفايل التدريبي</h1>
-                <p className="text-sm text-indigo-300 mt-0.5">
+                <p className="text-sm text-gray-300 mt-0.5">
                   {member.nameAr} — يساعد المدرب على تصميم جدولك المثالي
                 </p>
                 {initialProfile && (
@@ -185,21 +189,21 @@ export default function GymProfileClient({ member, initialProfile }: { member: a
           {/* الجنس */}
           <div className="bg-gray-900 rounded-2xl border border-gray-800 p-5 space-y-3">
             <h2 className="font-bold text-white text-base flex items-center gap-2">
-              <span>👤</span> الجنس
+              <User className="w-5 h-5" /> الجنس
             </h2>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { value: 'male',   label: 'ذكر',   icon: '♂️', desc: 'أوزان الذكور' },
-                { value: 'female', label: 'أنثى',  icon: '♀️', desc: 'أوزان الإناث' },
+                { value: 'male',   label: 'ذكر',   icon: Mars,  desc: 'أوزان الذكور' },
+                { value: 'female', label: 'أنثى',  icon: Venus, desc: 'أوزان الإناث' },
               ].map(g => (
                 <button key={g.value} onClick={() => setGender(g.value as any)}
-                  className={`flex items-center gap-3 p-4 rounded-xl border text-right transition-all ${gender === g.value ? 'border-indigo-500 bg-indigo-900/30 text-white' : 'border-gray-700 bg-gray-800/50 text-gray-400 hover:border-gray-600'}`}>
-                  <span className="text-2xl">{g.icon}</span>
+                  className={`flex items-center gap-3 p-4 rounded-xl border text-right transition-all ${gender === g.value ? 'border-orange-500 bg-orange-900/20 text-white' : 'border-gray-700 bg-gray-800/50 text-gray-400 hover:border-gray-600'}`}>
+                  <g.icon className="w-6 h-6" />
                   <div>
                     <div className="font-bold text-base">{g.label}</div>
                     <div className="text-xs text-gray-500">{g.desc}</div>
                   </div>
-                  {gender === g.value && <span className="mr-auto text-indigo-400 text-lg">✓</span>}
+                  {gender === g.value && <CheckCircle2 className="mr-auto w-5 h-5 text-orange-400" />}
                 </button>
               ))}
             </div>
@@ -208,19 +212,19 @@ export default function GymProfileClient({ member, initialProfile }: { member: a
           {/* الهدف */}
           <div className="bg-gray-900 rounded-2xl border border-gray-800 p-5 space-y-3">
             <h2 className="font-bold text-white text-base flex items-center gap-2">
-              <span>🎯</span> هدفك من التدريب
+              <Target className="w-5 h-5" /> هدفك من التدريب
             </h2>
             <div className="space-y-2">
               {GOALS.map(g => (
                 <button key={g.value} onClick={() => setGoal(g.value)}
                   className={`w-full flex items-start gap-4 p-4 rounded-xl border text-right transition-all ${goal === g.value ? `${g.color} ${g.active} text-white` : 'border-gray-700 bg-gray-800/40 text-gray-400 hover:border-gray-600'}`}>
-                  <span className="text-2xl flex-shrink-0 mt-0.5">{g.icon}</span>
+                  <g.icon className="w-6 h-6 flex-shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-base">{g.label}</div>
                     <div className="text-sm text-gray-400 mt-0.5">{g.desc}</div>
                     {goal === g.value && <div className="text-xs text-gray-300 mt-1.5 bg-black/20 rounded-lg px-2 py-1">{g.detail}</div>}
                   </div>
-                  {goal === g.value && <span className="text-green-400 text-xl flex-shrink-0">✓</span>}
+                  {goal === g.value && <CheckCircle2 className="text-green-400 w-5 h-5 flex-shrink-0" />}
                 </button>
               ))}
             </div>
@@ -229,19 +233,19 @@ export default function GymProfileClient({ member, initialProfile }: { member: a
           {/* المستوى */}
           <div className="bg-gray-900 rounded-2xl border border-gray-800 p-5 space-y-3">
             <h2 className="font-bold text-white text-base flex items-center gap-2">
-              <span>📊</span> مستواك الحالي
+              <BarChart3 className="w-5 h-5" /> مستواك الحالي
             </h2>
             <div className="space-y-2">
               {(goal === 'senior_fitness' ? SENIOR_LEVELS : LEVELS).map(l => (
                 <button key={l.value} onClick={() => setLevel(l.value)}
                   className={`w-full flex items-start gap-4 p-4 rounded-xl border text-right transition-all ${level === l.value ? `${l.color} ring-2 ring-offset-0` : 'border-gray-700 bg-gray-800/40 text-gray-500 hover:border-gray-600'}`}>
-                  <span className="text-2xl flex-shrink-0">{l.icon}</span>
+                  <span className={`mt-1.5 inline-block w-3 h-3 rounded-full flex-shrink-0 ${l.dot}`} />
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-base text-white">{l.label}</div>
                     <div className="text-sm text-gray-400 mt-0.5">{l.desc}</div>
                     {level === l.value && <div className="text-xs text-gray-300 mt-1.5">{l.detail}</div>}
                   </div>
-                  {level === l.value && <span className="text-green-400 text-xl flex-shrink-0">✓</span>}
+                  {level === l.value && <CheckCircle2 className="text-green-400 w-5 h-5 flex-shrink-0" />}
                 </button>
               ))}
             </div>
@@ -250,24 +254,25 @@ export default function GymProfileClient({ member, initialProfile }: { member: a
           {/* أيام التدريب */}
           <div className="bg-gray-900 rounded-2xl border border-gray-800 p-5 space-y-3">
             <h2 className="font-bold text-white text-base flex items-center gap-2">
-              <span>📅</span> أيام التدريب أسبوعياً
+              <Calendar className="w-5 h-5" /> أيام التدريب أسبوعياً
             </h2>
             <div className="grid grid-cols-4 gap-2">
               {[3, 4, 5, 6].map(n => (
                 <button key={n} onClick={() => setDaysPerWeek(n)}
-                  className={`py-4 rounded-xl border font-extrabold text-2xl transition-all ${daysPerWeek === n ? 'border-indigo-500 bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'}`}>
+                  className={`py-4 rounded-xl border font-extrabold text-2xl transition-all ${daysPerWeek === n ? 'border-orange-500 bg-orange-500 text-white shadow-lg shadow-orange-900/40' : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'}`}>
                   {n}
                 </button>
               ))}
             </div>
             {goal === 'senior_fitness' && (
-              <p className="text-xs text-amber-500 bg-amber-900/20 border border-amber-800/40 rounded-lg px-3 py-2">
-                ⚠️ لأسباب السلامة، برنامج كبار السن لن يتجاوز 3 أيام نشطة أسبوعياً مع راحة كاملة بين كل جلستين — بغض النظر عن اختيارك هنا
+              <p className="text-xs text-amber-500 bg-amber-900/20 border border-amber-800/40 rounded-lg px-3 py-2 flex items-start gap-1.5">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                لأسباب السلامة، برنامج كبار السن لن يتجاوز 3 أيام نشطة أسبوعياً مع راحة كاملة بين كل جلستين — بغض النظر عن اختيارك هنا
               </p>
             )}
             {DAYS_INFO[daysPerWeek] && (
-              <div className="bg-indigo-950/40 border border-indigo-800/40 rounded-xl p-3">
-                <div className="font-bold text-indigo-300 text-sm">{DAYS_INFO[daysPerWeek].split}</div>
+              <div className="bg-orange-950/30 border border-orange-800/40 rounded-xl p-3">
+                <div className="font-bold text-orange-300 text-sm">{DAYS_INFO[daysPerWeek].split}</div>
                 <div className="text-xs text-gray-400 mt-1">{DAYS_INFO[daysPerWeek].desc}</div>
               </div>
             )}
@@ -277,7 +282,7 @@ export default function GymProfileClient({ member, initialProfile }: { member: a
           <div className="bg-gray-900 rounded-2xl border border-gray-800 p-5 space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="font-bold text-white text-base flex items-center gap-2">
-                <span>💪</span> مناطق التركيز
+                <Dumbbell className="w-5 h-5" /> مناطق التركيز
               </h2>
               {focusAreas.length > 0 && (
                 <span className="text-xs bg-orange-900/40 text-orange-400 border border-orange-800/40 px-2 py-1 rounded-lg">
@@ -290,9 +295,9 @@ export default function GymProfileClient({ member, initialProfile }: { member: a
               {FOCUS_AREAS.map(area => (
                 <button key={area.label} onClick={() => toggleFocus(area.label)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-right text-sm font-semibold transition-all ${focusAreas.includes(area.label) ? 'border-orange-500 bg-orange-900/30 text-orange-200' : 'border-gray-700 bg-gray-800/50 text-gray-400 hover:border-gray-600'}`}>
-                  <span className="text-lg">{area.icon}</span>
+                  <Target className="w-4 h-4" />
                   <span>{area.label}</span>
-                  {focusAreas.includes(area.label) && <span className="mr-auto text-orange-400">✓</span>}
+                  {focusAreas.includes(area.label) && <CheckCircle2 className="mr-auto w-4 h-4 text-orange-400" />}
                 </button>
               ))}
             </div>
@@ -301,42 +306,43 @@ export default function GymProfileClient({ member, initialProfile }: { member: a
           {/* البيانات الجسدية */}
           <div className="bg-gray-900 rounded-2xl border border-gray-800 p-5 space-y-4">
             <h2 className="font-bold text-white text-base flex items-center gap-2">
-              <span>📏</span> بياناتك الجسدية
+              <Ruler className="w-5 h-5" /> بياناتك الجسدية
               <span className="text-xs text-gray-500 font-normal">(تحسّن دقة الأوزان المقترحة)</span>
             </h2>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: 'العمر', value: age, set: setAge, placeholder: '25', unit: 'سنة', icon: '🧑' },
-                { label: 'سنوات التدريب', value: experienceYears, set: setExperienceYears, placeholder: '2', unit: 'سنة', icon: '📅' },
-                { label: 'الوزن', value: weight, set: setWeight, placeholder: '80', unit: 'كجم', icon: '⚖️' },
-                { label: 'الطول', value: height, set: setHeight, placeholder: '175', unit: 'سم', icon: '📐' },
+                { label: 'العمر', value: age, set: setAge, placeholder: '25', unit: 'سنة', icon: User },
+                { label: 'سنوات التدريب', value: experienceYears, set: setExperienceYears, placeholder: '2', unit: 'سنة', icon: Calendar },
+                { label: 'الوزن', value: weight, set: setWeight, placeholder: '80', unit: 'كجم', icon: Weight },
+                { label: 'الطول', value: height, set: setHeight, placeholder: '175', unit: 'سم', icon: Ruler },
               ].map(f => (
                 <div key={f.label} className="space-y-1.5">
                   <label className="text-sm text-gray-400 font-medium flex items-center gap-1.5">
-                    <span>{f.icon}</span>{f.label}
+                    <f.icon className="w-4 h-4" />{f.label}
                   </label>
                   <div className="relative">
                     <input type="number" value={f.value} onChange={e => f.set(e.target.value)}
                       placeholder={f.placeholder}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-3 text-white text-base font-semibold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 pr-12" />
+                      className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-3 text-white text-base font-semibold focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/30 pr-12" />
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">{f.unit}</span>
                   </div>
                 </div>
               ))}
             </div>
             {bmi && (
-              <div className={`rounded-xl px-4 py-3 border text-sm font-semibold ${
+              <div className={`rounded-xl px-4 py-3 border text-sm font-semibold flex items-center gap-1.5 flex-wrap ${
                 Number(bmi) < 18.5 ? 'bg-blue-900/20 border-blue-700/40 text-blue-300' :
                 Number(bmi) < 25   ? 'bg-green-900/20 border-green-700/40 text-green-300' :
                 Number(bmi) < 30   ? 'bg-yellow-900/20 border-yellow-700/40 text-yellow-300' :
                                      'bg-red-900/20 border-red-700/40 text-red-300'
               }`}>
-                مؤشر كتلة الجسم (BMI): {bmi} — {
+                <span>مؤشر كتلة الجسم (BMI): {bmi} — {
                   Number(bmi) < 18.5 ? 'نحيف — قد تحتاج زيادة السعرات' :
-                  Number(bmi) < 25   ? 'وزن مثالي ✅' :
+                  Number(bmi) < 25   ? 'وزن مثالي' :
                   Number(bmi) < 30   ? 'زيادة طفيفة في الوزن' :
                                        'يُنصح بالتركيز على خسارة الوزن'
-                }
+                }</span>
+                {Number(bmi) >= 18.5 && Number(bmi) < 25 && <CheckCircle2 className="w-4 h-4" />}
               </div>
             )}
           </div>
@@ -345,7 +351,7 @@ export default function GymProfileClient({ member, initialProfile }: { member: a
           {Number(age) >= 60 && goal !== 'senior_fitness' && (
             <div className="bg-amber-900/20 border border-amber-700/40 rounded-2xl p-4">
               <div className="flex items-start gap-3">
-                <span className="text-2xl flex-shrink-0">🧓</span>
+                <Shield className="w-6 h-6 flex-shrink-0 text-amber-400" />
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-amber-400 text-sm">هل برنامج "لياقة وقوة آمنة لكبار السن" أنسب لك؟</div>
                   <p className="text-xs text-amber-200/80 mt-1 leading-relaxed">
@@ -363,7 +369,7 @@ export default function GymProfileClient({ member, initialProfile }: { member: a
           {/* الإصابات والقيود */}
           <div className="bg-gray-900 rounded-2xl border border-gray-800 p-5 space-y-3">
             <h2 className="font-bold text-white text-base flex items-center gap-2">
-              <span>⚠️</span> إصابات أو قيود
+              <AlertTriangle className="w-5 h-5 text-amber-500" /> إصابات أو قيود
               <span className="text-xs text-gray-500 font-normal">(مهم جداً للسلامة)</span>
             </h2>
             <textarea value={limitations} onChange={e => setLimitations(e.target.value)}
@@ -375,8 +381,8 @@ export default function GymProfileClient({ member, initialProfile }: { member: a
 
           {/* Save button */}
           <button onClick={save} disabled={saving}
-            className="w-full py-5 rounded-2xl font-extrabold text-lg transition-all shadow-lg disabled:opacity-60 disabled:cursor-not-allowed bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-indigo-900/40">
-            {saved ? '✅ تم الحفظ! جاري التوجيه للجدول...' : saving ? '⏳ جاري الحفظ...' : '💾 حفظ البروفايل'}
+            className="w-full py-5 rounded-2xl font-extrabold text-lg transition-all shadow-lg disabled:opacity-60 disabled:cursor-not-allowed bg-orange-500 hover:bg-orange-400 text-white shadow-orange-900/40 inline-flex items-center justify-center gap-2">
+            {saved ? <><CheckCircle2 className="w-5 h-5" /> تم الحفظ! جاري التوجيه للجدول...</> : saving ? <><Loader2 className="w-5 h-5 animate-spin" /> جاري الحفظ...</> : <><Save className="w-5 h-5" /> حفظ البروفايل</>}
           </button>
 
         </div>

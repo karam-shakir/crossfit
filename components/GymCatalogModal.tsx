@@ -1,15 +1,16 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { Footprints, Weight, Shirt, Undo2, Target, Dumbbell, Flame, PlayCircle, AlertTriangle, Pencil, Trash2, Loader2 } from 'lucide-react';
 
 const CATEGORIES = [
-  { value: 'legs',        label: '🦵 الساق والورك' },
-  { value: 'free-weight', label: '🏆 القوة الحرة (الأوزان الحرة)' },
-  { value: 'chest',       label: '🏠 الصدر' },
-  { value: 'back',        label: '🔙 الظهر' },
-  { value: 'shoulders',   label: '🎯 الكتفين' },
-  { value: 'arms',        label: '💪 الذراعين' },
-  { value: 'core',        label: '🔥 البطن والجذع' },
-  { value: 'cardio',      label: '🏃 الكارديو' },
+  { value: 'legs',        label: 'الساق والورك',              icon: Footprints },
+  { value: 'free-weight', label: 'القوة الحرة (الأوزان الحرة)', icon: Weight },
+  { value: 'chest',       label: 'الصدر',                      icon: Shirt },
+  { value: 'back',        label: 'الظهر',                      icon: Undo2 },
+  { value: 'shoulders',   label: 'الكتفين',                    icon: Target },
+  { value: 'arms',        label: 'الذراعين',                   icon: Dumbbell },
+  { value: 'core',        label: 'البطن والجذع',               icon: Flame },
+  { value: 'cardio',      label: 'الكارديو',                   icon: Footprints },
 ];
 
 function emptyForm() {
@@ -84,7 +85,7 @@ export default function GymCatalogModal({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="bg-gray-950 border border-gray-800 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg max-h-[92vh] flex flex-col">
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 flex-shrink-0">
-          <h2 className="font-bold text-white flex items-center gap-2">🏋️ مكتبة تمارين الجيم</h2>
+          <h2 className="font-bold text-white flex items-center gap-2"><Dumbbell className="w-5 h-5" /> مكتبة تمارين الجيم</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-white text-xl leading-none px-2">×</button>
         </div>
 
@@ -96,30 +97,30 @@ export default function GymCatalogModal({ onClose }: { onClose: () => void }) {
 
           {!showAddForm ? (
             <button onClick={() => setShowAddForm(true)}
-              className="w-full py-2.5 rounded-xl bg-violet-700 hover:bg-violet-600 text-white text-sm font-bold transition-colors">
+              className="w-full py-2.5 rounded-xl bg-orange-700 hover:bg-orange-600 text-white text-sm font-bold transition-colors">
               + إضافة تمرين/جهاز جديد
             </button>
           ) : (
             <div className="bg-gray-900 rounded-xl border border-gray-800 p-3 space-y-2.5">
               <div className="grid grid-cols-2 gap-2">
                 <input value={form.nameAr} onChange={e => setForm(f => ({ ...f, nameAr: e.target.value }))}
-                  placeholder="الاسم بالعربي (اختياري)" className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500" />
+                  placeholder="الاسم بالعربي (اختياري)" className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500" />
                 <input value={form.nameEn} onChange={e => setForm(f => ({ ...f, nameEn: e.target.value }))}
-                  placeholder="Name in English" className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500" dir="ltr" />
+                  placeholder="Name in English" className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500" dir="ltr" />
               </div>
               <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500">
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500">
                 {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
               <input value={form.muscleGroup} onChange={e => setForm(f => ({ ...f, muscleGroup: e.target.value }))}
-                placeholder="العضلة المستهدفة (مثال: الرباعية والمؤخرة)" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500" />
+                placeholder="العضلة المستهدفة (مثال: الرباعية والمؤخرة)" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500" />
               <input value={form.youtube} onChange={e => setForm(f => ({ ...f, youtube: e.target.value }))}
-                placeholder="رابط شرح يوتيوب (اختياري — بحث عام تلقائي إن تُرك فارغاً)" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500" dir="ltr" />
+                placeholder="رابط شرح يوتيوب (اختياري — بحث عام تلقائي إن تُرك فارغاً)" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500" dir="ltr" />
               {error && <div className="text-xs text-red-400">{error}</div>}
               <div className="flex gap-2">
                 <button onClick={addExercise} disabled={saving}
-                  className="flex-1 py-2 rounded-lg bg-violet-700 hover:bg-violet-600 disabled:opacity-60 text-white text-sm font-bold transition-colors">
-                  {saving ? '⏳ جارٍ الحفظ...' : 'حفظ التمرين'}
+                  className="flex-1 py-2 rounded-lg bg-orange-700 hover:bg-orange-600 disabled:opacity-60 text-white text-sm font-bold transition-colors flex items-center justify-center gap-1.5">
+                  {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> جارٍ الحفظ...</> : 'حفظ التمرين'}
                 </button>
                 <button onClick={() => { setShowAddForm(false); setError(''); setForm(emptyForm()); }}
                   className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-semibold transition-colors">
@@ -136,7 +137,7 @@ export default function GymCatalogModal({ onClose }: { onClose: () => void }) {
               <div className="text-center text-gray-500 py-8 text-sm">لا توجد تمارين في الكتالوج بعد</div>
             ) : grouped.map(cat => (
               <div key={cat.value}>
-                <div className="text-xs font-bold text-violet-400 mb-1.5">{cat.label}</div>
+                <div className="text-xs font-bold text-orange-400 mb-1.5 flex items-center gap-1.5"><cat.icon className="w-3.5 h-3.5" /> {cat.label}</div>
                 <div className="space-y-1.5">
                   {cat.items.map(ex => (
                     <div key={ex.id} className="bg-gray-900 rounded-xl border border-gray-800 p-2.5">
@@ -173,21 +174,21 @@ export default function GymCatalogModal({ onClose }: { onClose: () => void }) {
                             <div className="font-semibold text-white text-sm">
                               {ex.nameAr || ex.nameEn} <span className="text-gray-500 font-normal">({ex.nameEn})</span>
                             </div>
-                            {ex.muscleGroup && <div className="text-[11px] text-gray-500 mt-0.5">💪 {ex.muscleGroup}</div>}
+                            {ex.muscleGroup && <div className="text-[11px] text-gray-500 mt-0.5 flex items-center gap-1"><Dumbbell className="w-3 h-3" /> {ex.muscleGroup}</div>}
                             {ex.youtube ? (
-                              <a href={ex.youtube} target="_blank" rel="noopener noreferrer" className="text-[11px] text-red-400 hover:text-red-300 mt-0.5 inline-block">🎬 رابط الشرح</a>
+                              <a href={ex.youtube} target="_blank" rel="noopener noreferrer" className="text-[11px] text-red-400 hover:text-red-300 mt-0.5 inline-flex items-center gap-1"><PlayCircle className="w-3.5 h-3.5" /> رابط الشرح</a>
                             ) : (
-                              <div className="text-[11px] text-amber-500 mt-0.5">⚠️ لا يوجد رابط شرح مخصص</div>
+                              <div className="text-[11px] text-amber-500 mt-0.5 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> لا يوجد رابط شرح مخصص</div>
                             )}
                           </div>
                           <div className="flex gap-1 flex-shrink-0">
                             <button onClick={() => startEdit(ex)}
                               className="w-7 h-7 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 flex items-center justify-center text-xs transition-colors">
-                              ✏️
+                              <Pencil className="w-3.5 h-3.5" />
                             </button>
                             <button onClick={() => deleteExercise(ex.id)}
                               className="w-7 h-7 rounded-lg bg-red-900/40 hover:bg-red-700 text-red-300 hover:text-white flex items-center justify-center text-xs transition-colors">
-                              🗑
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>

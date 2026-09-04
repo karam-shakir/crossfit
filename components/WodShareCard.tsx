@@ -1,14 +1,15 @@
 'use client';
+import { Sun, Dumbbell, Flame, Wind, Timer, FileText, type LucideIcon } from 'lucide-react';
 import { normalizeToBlocks } from '@/lib/wodBlocks';
 
 export type ShareCardLang = 'ar' | 'en';
 
-const SECTION_STYLE: Record<string, { icon: string; color: string; bg: string; labelAr: string; labelEn: string }> = {
-  warmup:    { icon: '🔆', color: '#D97706', bg: '#FFFBEB', labelAr: 'الإحماء',   labelEn: 'Warm-Up' },
-  strength:  { icon: '🏋️', color: '#2563EB', bg: '#EFF6FF', labelAr: 'القوة',     labelEn: 'Strength' },
-  metcon:    { icon: '🔥', color: '#DC2626', bg: '#FEF2F2', labelAr: 'الـ WOD',   labelEn: 'MetCon' },
-  accessory: { icon: '💪', color: '#7C3AED', bg: '#F5F3FF', labelAr: 'الأكسسوار', labelEn: 'Accessory' },
-  cooldown:  { icon: '🧘', color: '#0D9488', bg: '#F0FDFA', labelAr: 'التهدئة',   labelEn: 'Cooldown' },
+const SECTION_STYLE: Record<string, { icon: LucideIcon; color: string; bg: string; labelAr: string; labelEn: string }> = {
+  warmup:    { icon: Sun,      color: '#D97706', bg: '#FFFBEB', labelAr: 'الإحماء',   labelEn: 'Warm-Up' },
+  strength:  { icon: Dumbbell, color: '#2563EB', bg: '#EFF6FF', labelAr: 'القوة',     labelEn: 'Strength' },
+  metcon:    { icon: Flame,    color: '#DC2626', bg: '#FEF2F2', labelAr: 'الـ WOD',   labelEn: 'MetCon' },
+  accessory: { icon: Dumbbell, color: '#EA580C', bg: '#FFF7ED', labelAr: 'الأكسسوار', labelEn: 'Accessory' },
+  cooldown:  { icon: Wind,     color: '#1E2839', bg: '#F8FAFC', labelAr: 'التهدئة',   labelEn: 'Cooldown' },
 };
 
 const SECTION_ORDER = ['warmup', 'strength', 'metcon', 'accessory', 'cooldown'] as const;
@@ -51,10 +52,14 @@ export default function WodShareCard({ wod, lang = 'ar' }: { wod: any; lang?: Sh
         <div style={{ fontSize: 26, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.3, marginBottom: 4 }}>
           {title}
         </div>
-        <div style={{ fontSize: 14, color: '#94A3B8' }}>
-          {formatDate(wod.date, lang)}
-          {wod.type ? ` · ${wod.type}` : ''}
-          {wod.duration ? ` · ⏱ ${wod.duration}${isAr ? 'د' : ' min'}` : ''}
+        <div style={{ fontSize: 14, color: '#94A3B8', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
+          <span>{formatDate(wod.date, lang)}</span>
+          {wod.type ? <span> · {wod.type}</span> : null}
+          {wod.duration ? (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+              · <Timer size={13} /> {wod.duration}{isAr ? 'د' : ' min'}
+            </span>
+          ) : null}
         </div>
         {subtitle && (
           <div style={{ marginTop: 10, fontSize: 13.5, color: '#CBD5E1', lineHeight: 1.6 }}>
@@ -62,8 +67,8 @@ export default function WodShareCard({ wod, lang = 'ar' }: { wod: any; lang?: Sh
           </div>
         )}
         {wod.notes && (
-          <div style={{ marginTop: 10, fontSize: 12.5, color: '#93C5FD', lineHeight: 1.6, background: 'rgba(96,165,250,0.1)', borderRadius: 10, padding: '8px 10px' }}>
-            📝 {wod.notes}
+          <div style={{ marginTop: 10, fontSize: 12.5, color: '#93C5FD', lineHeight: 1.6, background: 'rgba(96,165,250,0.1)', borderRadius: 10, padding: '8px 10px', display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+            <FileText size={14} style={{ flexShrink: 0, marginTop: 2 }} /> <span>{wod.notes}</span>
           </div>
         )}
       </div>
@@ -153,8 +158,8 @@ export default function WodShareCard({ wod, lang = 'ar' }: { wod: any; lang?: Sh
       </div>
 
       {/* Footer */}
-      <div style={{ textAlign: 'center', marginTop: 22, fontSize: 12.5, color: '#94A3B8', fontWeight: 600 }}>
-        💪 {isAr ? 'مجموعة المطانيخ CrossFit' : 'MATANIKEH CROSSFIT'}
+      <div style={{ textAlign: 'center', marginTop: 22, fontSize: 12.5, color: '#94A3B8', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+        <Dumbbell size={14} /> {isAr ? 'مجموعة المطانيخ CrossFit' : 'MATANIKEH CROSSFIT'}
       </div>
     </div>
   );

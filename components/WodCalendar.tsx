@@ -1,10 +1,14 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import { X, Calendar, ChevronRight, ChevronLeft, Dumbbell, Moon, Flame, Handshake, Link2, Lightbulb, RefreshCw, Wind, Sun, Timer } from 'lucide-react';
 import WodBlockList from './WodBlockList';
 
 const DAYS_AR = ['أحد', 'إثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت'];
 const MONTHS_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 
+// ملاحظة: شكل FORMAT_META/formatMeta (icon كنص إيموجي) جزء من واجهة مُصدَّرة
+// يستخدمها app/dashboard/DashboardClient.tsx و app/wod-history/WodHistoryClient.tsx
+// خارج نطاق هذا التعديل — أبقيناه كما هو لتفادي كسرها (تعديل شكلي فقط داخل هذا الملف).
 export const FORMAT_META: Record<string, { icon: string; timeLabel: string }> = {
   'AMRAP':      { icon: '🔁', timeLabel: 'مدة AMRAP' },
   'EMOM':       { icon: '⏰', timeLabel: 'كل دقيقة لمدة' },
@@ -88,11 +92,11 @@ export default function WodCalendar({ onClose }: { onClose: () => void }) {
   }
 
   const sections = dayWod ? [
-    { key: 'warmup',    label: 'الإحماء 🔆',   blocks: dayWod.warmup    || [] },
-    { key: 'strength',  label: 'القوة 🏋️',     blocks: dayWod.strength  || [] },
-    { key: 'metcon',    label: 'الـ WOD 🔥',   blocks: dayWod.metcon    || [] },
-    { key: 'accessory', label: 'الأكسسوار 💪', blocks: dayWod.accessory || [] },
-    { key: 'cooldown',  label: 'الإطالات 🧘',  blocks: dayWod.cooldown  || [] },
+    { key: 'warmup',    label: 'الإحماء',   icon: Sun,       blocks: dayWod.warmup    || [] },
+    { key: 'strength',  label: 'القوة',     icon: Dumbbell,  blocks: dayWod.strength  || [] },
+    { key: 'metcon',    label: 'الـ WOD',   icon: Flame,     blocks: dayWod.metcon    || [] },
+    { key: 'accessory', label: 'الأكسسوار', icon: Dumbbell,  blocks: dayWod.accessory || [] },
+    { key: 'cooldown',  label: 'الإطالات',  icon: Wind,      blocks: dayWod.cooldown  || [] },
   ].filter(s => s.blocks.length > 0) : [];
 
   return (
@@ -101,8 +105,8 @@ export default function WodCalendar({ onClose }: { onClose: () => void }) {
 
         {/* Header */}
         <div className="bg-orange-600 px-4 py-3.5 flex items-center justify-between flex-shrink-0">
-          <button onClick={onClose} className="text-white text-lg font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20">✕</button>
-          <h2 className="text-white font-extrabold text-lg">📅 تقويم التمارين</h2>
+          <button onClick={onClose} className="text-white text-lg font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20"><X className="w-5 h-5" /></button>
+          <h2 className="text-white font-extrabold text-lg flex items-center gap-2"><Calendar className="w-5 h-5" /> تقويم التمارين</h2>
           <span className="w-8" />
         </div>
 
@@ -110,9 +114,9 @@ export default function WodCalendar({ onClose }: { onClose: () => void }) {
           <div className="overflow-y-auto flex-1">
             {/* Month nav */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
-              <button onClick={() => shiftMonth(-1)} className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200">‹</button>
+              <button onClick={() => shiftMonth(-1)} className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 flex items-center justify-center"><ChevronLeft className="w-4 h-4" /></button>
               <div className="font-extrabold text-slate-800 text-base">{MONTHS_AR[cursor.m]} {cursor.y}</div>
-              <button onClick={() => shiftMonth(1)} className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200">›</button>
+              <button onClick={() => shiftMonth(1)} className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 flex items-center justify-center"><ChevronRight className="w-4 h-4" /></button>
             </div>
 
             {/* Day headers */}
@@ -131,15 +135,15 @@ export default function WodCalendar({ onClose }: { onClose: () => void }) {
                   <button key={date} onClick={() => openDate(date)}
                     className={`relative aspect-square rounded-xl flex flex-col items-center justify-center text-sm font-bold transition-all ${
                       isToday ? 'bg-orange-600 text-white shadow-md'
-                      : w ? (w.isRest ? 'bg-slate-100 text-slate-500 border border-slate-200' : w.isPartnerWod ? 'bg-pink-50 text-pink-700 border border-pink-200' : w.isCalisthenics ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-orange-50 text-orange-700 border border-orange-200')
+                      : w ? (w.isRest ? 'bg-slate-100 text-slate-500 border border-slate-200' : w.isPartnerWod ? 'bg-amber-50 text-amber-700 border border-amber-200' : w.isCalisthenics ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-orange-50 text-orange-700 border border-orange-200')
                       : 'bg-white text-slate-300 border border-slate-100'
                     }`}>
                     {dayNum}
                     {w && !isToday && (
-                      <span className={`absolute bottom-1 w-1.5 h-1.5 rounded-full ${w.isRest ? 'bg-slate-400' : w.isPartnerWod ? 'bg-pink-500' : w.isCalisthenics ? 'bg-emerald-500' : 'bg-orange-500'}`} />
+                      <span className={`absolute bottom-1 w-1.5 h-1.5 rounded-full ${w.isRest ? 'bg-slate-400' : w.isPartnerWod ? 'bg-amber-500' : w.isCalisthenics ? 'bg-emerald-500' : 'bg-orange-500'}`} />
                     )}
                     {w?.isPartnerWod && !isToday && (
-                      <span className="absolute top-0.5 right-0.5 text-[9px]">🤝</span>
+                      <span className="absolute top-0.5 right-0.5"><Handshake className="w-2.5 h-2.5" /></span>
                     )}
                   </button>
                 );
@@ -150,7 +154,7 @@ export default function WodCalendar({ onClose }: { onClose: () => void }) {
 
             <div className="flex items-center gap-4 justify-center pb-4 text-[11px] text-slate-500">
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500" /> CrossFit</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-pink-500" /> بارتنر 🤝</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500" /> بارتنر <Handshake className="w-3.5 h-3.5" /></span>
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Calisthenics</span>
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-400" /> راحة</span>
             </div>
@@ -158,7 +162,7 @@ export default function WodCalendar({ onClose }: { onClose: () => void }) {
         ) : (
           <div className="overflow-y-auto flex-1">
             <div className="px-4 py-3 border-b border-slate-200 flex items-center gap-3">
-              <button onClick={() => setSelectedDate(null)} className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 flex-shrink-0">←</button>
+              <button onClick={() => setSelectedDate(null)} className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 flex-shrink-0 flex items-center justify-center"><ChevronLeft className="w-4 h-4" /></button>
               <div className="min-w-0">
                 <div className="font-extrabold text-slate-800 text-base">
                   {new Date(selectedDate + 'T00:00:00').toLocaleDateString('ar-SA', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -171,45 +175,49 @@ export default function WodCalendar({ onClose }: { onClose: () => void }) {
                 <p className="text-center text-slate-400 py-10">جاري التحميل...</p>
               ) : !dayWod ? (
                 <div className="text-center py-14 space-y-2">
-                  <div className="text-4xl">😴</div>
+                  <div className="flex justify-center"><Moon className="w-10 h-10 text-slate-400" /></div>
                   <p className="text-slate-500 font-semibold">لا يوجد تمرين مُسجَّل لهذا اليوم</p>
                 </div>
               ) : (
                 <>
                   {/* WOD info header */}
-                  <div className={`rounded-2xl p-4 shadow-lg ${dayWod.isPartnerWod ? 'bg-pink-600 shadow-pink-100' : 'bg-orange-600 shadow-orange-100'}`}>
+                  <div className={`rounded-2xl p-4 shadow-lg ${dayWod.isPartnerWod ? 'bg-amber-600 shadow-amber-100' : 'bg-orange-600 shadow-orange-100'}`}>
                     {dayWod.isPartnerWod && (
                       <div className="mb-2 inline-flex items-center gap-1.5 bg-white/20 rounded-full px-2.5 py-0.5 text-xs text-white font-semibold">
-                        🤝 يوم بارتنر
+                        <Handshake className="w-3.5 h-3.5" /> يوم بارتنر
                       </div>
                     )}
                     <div className="text-white font-extrabold text-lg leading-tight mb-2">{dayWod.titleEn || dayWod.title}</div>
                     <div className="flex flex-wrap gap-2">
-                      <span className="bg-white/20 text-white text-sm font-bold px-3 py-1.5 rounded-full">
+                      <span className="bg-white/20 text-white text-sm font-bold px-3 py-1.5 rounded-full inline-flex items-center gap-1.5">
                         {formatMeta(dayWod.type).icon} {dayWod.type}
                       </span>
                       {dayWod.duration && formatMeta(dayWod.type).timeLabel && (
-                        <span className="bg-white/20 text-white text-sm font-semibold px-3 py-1.5 rounded-full">
-                          ⏱ {formatMeta(dayWod.type).timeLabel}: {dayWod.duration} دقيقة
+                        <span className="bg-white/20 text-white text-sm font-semibold px-3 py-1.5 rounded-full inline-flex items-center gap-1.5">
+                          <Timer className="w-4 h-4" /> {formatMeta(dayWod.type).timeLabel}: {dayWod.duration} دقيقة
                         </span>
                       )}
                       {dayWod.rounds && (
-                        <span className="bg-white/20 text-white text-sm font-semibold px-3 py-1.5 rounded-full">
-                          🔄 الجولات: {dayWod.rounds}
+                        <span className="bg-white/20 text-white text-sm font-semibold px-3 py-1.5 rounded-full inline-flex items-center gap-1.5">
+                          <RefreshCw className="w-4 h-4" /> الجولات: {dayWod.rounds}
                         </span>
                       )}
                     </div>
                     {dayWod.notes && (
-                      <div className="bg-white/15 rounded-xl px-3 py-2.5 text-sm text-white leading-relaxed mt-3">💡 {dayWod.notes}</div>
+                      <div className="bg-white/15 rounded-xl px-3 py-2.5 text-sm text-white leading-relaxed mt-3 flex items-start gap-1.5">
+                        <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5" /> {dayWod.notes}
+                      </div>
                     )}
                     {dayWod.aiTheme && (
-                      <div className="bg-white/10 rounded-xl px-3 py-2.5 text-sm mt-2 leading-relaxed" style={{ color: 'rgba(255,255,255,0.9)' }}>🔗 {dayWod.aiTheme}</div>
+                      <div className="bg-white/10 rounded-xl px-3 py-2.5 text-sm mt-2 leading-relaxed flex items-start gap-1.5" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                        <Link2 className="w-4 h-4 flex-shrink-0 mt-0.5" /> {dayWod.aiTheme}
+                      </div>
                     )}
                   </div>
 
                   {sections.map(s => (
                     <div key={s.key} className="space-y-2.5">
-                      <h3 className="text-sm font-bold text-slate-500">{s.label}</h3>
+                      <h3 className="text-sm font-bold text-slate-500 flex items-center gap-1.5"><s.icon className="w-4 h-4" /> {s.label}</h3>
                       <WodBlockList blocks={s.blocks} />
                     </div>
                   ))}

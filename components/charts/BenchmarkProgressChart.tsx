@@ -1,5 +1,6 @@
 'use client';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { Trophy } from 'lucide-react';
 
 function formatVal(val: number, isTime: boolean): string {
   if (!isTime) return String(val);
@@ -26,7 +27,7 @@ export default function BenchmarkProgressChart({
           <div className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-xs shadow-xl">
             <div className="text-orange-400 font-bold">{payload[0]?.payload?.result}</div>
             {payload[0]?.payload?.result === formatVal(bestVal, isTime) && (
-              <div className="text-green-400 text-xs">🏆 أفضل نتيجة</div>
+              <div className="text-green-400 text-xs flex items-center gap-1"><Trophy className="w-3.5 h-3.5" /> أفضل نتيجة</div>
             )}
           </div>
         ) : null} />

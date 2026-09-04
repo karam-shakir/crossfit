@@ -3,6 +3,12 @@ import { useState, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import {
+  Hand, Anchor, Footprints, PersonStanding, Box, Dumbbell, RefreshCw, Moon,
+  Building2, Flame, TrendingUp, MessageCircle, X, CheckCircle2, ArrowUp,
+  ArrowDown, Pin, Sparkles, ClipboardList, Sun, Wind, Brain, Loader2,
+  Target, Calendar, PenLine,
+} from 'lucide-react';
 
 const CalisthenicsProgressChart = dynamic(() => import('@/components/charts/CalisthenicsProgressChart'), {
   ssr: false,
@@ -41,31 +47,38 @@ function YoutubeIcon() {
 
 type LevelKey = 'beginner' | 'intermediate' | 'advanced' | 'elite';
 
-const LEVEL_TABS: { key: LevelKey; label: string; emoji: string; active: string; idle: string }[] = [
-  { key: 'beginner',     label: 'مبتدئ', emoji: '🟢', active: 'bg-green-600 text-white shadow-lg',  idle: 'bg-green-50 text-green-700 border border-green-300' },
-  { key: 'intermediate', label: 'متوسط', emoji: '🔵', active: 'bg-blue-600 text-white shadow-lg',   idle: 'bg-blue-50 text-blue-700 border border-blue-300' },
-  { key: 'advanced',     label: 'متقدم', emoji: '🟠', active: 'bg-orange-500 text-white shadow-lg', idle: 'bg-orange-50 text-orange-700 border border-orange-300' },
-  { key: 'elite',        label: 'نخبة',  emoji: '🔴', active: 'bg-red-600 text-white shadow-lg',    idle: 'bg-red-50 text-red-700 border border-red-300' },
+const LEVEL_TABS: { key: LevelKey; label: string; dot: string; active: string; idle: string }[] = [
+  { key: 'beginner',     label: 'مبتدئ', dot: 'bg-green-500',  active: 'bg-green-600 text-white shadow-lg',  idle: 'bg-green-50 text-green-700 border border-green-300' },
+  { key: 'intermediate', label: 'متوسط', dot: 'bg-blue-500',   active: 'bg-blue-600 text-white shadow-lg',   idle: 'bg-blue-50 text-blue-700 border border-blue-300' },
+  { key: 'advanced',     label: 'متقدم', dot: 'bg-orange-500', active: 'bg-orange-500 text-white shadow-lg', idle: 'bg-orange-50 text-orange-700 border border-orange-300' },
+  { key: 'elite',        label: 'نخبة',  dot: 'bg-red-500',    active: 'bg-red-600 text-white shadow-lg',    idle: 'bg-red-50 text-red-700 border border-red-300' },
 ];
 
-const TYPE_THEME: Record<string, { accent: string; badge: string; icon: string; label: string }> = {
-  Push:      { accent: 'bg-orange-500',  badge: 'bg-orange-100 text-orange-700 border border-orange-200',   icon: '🙌', label: 'دفع' },
-  Pull:      { accent: 'bg-blue-500',    badge: 'bg-blue-100 text-blue-700 border border-blue-200',         icon: '🏗️', label: 'سحب' },
-  Legs:      { accent: 'bg-emerald-500', badge: 'bg-emerald-100 text-emerald-700 border border-emerald-200', icon: '🦵', label: 'أرجل' },
-  Skills:    { accent: 'bg-violet-500',  badge: 'bg-violet-100 text-violet-700 border border-violet-200',   icon: '🤸', label: 'مهارات' },
-  Core:      { accent: 'bg-amber-500',   badge: 'bg-amber-100 text-amber-700 border border-amber-200',      icon: '🧱', label: 'جذع' },
-  FullBody:  { accent: 'bg-indigo-500',  badge: 'bg-indigo-100 text-indigo-700 border border-indigo-200',   icon: '💪', label: 'كامل الجسم' },
-  Endurance: { accent: 'bg-rose-500',    badge: 'bg-rose-100 text-rose-700 border border-rose-200',         icon: '🔄', label: 'تحمل' },
-  Rest:      { accent: 'bg-slate-300',   badge: 'bg-slate-100 text-slate-500 border border-slate-200',      icon: '😴', label: 'راحة' },
+const TYPE_THEME: Record<string, { accent: string; badge: string; icon: any; label: string }> = {
+  Push:      { accent: 'bg-orange-500',  badge: 'bg-orange-100 text-orange-700 border border-orange-200',   icon: Hand,           label: 'دفع' },
+  Pull:      { accent: 'bg-blue-500',    badge: 'bg-blue-100 text-blue-700 border border-blue-200',         icon: Anchor,         label: 'سحب' },
+  Legs:      { accent: 'bg-emerald-500', badge: 'bg-emerald-100 text-emerald-700 border border-emerald-200', icon: Footprints,     label: 'أرجل' },
+  Skills:    { accent: 'bg-violet-500',  badge: 'bg-violet-100 text-violet-700 border border-violet-200',   icon: PersonStanding, label: 'مهارات' },
+  Core:      { accent: 'bg-amber-500',   badge: 'bg-amber-100 text-amber-700 border border-amber-200',      icon: Box,            label: 'جذع' },
+  FullBody:  { accent: 'bg-indigo-500',  badge: 'bg-indigo-100 text-indigo-700 border border-indigo-200',   icon: Dumbbell,       label: 'كامل الجسم' },
+  Endurance: { accent: 'bg-rose-500',    badge: 'bg-rose-100 text-rose-700 border border-rose-200',         icon: RefreshCw,      label: 'تحمل' },
+  Rest:      { accent: 'bg-slate-300',   badge: 'bg-slate-100 text-slate-500 border border-slate-200',      icon: Moon,           label: 'راحة' },
 };
 
 const GOAL_LABEL: Record<string, string> = {
-  strength: 'قوة بوزن الجسم 💪', skills: 'مهارات 🤸', muscle_gain: 'بناء عضلي 🏗️',
-  endurance: 'تحمل عضلي 🔄', fat_burn: 'حرق الدهون 🔥',
+  strength: 'قوة بوزن الجسم', skills: 'مهارات', muscle_gain: 'بناء عضلي',
+  endurance: 'تحمل عضلي', fat_burn: 'حرق الدهون',
+};
+const GOAL_ICON: Record<string, any> = {
+  strength: Dumbbell, skills: PersonStanding, muscle_gain: Building2,
+  endurance: RefreshCw, fat_burn: Flame,
 };
 
-const LEVEL_DISPLAY: Record<string, string> = {
-  beginner: '🟢 مبتدئ', intermediate: '🔵 متوسط', advanced: '🟠 متقدم', elite: '🔴 نخبة',
+const LEVEL_LABEL: Record<string, string> = {
+  beginner: 'مبتدئ', intermediate: 'متوسط', advanced: 'متقدم', elite: 'نخبة',
+};
+const LEVEL_DOT: Record<string, string> = {
+  beginner: 'bg-green-500', intermediate: 'bg-blue-500', advanced: 'bg-orange-500', elite: 'bg-red-500',
 };
 
 function todayStr() {
@@ -166,7 +179,7 @@ function ExerciseCard({
     <div className={`bg-white rounded-2xl overflow-hidden border shadow-sm ${isSkill ? 'border-violet-200' : 'border-slate-200'}`}>
       <div className="px-3.5 py-3 flex items-start gap-3">
         <span className={`mt-0.5 w-7 h-7 flex-shrink-0 rounded-full border flex items-center justify-center text-xs font-bold ${isSkill ? 'bg-violet-100 border-violet-300 text-violet-700' : 'bg-emerald-100 border-emerald-300 text-emerald-700'}`}>
-          {isSkill ? '🤸' : index + 1}
+          {isSkill ? <PersonStanding className="w-4 h-4" /> : index + 1}
         </span>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
@@ -178,7 +191,7 @@ function ExerciseCard({
               {trendData.length >= 2 && (
                 <button onClick={() => setShowTrend(t => !t)}
                   className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${showTrend ? 'bg-violet-600 text-white' : 'bg-violet-100 text-violet-700 hover:bg-violet-200'}`}>
-                  📈 تطوري
+                  <TrendingUp className="w-4 h-4" /> تطوري
                 </button>
               )}
               <a href={ytLink(ex)} target="_blank" rel="noopener noreferrer"
@@ -190,8 +203,8 @@ function ExerciseCard({
           </div>
           <div className="flex items-center gap-1.5 mt-2 flex-wrap">
             {ex.targetMuscles && (
-              <span className="text-xs bg-slate-100 border border-slate-300 text-slate-700 px-2 py-0.5 rounded-lg font-medium">
-                💪 {ex.targetMuscles}
+              <span className="text-xs bg-slate-100 border border-slate-300 text-slate-700 px-2 py-0.5 rounded-lg font-medium inline-flex items-center gap-1">
+                <Dumbbell className="w-4 h-4" /> {ex.targetMuscles}
               </span>
             )}
             {ex.sets > 0 && (
@@ -206,7 +219,7 @@ function ExerciseCard({
       {/* Progress trend */}
       {showTrend && trendData.length >= 2 && (
         <div className="mx-3 mb-3 rounded-xl bg-violet-50/50 border border-violet-200 p-3">
-          <div className="text-xs text-violet-700 font-bold mb-2">📈 {trendUnit === 'ثانية' ? 'مدة الثبات' : 'التكرارات'} الفعلية عبر الوقت</div>
+          <div className="text-xs text-violet-700 font-bold mb-2 flex items-center gap-1"><TrendingUp className="w-4 h-4" /> {trendUnit === 'ثانية' ? 'مدة الثبات' : 'التكرارات'} الفعلية عبر الوقت</div>
           <CalisthenicsProgressChart data={trendData} unitLabel={trendUnit} />
         </div>
       )}
@@ -230,7 +243,7 @@ function ExerciseCard({
           </div>
           {lvl.cue && (
             <div className="border-t border-amber-200 px-3 py-2.5 bg-amber-50 flex items-start gap-2">
-              <span className="text-sm flex-shrink-0 mt-0.5">💬</span>
+              <MessageCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
               <span className="text-[13px] text-amber-800 leading-relaxed font-medium">{lvl.cue}</span>
             </div>
           )}
@@ -244,37 +257,37 @@ function ExerciseCard({
                 'bg-slate-50 border-slate-200'
               }`}>
                 <button onClick={unlog} disabled={saving}
-                  className="text-slate-400 hover:text-red-500 text-xs font-bold px-1.5 flex-shrink-0">✕</button>
+                  className="text-slate-400 hover:text-red-500 text-xs font-bold px-1.5 flex-shrink-0"><X className="w-4 h-4" /></button>
                 <div className="text-right flex-1 min-w-0">
-                  <span className={`text-sm font-bold ${
+                  <span className={`text-sm font-bold inline-flex items-center gap-1 ${
                     existingLog.comparison === 'harder' ? 'text-emerald-700' :
                     existingLog.comparison === 'easier' ? 'text-amber-700' : 'text-slate-700'
                   }`}>
-                    ✅ أنجزت — {existingLog.actualVariation} ({existingLog.actualReps})
+                    <CheckCircle2 className="w-4 h-4 text-green-500" /> أنجزت — {existingLog.actualVariation} ({existingLog.actualReps})
                   </span>
-                  {existingLog.comparison === 'harder' && <span className="text-emerald-600 text-xs mr-2">⬆ أصعب من المقترح</span>}
-                  {existingLog.comparison === 'easier' && <span className="text-amber-600 text-xs mr-2">⬇ أسهل من المقترح</span>}
+                  {existingLog.comparison === 'harder' && <span className="text-emerald-600 text-xs mr-2 inline-flex items-center gap-0.5"><ArrowUp className="w-3.5 h-3.5" /> أصعب من المقترح</span>}
+                  {existingLog.comparison === 'easier' && <span className="text-amber-600 text-xs mr-2 inline-flex items-center gap-0.5"><ArrowDown className="w-3.5 h-3.5" /> أسهل من المقترح</span>}
                 </div>
               </div>
             ) : !expanded ? (
               <button onClick={() => setExpanded(true)}
-                className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 text-slate-500 text-sm font-semibold hover:border-violet-400 hover:text-violet-600 transition-all">
-                ✅ سجّل إنجازك (اختياري)
+                className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 text-slate-500 text-sm font-semibold hover:border-violet-400 hover:text-violet-600 transition-all inline-flex items-center justify-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4" /> سجّل إنجازك (اختياري)
               </button>
             ) : (
               <div className="space-y-2">
                 <div className="grid grid-cols-3 gap-2">
                   <button onClick={() => setManualMode('easier')} disabled={saving}
-                    className={`py-2 rounded-xl border text-sm font-bold transition-all ${manualMode === 'easier' ? 'bg-amber-500 text-white border-transparent' : 'bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100'}`}>
-                    ⬇ أسهل
+                    className={`py-2 rounded-xl border text-sm font-bold transition-all inline-flex items-center justify-center gap-1 ${manualMode === 'easier' ? 'bg-amber-500 text-white border-transparent' : 'bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100'}`}>
+                    <ArrowDown className="w-4 h-4" /> أسهل
                   </button>
                   <button onClick={() => submitLog('as_suggested', lvl.variation, lvl.reps)} disabled={saving}
                     className="py-2 rounded-xl border bg-slate-100 border-slate-300 text-slate-700 text-sm font-bold hover:bg-slate-200 transition-all">
                     = كما هو مقترح
                   </button>
                   <button onClick={() => setManualMode('harder')} disabled={saving}
-                    className={`py-2 rounded-xl border text-sm font-bold transition-all ${manualMode === 'harder' ? 'bg-emerald-600 text-white border-transparent' : 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100'}`}>
-                    ⬆ أصعب
+                    className={`py-2 rounded-xl border text-sm font-bold transition-all inline-flex items-center justify-center gap-1 ${manualMode === 'harder' ? 'bg-emerald-600 text-white border-transparent' : 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100'}`}>
+                    <ArrowUp className="w-4 h-4" /> أصعب
                   </button>
                 </div>
                 {manualMode && (
@@ -298,7 +311,7 @@ function ExerciseCard({
 
       {ex.notes && (
         <div className="px-4 pb-3 text-xs text-slate-600 flex items-start gap-1.5 leading-relaxed">
-          <span className="flex-shrink-0">📌</span><span>{ex.notes}</span>
+          <Pin className="w-4 h-4 flex-shrink-0" /><span>{ex.notes}</span>
         </div>
       )}
     </div>
@@ -357,18 +370,21 @@ function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
       <div className={`h-1.5 ${theme.accent}`} />
 
       {isToday && (
-        <div className="bg-emerald-600 text-white text-sm font-bold text-center py-2 tracking-widest">
-          ✨ جلسة اليوم
+        <div className="bg-emerald-600 text-white text-sm font-bold text-center py-2 tracking-widest inline-flex items-center justify-center gap-1.5 w-full">
+          <Sparkles className="w-4 h-4" /> جلسة اليوم
         </div>
       )}
 
       {!isRest && s.intensity && (
-        <div className={`text-sm font-bold text-center py-1.5 ${
+        <div className={`text-sm font-bold text-center py-1.5 inline-flex items-center justify-center gap-1.5 w-full ${
           s.intensity === 'Heavy'    ? 'bg-red-500 text-white' :
           s.intensity === 'Moderate' ? 'bg-amber-500 text-white' :
           s.intensity === 'Light'    ? 'bg-emerald-500 text-white' : 'hidden'
         }`}>
-          {s.intensity === 'Heavy' ? '🔴 شدة عالية' : s.intensity === 'Moderate' ? '🟡 شدة متوسطة' : s.intensity === 'Light' ? '🟢 خفيف' : ''}
+          {(s.intensity === 'Heavy' || s.intensity === 'Moderate' || s.intensity === 'Light') && (
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-white/70" />
+          )}
+          {s.intensity === 'Heavy' ? 'شدة عالية' : s.intensity === 'Moderate' ? 'شدة متوسطة' : s.intensity === 'Light' ? 'خفيف' : ''}
         </div>
       )}
 
@@ -377,7 +393,7 @@ function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
         onClick={() => !isRest && setOpen(o => !o)}
         className={`w-full px-4 py-3.5 text-right flex items-center gap-3 ${!isRest ? 'active:bg-black/5 cursor-pointer' : 'cursor-default'}`}
       >
-        <span className="text-2xl flex-shrink-0">{theme.icon}</span>
+        <theme.icon className="w-6 h-6 flex-shrink-0 text-slate-500" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
             <span className="font-extrabold text-slate-800 text-[17px] leading-tight">{s.dayName}</span>
@@ -390,7 +406,7 @@ function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
               </span>
             )}
             {isRest ? (
-              <span className="text-sm text-slate-500">😴 يوم راحة</span>
+              <span className="text-sm text-slate-500 inline-flex items-center gap-1"><Moon className="w-4 h-4" /> يوم راحة</span>
             ) : s.title ? (
               <span className="text-xs text-slate-600 leading-relaxed line-clamp-1">{s.title}</span>
             ) : null}
@@ -423,7 +439,7 @@ function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
 
           {s.notes && (
             <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 flex items-start gap-2">
-              <span className="text-base flex-shrink-0">📋</span>
+              <ClipboardList className="w-4 h-4 flex-shrink-0 text-slate-400" />
               <p className="text-[14px] text-slate-700 leading-relaxed">{s.notes}</p>
             </div>
           )}
@@ -435,7 +451,7 @@ function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
               {LEVEL_TABS.map(t => (
                 <button key={t.key} onClick={() => setLevel(t.key)}
                   className={`py-3 rounded-xl text-sm font-bold transition-all ${level === t.key ? t.active : t.idle}`}>
-                  <div className="text-lg">{t.emoji}</div>
+                  <div className="flex justify-center"><span className={`inline-block w-2.5 h-2.5 rounded-full ${t.dot}`} /></div>
                   <div className="mt-1">{t.label}</div>
                 </button>
               ))}
@@ -446,7 +462,7 @@ function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
           {s.warmup?.length > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
               <h4 className="text-[15px] font-bold text-amber-800 mb-3 flex items-center gap-2">
-                <span className="text-xl">🔆</span> الإحماء
+                <Sun className="w-5 h-5" /> الإحماء
               </h4>
               <ol className="space-y-2 list-none">
                 {s.warmup.map((w: string, i: number) => (
@@ -462,8 +478,8 @@ function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
           {unloggedExercises.length > 0 && (
             <div className="flex justify-end">
               <button onClick={markAllSuggested} disabled={bulkSaving}
-                className="text-xs font-bold bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 px-3 py-1.5 rounded-full transition-all disabled:opacity-50">
-                {bulkSaving ? '⏳ جارٍ الحفظ...' : '✅ أنجزت الكل بالمقترح'}
+                className="text-xs font-bold bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 px-3 py-1.5 rounded-full transition-all disabled:opacity-50 inline-flex items-center gap-1.5">
+                {bulkSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> جارٍ الحفظ...</> : <><CheckCircle2 className="w-4 h-4" /> أنجزت الكل بالمقترح</>}
               </button>
             </div>
           )}
@@ -472,7 +488,7 @@ function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
           {s.skillWork?.length > 0 && (
             <div>
               <h4 className="text-[15px] font-bold text-violet-700 mb-3 flex items-center gap-2">
-                <span className="text-xl">🤸</span>
+                <PersonStanding className="w-5 h-5" />
                 <span>تدريب المهارات</span>
                 <span className="bg-violet-100 text-violet-700 border border-violet-200 text-xs px-2.5 py-1 rounded-full font-bold">أول الجلسة</span>
               </h4>
@@ -493,7 +509,7 @@ function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
           {s.exercises?.length > 0 && (
             <div>
               <h4 className="text-[15px] font-bold text-emerald-700 mb-3 flex items-center gap-2">
-                <span className="text-xl">💪</span>
+                <Dumbbell className="w-5 h-5" />
                 <span>التمارين</span>
                 <span className="bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs px-2.5 py-1 rounded-full font-bold">
                   {s.exercises.length} تمرين
@@ -516,7 +532,7 @@ function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
           {s.cooldown?.length > 0 && (
             <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4">
               <h4 className="text-[15px] font-bold text-teal-700 mb-3 flex items-center gap-2">
-                <span className="text-xl">🧘</span> التهدئة والإطالة
+                <Wind className="w-5 h-5" /> التهدئة والإطالة
               </h4>
               <ol className="space-y-2 list-none">
                 {s.cooldown.map((c: string, i: number) => (
@@ -532,7 +548,7 @@ function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
           {/* Coach note */}
           {s.coachNote && (
             <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3.5 flex items-start gap-3">
-              <span className="text-2xl flex-shrink-0">🧠</span>
+              <Brain className="w-6 h-6 flex-shrink-0 text-emerald-600" />
               <div>
                 <div className="text-sm text-emerald-700 font-bold mb-1.5">ملاحظة المدرب</div>
                 <p className="text-[14px] text-slate-700 leading-relaxed">{s.coachNote}</p>
@@ -577,7 +593,9 @@ export default function CalisthenicsClient({ member, profile, sessions }: { memb
         <Navbar member={member} />
         <main className="flex-1 lg:mr-56 flex items-center justify-center px-4">
           <div className="text-center space-y-5 max-w-sm">
-            <div className="text-7xl">🤸</div>
+            <div className="mx-auto w-20 h-20 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center">
+              <PersonStanding className="w-6 h-6 text-emerald-500" />
+            </div>
             <h2 className="text-2xl font-extrabold text-slate-800">ابدأ رحلة الكاليسثنكس</h2>
             <p className="text-slate-500 text-base leading-relaxed">
               عبّئ بروفايلك (قدراتك الحالية، مهاراتك المستهدفة، معداتك) وسيصمم المدرب برنامجاً أسبوعياً مخصصاً لك بوزن الجسم
@@ -602,18 +620,24 @@ export default function CalisthenicsClient({ member, profile, sessions }: { memb
           <div className="bg-emerald-600 rounded-2xl p-5 shadow-lg shadow-emerald-200">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h1 className="font-extrabold text-white text-xl leading-tight mb-0.5">
-                  🤸 برنامج الكاليسثنكس
+                <h1 className="font-extrabold text-white text-xl leading-tight mb-0.5 flex items-center gap-2">
+                  <PersonStanding className="w-5 h-5" /> برنامج الكاليسثنكس
                 </h1>
-                <p style={{ color: 'rgba(255,255,255,0.85)' }} className="text-sm font-semibold">{GOAL_LABEL[profile.goal]}</p>
-                <p style={{ color: 'rgba(255,255,255,0.70)' }} className="text-xs mt-0.5">{LEVEL_DISPLAY[profile.level]} • {profile.daysPerWeek} أيام/أسبوع</p>
+                <p style={{ color: 'rgba(255,255,255,0.85)' }} className="text-sm font-semibold inline-flex items-center gap-1">
+                  {GOAL_ICON[profile.goal] && (() => { const GoalIcon = GOAL_ICON[profile.goal]; return <GoalIcon className="w-4 h-4" />; })()}
+                  {GOAL_LABEL[profile.goal]}
+                </p>
+                <p style={{ color: 'rgba(255,255,255,0.70)' }} className="text-xs mt-0.5 inline-flex items-center gap-1.5">
+                  <span className={`inline-block w-2 h-2 rounded-full ${LEVEL_DOT[profile.level]}`} />
+                  {LEVEL_LABEL[profile.level]} • {profile.daysPerWeek} أيام/أسبوع
+                </p>
                 {profile.skillGoals?.length > 0 && (
-                  <p style={{ color: 'rgba(255,255,255,0.70)' }} className="text-xs mt-0.5">🎯 {profile.skillGoals.join(' • ')}</p>
+                  <p style={{ color: 'rgba(255,255,255,0.70)' }} className="text-xs mt-0.5 inline-flex items-center gap-1"><Target className="w-3.5 h-3.5" /> {profile.skillGoals.join(' • ')}</p>
                 )}
               </div>
               <Link href="/calisthenics/profile"
-                className="flex-shrink-0 text-xs bg-white/20 border border-white/30 text-white px-3 py-2 rounded-xl hover:bg-white/30 transition-all font-semibold">
-                ✏️ البروفايل
+                className="flex-shrink-0 text-xs bg-white/20 border border-white/30 text-white px-3 py-2 rounded-xl hover:bg-white/30 transition-all font-semibold inline-flex items-center gap-1.5">
+                <PenLine className="w-4 h-4" /> البروفايل
               </Link>
             </div>
 
@@ -628,7 +652,11 @@ export default function CalisthenicsClient({ member, profile, sessions }: { memb
                   <div className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.70)' }}>تمرين / أسبوع</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-extrabold text-white">{currentSessions.find(s => s.date === today) ? '🔥' : '📅'}</div>
+                  <div className="flex justify-center">
+                    {currentSessions.find(s => s.date === today)
+                      ? <Flame className="w-6 h-6 text-white" />
+                      : <Calendar className="w-6 h-6 text-white/70" />}
+                  </div>
                   <div className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.70)' }}>
                     {currentSessions.find(s => s.date === today) ? 'اليوم تدريب!' : 'استمر'}
                   </div>
@@ -639,10 +667,12 @@ export default function CalisthenicsClient({ member, profile, sessions }: { memb
 
           {sessions.length === 0 ? (
             <div className="text-center py-20 space-y-4">
-              <div className="text-6xl">📋</div>
+              <div className="mx-auto w-16 h-16 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center">
+                <ClipboardList className="w-6 h-6 text-gray-400" />
+              </div>
               <p className="text-slate-800 font-bold text-lg">لا يوجد برنامج بعد</p>
-              <p className="text-slate-500 text-sm leading-relaxed max-w-xs mx-auto">
-                بروفايلك جاهز ✅ — انتظر المدرب ليولّد لك برنامجك الأسبوعي المخصص
+              <p className="text-slate-500 text-sm leading-relaxed max-w-xs mx-auto inline-flex items-center gap-1 justify-center">
+                بروفايلك جاهز <CheckCircle2 className="w-4 h-4 text-green-500" /> — انتظر المدرب ليولّد لك برنامجك الأسبوعي المخصص
               </p>
             </div>
           ) : (
@@ -661,7 +691,7 @@ export default function CalisthenicsClient({ member, profile, sessions }: { memb
                               ? 'bg-emerald-600 text-white shadow-lg'
                               : 'bg-white text-slate-600 border border-slate-300 hover:border-emerald-400'
                           }`}>
-                          {hasToday && <span className="ml-1">🔥</span>}
+                          {hasToday && <Flame className="w-3.5 h-3.5 inline ml-1 text-emerald-500" />}
                           {w.label}
                         </button>
                       );

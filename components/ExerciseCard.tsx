@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { X, Layers, Play, PlayCircle, Repeat, Weight, MapPin, Timer, Settings, MessageCircle, Lightbulb } from 'lucide-react';
 
 interface Exercise {
   id: string;
@@ -130,11 +131,11 @@ export default function ExerciseCard({
             <button
               onClick={() => setShowLevels(!showLevels)}
               className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-colors ${
-                showLevels ? 'bg-purple-500 text-white' : 'bg-slate-100 text-purple-600 hover:bg-purple-100'
+                showLevels ? 'bg-amber-500 text-white' : 'bg-slate-100 text-amber-600 hover:bg-amber-100'
               }`}
               title="عرض المستويات"
             >
-              {showLevels ? '×' : '⚡'}
+              {showLevels ? <X className="w-4 h-4" /> : <Layers className="w-4 h-4" />}
             </button>
           )}
           {ex?.gif && (
@@ -143,7 +144,7 @@ export default function ExerciseCard({
               className="w-8 h-8 rounded-lg bg-blue-500 hover:bg-blue-600 flex items-center justify-center text-sm transition-colors text-white"
               title="شاهد الأداء"
             >
-              {showGif ? '×' : '▶'}
+              {showGif ? <X className="w-4 h-4" /> : <Play className="w-4 h-4" />}
             </button>
           )}
           {ex?.youtube && (
@@ -154,7 +155,7 @@ export default function ExerciseCard({
               className="w-8 h-8 rounded-lg bg-red-500 hover:bg-red-600 flex items-center justify-center text-sm transition-colors text-white"
               title="شرح يوتيوب"
             >
-              ▶
+              <PlayCircle className="w-4 h-4" />
             </a>
           )}
         </div>
@@ -165,23 +166,23 @@ export default function ExerciseCard({
         {!levelData && (
           <div className="flex flex-wrap gap-1.5">
             {item.reps && (
-              <span className="text-sm bg-orange-50 border border-orange-200 text-orange-700 px-2 py-0.5 rounded-lg font-mono">
-                🔁 {item.reps}
+              <span className="text-sm bg-orange-50 border border-orange-200 text-orange-700 px-2 py-0.5 rounded-lg font-mono inline-flex items-center gap-1">
+                <Repeat className="w-4 h-4" /> {item.reps}
               </span>
             )}
             {item.weight && !weightIsMultiLevel && (
-              <span className="text-sm bg-slate-100 border border-slate-300 text-slate-700 px-2 py-0.5 rounded-lg font-mono">
-                ⚖️ {item.weight}
+              <span className="text-sm bg-slate-100 border border-slate-300 text-slate-700 px-2 py-0.5 rounded-lg font-mono inline-flex items-center gap-1">
+                <Weight className="w-4 h-4" /> {item.weight}
               </span>
             )}
             {item.distance && (
-              <span className="text-sm bg-slate-100 border border-slate-300 text-slate-700 px-2 py-0.5 rounded-lg font-mono">
-                📍 {item.distance}
+              <span className="text-sm bg-slate-100 border border-slate-300 text-slate-700 px-2 py-0.5 rounded-lg font-mono inline-flex items-center gap-1">
+                <MapPin className="w-4 h-4" /> {item.distance}
               </span>
             )}
             {item.time && (
-              <span className="text-sm bg-slate-100 border border-slate-300 text-slate-700 px-2 py-0.5 rounded-lg font-mono">
-                ⏱ {item.time}
+              <span className="text-sm bg-slate-100 border border-slate-300 text-slate-700 px-2 py-0.5 rounded-lg font-mono inline-flex items-center gap-1">
+                <Timer className="w-4 h-4" /> {item.time}
               </span>
             )}
           </div>
@@ -191,13 +192,13 @@ export default function ExerciseCard({
         {levelData && (
           <div className="flex flex-wrap gap-1.5">
             {levelData.reps && (
-              <span className="text-sm bg-orange-50 border border-orange-200 text-orange-700 px-2 py-0.5 rounded-lg font-mono">
-                🔁 {levelData.reps}
+              <span className="text-sm bg-orange-50 border border-orange-200 text-orange-700 px-2 py-0.5 rounded-lg font-mono inline-flex items-center gap-1">
+                <Repeat className="w-4 h-4" /> {levelData.reps}
               </span>
             )}
             {levelData.weight && (
-              <span className="text-sm bg-blue-50 border border-blue-200 text-blue-700 px-2 py-0.5 rounded-lg font-mono font-bold">
-                ⚖️ {levelData.weight}
+              <span className="text-sm bg-blue-50 border border-blue-200 text-blue-700 px-2 py-0.5 rounded-lg font-mono font-bold inline-flex items-center gap-1">
+                <Weight className="w-4 h-4" /> {levelData.weight}
               </span>
             )}
           </div>
@@ -207,8 +208,8 @@ export default function ExerciseCard({
       {/* ── قيد تنفيذ تقني (Touch & Go / RPE تصاعدي / Single-Arm ...) ── */}
       {item.executionNote && (
         <div className="px-3 pb-2">
-          <div className="bg-purple-50 border border-purple-200 text-purple-800 rounded-lg px-3 py-2 text-sm font-semibold">
-            ⚙️ {item.executionNote}
+          <div className="bg-gray-50 border border-gray-200 text-gray-800 rounded-lg px-3 py-2 text-sm font-semibold inline-flex items-center gap-1.5">
+            <Settings className="w-4 h-4" /> {item.executionNote}
           </div>
         </div>
       )}
@@ -216,8 +217,8 @@ export default function ExerciseCard({
       {/* ── Coaching cue from level ── */}
       {levelData && (levelData.cue) && (
         <div className="px-3 pb-2">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-800">
-            💬 {levelData.cue}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-800 flex items-start gap-1.5">
+            <MessageCircle className="w-4 h-4 flex-shrink-0 mt-0.5" /> {levelData.cue}
           </div>
         </div>
       )}
@@ -225,8 +226,8 @@ export default function ExerciseCard({
       {/* ── Notes (default, no level selected, not a multi-level string) ── */}
       {item.notes && !levelData && !notesIsMultiLevel && (
         <div className="px-3 pb-3">
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2 text-sm">
-            💡 {item.notes}
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2 text-sm flex items-start gap-1.5">
+            <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5" /> {item.notes}
           </div>
         </div>
       )}
@@ -240,7 +241,7 @@ export default function ExerciseCard({
           <div className="p-2 flex gap-2">
             <a href={ex.youtube} target="_blank" rel="noopener noreferrer"
               className="flex-1 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white text-sm py-2 rounded-lg font-semibold">
-              ▶ شرح على يوتيوب
+              <PlayCircle className="w-4 h-4" /> شرح على يوتيوب
             </a>
             <button onClick={() => setShowGif(false)}
               className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm rounded-lg">
@@ -278,19 +279,19 @@ export default function ExerciseCard({
                 <div className="text-xs font-bold text-slate-500 text-right">{LEVEL_LABELS[activeLevel]}</div>
                 <div className="flex flex-wrap gap-2 justify-end">
                   {lv.reps && (
-                    <span className="bg-orange-50 border border-orange-200 text-orange-700 text-sm px-3 py-1 rounded-lg font-mono">
-                      🔁 {lv.reps}
+                    <span className="bg-orange-50 border border-orange-200 text-orange-700 text-sm px-3 py-1 rounded-lg font-mono inline-flex items-center gap-1">
+                      <Repeat className="w-4 h-4" /> {lv.reps}
                     </span>
                   )}
                   {lv.weight && (
-                    <span className="bg-blue-50 border border-blue-200 text-blue-700 text-sm px-3 py-1 rounded-lg font-mono font-bold">
-                      ⚖️ {lv.weight}
+                    <span className="bg-blue-50 border border-blue-200 text-blue-700 text-sm px-3 py-1 rounded-lg font-mono font-bold inline-flex items-center gap-1">
+                      <Weight className="w-4 h-4" /> {lv.weight}
                     </span>
                   )}
                 </div>
                 {(lv.cue) && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-800">
-                    💬 {lv.cue}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-800 flex items-start gap-1.5">
+                    <MessageCircle className="w-4 h-4 flex-shrink-0 mt-0.5" /> {lv.cue}
                   </div>
                 )}
               </div>

@@ -16,14 +16,14 @@ export default function GymExerciseProgressChart({
         <Tooltip content={({ active, payload, label }) => active && payload?.length ? (
           <div className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs shadow-lg">
             <div className="text-slate-500">{label}</div>
-            <div className="text-indigo-700 font-bold text-sm">{payload[0]?.value}</div>
+            <div className="text-orange-700 font-bold text-sm">{payload[0]?.value}</div>
           </div>
         ) : null} />
         {suggestedValue !== undefined && (
           <ReferenceLine y={suggestedValue} stroke="#f59e0b" strokeDasharray="4 2" strokeWidth={1.5} />
         )}
-        <Line type="monotone" dataKey="value" stroke="#4f46e5" strokeWidth={2.5}
-          dot={{ fill: '#4f46e5', r: 4, strokeWidth: 2, stroke: '#fff' }}
+        <Line type="monotone" dataKey="value" stroke="#f97316" strokeWidth={2.5}
+          dot={{ fill: '#f97316', r: 4, strokeWidth: 2, stroke: '#fff' }}
           activeDot={{ r: 6 }} />
       </LineChart>
     </ResponsiveContainer>

@@ -2,24 +2,32 @@
 import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
+import {
+  Trash2, Sparkles, FolderOpen, RefreshCw, Settings, AlertTriangle, Loader2, Sun, Flag,
+  Target, Dumbbell, Zap, CheckCircle2, Copy, Save, Clock, MessageSquare, Wind, Salad,
+  Compass, Share2, Medal, Lightbulb, Footprints,
+} from 'lucide-react';
 
 const LEVEL_TABS = [
   { key: 'beginner'     as const, label: 'مبتدئ', active: 'bg-green-600 text-white',  idle: 'bg-gray-800 text-green-400 border border-green-700'  },
   { key: 'intermediate' as const, label: 'متوسط', active: 'bg-blue-600 text-white',   idle: 'bg-gray-800 text-blue-400 border border-blue-700'    },
   { key: 'advanced'     as const, label: 'متقدم', active: 'bg-orange-500 text-white',  idle: 'bg-gray-800 text-orange-400 border border-orange-700' },
-  { key: 'elite'        as const, label: 'نخبة',  idle: 'bg-gray-800 text-purple-400 border border-purple-700', active: 'bg-purple-600 text-white' },
+  { key: 'elite'        as const, label: 'نخبة',  idle: 'bg-gray-800 text-amber-400 border border-amber-700', active: 'bg-amber-500 text-white' },
 ];
 type LevelKey = 'beginner' | 'intermediate' | 'advanced' | 'elite';
 
 const SESSION_TYPES = [
-  { value: 'full',       label: 'كامل 🏁',        desc: 'السباق الكامل 8 محطات + 8 كم' },
-  { value: 'simulation', label: 'محاكاة 🎯',       desc: 'نفس البنية بأوزان تدريبية' },
-  { value: 'strength',   label: 'قوة المحطات 💪', desc: 'تركيز على محطات القوة فقط' },
-  { value: 'running',    label: 'جري + مقاطع 🏃',  desc: 'الجري مع مقاطع سرعة' },
+  { value: 'full',       label: 'كامل',          icon: Flag,     desc: 'السباق الكامل 8 محطات + 8 كم' },
+  { value: 'simulation', label: 'محاكاة',        icon: Target,   desc: 'نفس البنية بأوزان تدريبية' },
+  { value: 'strength',   label: 'قوة المحطات',   icon: Dumbbell, desc: 'تركيز على محطات القوة فقط' },
+  { value: 'running',    label: 'جري + مقاطع',   icon: Zap,      desc: 'الجري مع مقاطع سرعة' },
 ];
 
 const SESSION_TYPE_LABELS: Record<string, string> = {
-  full: 'كامل 🏁', simulation: 'محاكاة 🎯', strength: 'قوة المحطات 💪', running: 'جري + مقاطع 🏃',
+  full: 'كامل', simulation: 'محاكاة', strength: 'قوة المحطات', running: 'جري + مقاطع',
+};
+const SESSION_TYPE_ICONS: Record<string, typeof Flag> = {
+  full: Flag, simulation: Target, strength: Dumbbell, running: Zap,
 };
 
 // ——— بناء نص المشاركة ———
@@ -88,6 +96,7 @@ function HistoryCard({
   onDelete: () => void;
 }) {
   const typeLabel = SESSION_TYPE_LABELS[rec.sessionType] || rec.sessionType;
+  const TypeIcon = SESSION_TYPE_ICONS[rec.sessionType];
   return (
     <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
       <div className="flex items-start justify-between gap-2">
@@ -97,14 +106,14 @@ function HistoryCard({
           </div>
           <div className="flex flex-wrap items-center gap-1.5 mt-1">
             <span className="text-xs text-gray-500">{rec.date}</span>
-            <span className="text-xs bg-red-900/30 text-red-300 border border-red-700/30 px-2 py-0.5 rounded-full">
-              {typeLabel}
+            <span className="text-xs bg-red-900/30 text-red-300 border border-red-700/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+              {TypeIcon && <TypeIcon className="w-3 h-3" />} {typeLabel}
             </span>
             <span className="text-xs bg-orange-900/30 text-orange-300 border border-orange-700/30 px-2 py-0.5 rounded-full">
               {rec.difficulty}
             </span>
             {rec.sessionData?.totalDuration && (
-              <span className="text-xs text-gray-500">⏱ {rec.sessionData.totalDuration} د</span>
+              <span className="text-xs text-gray-500 flex items-center gap-1"><Clock className="w-3 h-3" /> {rec.sessionData.totalDuration} د</span>
             )}
           </div>
         </div>
@@ -115,7 +124,7 @@ function HistoryCard({
           </button>
           <button onClick={onDelete}
             className="text-xs text-gray-500 hover:text-red-400 bg-gray-800 px-2 py-1.5 rounded-lg transition-colors">
-            🗑
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -254,7 +263,7 @@ export default function HyroxClient({ member }: { member: any }) {
           {/* Header */}
           <div className="bg-gradient-to-l from-red-900/40 to-orange-900/40 rounded-2xl border border-red-700/30 p-5">
             <div className="flex items-center gap-3 mb-2">
-              <span className="text-4xl">🏁</span>
+              <Flag className="w-9 h-9 text-red-400" />
               <div>
                 <h1 className="text-xl font-bold text-white">Hyrox Training</h1>
                 <p className="text-sm text-red-300">تدريب الهايروكس — القوة والتحمل</p>
@@ -268,10 +277,10 @@ export default function HyroxClient({ member }: { member: any }) {
             {isAdmin && (
               <button
                 onClick={() => setActiveTab('generate')}
-                className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${
+                className={`flex-1 py-2.5 text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 ${
                   activeTab === 'generate' ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'
                 }`}>
-                🤖 توليد جلسة
+                <Sparkles className="w-4 h-4" /> توليد جلسة
               </button>
             )}
             <button
@@ -279,7 +288,7 @@ export default function HyroxClient({ member }: { member: any }) {
               className={`flex-1 py-2.5 text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 ${
                 activeTab === 'history' ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'
               }`}>
-              📂 سجل الجلسات
+              <FolderOpen className="w-4 h-4" /> سجل الجلسات
               {history.length > 0 && (
                 <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{history.length}</span>
               )}
@@ -293,7 +302,7 @@ export default function HyroxClient({ member }: { member: any }) {
               {(showSettings || !session) && (
                 <div className="bg-gray-900 rounded-2xl border border-gray-800 p-5 space-y-4">
                   <h2 className="font-semibold text-white flex items-center gap-2">
-                    <span>⚙️</span> إعدادات الجلسة
+                    <Settings className="w-5 h-5" /> إعدادات الجلسة
                   </h2>
 
                   <div>
@@ -306,7 +315,7 @@ export default function HyroxClient({ member }: { member: any }) {
                               ? 'border-red-500 bg-red-900/20 text-white'
                               : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'
                           }`}>
-                          <div className="font-semibold text-sm">{t.label}</div>
+                          <div className="font-semibold text-sm flex items-center gap-1.5"><t.icon className="w-4 h-4" /> {t.label}</div>
                           <div className="text-xs mt-0.5 opacity-70">{t.desc}</div>
                         </button>
                       ))}
@@ -320,20 +329,20 @@ export default function HyroxClient({ member }: { member: any }) {
                   </div>
 
                   {error && (
-                    <div className="bg-red-900/30 border border-red-700/50 rounded-xl p-3 text-red-400 text-xs">⚠️ {error}</div>
+                    <div className="bg-red-900/30 border border-red-700/50 rounded-xl p-3 text-red-400 text-xs flex items-center gap-1.5"><AlertTriangle className="w-4 h-4" /> {error}</div>
                   )}
 
                   <button onClick={generate} disabled={generating}
                     className="w-full py-3 rounded-xl bg-gradient-to-l from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 disabled:from-gray-700 disabled:to-gray-700 text-white font-semibold transition-all flex items-center justify-center gap-2">
                     {generating ? (
-                      <><span className="animate-spin">⚙️</span> يتم توليد الجلسة بالذكاء الاصطناعي...</>
+                      <><Loader2 className="w-4 h-4 animate-spin" /> يتم توليد الجلسة بالذكاء الاصطناعي...</>
                     ) : (
-                      <><span>🤖</span> توليد جلسة Hyrox</>
+                      <><Sparkles className="w-4 h-4" /> توليد جلسة Hyrox</>
                     )}
                   </button>
                   {generating && (
-                    <p className="text-center text-xs text-red-400 animate-pulse">
-                      🏃 يحلل الذكاء الاصطناعي أفضل برمجة هايروكس لمستواك...
+                    <p className="text-center text-xs text-red-400 animate-pulse flex items-center justify-center gap-1.5">
+                      <Zap className="w-4 h-4" /> يحلل الذكاء الاصطناعي أفضل برمجة هايروكس لمستواك...
                     </p>
                   )}
                 </div>
@@ -368,7 +377,7 @@ export default function HyroxClient({ member }: { member: any }) {
                           ? 'bg-green-700/40 border border-green-600/40 text-green-300'
                           : 'bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white'
                       }`}>
-                      {saved ? '✅ محفوظة' : saving ? '⏳...' : '💾 حفظ'}
+                      {saved ? <><CheckCircle2 className="w-4 h-4" /> محفوظة</> : saving ? <><Loader2 className="w-4 h-4 animate-spin" />...</> : <><Save className="w-4 h-4" /> حفظ</>}
                     </button>
 
                     {/* واتساب */}
@@ -389,14 +398,14 @@ export default function HyroxClient({ member }: { member: any }) {
                           ? 'bg-blue-700/40 border border-blue-600/40 text-blue-300'
                           : 'bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white'
                       }`}>
-                      {copied ? '✅ تم النسخ' : '📋 نسخ'}
+                      {copied ? <><CheckCircle2 className="w-4 h-4" /> تم النسخ</> : <><Copy className="w-4 h-4" /> نسخ</>}
                     </button>
 
                     {/* جلسة جديدة */}
                     <button
                       onClick={() => { setShowSettings(true); setSaved(false); }}
                       className="px-3 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-400 hover:text-white text-xs transition-colors">
-                      🔄
+                      <RefreshCw className="w-4 h-4" />
                     </button>
                   </div>
 
@@ -406,8 +415,8 @@ export default function HyroxClient({ member }: { member: any }) {
                       <div>
                         <h2 className="text-lg font-bold text-white">{session.title}</h2>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs bg-red-900/50 border border-red-700/40 text-red-300 px-2 py-0.5 rounded-full">
-                            ⏱ {session.totalDuration} دقيقة
+                          <span className="text-xs bg-red-900/50 border border-red-700/40 text-red-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <Clock className="w-3 h-3" /> {session.totalDuration} دقيقة
                           </span>
                           {sessionMeta && (
                             <span className="text-xs text-gray-500">{sessionMeta.date}</span>
@@ -417,7 +426,7 @@ export default function HyroxClient({ member }: { member: any }) {
                     </div>
                     {session.coachNote && (
                       <div className="mt-3 bg-black/20 rounded-xl p-3">
-                        <p className="text-xs text-gray-300">💬 {session.coachNote}</p>
+                        <p className="text-xs text-gray-300 flex items-start gap-1.5"><MessageSquare className="w-4 h-4 flex-shrink-0" /> {session.coachNote}</p>
                       </div>
                     )}
                   </div>
@@ -426,7 +435,7 @@ export default function HyroxClient({ member }: { member: any }) {
                   {session.warmup && (
                     <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
                       <h3 className="font-semibold text-yellow-400 mb-3 flex items-center gap-2">
-                        <span>🔆</span> الإحماء — {session.warmup.duration}
+                        <Sun className="w-5 h-5" /> الإحماء — {session.warmup.duration}
                       </h3>
                       <div className="space-y-2">
                         {session.warmup.exercises?.map((ex: any, i: number) => (
@@ -447,12 +456,12 @@ export default function HyroxClient({ member }: { member: any }) {
                   {session.stations && (
                     <div className="space-y-3">
                       <h3 className="font-semibold text-red-400 flex items-center gap-2">
-                        <span>🏁</span> المحطات الثمانية
+                        <Flag className="w-5 h-5" /> المحطات الثمانية
                       </h3>
                       {session.stations.map((st: any, i: number) => (
                         <div key={i} className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
                           <div className="bg-blue-900/20 border-b border-blue-800/30 px-4 py-2 flex items-center gap-2">
-                            <span>🏃</span>
+                            <Footprints className="w-4 h-4 text-blue-400" />
                             <span className="text-xs text-blue-400 font-semibold">جري {st.runBefore}</span>
                           </div>
                           <div className="p-4">
@@ -465,7 +474,7 @@ export default function HyroxClient({ member }: { member: any }) {
                                 </div>
                               </div>
                               {st.targetTime && (
-                                <span className="text-xs text-orange-400 bg-orange-900/30 px-2 py-1 rounded-lg">⏱ {st.targetTime}</span>
+                                <span className="text-xs text-orange-400 bg-orange-900/30 px-2 py-1 rounded-lg flex items-center gap-1"><Clock className="w-3 h-3" /> {st.targetTime}</span>
                               )}
                             </div>
                             {/* عرض بيانات المستوى المحدد */}
@@ -497,8 +506,8 @@ export default function HyroxClient({ member }: { member: any }) {
                               </div>
                             )}
                             {st.tips && (
-                              <div className="mt-2 text-xs text-yellow-400 bg-yellow-900/10 rounded-lg p-2">
-                                💡 {st.tips}
+                              <div className="mt-2 text-xs text-yellow-400 bg-yellow-900/10 rounded-lg p-2 flex items-start gap-1.5">
+                                <Lightbulb className="w-3.5 h-3.5 flex-shrink-0" /> {st.tips}
                               </div>
                             )}
                           </div>
@@ -511,20 +520,21 @@ export default function HyroxClient({ member }: { member: any }) {
                   {session.targetTimes && (
                     <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
                       <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
-                        <span>⏱</span> أوقات الأداء المرجعية
+                        <Clock className="w-5 h-5" /> أوقات الأداء المرجعية
                       </h3>
                       <div className="grid grid-cols-2 gap-2">
                         {Object.entries(session.targetTimes).map(([level, time]: [string, any]) => {
-                          const labels: Record<string, { ar: string; color: string }> = {
-                            elite:        { ar: 'نخبة 🥇',   color: 'text-purple-400 bg-purple-900/20 border-purple-700/30' },
-                            advanced:     { ar: 'متقدم 🥈',  color: 'text-blue-400 bg-blue-900/20 border-blue-700/30' },
-                            intermediate: { ar: 'متوسط 🥉',  color: 'text-green-400 bg-green-900/20 border-green-700/30' },
+                          const labels: Record<string, { ar: string; color: string; icon?: typeof Medal }> = {
+                            elite:        { ar: 'نخبة',   color: 'text-amber-400 bg-amber-900/20 border-amber-700/30', icon: Medal },
+                            advanced:     { ar: 'متقدم',  color: 'text-blue-400 bg-blue-900/20 border-blue-700/30', icon: Medal },
+                            intermediate: { ar: 'متوسط',  color: 'text-green-400 bg-green-900/20 border-green-700/30', icon: Medal },
                             beginner:     { ar: 'مبتدئ',     color: 'text-gray-400 bg-gray-800 border-gray-700' },
                           };
                           const l = labels[level] || { ar: level, color: 'text-gray-400 bg-gray-800 border-gray-700' };
+                          const LIcon = l.icon;
                           return (
                             <div key={level} className={`rounded-xl border p-3 text-center ${l.color}`}>
-                              <div className="text-xs mb-1">{l.ar}</div>
+                              <div className="text-xs mb-1 flex items-center justify-center gap-1">{LIcon && <LIcon className="w-3.5 h-3.5" />} {l.ar}</div>
                               <div className="font-bold text-sm">{time}</div>
                             </div>
                           );
@@ -537,7 +547,7 @@ export default function HyroxClient({ member }: { member: any }) {
                   {session.cooldown && (
                     <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
                       <h3 className="font-semibold text-blue-400 mb-3 flex items-center gap-2">
-                        <span>🧘</span> التهدئة
+                        <Wind className="w-5 h-5" /> التهدئة
                       </h3>
                       <div className="space-y-2">
                         {session.cooldown.exercises?.map((ex: any, i: number) => (
@@ -562,7 +572,7 @@ export default function HyroxClient({ member }: { member: any }) {
                   {(session.nutritionBefore || session.nutritionAfter) && (
                     <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4 space-y-3">
                       <h3 className="font-semibold text-green-400 flex items-center gap-2">
-                        <span>🥗</span> التغذية
+                        <Salad className="w-5 h-5" /> التغذية
                       </h3>
                       {session.nutritionBefore && (
                         <div className="bg-green-900/10 rounded-xl p-3">
@@ -581,9 +591,9 @@ export default function HyroxClient({ member }: { member: any }) {
 
                   {/* Next recommendation */}
                   {session.nextSessionRecommendation && (
-                    <div className="bg-purple-900/20 border border-purple-700/30 rounded-2xl p-4">
-                      <h3 className="font-semibold text-purple-400 mb-2 flex items-center gap-2">
-                        <span>🔮</span> توصية الجلسة القادمة
+                    <div className="bg-orange-900/20 border border-orange-700/30 rounded-2xl p-4">
+                      <h3 className="font-semibold text-orange-400 mb-2 flex items-center gap-2">
+                        <Compass className="w-5 h-5" /> توصية الجلسة القادمة
                       </h3>
                       <p className="text-sm text-gray-300">{session.nextSessionRecommendation}</p>
                     </div>
@@ -592,7 +602,7 @@ export default function HyroxClient({ member }: { member: any }) {
                   {/* Share bar at bottom too */}
                   <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4 space-y-3">
                     <h3 className="font-semibold text-white text-sm flex items-center gap-2">
-                      <span>📤</span> مشاركة الجلسة
+                      <Share2 className="w-4 h-4" /> مشاركة الجلسة
                     </h3>
                     <div className="flex gap-2">
                       <button onClick={shareWhatsApp}
@@ -608,7 +618,7 @@ export default function HyroxClient({ member }: { member: any }) {
                             ? 'bg-blue-700/40 border border-blue-600/40 text-blue-300'
                             : 'bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white'
                         }`}>
-                        {copied ? '✅ تم النسخ!' : '📋 نسخ النص'}
+                        {copied ? <><CheckCircle2 className="w-4 h-4" /> تم النسخ!</> : <><Copy className="w-4 h-4" /> نسخ النص</>}
                       </button>
                     </div>
                     <p className="text-xs text-gray-600 text-center">
@@ -628,7 +638,7 @@ export default function HyroxClient({ member }: { member: any }) {
                 <div className="text-center text-gray-500 py-10 text-sm">جاري التحميل...</div>
               ) : history.length === 0 ? (
                 <div className="text-center py-12 space-y-3">
-                  <div className="text-5xl">🏁</div>
+                  <Flag className="w-12 h-12 text-gray-700 mx-auto" />
                   <p className="text-gray-500 text-sm">لا توجد جلسات محفوظة بعد</p>
                   {isAdmin ? (
                     <button
@@ -643,12 +653,12 @@ export default function HyroxClient({ member }: { member: any }) {
               ) : (
                 <>
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-white text-sm">
-                      📂 الجلسات المحفوظة ({history.length})
+                    <h3 className="font-semibold text-white text-sm flex items-center gap-1.5">
+                      <FolderOpen className="w-4 h-4" /> الجلسات المحفوظة ({history.length})
                     </h3>
                     <button onClick={loadHistory}
-                      className="text-xs text-gray-500 hover:text-white transition-colors">
-                      🔄 تحديث
+                      className="text-xs text-gray-500 hover:text-white transition-colors flex items-center gap-1">
+                      <RefreshCw className="w-3.5 h-3.5" /> تحديث
                     </button>
                   </div>
                   {history.map(rec => (

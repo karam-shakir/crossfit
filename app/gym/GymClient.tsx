@@ -3,6 +3,11 @@ import { useState, useMemo, useEffect, useContext, createContext } from 'react';
 import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import {
+  Dumbbell, Moon, TrendingUp, CheckCircle2, Loader2, MessageCircle, Pin,
+  ClipboardList, Sun, Wind, Brain, Flame, Calendar, PenLine, X, ArrowUp,
+  ArrowDown, Target, Zap, Sparkles,
+} from 'lucide-react';
 
 const GymExerciseProgressChart = dynamic(() => import('@/components/charts/GymExerciseProgressChart'), {
   ssr: false,
@@ -11,21 +16,21 @@ const GymExerciseProgressChart = dynamic(() => import('@/components/charts/GymEx
 
 type LevelKey = 'beginner' | 'intermediate' | 'advanced' | 'elite';
 
-const LEVEL_TABS: { key: LevelKey; label: string; emoji: string; active: string; idle: string }[] = [
-  { key: 'beginner',     label: 'مبتدئ',  emoji: '🟢', active: 'bg-green-600 text-white shadow-lg shadow-green-900/40',    idle: 'bg-green-50 text-green-700 border border-green-300' },
-  { key: 'intermediate', label: 'متوسط',  emoji: '🔵', active: 'bg-blue-600 text-white shadow-lg shadow-blue-900/40',     idle: 'bg-blue-50 text-blue-700 border border-blue-300' },
-  { key: 'advanced',     label: 'متقدم',  emoji: '🟠', active: 'bg-orange-500 text-white shadow-lg shadow-orange-900/40', idle: 'bg-orange-50 text-orange-700 border border-orange-300' },
-  { key: 'elite',        label: 'محترف',  emoji: '🔴', active: 'bg-red-600 text-white shadow-lg shadow-red-900/40',       idle: 'bg-red-50 text-red-700 border border-red-300' },
+const LEVEL_TABS: { key: LevelKey; label: string; dot: string; active: string; idle: string }[] = [
+  { key: 'beginner',     label: 'مبتدئ',  dot: 'bg-green-500',  active: 'bg-green-600 text-white shadow-lg shadow-green-900/40',    idle: 'bg-green-50 text-green-700 border border-green-300' },
+  { key: 'intermediate', label: 'متوسط',  dot: 'bg-blue-500',   active: 'bg-blue-600 text-white shadow-lg shadow-blue-900/40',     idle: 'bg-blue-50 text-blue-700 border border-blue-300' },
+  { key: 'advanced',     label: 'متقدم',  dot: 'bg-orange-500', active: 'bg-orange-500 text-white shadow-lg shadow-orange-900/40', idle: 'bg-orange-50 text-orange-700 border border-orange-300' },
+  { key: 'elite',        label: 'محترف',  dot: 'bg-red-500',    active: 'bg-red-600 text-white shadow-lg shadow-red-900/40',       idle: 'bg-red-50 text-red-700 border border-red-300' },
 ];
 
-const SPLIT_THEME: Record<string, { accent: string; badge: string; icon: string }> = {
-  Push:       { accent: 'bg-orange-500',   badge: 'bg-orange-100 text-orange-700 border border-orange-200',   icon: '🟠' },
-  Pull:       { accent: 'bg-blue-500',     badge: 'bg-blue-100 text-blue-700 border border-blue-200',         icon: '🔵' },
-  Legs:       { accent: 'bg-emerald-500',  badge: 'bg-emerald-100 text-emerald-700 border border-emerald-200', icon: '🟢' },
-  Upper:      { accent: 'bg-violet-500',   badge: 'bg-violet-100 text-violet-700 border border-violet-200',   icon: '🟣' },
-  Lower:      { accent: 'bg-amber-500',    badge: 'bg-amber-100 text-amber-700 border border-amber-200',      icon: '🟡' },
-  'Full Body':{ accent: 'bg-indigo-500',   badge: 'bg-indigo-100 text-indigo-700 border border-indigo-200',   icon: '🔷' },
-  Rest:       { accent: 'bg-slate-300',    badge: 'bg-slate-100 text-slate-500 border border-slate-200',      icon: '😴' },
+const SPLIT_THEME: Record<string, { accent: string; badge: string }> = {
+  Push:       { accent: 'bg-orange-500',   badge: 'bg-orange-100 text-orange-700 border border-orange-200' },
+  Pull:       { accent: 'bg-blue-500',     badge: 'bg-blue-100 text-blue-700 border border-blue-200' },
+  Legs:       { accent: 'bg-emerald-500',  badge: 'bg-emerald-100 text-emerald-700 border border-emerald-200' },
+  Upper:      { accent: 'bg-violet-500',   badge: 'bg-violet-100 text-violet-700 border border-violet-200' },
+  Lower:      { accent: 'bg-amber-500',    badge: 'bg-amber-100 text-amber-700 border border-amber-200' },
+  'Full Body':{ accent: 'bg-indigo-500',   badge: 'bg-indigo-100 text-indigo-700 border border-indigo-200' },
+  Rest:       { accent: 'bg-slate-300',    badge: 'bg-slate-100 text-slate-500 border border-slate-200' },
 };
 
 // روابط شرح لكل جهاز معروف بمكتبة الأساس — بلا أي علامة تجارية، تصلح لأي صالة. لأي تمرين مضاف عبر
@@ -81,12 +86,18 @@ function ytFallback(nameEn: string): string {
 const GymCatalogYoutubeContext = createContext<Record<string, string>>({});
 
 const GOAL_LABEL: Record<string, string> = {
-  weight_loss: 'خسارة الوزن 🔥', muscle_gain: 'بناء العضلة 💪',
-  strength: 'القوة 🏋️', general_fitness: 'لياقة عامة ⚡', body_recomp: 'إعادة تشكيل 🎯',
+  weight_loss: 'خسارة الوزن', muscle_gain: 'بناء العضلة',
+  strength: 'القوة', general_fitness: 'لياقة عامة', body_recomp: 'إعادة تشكيل',
+};
+const GOAL_ICON: Record<string, any> = {
+  weight_loss: Flame, muscle_gain: Dumbbell, strength: Dumbbell, general_fitness: Zap, body_recomp: Target,
 };
 
-const LEVEL_DISPLAY: Record<string, string> = {
-  beginner: '🟢 مبتدئ', intermediate: '🔵 متوسط', advanced: '🟠 متقدم', elite: '🔴 محترف',
+const LEVEL_LABEL: Record<string, string> = {
+  beginner: 'مبتدئ', intermediate: 'متوسط', advanced: 'متقدم', elite: 'محترف',
+};
+const LEVEL_DOT: Record<string, string> = {
+  beginner: 'bg-green-500', intermediate: 'bg-blue-500', advanced: 'bg-orange-500', elite: 'bg-red-500',
 };
 
 function todayStr() {
@@ -211,7 +222,7 @@ function ExerciseCard({
               {trendData.length >= 2 && (
                 <button onClick={() => setShowTrend(t => !t)}
                   className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${showTrend ? 'bg-indigo-600 text-white' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'}`}>
-                  📈 تطوري
+                  <TrendingUp className="w-4 h-4" /> تطوري
                 </button>
               )}
               <a href={catalogYoutube[ex.machineId] || MACHINE_YOUTUBE[ex.machineId] || ytFallback(ex.nameEn)} target="_blank" rel="noopener noreferrer"
@@ -222,8 +233,8 @@ function ExerciseCard({
             </div>
           </div>
           <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-            <span className="text-xs bg-slate-100 border border-slate-300 text-slate-700 px-2 py-0.5 rounded-lg font-medium">
-              💪 {ex.muscleGroup}
+            <span className="text-xs bg-slate-100 border border-slate-300 text-slate-700 px-2 py-0.5 rounded-lg font-medium inline-flex items-center gap-1">
+              <Dumbbell className="w-4 h-4" /> {ex.muscleGroup}
             </span>
             <span className="text-xs bg-slate-100 border border-slate-300 text-slate-700 px-2 py-0.5 rounded-lg font-medium">
               {ex.sets} مجموعات
@@ -235,7 +246,7 @@ function ExerciseCard({
       {/* Progress trend */}
       {showTrend && trendData.length >= 2 && (
         <div className="mx-3 mb-3 rounded-xl bg-indigo-50/50 border border-indigo-200 p-3">
-          <div className="text-xs text-indigo-700 font-bold mb-2">📈 الوزن الفعلي عبر الوقت (الخط المتقطع = المقترح الحالي)</div>
+          <div className="text-xs text-indigo-700 font-bold mb-2 flex items-center gap-1"><TrendingUp className="w-4 h-4" /> الوزن الفعلي عبر الوقت (الخط المتقطع = المقترح الحالي)</div>
           <GymExerciseProgressChart data={trendData} suggestedValue={suggestedNum ?? undefined} />
         </div>
       )}
@@ -259,7 +270,7 @@ function ExerciseCard({
           </div>
           {lvl.cue && (
             <div className="border-t border-amber-200 px-3 py-3 bg-amber-50 flex items-start gap-2">
-              <span className="text-base flex-shrink-0 mt-0.5">💬</span>
+              <MessageCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
               <span className="text-sm text-amber-800 leading-relaxed font-medium">{lvl.cue}</span>
             </div>
           )}
@@ -273,37 +284,37 @@ function ExerciseCard({
                 'bg-slate-50 border-slate-200'
               }`}>
                 <button onClick={unlog} disabled={saving}
-                  className="text-slate-400 hover:text-red-500 text-xs font-bold px-1.5 flex-shrink-0">✕</button>
+                  className="text-slate-400 hover:text-red-500 text-xs font-bold px-1.5 flex-shrink-0"><X className="w-4 h-4" /></button>
                 <div className="text-right flex-1 min-w-0">
-                  <span className={`text-sm font-bold ${
+                  <span className={`text-sm font-bold inline-flex items-center gap-1 ${
                     existingLog.comparison === 'more' ? 'text-emerald-700' :
                     existingLog.comparison === 'less' ? 'text-amber-700' : 'text-slate-700'
                   }`}>
-                    ✅ أنجزت — {existingLog.actualWeight} × {existingLog.actualReps}
+                    <CheckCircle2 className="w-4 h-4 text-green-500" /> أنجزت — {existingLog.actualWeight} × {existingLog.actualReps}
                   </span>
-                  {existingLog.comparison === 'more' && <span className="text-emerald-600 text-xs mr-2">⬆ أعلى من المقترح</span>}
-                  {existingLog.comparison === 'less' && <span className="text-amber-600 text-xs mr-2">⬇ أقل من المقترح</span>}
+                  {existingLog.comparison === 'more' && <span className="text-emerald-600 text-xs mr-2 inline-flex items-center gap-0.5"><ArrowUp className="w-3.5 h-3.5" /> أعلى من المقترح</span>}
+                  {existingLog.comparison === 'less' && <span className="text-amber-600 text-xs mr-2 inline-flex items-center gap-0.5"><ArrowDown className="w-3.5 h-3.5" /> أقل من المقترح</span>}
                 </div>
               </div>
             ) : !expanded ? (
               <button onClick={() => setExpanded(true)}
-                className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 text-slate-500 text-sm font-semibold hover:border-indigo-400 hover:text-indigo-600 transition-all">
-                ✅ سجّل إنجازك (اختياري)
+                className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 text-slate-500 text-sm font-semibold hover:border-indigo-400 hover:text-indigo-600 transition-all inline-flex items-center justify-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4" /> سجّل إنجازك (اختياري)
               </button>
             ) : (
               <div className="space-y-2">
                 <div className="grid grid-cols-3 gap-2">
                   <button onClick={() => setManualMode('less')} disabled={saving}
-                    className={`py-2 rounded-xl border text-sm font-bold transition-all ${manualMode === 'less' ? 'bg-amber-500 text-white border-transparent' : 'bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100'}`}>
-                    ⬇ أقل
+                    className={`py-2 rounded-xl border text-sm font-bold transition-all inline-flex items-center justify-center gap-1 ${manualMode === 'less' ? 'bg-amber-500 text-white border-transparent' : 'bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100'}`}>
+                    <ArrowDown className="w-4 h-4" /> أقل
                   </button>
                   <button onClick={() => submitLog('same')} disabled={saving}
                     className="py-2 rounded-xl border bg-slate-100 border-slate-300 text-slate-700 text-sm font-bold hover:bg-slate-200 transition-all">
                     = نفسه
                   </button>
                   <button onClick={() => setManualMode('more')} disabled={saving}
-                    className={`py-2 rounded-xl border text-sm font-bold transition-all ${manualMode === 'more' ? 'bg-emerald-600 text-white border-transparent' : 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100'}`}>
-                    ⬆ أكثر
+                    className={`py-2 rounded-xl border text-sm font-bold transition-all inline-flex items-center justify-center gap-1 ${manualMode === 'more' ? 'bg-emerald-600 text-white border-transparent' : 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100'}`}>
+                    <ArrowUp className="w-4 h-4" /> أكثر
                   </button>
                 </div>
                 {manualMode && (
@@ -327,7 +338,7 @@ function ExerciseCard({
 
       {ex.notes && (
         <div className="px-4 pb-3.5 text-sm text-slate-600 flex items-start gap-1.5 leading-relaxed">
-          <span className="flex-shrink-0">📌</span><span>{ex.notes}</span>
+          <Pin className="w-4 h-4 flex-shrink-0" /><span>{ex.notes}</span>
         </div>
       )}
     </div>
@@ -386,19 +397,22 @@ function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
 
       {/* Today badge */}
       {isToday && (
-        <div className="bg-indigo-600 text-white text-sm font-bold text-center py-2 tracking-widest">
-          ✨ تمرين اليوم
+        <div className="bg-indigo-600 text-white text-sm font-bold text-center py-2 tracking-widest inline-flex items-center justify-center gap-1.5 w-full">
+          <Sparkles className="w-4 h-4" /> تمرين اليوم
         </div>
       )}
       {/* Intensity badge */}
       {!isRest && s.intensity && (
-        <div className={`text-sm font-bold text-center py-1.5 ${
+        <div className={`text-sm font-bold text-center py-1.5 inline-flex items-center justify-center gap-1.5 w-full ${
           s.intensity === 'Heavy'    ? 'bg-red-500 text-white' :
           s.intensity === 'Moderate' ? 'bg-amber-500 text-white' :
           s.intensity === 'Light'    ? 'bg-emerald-500 text-white' :
           s.intensity === 'Cardio'   ? 'bg-sky-500 text-white' : 'hidden'
         }`}>
-          {s.intensity === 'Heavy' ? '🔴 شدة عالية' : s.intensity === 'Moderate' ? '🟡 شدة متوسطة' : s.intensity === 'Light' ? '🟢 خفيف / حجم' : s.intensity === 'Cardio' ? '🔵 كارديو' : ''}
+          {(s.intensity === 'Heavy' || s.intensity === 'Moderate' || s.intensity === 'Light' || s.intensity === 'Cardio') && (
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-white/70" />
+          )}
+          {s.intensity === 'Heavy' ? 'شدة عالية' : s.intensity === 'Moderate' ? 'شدة متوسطة' : s.intensity === 'Light' ? 'خفيف / حجم' : s.intensity === 'Cardio' ? 'كارديو' : ''}
         </div>
       )}
 
@@ -407,7 +421,11 @@ function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
         onClick={() => !isRest && setOpen(o => !o)}
         className={`w-full px-4 py-3.5 text-right flex items-center gap-3 ${!isRest ? 'active:bg-black/5 cursor-pointer' : 'cursor-default'}`}
       >
-        <span className="text-2xl flex-shrink-0">{theme.icon}</span>
+        {isRest ? (
+          <Moon className="w-6 h-6 flex-shrink-0 text-slate-400" />
+        ) : (
+          <span className={`inline-block w-3.5 h-3.5 rounded-full flex-shrink-0 ${theme.accent}`} />
+        )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
             <span className="font-extrabold text-slate-800 text-[17px] leading-tight">{s.dayName}</span>
@@ -420,7 +438,7 @@ function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
               </span>
             )}
             {isRest ? (
-              <span className="text-sm text-slate-500">😴 يوم راحة</span>
+              <span className="text-sm text-slate-500 inline-flex items-center gap-1"><Moon className="w-4 h-4" /> يوم راحة</span>
             ) : s.title ? (
               <span className="text-xs text-slate-600 leading-relaxed line-clamp-1">{s.title}</span>
             ) : null}
@@ -454,7 +472,7 @@ function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
           {/* Session notes */}
           {s.notes && (
             <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 flex items-start gap-2">
-              <span className="text-base flex-shrink-0">📋</span>
+              <ClipboardList className="w-4 h-4 flex-shrink-0 text-gray-400" />
               <p className="text-[15px] text-slate-700 leading-relaxed">{s.notes}</p>
             </div>
           )}
@@ -466,7 +484,7 @@ function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
               {LEVEL_TABS.map(t => (
                 <button key={t.key} onClick={() => setLevel(t.key)}
                   className={`py-3 rounded-xl text-sm font-bold transition-all ${level === t.key ? t.active : t.idle}`}>
-                  <div className="text-lg">{t.emoji}</div>
+                  <div className="flex justify-center"><span className={`inline-block w-2.5 h-2.5 rounded-full ${t.dot}`} /></div>
                   <div className="mt-1">{t.label}</div>
                 </button>
               ))}
@@ -477,7 +495,7 @@ function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
           {s.warmup?.length > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
               <h4 className="text-[15px] font-bold text-amber-800 mb-3 flex items-center gap-2">
-                <span className="text-xl">🔆</span> الإحماء
+                <Sun className="w-5 h-5" /> الإحماء
               </h4>
               <ol className="space-y-2 list-none">
                 {s.warmup.map((w: string, i: number) => (
@@ -495,7 +513,7 @@ function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
             <div>
               <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
                 <h4 className="text-[15px] font-bold text-blue-700 flex items-center gap-2">
-                  <span className="text-xl">💪</span>
+                  <Dumbbell className="w-5 h-5" />
                   <span>التمارين</span>
                   <span className="bg-blue-100 text-blue-700 border border-blue-200 text-xs px-2.5 py-1 rounded-full font-bold">
                     {s.exercises.length} تمرين
@@ -503,8 +521,8 @@ function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
                 </h4>
                 {unloggedExercises.length > 0 && (
                   <button onClick={markAllSuggested} disabled={bulkSaving}
-                    className="text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-full transition-all disabled:opacity-50">
-                    {bulkSaving ? '⏳ جارٍ الحفظ...' : '✅ أنجزت الكل بالمقترح'}
+                    className="text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-full transition-all disabled:opacity-50 inline-flex items-center gap-1.5">
+                    {bulkSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> جارٍ الحفظ...</> : <><CheckCircle2 className="w-4 h-4" /> أنجزت الكل بالمقترح</>}
                   </button>
                 )}
               </div>
@@ -525,7 +543,7 @@ function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
           {s.cooldown?.length > 0 && (
             <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4">
               <h4 className="text-[15px] font-bold text-teal-700 mb-3 flex items-center gap-2">
-                <span className="text-xl">🧘</span> التهدئة والإطالة
+                <Wind className="w-5 h-5" /> التهدئة والإطالة
               </h4>
               <ol className="space-y-2 list-none">
                 {s.cooldown.map((c: string, i: number) => (
@@ -541,7 +559,7 @@ function SessionCard({ s, isToday, logs, onLogged, onUnlogged }: {
           {/* Coach note */}
           {s.coachNote && (
             <div className="bg-indigo-50 border border-indigo-200 rounded-2xl px-4 py-3.5 flex items-start gap-3">
-              <span className="text-2xl flex-shrink-0">🧠</span>
+              <Brain className="w-6 h-6 flex-shrink-0 text-indigo-600" />
               <div>
                 <div className="text-sm text-indigo-700 font-bold mb-1.5">ملاحظة المدرب</div>
                 <p className="text-[15px] text-slate-700 leading-relaxed">{s.coachNote}</p>
@@ -596,13 +614,15 @@ export default function GymClient({ member, profile, sessions }: { member: any; 
         <Navbar member={member} />
         <main className="flex-1 lg:mr-56 flex items-center justify-center px-4">
           <div className="text-center space-y-5 max-w-sm">
-            <div className="text-7xl">🏋️</div>
+            <div className="mx-auto w-20 h-20 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center">
+              <Dumbbell className="w-6 h-6 text-orange-500" />
+            </div>
             <h2 className="text-2xl font-extrabold text-white">ابدأ رحلتك في الجيم</h2>
             <p className="text-gray-400 text-base leading-relaxed">
               عبّئ بروفايلك التدريبي وسيقوم المدرب بتصميم جدول أسبوعي مخصص لك بأجهزة الجيم المتوفرة في أي صالة
             </p>
             <Link href="/gym/profile"
-              className="inline-block bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-8 py-4 rounded-2xl transition-colors text-base shadow-lg shadow-indigo-900/40">
+              className="inline-block bg-orange-500 hover:bg-orange-400 text-white font-bold px-8 py-4 rounded-2xl transition-colors text-base shadow-lg shadow-orange-900/40">
               إعداد البروفايل التدريبي →
             </Link>
           </div>
@@ -619,34 +639,49 @@ export default function GymClient({ member, profile, sessions }: { member: any; 
         <div className="max-w-xl mx-auto px-4 pt-5 space-y-4">
 
           {/* Header */}
-          <div className="bg-indigo-600 rounded-2xl p-5 shadow-lg shadow-indigo-200">
+          <div className="bg-gray-900 border border-gray-800 border-r-4 border-r-orange-500 rounded-2xl p-5 shadow-lg shadow-black/20">
             <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h1 className="font-extrabold text-white text-xl leading-tight mb-0.5">
-                  🏋️ جدول الجيم
-                </h1>
-                <p style={{color:'rgba(255,255,255,0.85)'}} className="text-sm font-semibold">{GOAL_LABEL[profile.goal]}</p>
-                <p style={{color:'rgba(255,255,255,0.70)'}} className="text-xs mt-0.5">{LEVEL_DISPLAY[profile.level]} • {profile.daysPerWeek} أيام/أسبوع</p>
+              <div className="min-w-0 flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-500/15 border border-orange-500/30 flex items-center justify-center flex-shrink-0">
+                  <Dumbbell className="w-5 h-5 text-orange-500" />
+                </div>
+                <div className="min-w-0">
+                  <h1 className="font-extrabold text-white text-xl leading-tight mb-0.5">
+                    جدول الجيم
+                  </h1>
+                  <p className="text-sm font-semibold text-gray-300 inline-flex items-center gap-1">
+                    {GOAL_ICON[profile.goal] && (() => { const GoalIcon = GOAL_ICON[profile.goal]; return <GoalIcon className="w-4 h-4 text-orange-500" />; })()}
+                    {GOAL_LABEL[profile.goal]}
+                  </p>
+                  <p className="text-xs mt-0.5 text-gray-500 inline-flex items-center gap-1.5">
+                    <span className={`inline-block w-2 h-2 rounded-full ${LEVEL_DOT[profile.level]}`} />
+                    {LEVEL_LABEL[profile.level]} • {profile.daysPerWeek} أيام/أسبوع
+                  </p>
+                </div>
               </div>
               <Link href="/gym/profile"
-                className="flex-shrink-0 text-xs bg-white/20 border border-white/30 text-white px-3 py-2 rounded-xl hover:bg-white/30 transition-all font-semibold">
-                ✏️ البروفايل
+                className="flex-shrink-0 text-xs bg-gray-800 border border-gray-700 text-gray-200 px-3 py-2 rounded-xl hover:bg-gray-700 transition-all font-semibold inline-flex items-center gap-1.5">
+                <PenLine className="w-4 h-4" /> البروفايل
               </Link>
             </div>
 
             {sessions.length > 0 && (
-              <div className="mt-4 pt-3 border-t border-white/20 grid grid-cols-3 gap-2">
+              <div className="mt-4 pt-3 border-t border-gray-800 grid grid-cols-3 gap-2">
                 <div className="text-center">
                   <div className="text-2xl font-extrabold text-white">{trainingDays}</div>
-                  <div className="text-[11px] mt-0.5" style={{color:'rgba(255,255,255,0.70)'}}>أيام تمرين</div>
+                  <div className="text-[11px] mt-0.5 text-gray-500">أيام تمرين</div>
                 </div>
-                <div className="text-center border-x border-white/20">
+                <div className="text-center border-x border-gray-800">
                   <div className="text-2xl font-extrabold text-white">{totalExercises}</div>
-                  <div className="text-[11px] mt-0.5" style={{color:'rgba(255,255,255,0.70)'}}>تمرين / أسبوع</div>
+                  <div className="text-[11px] mt-0.5 text-gray-500">تمرين / أسبوع</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-extrabold text-white">{currentSessions.find(s => s.date === today) ? '🔥' : '📅'}</div>
-                  <div className="text-[11px] mt-0.5" style={{color:'rgba(255,255,255,0.70)'}}>
+                  <div className="flex justify-center">
+                    {currentSessions.find(s => s.date === today)
+                      ? <Flame className="w-6 h-6 text-orange-500" />
+                      : <Calendar className="w-6 h-6 text-gray-500" />}
+                  </div>
+                  <div className="text-[11px] mt-0.5 text-gray-500">
                     {currentSessions.find(s => s.date === today) ? 'اليوم تمرين!' : 'استمر'}
                   </div>
                 </div>
@@ -656,10 +691,12 @@ export default function GymClient({ member, profile, sessions }: { member: any; 
 
           {sessions.length === 0 ? (
             <div className="text-center py-20 space-y-4">
-              <div className="text-6xl">📋</div>
+              <div className="mx-auto w-16 h-16 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center">
+                <ClipboardList className="w-6 h-6 text-gray-400" />
+              </div>
               <p className="text-slate-800 font-bold text-lg">لا يوجد جدول بعد</p>
-              <p className="text-slate-500 text-sm leading-relaxed max-w-xs mx-auto">
-                بروفايلك جاهز ✅ — انتظر المدرب ليولّد لك جدولك الأسبوعي المخصص
+              <p className="text-slate-500 text-sm leading-relaxed max-w-xs mx-auto inline-flex items-center gap-1 justify-center">
+                بروفايلك جاهز <CheckCircle2 className="w-4 h-4 text-green-500" /> — انتظر المدرب ليولّد لك جدولك الأسبوعي المخصص
               </p>
             </div>
           ) : (
@@ -678,7 +715,7 @@ export default function GymClient({ member, profile, sessions }: { member: any; 
                               ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40'
                               : 'bg-white text-slate-600 border border-slate-300 hover:border-indigo-400 hover:text-indigo-600'
                           }`}>
-                          {hasToday && <span className="ml-1">🔥</span>}
+                          {hasToday && <Flame className="w-3.5 h-3.5 inline ml-1 text-orange-500" />}
                           {w.label}
                         </button>
                       );

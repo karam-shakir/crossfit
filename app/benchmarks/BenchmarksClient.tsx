@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import ExerciseCard from '@/components/ExerciseCard';
+import { BarChart3, TrendingUp, CheckCircle2 } from 'lucide-react';
 
 // تحميل كسول لمكتبة recharts (~100kB) — لا تُحمَّل إلا عند عرض هذا القسم فعلياً
 const BenchmarkProgressChart = dynamic(() => import('@/components/charts/BenchmarkProgressChart'), {
@@ -75,16 +76,18 @@ export default function BenchmarksClient({ member }: { member: any }) {
       <main className="flex-1 min-w-0 lg:mr-56 pb-safe-nav lg:pb-0 overflow-x-hidden">
         <div className="max-w-2xl mx-auto px-4 pt-safe pb-6 space-y-6">
 
-          <h1 className="text-xl font-bold text-white">📊 البنشمارك الكلاسيكية</h1>
+          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-gray-400" /> البنشمارك الكلاسيكية
+          </h1>
 
           <div className="flex gap-2">
             <button onClick={() => setTab('girls')}
-              className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'girls' ? 'bg-pink-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
-              👧 البنات (Girls)
+              className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'girls' ? 'bg-orange-500 text-white' : 'bg-gray-800 text-gray-400'}`}>
+              البنات (Girls)
             </button>
             <button onClick={() => setTab('heroes')}
               className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === 'heroes' ? 'bg-blue-700 text-white' : 'bg-gray-800 text-gray-400'}`}>
-              🦸 الأبطال (Heroes)
+              الأبطال (Heroes)
             </button>
           </div>
 
@@ -109,7 +112,7 @@ export default function BenchmarksClient({ member }: { member: any }) {
                       {best ? (
                         <div className="text-left flex-shrink-0">
                           <div className="text-orange-400 font-bold text-sm">{best.result}</div>
-                          {best.rxd && <div className="text-xs text-green-400">Rx'd ✅</div>}
+                          {best.rxd && <div className="text-xs text-green-400 inline-flex items-center gap-1">Rx'd <CheckCircle2 className="w-4 h-4" /></div>}
                         </div>
                       ) : (
                         <div className="text-xs text-gray-600 flex-shrink-0">لم تُؤدَ بعد</div>
@@ -196,8 +199,8 @@ export default function BenchmarksClient({ member }: { member: any }) {
                           {/* رسم بياني تطور الأداء */}
                           {parsed.length >= 2 && (
                             <div className="bg-gray-800/60 rounded-xl p-3 mb-3">
-                              <div className="text-xs text-gray-400 mb-2">
-                                📈 تطور الأداء {isTime ? '(أقل وقت = أفضل)' : '(أعلى = أفضل)'}
+                              <div className="text-xs text-gray-400 mb-2 flex items-center gap-1">
+                                <TrendingUp className="w-4 h-4 text-orange-500" /> تطور الأداء {isTime ? '(أقل وقت = أفضل)' : '(أعلى = أفضل)'}
                               </div>
                               <BenchmarkProgressChart
                                 data={parsed.map((r: any) => ({ date: r.date.slice(5), value: r.numVal, result: r.result }))}

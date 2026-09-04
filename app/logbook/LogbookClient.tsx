@@ -2,6 +2,7 @@
 import { todaySA } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
+import { BookOpen, CheckCircle2, Clock, Repeat, Dumbbell, Trash2 } from 'lucide-react';
 
 export default function LogbookClient({ member }: { member: any }) {
   const [entries, setEntries] = useState<any[]>([]);
@@ -46,7 +47,9 @@ export default function LogbookClient({ member }: { member: any }) {
         <div className="max-w-2xl mx-auto px-4 pt-safe pb-6 space-y-6">
 
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-white">📓 سجل التمارين</h1>
+            <h1 className="text-xl font-bold text-white flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-orange-500" /> سجل التمارين
+            </h1>
             <button onClick={() => setShowForm(!showForm)}
               className="bg-orange-500 hover:bg-orange-400 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
               + تسجيل جلسة
@@ -114,14 +117,18 @@ export default function LogbookClient({ member }: { member: any }) {
                 <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
                   <input type="checkbox" checked={form.rxd} onChange={e => setForm(p => ({ ...p, rxd: e.target.checked }))}
                     className="w-4 h-4 accent-orange-500" />
-                  Rx'd ✅
+                  <span className="inline-flex items-center gap-1">Rx'd <CheckCircle2 className="w-4 h-4 text-green-500" /></span>
                 </label>
               </div>
 
               <div className="flex gap-3">
                 <button onClick={saveEntry} disabled={!form.wodTitle || saving}
                   className="flex-1 bg-orange-500 hover:bg-orange-400 disabled:bg-gray-700 text-white py-2 rounded-xl text-sm font-semibold transition-colors">
-                  {saving ? 'جاري الحفظ...' : 'حفظ الجلسة 📓'}
+                  {saving ? 'جاري الحفظ...' : (
+                    <span className="inline-flex items-center justify-center gap-1">
+                      حفظ الجلسة <BookOpen className="w-4 h-4" />
+                    </span>
+                  )}
                 </button>
                 <button onClick={() => setShowForm(false)}
                   className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-sm transition-colors">
@@ -135,7 +142,7 @@ export default function LogbookClient({ member }: { member: any }) {
             <div className="text-center text-gray-500 py-12">جاري التحميل...</div>
           ) : entries.length === 0 ? (
             <div className="bg-gray-900 rounded-2xl p-8 text-center border border-gray-800">
-              <div className="text-5xl mb-4">📓</div>
+              <BookOpen className="w-6 h-6 text-gray-600 mb-4 mx-auto" />
               <div className="text-gray-400">لا توجد تمارين مسجلة بعد</div>
             </div>
           ) : (
@@ -152,9 +159,9 @@ export default function LogbookClient({ member }: { member: any }) {
                         <div className="text-orange-400 font-mono text-sm mt-1">{entry.result}</div>
                       )}
                       <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
-                        {entry.time && <span className="text-xs text-gray-400">⏱ {entry.time}</span>}
-                        {entry.rounds && <span className="text-xs text-gray-400">🔄 {entry.rounds} راوندات</span>}
-                        {entry.weight && <span className="text-xs text-gray-400">🏋️ {entry.weight}</span>}
+                        {entry.time && <span className="text-xs text-gray-400 inline-flex items-center gap-1"><Clock className="w-4 h-4" /> {entry.time}</span>}
+                        {entry.rounds && <span className="text-xs text-gray-400 inline-flex items-center gap-1"><Repeat className="w-4 h-4" /> {entry.rounds} راوندات</span>}
+                        {entry.weight && <span className="text-xs text-gray-400 inline-flex items-center gap-1"><Dumbbell className="w-4 h-4" /> {entry.weight}</span>}
                         {entry.reps && <span className="text-xs text-gray-400">× {entry.reps} تكرار</span>}
                       </div>
                       {entry.notes && (
@@ -165,7 +172,7 @@ export default function LogbookClient({ member }: { member: any }) {
                       <span className="text-xs text-gray-500">{entry.date}</span>
                       <button onClick={() => deleteEntry(entry.id)}
                         className="w-7 h-7 rounded-lg bg-gray-700 hover:bg-red-800 flex items-center justify-center text-xs transition-colors">
-                        🗑
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>

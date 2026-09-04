@@ -6,7 +6,7 @@
 *, *::before, *::after { box-sizing: border-box; }
 
 html {
-  background: #f1f5f9;
+  background: #05070d;
   font-size: 16px;
   overflow-x: hidden;
   overflow-y: auto;
@@ -16,8 +16,8 @@ html {
 }
 
 body {
-  background: #f1f5f9;
-  color: #1e293b;
+  background: #05070d;
+  color: #f8fafc;
   font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
   overflow-x: hidden;
   overflow-y: auto;
@@ -29,87 +29,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
   touch-action: manipulation;
 }
-
-/* ══ Light theme — structural overrides ══════════════════════════════════ */
-
-/* Backgrounds */
-.bg-gray-950 { background-color: #ffffff !important; }
-.bg-gray-900 { background-color: #f8fafc !important; }
-.bg-gray-800 { background-color: #f1f5f9 !important; }
-.bg-gray-700 { background-color: #e2e8f0 !important; }
-
-/* Opacity-variant backgrounds */
-.bg-gray-900\/20 { background-color: rgba(248,250,252,0.6) !important; }
-.bg-gray-900\/30 { background-color: rgba(248,250,252,0.7) !important; }
-.bg-gray-900\/40 { background-color: rgba(248,250,252,0.8) !important; }
-.bg-gray-800\/40 { background-color: rgba(241,245,249,0.6) !important; }
-.bg-gray-800\/50 { background-color: rgba(241,245,249,0.75) !important; }
-.bg-gray-800\/60 { background-color: rgba(241,245,249,0.85) !important; }
-.bg-gray-800\/70 { background-color: rgba(241,245,249,0.9) !important; }
-.bg-gray-700\/30 { background-color: rgba(226,232,240,0.5) !important; }
-.bg-gray-700\/40 { background-color: rgba(226,232,240,0.65) !important; }
-
-/* Borders */
-.border-gray-800 { border-color: #e2e8f0 !important; }
-.border-gray-700 { border-color: #cbd5e1 !important; }
-.border-gray-600 { border-color: #94a3b8 !important; }
-.border-gray-700\/30 { border-color: rgba(203,213,225,0.5) !important; }
-.border-gray-800\/30 { border-color: rgba(226,232,240,0.5) !important; }
-.border-gray-800\/40 { border-color: rgba(226,232,240,0.65) !important; }
-.border-gray-800\/50 { border-color: rgba(226,232,240,0.8) !important; }
-
-/* Text — on gray/light backgrounds → dark */
-body .text-white  { color: #0f172a !important; }
-body .text-gray-300 { color: #334155 !important; }
-body .text-gray-400 { color: #475569 !important; }
-body .text-gray-500 { color: #64748b !important; }
-body .text-gray-600 { color: #94a3b8 !important; }
-
-/* Additional gray text — light shades invisible on white */
-body .text-gray-100, body .text-gray-200 { color: #334155 !important; }
-
-/* Colored light text → visible on white/light backgrounds */
-body .text-blue-200,   body .text-blue-300,   body .text-blue-400   { color: #1d4ed8 !important; }
-body .text-teal-200,   body .text-teal-300,   body .text-teal-400   { color: #0f766e !important; }
-body .text-green-200,  body .text-green-300,  body .text-green-400  { color: #15803d !important; }
-body .text-indigo-100, body .text-indigo-200, body .text-indigo-300, body .text-indigo-400 { color: #4338ca !important; }
-body .text-orange-200, body .text-orange-300, body .text-orange-400 { color: #c2410c !important; }
-body .text-purple-200, body .text-purple-300, body .text-purple-400 { color: #7e22ce !important; }
-body .text-yellow-200, body .text-yellow-300, body .text-yellow-400 { color: #92400e !important; }
-body .text-red-200,    body .text-red-300,    body .text-red-400    { color: #b91c1c !important; }
-body .text-amber-50, body .text-amber-100, body .text-amber-200, body .text-amber-300, body .text-amber-400 { color: #92400e !important; }
-body .text-emerald-200, body .text-emerald-300, body .text-emerald-400 { color: #065f46 !important; }
-body .text-rose-300, body .text-rose-400 { color: #be123c !important; }
-body .text-cyan-300, body .text-cyan-400 { color: #0e7490 !important; }
-
-/* Restore white text on colored backgrounds (higher specificity wins) */
-[class*="bg-orange-"] .text-white,  [class*="bg-orange-"].text-white  { color: #ffffff !important; }
-[class*="bg-red-"]    .text-white,  [class*="bg-red-"].text-white     { color: #ffffff !important; }
-[class*="bg-blue-"]   .text-white,  [class*="bg-blue-"].text-white    { color: #ffffff !important; }
-[class*="bg-green-"]  .text-white,  [class*="bg-green-"].text-white   { color: #ffffff !important; }
-[class*="bg-purple-"] .text-white,  [class*="bg-purple-"].text-white  { color: #ffffff !important; }
-[class*="bg-teal-"]   .text-white,  [class*="bg-teal-"].text-white    { color: #ffffff !important; }
-[class*="bg-indigo-"] .text-white,  [class*="bg-indigo-"].text-white  { color: #ffffff !important; }
-[class*="bg-yellow-"] .text-white,  [class*="bg-yellow-"].text-white  { color: #ffffff !important; }
-[class*="bg-pink-"]    .text-white,  [class*="bg-pink-"].text-white    { color: #ffffff !important; }
-[class*="bg-amber-"]   .text-white,  [class*="bg-amber-"].text-white   { color: #ffffff !important; }
-[class*="bg-emerald-"] .text-white,  [class*="bg-emerald-"].text-white  { color: #ffffff !important; }
-[class*="bg-cyan-"]    .text-white,  [class*="bg-cyan-"].text-white     { color: #ffffff !important; }
-[class*="bg-rose-"]    .text-white,  [class*="bg-rose-"].text-white     { color: #ffffff !important; }
-[class*="bg-sky-"]     .text-white,  [class*="bg-sky-"].text-white      { color: #ffffff !important; }
-[class*="bg-violet-"]  .text-white,  [class*="bg-violet-"].text-white   { color: #ffffff !important; }
-[class*="bg-lime-"]    .text-white,  [class*="bg-lime-"].text-white     { color: #1a2e05 !important; }
-[class*="bg-amber-"]  .text-amber-50, [class*="bg-amber-"] .text-amber-100,
-[class*="bg-amber-"]  .text-amber-200, [class*="bg-amber-"] .text-gray-100 { color: #fef3c7 !important; }
-
-/* bg-gray-800/80 opacity not covered above — keep it light for consistency */
-.bg-gray-800\/80 { background-color: rgba(241,245,249,0.95) !important; }
-.bg-gray-900\/50 { background-color: rgba(248,250,252,0.85) !important; }
-
-/* Navbar and fixed bars — keep darker */
-nav.bg-gray-900, header.bg-gray-900 { background-color: #1e293b !important; }
-nav .text-white, header .text-white  { color: #f8fafc !important; }
-nav .text-gray-400, header .text-gray-400 { color: #94a3b8 !important; }
 
 /* منع أي عنصر من تجاوز عرض الشاشة */
 html, body {
