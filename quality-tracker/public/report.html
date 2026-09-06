@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>تقرير إنجاز وثائق الجودة</title>
+<style>
+  /* هوية جامعة أم القرى: الأخضر الداكن والذهبي */
+  :root { --uqu-green:#0b3d3a; --uqu-green-2:#146b5c; --uqu-gold:#b8962e; --uqu-gold-2:#e2c766; --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb;
+    --ok:#c6efce; --ok-ink:#0f5132; --late:#ffeb9c; --late-ink:#664d03; --bad:#ffc7ce; --bad-ink:#842029; --pending:#f3f4f6 }
+  * { box-sizing:border-box } body { margin:0; font-family:Tahoma,"Segoe UI",Arial,sans-serif; color:var(--ink); background:#e9ecef; font-size:13px }
+  .toolbar { position:sticky; top:0; background:#fff; border-bottom:1px solid var(--line); padding:10px 20px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; z-index:5 }
+  .toolbar select, .toolbar button, .toolbar a { font-family:inherit; font-size:13px; padding:7px 12px; border-radius:8px; border:1px solid var(--line); background:#fff; cursor:pointer; text-decoration:none; color:var(--ink) }
+  .toolbar .primary { background:var(--uqu-green); color:#fff; border-color:var(--uqu-green) }
+  .page { background:#fff; width:210mm; min-height:297mm; margin:16px auto; padding:14mm 14mm 18mm; box-shadow:0 8px 30px rgba(0,0,0,.12); position:relative; page-break-after:always }
+  .page:last-child { page-break-after:auto }
+  .head { display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid var(--uqu-green); padding-bottom:10px }
+  .head .org { font-weight:bold; color:var(--uqu-green); line-height:1.7 } .head .org small { display:block; color:var(--muted); font-weight:normal }
+  .head .logo { width:110px; height:70px; display:flex; align-items:center; justify-content:center; color:var(--uqu-gold); font-size:11px; text-align:center; border:1px dashed var(--uqu-gold-2); border-radius:8px }
+  .head .logo img { max-width:110px; max-height:70px }
+  .gold-line { height:3px; background:linear-gradient(90deg,var(--uqu-gold),var(--uqu-gold-2)); margin:4px 0 14px }
+  h1 { font-size:18px; color:var(--uqu-green); margin:6px 0 2px; text-align:center } .subtitle { text-align:center; color:var(--muted); margin-bottom:12px }
+  .meta { display:grid; grid-template-columns:1fr 1fr; gap:4px 20px; background:#f5f7f6; border:1px solid var(--line); border-radius:10px; padding:10px 14px; margin-bottom:14px }
+  .meta div b { color:var(--uqu-green) }
+  .kpis { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:14px }
+  .kpi { border:1px solid var(--line); border-top:4px solid var(--uqu-green); border-radius:8px; padding:8px; text-align:center } .kpi b { display:block; font-size:22px; color:var(--uqu-green) } .kpi span { color:var(--muted); font-size:11px }
+  .kpi.gold { border-top-color:var(--uqu-gold) }
+  .bar { height:12px; background:#e5e7eb; border-radius:999px; overflow:hidden; margin:2px 0 14px } .bar i { display:block; height:100%; background:linear-gradient(90deg,var(--uqu-green),var(--uqu-green-2)) }
+  h2 { font-size:14px; color:#fff; background:var(--uqu-green); padding:6px 10px; border-radius:6px; margin:14px 0 6px } h2 small { font-weight:normal; opacity:.9 }
+  table { width:100%; border-collapse:collapse; margin-bottom:6px } th, td { border:1px solid #cfd8d6; padding:5px 7px; text-align:right; vertical-align:top; font-size:12px }
+  th { background:#e8f0ee; color:var(--uqu-green) } td.c { text-align:center; white-space:nowrap }
+  .s-early { background:var(--ok); color:var(--ok-ink) } .s-late { background:var(--late); color:var(--late-ink) } .s-overdue { background:var(--bad); color:var(--bad-ink) } .s-pending { background:var(--pending) }
+  .sign { display:flex; justify-content:space-between; margin-top:26px; padding-top:10px } .sign div { width:45%; text-align:center } .sign .l { border-top:1px solid var(--ink); margin-top:36px; padding-top:4px; color:var(--muted) }
+  .foot { position:absolute; bottom:8mm; right:14mm; left:14mm; border-top:1px solid var(--line); padding-top:4px; display:flex; justify-content:space-between; color:var(--muted); font-size:10px }
+  .summary-table td.pct { font-weight:bold; color:var(--uqu-green) }
+  @media print { body { background:#fff } .toolbar { display:none } .page { margin:0; box-shadow:none; width:auto; min-height:auto; padding:10mm } }
+  @page { size:A4; margin:8mm }
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <a href="/">→ العودة للوحة المتابعة</a>
+  <label>القسم: <select id="deptSel"></select></label>
+  <button class="primary" onclick="window.print()">🖨 طباعة / حفظ PDF</button>
+  <span id="info" style="color:#6b7280"></span>
+</div>
+<div id="pages"></div>
+<script>
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const DAYS = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+const MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+const fmt = (s) => { if (!s) return ''; const d = new Date(s + 'T00:00:00'); return `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; };
+const q = new URLSearchParams(location.search);
+let dept = q.get('dept') || 'all';
+
+function headerHtml(R) {
+  return `<div class="head">
+    <div class="org">المملكة العربية السعودية<br>وزارة التعليم<br>جامعة أم القرى<small>كلية الحاسبات — وكالة الكلية للتطوير والجودة</small></div>
+    <div class="logo"><img src="/logo.png" alt="" onerror="this.parentNode.textContent='شعار جامعة أم القرى\\n(ضع الملف public/logo.png)'"></div>
+  </div><div class="gold-line"></div>`;
+}
+function footerHtml(R, i, n) {
+  return `<div class="foot"><span>جامعة أم القرى — كلية الحاسبات — وكالة الكلية للتطوير والجودة</span><span>تاريخ التقرير: ${R.todayArabic} — صفحة ${i} من ${n}</span></div>`;
+}
+function fileRow(f) {
+  const cls = f.submittedAt ? (f.early ? 's-early' : 's-late') : f.overdue ? 's-overdue' : 's-pending';
+  const st = f.submittedAt ? (f.early ? '✔ تم التسليم قبل الموعد' : '✔ تم التسليم بعد الموعد') : f.overdue ? '✘ لم يُسلّم (متأخر)' : '⏳ لم يُسلّم بعد';
+  return `<tr><td class="c">${esc(f.number || '')}</td><td>${esc(f.name)}</td><td>${esc(f.responsible || '')}</td><td class="c">${fmt(f.deadline)}</td><td class="c ${cls}">${st}</td><td class="c">${f.submittedAt ? fmt(f.submittedAt) : '—'}</td><td>${esc(f.note || '')}</td></tr>`;
+}
+function deptPage(R, rep, i, n) {
+  const d = rep.department, s = rep.summary;
+  return `<div class="page">${headerHtml(R)}
+    <h1>تقرير إنجاز وثائق ومتطلبات الجودة</h1>
+    <div class="subtitle">${esc(R.program.name)} — ${esc(R.program.semester || '')} ${esc(R.program.academicYear || '')}</div>
+    <div class="meta"><div><b>القسم:</b> ${esc(d.name)}</div><div><b>رئيس القسم:</b> ${esc(d.head.name)}</div><div><b>تاريخ التقرير:</b> ${R.todayArabic}</div><div><b>نسبة الإنجاز:</b> ${s.percent}%</div></div>
+    <div class="kpis"><div class="kpi"><b>${s.total}</b><span>إجمالي الوثائق المطلوبة</span></div><div class="kpi"><b>${s.submitted}</b><span>الوثائق المستلمة</span></div><div class="kpi"><b>${s.early}</b><span>سُلِّمت قبل الموعد</span></div><div class="kpi gold"><b>${s.late}</b><span>سُلِّمت بعد الموعد</span></div><div class="kpi gold"><b>${s.overdue}</b><span>متأخرة لم تُسلّم</span></div></div>
+    <div class="bar"><i style="width:${s.percent}%"></i></div>
+    ${rep.groups.map((g) => `<h2>${esc(g.phase || 'الوثائق المستحقة')} <small>— الموعد النهائي: ${fmt(g.deadline)} — المستلم ${g.submitted}/${g.total}</small></h2>
+      <table><thead><tr><th style="width:9%">م</th><th style="width:33%">الوثيقة / المتطلب</th><th style="width:18%">مسؤولية التنفيذ</th><th style="width:12%">الموعد النهائي</th><th style="width:12%">الحالة</th><th style="width:10%">تاريخ التسليم</th><th>ملاحظات</th></tr></thead><tbody>${g.files.map(fileRow).join('')}</tbody></table>`).join('')}
+    <div class="sign"><div>رئيس ${esc(d.name)}<div class="l">${esc(d.head.name)}</div></div><div>وكيل الكلية للتطوير والجودة<div class="l">الاسم والتوقيع</div></div></div>
+    ${footerHtml(R, i, n)}</div>`;
+}
+function summaryPage(R, i, n) {
+  const rows = R.reports.map((r) => `<tr><td>${esc(r.department.name)}</td><td class="c">${r.summary.total}</td><td class="c s-early">${r.summary.early}</td><td class="c s-late">${r.summary.late}</td><td class="c s-overdue">${r.summary.overdue}</td><td class="c">${r.summary.pending}</td><td class="c pct">${r.summary.percent}%</td></tr>`).join('');
+  const tot = R.reports.reduce((a, r) => { for (const k of ['total','submitted','early','late','overdue','pending']) a[k] = (a[k] || 0) + r.summary[k]; return a; }, {});
+  const pct = tot.total ? Math.round((tot.submitted / tot.total) * 100) : 0;
+  return `<div class="page">${headerHtml(R)}
+    <h1>التقرير الإجمالي لإنجاز وثائق الجودة بالأقسام</h1>
+    <div class="subtitle">${esc(R.program.name)} — ${esc(R.program.semester || '')} ${esc(R.program.academicYear || '')}</div>
+    <div class="kpis"><div class="kpi"><b>${tot.total}</b><span>إجمالي الوثائق</span></div><div class="kpi"><b>${tot.submitted}</b><span>المستلمة</span></div><div class="kpi"><b>${tot.early}</b><span>قبل الموعد</span></div><div class="kpi gold"><b>${tot.late}</b><span>بعد الموعد</span></div><div class="kpi gold"><b>${tot.overdue}</b><span>متأخرة</span></div></div>
+    <div class="bar"><i style="width:${pct}%"></i></div>
+    <table class="summary-table"><thead><tr><th>القسم</th><th>المطلوب</th><th>قبل الموعد</th><th>بعد الموعد</th><th>متأخرة</th><th>لم يحن موعدها</th><th>نسبة الإنجاز</th></tr></thead><tbody>${rows}</tbody></table>
+    <h2>حالة التسليم حسب المواعيد</h2>
+    <table><thead><tr><th>الموعد النهائي</th><th>المرحلة</th>${R.reports.map((r) => `<th>${esc(r.department.shortName || r.department.name)}</th>`).join('')}</tr></thead><tbody>
+    ${[...new Set(R.reports.flatMap((r) => r.groups.map((g) => g.deadline)))].sort().map((dl) => `<tr><td class="c">${fmt(dl)}</td><td>${esc((R.reports.flatMap((r) => r.groups).find((g) => g.deadline === dl) || {}).phase || '')}</td>${R.reports.map((r) => { const g = r.groups.find((x) => x.deadline === dl); if (!g) return '<td class="c">—</td>'; const cls = g.status === 'complete_early' ? 's-early' : g.status === 'complete_late' ? 's-late' : g.status === 'overdue' ? 's-overdue' : g.status === 'partial' ? 's-late' : 's-pending'; return `<td class="c ${cls}">${g.submitted}/${g.total}</td>`; }).join('')}</tr>`).join('')}
+    </tbody></table>
+    <div class="sign"><div>أعد التقرير<div class="l">${esc(R.generatedBy || '')}</div></div><div>وكيل الكلية للتطوير والجودة<div class="l">الاسم والتوقيع</div></div></div>
+    ${footerHtml(R, i, n)}</div>`;
+}
+async function render() {
+  const r = await fetch('/api/report/' + encodeURIComponent(dept));
+  if (r.status === 401) { location.href = '/login.html?next=' + encodeURIComponent(location.pathname + location.search); return; }
+  const R = await r.json();
+  if (!r.ok) { document.getElementById('pages').innerHTML = `<div class="page"><p>${esc(R.error)}</p></div>`; return; }
+  const sel = document.getElementById('deptSel');
+  if (!sel.options.length) {
+    const all = await fetch('/api/report/all').then((x) => x.json());
+    sel.innerHTML = `<option value="all">جميع الأقسام (تقرير إجمالي + تقرير لكل قسم)</option>` + all.reports.map((x) => `<option value="${x.department.id}">${esc(x.department.name)}</option>`).join('');
+    sel.value = dept;
+    sel.onchange = () => { dept = sel.value; history.replaceState(null, '', '?dept=' + dept); render(); };
+  }
+  const pages = [];
+  const n = (dept === 'all' ? 1 : 0) + R.reports.length;
+  if (dept === 'all') pages.push(summaryPage(R, 1, n));
+  R.reports.forEach((rep, i) => pages.push(deptPage(R, rep, pages.length + 1, n)));
+  document.getElementById('pages').innerHTML = pages.join('');
+  document.getElementById('info').textContent = `تاريخ التقرير: ${R.todayArabic}`;
+}
+render();
+</script>
+</body>
+</html>
