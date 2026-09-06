@@ -1,9 +1,0 @@
-node_modules/
-.env
-data/state.json
-data/users.json
-data/.session-secret
-data/*.xlsx
-!data/quality-template.xlsx
-exports/
-*.log
