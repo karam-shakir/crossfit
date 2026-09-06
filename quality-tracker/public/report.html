@@ -3,11 +3,13 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>تقرير إنجاز وثائق الجودة</title>
+<link rel="icon" href="logo.png" type="image/png">
+<link rel="stylesheet" href="brand.css">
 <style>
-  /* هوية جامعة أم القرى: الأخضر الداكن والذهبي */
-  :root { --uqu-green:#0b3d3a; --uqu-green-2:#146b5c; --uqu-gold:#b8962e; --uqu-gold-2:#e2c766; --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb;
+  /* هوية جامعة أم القرى: التركوازي والذهبي الرسميان */
+  :root { --uqu-green:#00686F; --uqu-green-2:#005B61; --uqu-gold:#B08D44; --uqu-gold-2:#D4B76A; --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb;
     --ok:#c6efce; --ok-ink:#0f5132; --late:#ffeb9c; --late-ink:#664d03; --bad:#ffc7ce; --bad-ink:#842029; --pending:#f3f4f6 }
-  * { box-sizing:border-box } body { margin:0; font-family:Tahoma,"Segoe UI",Arial,sans-serif; color:var(--ink); background:#e9ecef; font-size:13px }
+  * { box-sizing:border-box } body { margin:0; font-family:var(--brand-font); color:var(--ink); background:#e9ecef; font-size:13px }
   .toolbar { position:sticky; top:0; background:#fff; border-bottom:1px solid var(--line); padding:10px 20px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; z-index:5 }
   .toolbar select, .toolbar button, .toolbar a { font-family:inherit; font-size:13px; padding:7px 12px; border-radius:8px; border:1px solid var(--line); background:#fff; cursor:pointer; text-decoration:none; color:var(--ink) }
   .toolbar .primary { background:var(--uqu-green); color:#fff; border-color:var(--uqu-green) }
@@ -15,8 +17,8 @@
   .page:last-child { page-break-after:auto }
   .head { display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid var(--uqu-green); padding-bottom:10px }
   .head .org { font-weight:bold; color:var(--uqu-green); line-height:1.7 } .head .org small { display:block; color:var(--muted); font-weight:normal }
-  .head .logo { width:110px; height:70px; display:flex; align-items:center; justify-content:center; color:var(--uqu-gold); font-size:11px; text-align:center; border:1px dashed var(--uqu-gold-2); border-radius:8px }
-  .head .logo img { max-width:110px; max-height:70px }
+  .head .logo { width:130px; height:90px; display:flex; align-items:center; justify-content:center }
+  .head .logo img { max-width:130px; max-height:90px }
   .gold-line { height:3px; background:linear-gradient(90deg,var(--uqu-gold),var(--uqu-gold-2)); margin:4px 0 14px }
   h1 { font-size:18px; color:var(--uqu-green); margin:6px 0 2px; text-align:center } .subtitle { text-align:center; color:var(--muted); margin-bottom:12px }
   .meta { display:grid; grid-template-columns:1fr 1fr; gap:4px 20px; background:#f5f7f6; border:1px solid var(--line); border-radius:10px; padding:10px 14px; margin-bottom:14px }
@@ -55,7 +57,7 @@ let dept = q.get('dept') || 'all';
 function headerHtml(R) {
   return `<div class="head">
     <div class="org">المملكة العربية السعودية<br>وزارة التعليم<br>جامعة أم القرى<small>كلية الحاسبات — وكالة الكلية للتطوير والجودة</small></div>
-    <div class="logo"><img src="/logo.png" alt="" onerror="this.parentNode.textContent='شعار جامعة أم القرى\\n(ضع الملف public/logo.png)'"></div>
+    <div class="logo"><img src="/logo.png" alt="جامعة أم القرى"></div>
   </div><div class="gold-line"></div>`;
 }
 function footerHtml(R, i, n) {
