@@ -91,7 +91,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
   const [weeklyError, setWeeklyError] = useState('');
   const [weeklyWarnings, setWeeklyWarnings] = useState<string[]>([]); // تنبيهات محظورات دمج الحركات + تصحيح type + فحص الاكتمال، مجمّعة عبر أيام الأسبوع — راجع lib/wodWeeklyGeneration.ts
   const [weeklyFromDate, setWeeklyFromDate] = useState(todaySA());
-  const [weeklyDays, setWeeklyDays] = useState(7);
+  const [weeklyDays, setWeeklyDays] = useState(5); // = MAX_SAFE_WEEKLY_DAYS في lib/wodWeeklyGeneration.ts — طلب أكثر من هذا يُرفض من السيرفر
   const [weekMode, setWeekMode] = useState<'crossfit' | 'mixed'>('crossfit');
   const [calisthenicsDays, setCalisthenicsDays] = useState(1);
   const [savedPlans, setSavedPlans] = useState<any[]>([]);
@@ -1782,9 +1782,13 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
                         ))}
                       </select>
                       {weeklyBenchmarkName && (
-                        <input type="date" value={weeklyBenchmarkDate} onChange={e => setWeeklyBenchmarkDate(e.target.value)}
-                          min={weeklyFromDate}
-                          className="w-full mt-2 bg-gray-800 border border-yellow-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
+                        <>
+                          <input type="date" value={weeklyBenchmarkDate} onChange={e => setWeeklyBenchmarkDate(e.target.value)}
+                            min={weeklyFromDate}
+                            max={new Date(new Date(weeklyFromDate).getTime() + (weeklyDays - 1) * 86400000).toISOString().slice(0, 10)}
+                            className="w-full mt-2 bg-gray-800 border border-yellow-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
+                          <p className="text-[11px] text-yellow-600/80 mt-1">لازم يقع التاريخ ضمن نطاق الـ{weeklyDays} أيام المطلوب توليدها، وإلا يُتجاهَل البنشمارك بصمت</p>
+                        </>
                       )}
                     </div>
 
