@@ -1,4 +1,9 @@
 /** تشغيل الخادم + المجدول التلقائي */
+const [major] = process.versions.node.split('.').map(Number);
+if (major < 18) {
+  console.error(`❌ إصدار Node.js الحالي ${process.versions.node} قديم. يلزم Node.js 18 أو أحدث: https://nodejs.org`);
+  process.exit(1);
+}
 import cron from 'node-cron';
 import { env } from './config.ts';
 import { createApp, ensureDefaultAdmin } from './server.ts';
@@ -40,8 +45,16 @@ async function scheduledInbox() {
   }
 }
 
-const adminInit = ensureDefaultAdmin();
-app.listen(env.port, () => {
+let adminInit: { created: boolean; username: string };
+try {
+  loadConfig();
+  adminInit = ensureDefaultAdmin();
+} catch (e: any) {
+  console.error('❌ تعذر قراءة ملفات البيانات:', e.message || e);
+  console.error(`   مجلد البيانات: ${env.dataDir}`);
+  process.exit(1);
+}
+const server = app.listen(env.port, () => {
   console.log(`✅ لوحة متابعة وثائق الجودة: http://localhost:${env.port}  (${env.dryRun ? 'وضع التجربة DRY_RUN' : 'إرسال فعلي'})`);
   if (adminInit.created) console.log(`   ⚠️ تم إنشاء مستخدم المدير الافتراضي "${adminInit.username}" - غيّر كلمة المرور من لوحة المتابعة فوراً`);
   console.log(`   المنطقة الزمنية: ${env.tz} | ساعة الإرسال: ${loadConfig().settings.sendHour}:00`);
@@ -49,4 +62,9 @@ app.listen(env.port, () => {
   cron.schedule('*/10 * * * *', () => scheduledTick('مجدولة'), { timezone: env.tz });
   if (env.imap.enabled) cron.schedule(`*/${Math.max(1, env.imap.pollMinutes)} * * * *`, scheduledInbox, { timezone: env.tz });
   setTimeout(() => scheduledTick('عند التشغيل'), 3000);
+});
+server.on('error', (e: any) => {
+  if (e.code === 'EADDRINUSE') console.error(`❌ المنفذ ${env.port} مستخدم من برنامج آخر. غيّر PORT في ملف .env (مثلاً PORT=4001) أو أغلق البرنامج الآخر.`);
+  else console.error('❌ تعذر تشغيل الخادم:', e.message || e);
+  process.exit(1);
 });

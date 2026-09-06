@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'node:path';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { channelConfigured, env } from './config.ts';
 import { loadConfig, loadState, loadTemplates, newId, saveConfig, saveState, saveTemplates } from './store.ts';
 import { buildManual, findSubmission, groupCell, groupsForDept, statusMatrix } from './engine.ts';
@@ -20,7 +21,7 @@ export function createApp() {
   app.use(express.json({ limit: '2mb' }));
   app.use(attachUser);
 
-  const publicDir = new URL('../public/', import.meta.url).pathname;
+  const publicDir = fileURLToPath(new URL('../public/', import.meta.url));
   app.use(express.static(publicDir));
 
   const wrap = (fn: (req: express.Request, res: express.Response) => Promise<unknown> | unknown) => async (req: express.Request, res: express.Response) => {

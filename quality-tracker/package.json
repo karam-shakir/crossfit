@@ -14,7 +14,7 @@
     "excel:import": "tsx src/cli.ts excel-import",
     "excel:export": "tsx src/cli.ts excel-export",
     "test:channels": "tsx src/cli.ts test-channels",
-    "test": "tsx --test test/*.test.ts",
+    "test": "tsx --test test/engine.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

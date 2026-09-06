@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { fileURLToPath } from 'node:url';
 
 const bool = (v: string | undefined, d = false) => (v === undefined || v === '' ? d : /^(1|true|yes)$/i.test(v));
 const num = (v: string | undefined, d: number) => (v && !Number.isNaN(Number(v)) ? Number(v) : d);
@@ -8,7 +9,7 @@ export const env = {
   tz: process.env.TZ_NAME || 'Asia/Riyadh',
   dashboardPassword: process.env.DASHBOARD_PASSWORD || '', // متوافق مع الإصدار السابق: يُستخدم ككلمة مرور المدير الأولى إن لم تُحدد ADMIN_PASSWORD
   dryRun: bool(process.env.DRY_RUN, true),
-  dataDir: process.env.DATA_DIR || new URL('../data/', import.meta.url).pathname,
+  dataDir: process.env.DATA_DIR || fileURLToPath(new URL('../data/', import.meta.url)),
 
   smtp: {
     host: process.env.SMTP_HOST || '',
