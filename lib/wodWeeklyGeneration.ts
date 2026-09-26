@@ -10,6 +10,7 @@ import {
   movementBlacklistGuidance, stripRule1Violations, stripRule3Violations, detectRule2HeavyOverlap,
   StimulusType, STIMULUS_LABELS_AR, buildStimulusSequence, stimulusGuidanceFor,
   metconStimulusMixGuidance, metconRepLoadGuidance, metconTimeCapGuidance, detectMetconStimulusImbalance,
+  detectMetconVolumeTooLowForStimulus,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
 import { flattenMovements, sanitizeLevels, detectIncompleteSections, deriveTypeFromMetconFormat } from '@/lib/wodBlocks';
@@ -538,6 +539,11 @@ export async function processWeeklyWodResult(rawText: string, ctx: WeeklyWodCont
           ...detectMetconStimulusImbalance(
             dayMetcon.flatMap(b => b.movements.map((m: any) => m.exerciseId)),
             customMetconCategory,
+          ),
+          ...detectMetconVolumeTooLowForStimulus(
+            ctx.stimulusSequence[patternIdx] ?? ctx.stimulusSequence[ctx.stimulusSequence.length - 1],
+            dayMetcon.flatMap(b => b.movements.map((m: any) => m.exerciseId)),
+            day.rounds ?? null,
           ),
         ];
         if (warnings.length) {

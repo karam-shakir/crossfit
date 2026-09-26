@@ -648,6 +648,27 @@ export function detectMetconStimulusImbalance(
   return [];
 }
 
+// أنواع التحفيز اللي وصفتها STIMULUS_METCON_PROFILE بمدة "طويلة نسبياً/طويلة" (١٢-٢٠+ دقيقة)
+// بغض النظر عن خفة الحمل — الحمل الخفيف يبرر مدة أطول، لا ميتكون أقصر
+const LONG_DURATION_STIMULI: StimulusType[] = ['muscular-endurance', 'aerobic-engine'];
+
+/** رصد فقط (بلا حذف تلقائي — نفس حذر detectMetconStimulusImbalance من تفسير حقل reps النصي الحر):
+ * يكتشف احتمال أن حجم الميتكون (عدد الحركات المختلفة + غياب جولات متكررة) غير كافٍ ليملأ نافذة
+ * المدة التي يفترضها نوع تحفيز اليوم. مثال حقيقي رصدناه: يوم muscular-endurance بحركة ونصف
+ * (٣٠ Dumbbell Power Clean + ١٥٠ Jump Rope، مرة واحدة بلا جولات) انتهى فعلياً خلال ٣-٥ دقائق
+ * رغم إن هذا النوع من التحفيز يفترض ١٢-٢٠ دقيقة كاملة — حجم غير كافٍ لملء الوقت، لا خطأ بالحمل. */
+export function detectMetconVolumeTooLowForStimulus(
+  stimulus: StimulusType | undefined,
+  metconMovementIds: string[],
+  rounds: number | null | undefined,
+): string[] {
+  if (!stimulus || !LONG_DURATION_STIMULI.includes(stimulus)) return [];
+  if (rounds != null) return []; // جولات متكررة فعلية = حجم إجمالي كافٍ غالباً
+  const distinctMovements = new Set(metconMovementIds).size;
+  if (distinctMovements > 2) return []; // ٣+ حركات مختلفة تعطي حجماً كافياً غالباً حتى بلا جولات
+  return [`نوع تحفيز اليوم "${STIMULUS_LABELS_AR[stimulus]}" يفترض ميتكون ${STIMULUS_METCON_PROFILE[stimulus].durationAr} — لكن الميتكون المولَّد حركة أو حركتان فقط بلا جولات متكررة (rounds فارغ)، ما يرجّح إنه سينتهي أسرع بكثير من المدة المقصودة. راجع الحجم يدوياً قبل الحفظ (زِد التكرارات أو أضف حركة/جولات).`];
+}
+
 // ═══ قانون التحميل حسب عدد التكرارات (وصفة الميتكون العلمية — خطوة ٣) — الوزن نسبة من 1RM
 // اللاعب، تُحدَّد بعدد التكرارات المتوقعة في الجولة الواحدة، لا بمرحلة دورة التدريج وحدها. ═══
 export function metconRepLoadGuidance(): string {

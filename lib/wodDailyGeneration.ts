@@ -21,6 +21,7 @@ import {
   movementBlacklistGuidance, stripRule1Violations, stripRule3Violations, detectRule2HeavyOverlap,
   StimulusType, suggestStimulusType, stimulusGuidanceFor,
   metconStimulusMixGuidance, metconRepLoadGuidance, metconTimeCapGuidance, detectMetconStimulusImbalance,
+  detectMetconVolumeTooLowForStimulus,
 } from '@/lib/crossfitProgramming';
 import { parseAiJson } from '@/lib/aiJson';
 import { flattenMovements, sanitizeLevels, detectIncompleteSections, deriveTypeFromMetconFormat } from '@/lib/wodBlocks';
@@ -539,6 +540,11 @@ export function processDailyWodResult(rawText: string, ctx: DailyWodContext) {
     blacklistWarnings.push(...detectMetconStimulusImbalance(
       metconBlocks.flatMap(b => b.movements.map((m: any) => m.exerciseId)),
       customMetconCategory,
+    ));
+    blacklistWarnings.push(...detectMetconVolumeTooLowForStimulus(
+      ctx.effectiveStimulus,
+      metconBlocks.flatMap(b => b.movements.map((m: any) => m.exerciseId)),
+      generated.rounds ?? null,
     ));
     if (blacklistWarnings.length) console.warn(`[generate/wod ${ctx.date}]`, blacklistWarnings.join(' | '));
   }
