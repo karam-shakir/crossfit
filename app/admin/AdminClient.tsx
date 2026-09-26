@@ -71,7 +71,7 @@ function emptyExercise() {
   return { exerciseId: '', reps: '', weight: '', distance: '', time: '', notes: '', executionNote: '' };
 }
 
-export default function AdminClient({ member, exercises, isFullAdmin = true }: { member: any; exercises: any[]; isFullAdmin?: boolean }) {
+export default function AdminClient({ member, exercises, isFullAdmin = true, isGymManager = false }: { member: any; exercises: any[]; isFullAdmin?: boolean; isGymManager?: boolean }) {
   const [tab, setTab] = useState<AdminTab>('wod');
   const [showExerciseLibrary, setShowExerciseLibrary] = useState(false);
   const [showGymCatalog, setShowGymCatalog] = useState(false);
@@ -856,7 +856,7 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
     setMembers(prev => prev.filter(m => m.id !== id));
   }
 
-  async function togglePermission(id: string, perm: 'canViewWods' | 'canGenerateWod', current: boolean) {
+  async function togglePermission(id: string, perm: 'canViewWods' | 'canGenerateWod' | 'canGenerateGym', current: boolean) {
     const res = await fetch(`/api/members/permissions?id=${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -934,15 +934,17 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
               className="py-2.5 rounded-xl text-xs font-semibold transition-colors flex flex-col items-center justify-center gap-1 text-center leading-tight min-h-[3.25rem] bg-gray-800 text-gray-400 hover:text-white">
               <Puzzle className="w-4 h-4" /><span>مكتبة التمارين</span>
             </button>
+            {(isFullAdmin || isGymManager) && (
+              <button onClick={() => setTab('gym')}
+                className={`py-2.5 rounded-xl text-xs font-semibold transition-colors flex flex-col items-center justify-center gap-1 text-center leading-tight min-h-[3.25rem] ${tab === 'gym' ? 'bg-gray-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+                <Building2 className="w-4 h-4" /><span>الجيم</span>
+              </button>
+            )}
             {isFullAdmin && (
               <>
                 <button onClick={() => setTab('sports')}
                   className={`py-2.5 rounded-xl text-xs font-semibold transition-colors flex flex-col items-center justify-center gap-1 text-center leading-tight min-h-[3.25rem] ${tab === 'sports' ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
                   <Dumbbell className="w-4 h-4" /><span>خطة الرياضات</span>
-                </button>
-                <button onClick={() => setTab('gym')}
-                  className={`py-2.5 rounded-xl text-xs font-semibold transition-colors flex flex-col items-center justify-center gap-1 text-center leading-tight min-h-[3.25rem] ${tab === 'gym' ? 'bg-gray-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
-                  <Building2 className="w-4 h-4" /><span>الجيم</span>
                 </button>
                 <button onClick={() => setTab('running')}
                   className={`py-2.5 rounded-xl text-xs font-semibold transition-colors flex flex-col items-center justify-center gap-1 text-center leading-tight min-h-[3.25rem] ${tab === 'running' ? 'bg-orange-700 text-white' : 'bg-gray-800 text-gray-400'}`}>
@@ -965,7 +967,10 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
           </div>
           {!isFullAdmin && (
             <div className="bg-gray-900 border border-amber-700/40 rounded-xl px-4 py-2.5 text-xs text-amber-300 flex items-center gap-2">
-              <Handshake className="w-4 h-4 flex-shrink-0" /> صلاحية مدرّب — يمكنك توليد وحفظ تمارين الكروسفت فقط. لإدارة الأعضاء أو الرياضات الأخرى تواصل مع مدير النظام.
+              <Handshake className="w-4 h-4 flex-shrink-0" />
+              {isGymManager
+                ? 'صلاحية مدرّب — يمكنك توليد وحفظ برنامج الجيم فقط. لإدارة الأعضاء أو الأقسام الأخرى تواصل مع مدير النظام.'
+                : 'صلاحية مدرّب — يمكنك توليد وحفظ تمارين الكروسفت فقط. لإدارة الأعضاء أو الرياضات الأخرى تواصل مع مدير النظام.'}
             </div>
           )}
 
@@ -2614,14 +2619,24 @@ export default function AdminClient({ member, exercises, isFullAdmin = true }: {
                                       {m.canViewWods !== false ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />} سجل التمارين
                                     </button>
                                     <button
-                                      onClick={() => togglePermission(m.id, 'canGenerateWod', m.canGenerateWod !== false)}
+                                      onClick={() => togglePermission(m.id, 'canGenerateWod', m.canGenerateWod === true)}
                                       className={`text-xs px-3 py-1.5 rounded-full border transition-colors font-medium flex items-center gap-1 ${
-                                        m.canGenerateWod !== false
+                                        m.canGenerateWod === true
                                           ? 'bg-green-900/40 border-green-700/50 text-green-400'
                                           : 'bg-red-900/40 border-red-700/50 text-red-400'
                                       }`}
                                     >
-                                      {m.canGenerateWod !== false ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />} توليد التمرين
+                                      {m.canGenerateWod === true ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />} توليد التمرين
+                                    </button>
+                                    <button
+                                      onClick={() => togglePermission(m.id, 'canGenerateGym', m.canGenerateGym === true)}
+                                      className={`text-xs px-3 py-1.5 rounded-full border transition-colors font-medium flex items-center gap-1 ${
+                                        m.canGenerateGym === true
+                                          ? 'bg-green-900/40 border-green-700/50 text-green-400'
+                                          : 'bg-red-900/40 border-red-700/50 text-red-400'
+                                      }`}
+                                    >
+                                      {m.canGenerateGym === true ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />} توليد الجيم
                                     </button>
                                   </div>
                                 </div>

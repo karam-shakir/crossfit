@@ -3,7 +3,7 @@ import { getSession } from '@/lib/auth';
 import { getDb } from '@/lib/mongodb';
 
 // PATCH /api/members/permissions?id=xxx
-// body: { canViewWods: bool, canGenerateWod: bool }
+// body: { canViewWods: bool, canGenerateWod: bool, canGenerateGym: bool }
 export async function PATCH(req: NextRequest) {
   const session = await getSession();
   if (!session || session.role !== 'admin')
@@ -20,6 +20,7 @@ export async function PATCH(req: NextRequest) {
   const update: Record<string, boolean> = {};
   if (typeof body.canViewWods === 'boolean') update.canViewWods = body.canViewWods;
   if (typeof body.canGenerateWod === 'boolean') update.canGenerateWod = body.canGenerateWod;
+  if (typeof body.canGenerateGym === 'boolean') update.canGenerateGym = body.canGenerateGym;
 
   await db.collection('members').updateOne({ id }, { $set: update });
   return NextResponse.json({ ok: true, ...update });

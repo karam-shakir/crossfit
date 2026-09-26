@@ -14,6 +14,7 @@ export interface Member {
   avatar: string;
   canViewWods?: boolean;
   canGenerateWod?: boolean;
+  canGenerateGym?: boolean;
 }
 
 export interface Exercise {

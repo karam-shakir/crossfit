@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getSession } from '@/lib/auth';
+import { canManageGym } from '@/lib/permissions';
 import { buildGymWeekContext, processGymWeekResult } from '@/lib/gymGeneration';
 
 // نفس مهلة مسار Claude — راجع التعليق هناك، القيد نفسه (300 ثانية بلا Fluid Compute)
@@ -8,7 +9,7 @@ export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== 'admin')
+  if (!(await canManageGym(session)))
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   if (!process.env.OPENAI_API_KEY)

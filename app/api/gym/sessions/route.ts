@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import { canManageGym } from '@/lib/permissions';
 import { getGymSessions, deleteGymSessionsByMember } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
@@ -7,7 +8,7 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const { searchParams } = new URL(req.url);
-  const memberId = session.role === 'admin'
+  const memberId = (session.role === 'admin' || await canManageGym(session))
     ? (searchParams.get('memberId') || session.id)
     : session.id;
 

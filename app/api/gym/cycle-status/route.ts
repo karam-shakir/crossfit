@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import { canManageGym } from '@/lib/permissions';
 import { getLatestGymWeekMeta } from '@/lib/db';
 import { computeNextCyclePhase, CYCLE_PHASE_LABELS_AR, CYCLE_PHASE_INFO } from '@/lib/periodization';
 
 // يعرض للوحة الإدارة مرحلة دورة التدريج القادمة لهذا العضو تحديداً قبل التوليد الفعلي
 export async function GET(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== 'admin')
+  if (!(await canManageGym(session)))
     return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 
   const { searchParams } = new URL(req.url);

@@ -12,8 +12,10 @@ export default async function AdminPage() {
   const isFullAdmin = member.role === 'admin';
   // صلاحية شبه إدارية محدودة بتوليد/حفظ تمارين الكروسفت — يفعّلها المدير لعضو عبر canGenerateWod
   const isCrossfitManager = isFullAdmin || member.canGenerateWod === true;
-  if (!isCrossfitManager) redirect('/dashboard');
+  // صلاحية شبه إدارية محدودة بتوليد/حفظ برنامج الجيم فقط — يفعّلها المدير لعضو عبر canGenerateGym
+  const isGymManager = isFullAdmin || member.canGenerateGym === true;
+  if (!isCrossfitManager && !isGymManager) redirect('/dashboard');
 
   const { password: _, ...safeMember } = member;
-  return <AdminClient member={safeMember} exercises={exercises} isFullAdmin={isFullAdmin} />;
+  return <AdminClient member={safeMember} exercises={exercises} isFullAdmin={isFullAdmin} isGymManager={isGymManager} />;
 }
