@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { getMembers, saveMembers } from '@/lib/db';
 import { getSession } from '@/lib/auth';
+import { canManageGym } from '@/lib/permissions';
 import { todaySA } from '@/lib/timezone';
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
@@ -13,11 +14,23 @@ const AVATARS = ['🏋️','💪','🔥','⚡','🦁','🐺','🦅','🎯','🏆
 
 export async function GET() {
   const session = await getSession();
+  if (!session) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
+
   // Admin فقط يمكنه رؤية قائمة الأعضاء الكاملة
-  if (!session || session.role !== 'admin')
-    return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
-  const members = (await getMembers()).map(({ password: _, ...m }) => m);
-  return NextResponse.json(members);
+  if (session.role === 'admin') {
+    const members = (await getMembers()).map(({ password: _, ...m }) => m);
+    return NextResponse.json(members);
+  }
+
+  // مدرّب الجيم يحتاج القائمة لاختيار العضو فقط — حقول التعريف الأساسية بلا صلاحيات أو تواريخ
+  if (await canManageGym(session)) {
+    const members = (await getMembers()).map(m => ({
+      id: m.id, username: m.username, nameAr: m.nameAr, role: m.role, avatar: m.avatar,
+    }));
+    return NextResponse.json(members);
+  }
+
+  return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
 }
 
 export async function POST(req: NextRequest) {

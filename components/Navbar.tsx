@@ -288,14 +288,15 @@ function Avatar({ name, role }: { name: string; role: string }) {
 
 // ===== Main Navbar Component =====
 export default function Navbar({ member }: {
-  member: { nameAr: string; role: string; avatar?: string; canViewWods?: boolean; canGenerateWod?: boolean }
+  member: { nameAr: string; role: string; avatar?: string; canViewWods?: boolean; canGenerateWod?: boolean; canGenerateGym?: boolean }
 }) {
   const pathname = usePathname();
   const router   = useRouter();
   const [open, setOpen] = useState(false);
 
   const isAdmin = member.role === 'admin';
-  const canManageCrossfit = isAdmin || member.canGenerateWod === true;
+  // يظهر رابط لوحة التحكم لأي مدرّب بصلاحية جزئية (كروسفت أو جيم) — محتوى اللوحة نفسه يتقيّد بصلاحيته داخل AdminClient
+  const canManageCrossfit = isAdmin || member.canGenerateWod === true || member.canGenerateGym === true;
   const [impersonationBanner, setImpersonationBanner] = useState(false);
 
   useEffect(() => {

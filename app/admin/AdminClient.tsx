@@ -72,7 +72,9 @@ function emptyExercise() {
 }
 
 export default function AdminClient({ member, exercises, isFullAdmin = true, isGymManager = false }: { member: any; exercises: any[]; isFullAdmin?: boolean; isGymManager?: boolean }) {
-  const [tab, setTab] = useState<AdminTab>('wod');
+  // مدرّب جيم فقط (بلا canGenerateWod) لا يملك صلاحية تبويبات الكروسفت — تُخفى عنه ويبدأ من الجيم
+  const hasCrossfitAccess = isFullAdmin || member.canGenerateWod === true;
+  const [tab, setTab] = useState<AdminTab>(hasCrossfitAccess ? 'wod' : 'gym');
   const [showExerciseLibrary, setShowExerciseLibrary] = useState(false);
   const [showGymCatalog, setShowGymCatalog] = useState(false);
   const [wod, setWod] = useState<any>(emptyWod(todaySA()));
@@ -922,18 +924,22 @@ export default function AdminClient({ member, exercises, isFullAdmin = true, isG
           <h1 className="text-xl font-bold text-white flex items-center gap-2"><Settings className="w-5 h-5" /> لوحة الإدارة</h1>
 
           <div className="grid grid-cols-3 gap-2">
-            <button onClick={() => setTab('wod')}
-              className={`py-2.5 rounded-xl text-xs font-semibold transition-colors flex flex-col items-center justify-center gap-1 text-center leading-tight min-h-[3.25rem] ${tab === 'wod' ? 'bg-orange-500 text-white' : 'bg-gray-800 text-gray-400'}`}>
-              <Flame className="w-4 h-4" /><span>WOD اليومي</span>
-            </button>
-            <button onClick={() => setTab('weekly')}
-              className={`py-2.5 rounded-xl text-xs font-semibold transition-colors flex flex-col items-center justify-center gap-1 text-center leading-tight min-h-[3.25rem] ${tab === 'weekly' ? 'bg-amber-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
-              <Calendar className="w-4 h-4" /><span>خطة CrossFit</span>
-            </button>
-            <button onClick={() => setShowExerciseLibrary(true)}
-              className="py-2.5 rounded-xl text-xs font-semibold transition-colors flex flex-col items-center justify-center gap-1 text-center leading-tight min-h-[3.25rem] bg-gray-800 text-gray-400 hover:text-white">
-              <Puzzle className="w-4 h-4" /><span>مكتبة التمارين</span>
-            </button>
+            {hasCrossfitAccess && (
+              <>
+                <button onClick={() => setTab('wod')}
+                  className={`py-2.5 rounded-xl text-xs font-semibold transition-colors flex flex-col items-center justify-center gap-1 text-center leading-tight min-h-[3.25rem] ${tab === 'wod' ? 'bg-orange-500 text-white' : 'bg-gray-800 text-gray-400'}`}>
+                  <Flame className="w-4 h-4" /><span>WOD اليومي</span>
+                </button>
+                <button onClick={() => setTab('weekly')}
+                  className={`py-2.5 rounded-xl text-xs font-semibold transition-colors flex flex-col items-center justify-center gap-1 text-center leading-tight min-h-[3.25rem] ${tab === 'weekly' ? 'bg-amber-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+                  <Calendar className="w-4 h-4" /><span>خطة CrossFit</span>
+                </button>
+                <button onClick={() => setShowExerciseLibrary(true)}
+                  className="py-2.5 rounded-xl text-xs font-semibold transition-colors flex flex-col items-center justify-center gap-1 text-center leading-tight min-h-[3.25rem] bg-gray-800 text-gray-400 hover:text-white">
+                  <Puzzle className="w-4 h-4" /><span>مكتبة التمارين</span>
+                </button>
+              </>
+            )}
             {(isFullAdmin || isGymManager) && (
               <button onClick={() => setTab('gym')}
                 className={`py-2.5 rounded-xl text-xs font-semibold transition-colors flex flex-col items-center justify-center gap-1 text-center leading-tight min-h-[3.25rem] ${tab === 'gym' ? 'bg-gray-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
@@ -968,7 +974,9 @@ export default function AdminClient({ member, exercises, isFullAdmin = true, isG
           {!isFullAdmin && (
             <div className="bg-gray-900 border border-amber-700/40 rounded-xl px-4 py-2.5 text-xs text-amber-300 flex items-center gap-2">
               <Handshake className="w-4 h-4 flex-shrink-0" />
-              {isGymManager
+              {hasCrossfitAccess && isGymManager
+                ? 'صلاحية مدرّب — يمكنك توليد وحفظ تمارين الكروسفت وبرنامج الجيم فقط. لإدارة الأعضاء أو الأقسام الأخرى تواصل مع مدير النظام.'
+                : isGymManager
                 ? 'صلاحية مدرّب — يمكنك توليد وحفظ برنامج الجيم فقط. لإدارة الأعضاء أو الأقسام الأخرى تواصل مع مدير النظام.'
                 : 'صلاحية مدرّب — يمكنك توليد وحفظ تمارين الكروسفت فقط. لإدارة الأعضاء أو الرياضات الأخرى تواصل مع مدير النظام.'}
             </div>
@@ -2818,10 +2826,12 @@ export default function AdminClient({ member, exercises, isFullAdmin = true, isG
                   <h2 className="font-extrabold text-white text-base flex items-center gap-2"><Building2 className="w-5 h-5" /> توليد جدول الجيم</h2>
                   <p className="text-xs text-orange-300 mt-0.5">اختر العضو وخصّص الإعدادات كمدرب قبل التوليد</p>
                 </div>
-                <button onClick={() => setShowGymCatalog(true)}
-                  className="flex-shrink-0 px-3 py-2 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold transition-colors flex items-center gap-1.5">
-                  <Dumbbell className="w-3.5 h-3.5" /> مكتبة تمارين الجيم
-                </button>
+                {isFullAdmin && (
+                  <button onClick={() => setShowGymCatalog(true)}
+                    className="flex-shrink-0 px-3 py-2 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold transition-colors flex items-center gap-1.5">
+                    <Dumbbell className="w-3.5 h-3.5" /> مكتبة تمارين الجيم
+                  </button>
+                )}
               </div>
 
               {/* Step 1 — Member + Date */}
@@ -3121,8 +3131,8 @@ export default function AdminClient({ member, exercises, isFullAdmin = true, isG
                 </div>
               )}
 
-              {/* حذف جلسات جيم لنطاق تاريخ — لتصحيح توليد خاطئ أو مسح جدول تجريبي قبل تسليم جدول حقيقي */}
-              {gymSelectedMember && (
+              {/* حذف جلسات جيم لنطاق تاريخ — لتصحيح توليد خاطئ أو مسح جدول تجريبي قبل تسليم جدول حقيقي (مدير النظام فقط) */}
+              {isFullAdmin && gymSelectedMember && (
                 <div className="bg-gray-900 rounded-2xl border border-gray-800 p-4 space-y-2.5">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> حذف جلسات (نطاق تاريخ)</p>
                   <div className="grid grid-cols-2 gap-2">
